@@ -1,6 +1,232 @@
 {
-  "generated_at": "2026-03-06T19:11:18.471356+00:00",
-  "updated_date": "20260306",
+  "generated_at": "2026-06-08T11:28:38.740966+00:00",
+  "updated_date": "20260530-20260608",
   "carryover_days": 9,
-  "items": []
+  "tag_states": {
+    "world-models": {
+      "updated_date": "20260530-20260608",
+      "carryover_days": 9,
+      "items": [
+        {
+          "id": "2606.06832v1",
+          "source": "arxiv",
+          "title": "STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images",
+          "abstract": "Robots performing long-horizon visual manipulation observe high-dimensional images, but successful plans depend on action-relevant facts: what can be done now and what changes afterward. A useful planning representation should discard irrelevant visual details while preserving action applicability and effects. Classical task planners exploit this structure through symbolic operators with preconditions and effects, but obtaining such representations from raw visual experience remains challenging. We study a visual task-planning setting in which a robot receives only image transitions: the current image, executed high-level action, and the resulting image. At test time, given a start image and a goal image, the robot must produce a sequence of high-level actions that reaches the goal. To address this problem, we introduce STRIPS-WM, a framework for learning image-grounded STRIPS-style world models directly from visual transitions. STRIPS-WM first induces a finite abstract transition graph from images, then learns latent binary predicates and one grounded propositional operator per action label. The learned operators form a symbolic action model with sparse preconditions and add/delete effects. Finally, the learned predicates are distilled into a visual encoder, enabling classical planning directly from novel start and goal images. Experiments on visual rearrangement tasks show that STRIPS-WM improves image-to-plan success over the tested visual rollout, latent graph-search and latent-symbolic baselines.",
+          "authors": [
+            "Abhiroop Ajith",
+            "Constantinos Chamzas"
+          ],
+          "primary_category": "cs.RO",
+          "categories": [
+            "cs.RO"
+          ],
+          "published": "2026-06-05T02:16:50+00:00",
+          "link": "https://arxiv.org/pdf/2606.06832v1",
+          "tags": [
+            "keyword:world-models",
+            "query:world-models"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "learns STRIPS-style world models from image transitions",
+          "llm_evidence_cn": "从图像转移学习STRIPS式世界模型",
+          "llm_evidence": "从图像转移学习STRIPS式世界模型",
+          "canonical_evidence": "从图像转移学习STRIPS式世界模型",
+          "llm_tldr_en": "Learns grounded propositional STRIPS-style world models from image transitions for long-horizon visual manipulation planning.",
+          "llm_tldr_cn": "该论文研究如何从视觉经验中学习符号化的世界模型。机器人在执行高层动作后观察图像变化，利用这些转移学习STRIPS风格的算子，包含前提和效果。得到的符号世界模型能用于任务规划，丢弃无关视觉细节而保留动作相关的状态变化。这使得机器人能从原始的视觉经验中自主构建规划所需的知识。",
+          "llm_tldr": "该论文研究如何从视觉经验中学习符号化的世界模型。机器人在执行高层动作后观察图像变化，利用这些转移学习STRIPS风格的算子，包含前提和效果。得到的符号世界模型能用于任务规划，丢弃无关视觉细节而保留动作相关的状态变化。这使得机器人能从原始的视觉经验中自主构建规划所需的知识。",
+          "llm_tags": [
+            "query:world-models"
+          ],
+          "matched_query_tag": "query:world-models",
+          "matched_query_text": "learning world models from experience",
+          "matched_requirement_id": "req-5",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.06832v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.05558v1",
+          "source": "arxiv",
+          "title": "Autoregressive Diffusion World Models for Off-Policy Evaluation of LLM Agents",
+          "abstract": "Evaluating large language model (LLM) agents in multi-turn interactive environments is expensive and risky, as it requires online environment interaction. We propose ADWM (Autoregressive Diffusion World Model), an evaluation framework that estimates the performance of a new LLM agent policy purely from pre-collected trajectories. The core idea is to learn a latent diffusion world model that simulates how the environment responds to the evaluation policy, without ever executing it in the real environment. Existing diffusion-based OPE methods guide full trajectories in a single pass by jointly diffusing states and actions, an assumption that breaks down for LLM agents whose actions are discrete text that must be sampled from the policy after observing the environment. Unlike autoregressive world models that suffer from compounding errors, ADWM models each transition as an independent denoising process, enabling reliable step-by-step rollouts where the world model and agent alternate in causal order. Crucially, the LLM agent under evaluation directly guides the diffusion generation at each step via a policy-conditioned score function, ensuring that simulated trajectories accurately reflect its decision-making patterns. Empirically, ADWM achieves accurate value estimates and evaluation reliability across diverse multi-turn agent tasks, demonstrating its promise as a practical framework for offline LLM agent evaluation.",
+          "authors": [
+            "Kaixuan Liu",
+            "Guojun Xiong",
+            "Weinan Zhang",
+            "Shengpu Tang"
+          ],
+          "primary_category": "cs.LG",
+          "categories": [
+            "cs.LG"
+          ],
+          "published": "2026-06-04T01:13:24+00:00",
+          "link": "https://arxiv.org/pdf/2606.05558v1",
+          "tags": [
+            "keyword:world-models",
+            "query:world-models"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "latent diffusion world model for off-policy evaluation",
+          "llm_evidence_cn": "潜在扩散世界模型用于离线策略评估",
+          "llm_evidence": "潜在扩散世界模型用于离线策略评估",
+          "canonical_evidence": "潜在扩散世界模型用于离线策略评估",
+          "llm_tldr_en": "Proposes ADWM, an autoregressive diffusion world model that simulates environment responses to evaluate LLM agents without online interaction.",
+          "llm_tldr_cn": "该论文提出ADWM（自回归扩散世界模型），用于LLM代理的离线策略评估。其核心是学习一个潜在扩散世界模型，从预收集轨迹中模拟环境对评估策略的响应，避免实际环境交互。针对LLM动作离散的特点，采用自回归方式逐步生成状态。实验表明ADWM能够准确估计新策略的性能，为安全的LLM评估提供了有效工具。",
+          "llm_tldr": "该论文提出ADWM（自回归扩散世界模型），用于LLM代理的离线策略评估。其核心是学习一个潜在扩散世界模型，从预收集轨迹中模拟环境对评估策略的响应，避免实际环境交互。针对LLM动作离散的特点，采用自回归方式逐步生成状态。实验表明ADWM能够准确估计新策略的性能，为安全的LLM评估提供了有效工具。",
+          "llm_tags": [
+            "query:world-models"
+          ],
+          "matched_query_tag": "query:world-models",
+          "matched_query_text": "latent world model",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.05558v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.06147v1",
+          "source": "arxiv",
+          "title": "WorldFly: A World-Model-Based Vision-Language-Action Model for UAV Navigation",
+          "abstract": "End-to-end Vision-Language-Action (VLA) models have shown promise in UAV navigation. However, existing approaches typically rely on historical observations to directly predict actions, often struggling in dense urban environments where severe occlusions and sharp turns result in drastic viewpoint transitions. We argue that the ability to \"imagine\" future states -- inherent in World Models -- is critical for robust decision-making under such partial observability. To address this, we construct a challenging Urban Canyon Traversal Benchmark, specifically designed to evaluate spatial understanding in scenarios characterized by severe occlusions and drastic viewpoint transitions. To this end, we propose WorldFly, a novel world-model-based VLA framework that employs a dual-branch coupled flow matching mechanism to jointly generate future video predictions and navigation actions, thereby explicitly guiding the agent's policy via spatial imagination. Extensive evaluations on our benchmark demonstrate that WorldFly outperforms other baselines, particularly in unseen environments, validating the effectiveness of integrating world models into embodied aerial agents.",
+          "authors": [
+            "Shengtao Zheng",
+            "Kai Li",
+            "Weichen Zhang",
+            "Yu Meng",
+            "Chen Gao",
+            "Xinlei Chen",
+            "Yong Li",
+            "Xiao-Ping Zhang"
+          ],
+          "primary_category": "cs.AI",
+          "categories": [
+            "cs.AI"
+          ],
+          "published": "2026-06-04T13:23:05+00:00",
+          "link": "https://arxiv.org/pdf/2606.06147v1",
+          "tags": [
+            "keyword:world-models",
+            "query:world-models"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "internal world model for UAV navigation",
+          "llm_evidence_cn": "用于无人机导航的内部世界模型",
+          "llm_evidence": "用于无人机导航的内部世界模型",
+          "canonical_evidence": "用于无人机导航的内部世界模型",
+          "llm_tldr_en": "Proposes WorldFly, a world-model-based vision-language-action model that imagines future states for UAV navigation in dense urban environments.",
+          "llm_tldr_cn": "该论文提出WorldFly，一种基于世界模型的视觉-语言-动作（VLA）框架，用于无人机导航。针对密集城市环境中严重遮挡和视角剧变导致的难题，WorldFly利用世界模型想象未来状态，增强决策鲁棒性。作者构建了Urban Canyon Traversal基准来评估空间理解，实验表明WorldFly显著优于直接预测动作的VLA模型。",
+          "llm_tldr": "该论文提出WorldFly，一种基于世界模型的视觉-语言-动作（VLA）框架，用于无人机导航。针对密集城市环境中严重遮挡和视角剧变导致的难题，WorldFly利用世界模型想象未来状态，增强决策鲁棒性。作者构建了Urban Canyon Traversal基准来评估空间理解，实验表明WorldFly显著优于直接预测动作的VLA模型。",
+          "llm_tags": [
+            "query:world-models"
+          ],
+          "matched_query_tag": "query:world-models",
+          "matched_query_text": "internal world model in agents",
+          "matched_requirement_id": "req-6",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.06147v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.05925v1",
+          "source": "arxiv",
+          "title": "Towards World Models in Biomedical Research",
+          "abstract": "A central goal of biomedicine is to understand, predict and ultimately control the dynamic mechanisms by which biological systems respond to perturbations, disease progression and therapeutic intervention. Although foundation models and large language models have accelerated biomedical data interpretation, most current systems remain focused on static pattern recognition rather than prospective simulation of biological futures. Here we propose biomedical world models as a paradigm for AI-driven discovery. These models learn latent representations of molecular, cellular, tissue and clinical states, together with intervention-conditioned dynamics that allow future trajectories to be simulated before actions are taken. We discuss how biomedical world models could function as data engines, environment simulators and scientific planning substrates across applications including virtual cells, organoids, virtual patients and surgical simulation. We outline the data infrastructure, evaluation benchmarks, safety constraints and governance frameworks required. Biomedical world models may provide a foundation for simulation-guided, closed-loop and experimentally actionable biomedical discovery.",
+          "authors": [
+            "Guangyu Wang",
+            "Jingkun Yue",
+            "Siqi Zhang",
+            "Yu Liu",
+            "Xiaoyu Wang",
+            "Mingyuan Meng",
+            "Changwei Ji",
+            "Zongbo Han",
+            "Yulin Wang",
+            "Yang Yue",
+            "Frank Fu",
+            "Ting Chen",
+            "Song Wu",
+            "Ziwei Liu",
+            "Jiangning Song",
+            "Ming Li",
+            "Gao Huang",
+            "Xiaohong Liu",
+            "Athanasios Vasilakos",
+            "Xingcai Zhang",
+            "Ping Zhang",
+            "Yong Li"
+          ],
+          "primary_category": "cs.AI",
+          "categories": [
+            "cs.AI"
+          ],
+          "published": "2026-06-04T09:28:54+00:00",
+          "link": "https://arxiv.org/pdf/2606.05925v1",
+          "tags": [
+            "keyword:world-models",
+            "query:world-models"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "world model paradigm for biomedical research",
+          "llm_evidence_cn": "生物医学研究的世界模型范式",
+          "llm_evidence": "生物医学研究的世界模型范式",
+          "canonical_evidence": "生物医学研究的世界模型范式",
+          "llm_tldr_en": "Proposes biomedical world models that learn latent representations and intervention-conditioned dynamics to simulate biological futures, shifting from static pattern recognition to prospective simulation.",
+          "llm_tldr_cn": "当前生物医学AI多局限于静态模式识别，无法前瞻性模拟生物学未来。本文提出生物医学世界模型范式，学习分子、细胞、组织和临床状态的潜在表示及干预条件动力学，可模拟未来轨迹，为药物发现和疾病控制提供新途径。",
+          "llm_tldr": "当前生物医学AI多局限于静态模式识别，无法前瞻性模拟生物学未来。本文提出生物医学世界模型范式，学习分子、细胞、组织和临床状态的潜在表示及干预条件动力学，可模拟未来轨迹，为药物发现和疾病控制提供新途径。",
+          "llm_tags": [
+            "query:world-models"
+          ],
+          "matched_query_tag": "query:world-models",
+          "matched_query_text": "world model",
+          "matched_requirement_id": "req-1",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.05925v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.07127v1",
+          "source": "arxiv",
+          "title": "Learning Explicit Behavioral Models with Adaptive Questions and World-Model Probes",
+          "abstract": "Interactive agents trained only against task return can achieve high scores while failing to represent the mechanisms that make their actions succeed. This makes brittle behavior difficult to diagnose and limits adaptation when environment dynamics change. Existing LLM reflection and policy-code repair can revise behavior from failed trajectories, but questions and world-understanding tests are usually used only after training. We introduce an Explicit Symbolic Behavioral Model (ESBM), a trainable behavioral model that couples task performance with evidence-grounded question answering and executable mechanism prediction. An ESBM represents behavior through typed predicates, weighted rules, bounded options and mechanism memory; the mechanism layer predicts symbolic events, object changes, rewards and terminal consequences under action interventions. After each rollout, adaptive questions and active world-model probes convert score failures, QA errors and transition-prediction errors into constraints for local ESBM edits. Candidate models are selected by a multi-criterion rule that jointly evaluates task score, answerability and active world-model consistency. Under the tested Atari-style protocols, ESBM learns high-scoring policies while producing explicit answers and executable mechanism predictions, indicating that adaptive questions can serve as both training pressure and reusable benchmarks for mechanistic policy learning in this setting.",
+          "authors": [
+            "Hikaru Shindo",
+            "Yu Deng",
+            "Teng Cao",
+            "Quentin Delfosse",
+            "Christopher Tauchmann",
+            "Jannis Blüml",
+            "Gopika Sudhakaran",
+            "Kristian Kersting"
+          ],
+          "primary_category": "cs.LG",
+          "categories": [
+            "cs.LG"
+          ],
+          "published": "2026-06-05T10:34:55+00:00",
+          "link": "https://arxiv.org/pdf/2606.07127v1",
+          "tags": [
+            "keyword:world-models",
+            "query:world-models"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "internal world model via explicit symbolic behavioral model and probes",
+          "llm_evidence_cn": "通过显式符号行为模型和探针实现的内部世界模型",
+          "llm_evidence": "通过显式符号行为模型和探针实现的内部世界模型",
+          "canonical_evidence": "通过显式符号行为模型和探针实现的内部世界模型",
+          "llm_tldr_en": "ESBM couples task performance with question answering and mechanism prediction, using adaptive questions and world-model probes to build explicit, interpretable behavioral models.",
+          "llm_tldr_cn": "仅靠任务奖励训练的交互智能体行为脆弱且难以诊断。本文提出显式符号行为模型（ESBM），将任务表现与证据问答和可执行机制预测耦合，利用自适应问题和世界模型探针在训练中构建可解释行为模型，提升了诊断性和适应性。",
+          "llm_tldr": "仅靠任务奖励训练的交互智能体行为脆弱且难以诊断。本文提出显式符号行为模型（ESBM），将任务表现与证据问答和可执行机制预测耦合，利用自适应问题和世界模型探针在训练中构建可解释行为模型，提升了诊断性和适应性。",
+          "llm_tags": [
+            "query:world-models"
+          ],
+          "matched_query_tag": "query:world-models",
+          "matched_query_text": "internal world model in agents",
+          "matched_requirement_id": "req-6",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.07127v1",
+          "carry_days": 1
+        }
+      ]
+    }
+  }
 }

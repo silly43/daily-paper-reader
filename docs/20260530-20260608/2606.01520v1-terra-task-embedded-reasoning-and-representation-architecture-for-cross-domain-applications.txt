@@ -1,0 +1,346 @@
+Title: TERRA: Task-Embedded Reasoning and Representation Architecture for Cross-Domain Applications
+
+URL Source: https://arxiv.org/pdf/2606.01520v1
+
+Published Time: Tue, 02 Jun 2026 01:51:41 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# TERRA: Task-Embedded Reasoning and Representation Architecture for Cross-Domain Applications 
+
+## Shayan Shokri 1
+
+## Humanpath Labs Inc. 
+
+Abstract 
+
+A single action-conditioned latent predictive architecture can in principle be trained on the structured state of a driving scene, a robot workspace, or a financial order book. The ingredients for doing so within any one of these domains already exist and are individually validated: masked-latent prediction [1, 2], action-conditioned latent world models [3, 8, 9], discrete action tokenization [4, 5, 6], and joint-embedding prediction on voxelized state [14, 15, 17]. What is not established, and what TERRA addresses, is the transfer question: when does a representation or predictor learned in one structured-state domain carry over to a structurally analogous but otherwise unrelated domain, and by how much. We give this question a formal treatment. We model each domain as a controlled Markov process on a graded latent grid, factor any instantiation into thin domain adapters and a shared domain-invariant core, and identify a cross-domain correspondence with an approximate Markov decision process homomorphism [21, 23, 24] whose quality is measured by a lax bisimulation discrepancy [24, 27] and, at the level of whole domains lacking a shared coordinate system, by a Gromov-Wasserstein distance between their action-conditioned transition operators [29]. Under a Lipschitz predictor we derive a predictive transfer bound that separates source-model error from structural mismatch, grows geometrically in the prediction horizon, and is certified from below by the Gromov-Wasserstein distance; we then connect latent error to decision regret through the Lipschitz value property of bisimulation metrics [21, 22, 25]. The resulting Structured-State Transfer Hypothesis is stated as a falsifiable claim with a preregistered experimental program, centered on a transfer test from driving scenes to order books, including the conditions under which the claim is refuted. We present no empirical results: this is a research proposal whose contribution is to convert a widely repeated intuition into testable theory. 
+
+# 1 Introduction 
+
+The claim that a predictive model of structured state in one domain captures something reusable about decision-making in another is repeated frequently and tested almost never. Action-conditioned latent predictors now work within individual domains. V-JEPA 2-AC [3] plans on a physical robot from rollouts in representation space; joint-embedding prediction yields strong features on point clouds [14] and on LiDAR occupancy grids [17]. Each of these is a within-domain result. The promise that the same architecture, or even the same learned representation, carries from a physical scene to a nonphysical structured system such as a market microstructure or a power grid is asserted widely, yet it is supported by neither a theory of when it should hold nor an experiment establishing whether it does. TERRA takes the position that this transfer question is the open problem worth solving, and that it is answerable with existing mathematical tools rather than left as an intuition. Our contributions are the following. 1. A formal model of a structured-state decision domain as a controlled Markov process on a graded latent grid (Section 3), and a factorization of any instantiation into domain adapters and a shared domain-invariant core (Sec-tion 4).  
+
+> 1shayan@humanpath.si
+
+2. A theory of cross-domain correspondence (Section 5) that identifies the correspondence between two domains with an approximate Markov decision process homomor-phism, measures its quality by a lax bisimulation discrep-ancy and a Gromov-Wasserstein distance between tran-sition operators, and derives a predictive transfer bound separating source-model error from structural mismatch. 3. A reduction from latent prediction error to decision re-gret using the Lipschitz value property of bisimulation metrics, so that the bound speaks to control quality and not only to representation fidelity. 4. The Structured-State Transfer Hypothesis, stated as a fal-sifiable empirical claim, and a preregistered experimental program with explicit refutation conditions (Section 8). We use the architecture of an existing structured-state predic-tor, retained under the TERRA name, as a concrete substrate that realizes the interface (Section 6). The substrate is a re-combination of validated components and is presented as engineering. The theory of transfer built on top of it is the contribution. 
+
+# 2 Related Work and Positioning 
+
+We position TERRA against two bodies of work: the predictive-learning lineage it uses as a substrate, and the 1
+
+> arXiv:2606.01520v1 [cs.AI] 1 Jun 2026
+
+abstraction-theory lineage on which the transfer analysis rests. 
+
+Predictive-learning substrate. I-JEPA [1] and V-JEPA [2] established masked prediction in representation space following the program of LeCun [11]. V-JEPA 2-AC [3] adds action conditioning and plans on a real robot. DINO-WM [9], PLDM [10], Dreamer [8], and the original world model of Ha and Schmidhuber [7] form the action-conditioned world-modeling line; RT-2 [4], OpenVLA [5], and π0 [6] supply discrete action tokenization; BYOL [12] and masked autoencoding [13] supply the anti-collapse and masking machinery; Point-JEPA [14], 3D-JEPA [15], Ge-oMAE [16], and the LiDAR occupancy world model [17] bring all of this to voxelized state, the substrate domain TERRA itself uses. None of these components is claimed as novel here. 
+
+Abstraction theory. Markov decision process homomor-phisms [23] and bisimulation metrics [21, 22] formalize when two states, or two processes, are behaviorally equiva-lent, and they come with value-preservation guarantees. The lax bisimulation metric [24] extends this to abstract over ac-tions and is exactly the relation realized by a homomorphism. DeepMDP [25] and deep bisimulation for control [26] learn latent spaces in which embedding distance upper-bounds bisimulation distance. Continuous homomorphisms with policy-gradient guarantees [27] and a generalized bisimula-tion metric between pairs of distinct processes [28] extend the theory to the cross-process setting that transfer requires. We use these tools, together with the Gromov-Wasserstein distance between metric-measure spaces [29], to make the cross-domain correspondence quantitative. 
+
+What remains open. None of the predictive-learning work tests transfer across the boundary from physical to nonphysical domains, and none of the abstraction-theory work has been instantiated for high-dimensional action-conditioned latent predictors over structured grids. TERRA joins the two. 
+
+# 3 Structured-State Decision Domains 
+
+Definition 1 (Structured-state domain) . A structured-state decision domain is a tuple D = ( S, A, T, r ) where the state space S is a Polish space admitting a graded grid repre-sentation V ∈ Rd1×···× dk ×c; the action space A admits a discrete tokenization τ : A → V ∗ over a finite vocab-ulary V; T : S × A → P (S) is a transition kernel; and 
+
+r : S × A → R is a bounded task signal. A driving scene is a voxel grid over physical space; an or-der book is a grid over price, time, and side; a risk portfolio is a grid over assets and factors. We call D admissible when all four elements are present and T is learnable from logged trajectories. Admissibility is a property of the domain and not of any model. 
+
+# 4 The Domain-Invariant Interface 
+
+The interface is what makes transfer measurable rather than rhetorical. We factor any instantiation into two parts. The domain adapters, which are small and domain-specific, com-prise an encoder front-end eD : S → Z mapping the grid into a canonical latent space (Z, d Z ), together with the tokenizer τD . The shared core, which is large and domain-invariant, comprises a context-encoder trunk fθ ,an exponential-moving-average target encoder f¯θ , and an action-conditioned latent predictor gϕ : Z × V ∗ → Z that operates only on canonical latents and action tokens. Because the core is identical across domains by construc-tion, any transfer that is observed when the core trained on one domain is reused on another is attributable to shared structure rather than to architecture reuse. This is the prop-erty the theory below exploits. 
+
+# 5 Cross-Domain Transfer 
+
+We work throughout in the canonical latent space of each domain. Write Ti(· | z, a ) ∈ P (Zi) for the latent transition kernel of domain i, induced by the target encoder applied to true successor states, ri(z, a ) for the latent reward, and 
+
+W for the Kantorovich (Wasserstein-1) distance on P(Zi).Latent spaces are complete separable metric spaces and rewards are bounded. 
+
+## 5.1 Correspondences as approximate homo-morphisms 
+
+Definition 2 (Cross-domain correspondence) . Given admis-sible domains D1, D2 with canonical latent spaces Z1, Z2, a correspondence is a pair Φ = ( ϕZ , ϕ A) with ϕZ : Z1 → Z 2
+
+and ϕA : V∗ 
+
+> 1
+
+→ V ∗ 
+
+> 2
+
+.
+
+Φ is an exact Markov decision process homomorphism [23] when it intertwines the kernels and preserves reward, 
+
+ϕZ♯ T1(· | z, a ) = T2
+
+ · | ϕZ (z), ϕ A(a), r1(z, a ) = r2
+
+ ϕZ (z), ϕ A(a),
+
+(1) where ϕZ♯ denotes pushforward of measures. Exact homo-morphisms preserve optimal value and lift optimal policies [23, 27]; they almost never exist between physically unre-lated domains, so we quantify the defect. 25.2 Measuring correspondence 
+
+Definition 3 (Lax discrepancy) . The transition and reward defects of Φ are 
+
+εT (Φ) = sup 
+
+> z,a
+
+W  ϕZ♯T1(· | z, a ), T 2(· | ϕZ (z), ϕ A(a)) ,εr (Φ) = sup 
+
+> z,a
+
+r1(z, a ) − r2(ϕZ (z), ϕ A(a)) ,
+
+and the lax bisimulation discrepancy is εlax (Φ) = cr εr (Φ)+ 
+
+ctεT (Φ) .Both arguments of W are measures on Z2, so the defi-nition is well typed. This is the cross-domain form of the lax bisimulation metric [24], which abstracts over actions through ϕA.
+
+## 5.3 Assumptions 
+
+Assumption 1 (Lipschitz state map) . ϕZ is Lϕ-Lipschitz, so pushforward by ϕZ is Lϕ-Lipschitz in W :
+
+W (ϕZ♯μ, ϕ Z♯ν) ≤ Lϕ W (μ, ν ).
+
+Assumption 2 (Source fidelity) . The core trained on D1
+
+realizes a latent kernel ˆg(· | z, a ) with one-step error 
+
+sup z,a W (ˆ g(· | z, a ), T 1(· | z, a )) ≤ δ.
+
+Assumption 3 (Lipschitz core) . The transported one-step predictor on Z2 is L-Lipschitz in its latent argument in W ,uniformly over actions. Lipschitz latent dynamics are the standing assumption of DeepMDP [25] and are induced by deep bisimulation regularization [26]. 
+
+## 5.4 One-step transfer error 
+
+For predictor reuse we transport the source core to D2 by 
+
+ˆg2(· | w, b ) = ϕZ♯ ˆg(· | ϕ−1 
+
+> Z
+
+(w), ϕ −1 
+
+> A
+
+(b)) where defined. 
+
+Proposition 1 (One-step decomposition) . Under Assump-tions 1 and 2, the transported predictor satisfies 
+
+sup 
+
+> w,b
+
+W  ˆg2(· | w, b ), T 2(· | w, b ) ≤ Lϕ δ+εT (Φ) =: ε1,
+
+(2) 
+
+the sum of a source-model term Lϕδ and a structural-mismatch term εT (Φ) .Proof. Fix (w, b ) and set (z, a ) = ( ϕ−1 
+
+> Z
+
+(w), ϕ −1 
+
+> A
+
+(b)) . By the triangle inequality for W ,
+
+W (ˆ g2(· | w, b ), T 2(· | w, b )) 
+
+≤ W (ϕZ♯ ˆg(· | z, a ), ϕ Z♯T1(· | z, a )) + W (ϕZ♯T1(· | z, a ), T 2(· | w, b )) .
+
+The first term is ≤ Lϕ W (ˆ g(· | z, a ), T 1(· | z, a )) ≤ Lϕδ by Assumptions 1 and 2; the second is ≤ εT (Φ) by definition. This separates two error sources a coarser analysis would conflate: how well the core fits the source ( δ), and how far 
+
+Φ is from a homomorphism ( εT ). 
+
+## 5.5 Horizon transfer bound 
+
+Proposition 2 (Horizon bound) . Under Assumptions 1–3, rolling the transported core out for H steps on D2 under a fixed action sequence from the true initial latent incurs error 
+
+∆H ≤ ε1
+
+> H−1
+
+X
+
+> h=0
+
+Lh = ε1
+
+LH − 1
+
+L − 1 (L̸ = 1) , (3) 
+
+where ∆H = W (ˆ ρH , ρ H ) is the gap between the trans-ported and true H-step latent distributions and ε1 =
+
+Lϕδ + εT (Φ) .Proof. Let ∆h = W (ˆ ρh, ρ h) with ∆0 = 0 . Coupling the two rollouts stepwise and using the triangle inequality, 
+
+∆h+1 ≤ W (ˆ g2♯ ˆρh, ˆg2♯ρh)
+
+| {z }  
+
+> ≤L∆h(Asm. 3 )
+
++ W (ˆ g2♯ρh, T 2♯ρh)
+
+| {z }  
+
+> ≤ε1(Prop. 1 )
+
+≤ L∆h + ε1.
+
+Unrolling from ∆0 = 0 gives the geometric sum. For a contractive or marginally stable core ( L ≤ 1) the error stays of order ε1H or ε1/(1 − L), so a good corre-spondence transfers over long horizons; for an expansive core ( L > 1) it grows geometrically, so transfer is useful only at short horizons. The empirical Lipschitz constant of the core thus sets a measurable horizon-decay rate, which Section 8 tests directly. 
+
+## 5.6 The achievable floor: a Gromov-Wasserstein lower bound 
+
+Define the within-domain transition pseudomet-ric Di(( z, a ), (z′, a ′)) = W (Ti(· | z, a ), T i(· |
+
+z′, a ′)) + |ri(z, a ) − ri(z′, a ′)| and let μi be the oc-cupancy measure over state-action pairs of domain i. The Gromov-Wasserstein discrepancy is 
+
+GW( D1, D2) = inf 
+
+> π∈Π( μ1,μ 2)
+
+Z Z 
+
+D1(x, x ′)−D2(y, y ′) dπ(x, y ) d π(x′, y ′).
+
+(4) 
+
+Proposition 3 (Structural floor) . If ϕZ is an isometry onto its image (the canonical-latent normalization) and cr =
+
+ct = 1 , then every admissible Φ satisfies GW( D1, D2) ≤
+
+2 εlax (Φ) , hence 
+
+GW( D1, D2) ≤ 2 inf  
+
+> Φ
+
+εlax (Φ) . (5) 
+
+A general Lϕ-bi-Lipschitz ϕZ multiplies the bound by Lϕ.Proof sketch. The graph πΦ pairing x with Φ( x) is an ad-missible coupling of μ1, μ 2. For pairs x, x ′ with images 
+
+y = Φ( x), y ′ = Φ( x′), the triangle inequality for W
+
+together with the isometry of ϕZ bounds the integrand 
+
+|D1(x, x ′) − D2(y, y ′)| by the transition and reward defects evaluated at x and x′, each at most εlax (Φ) . Evaluating GW 
+
+on πΦ and taking the infimum over Φ gives the claim. 3Because GW is built from intrinsic, coordinate-free quan-tities, it certifies how much correspondence is possible at all: no correspondence can drive εlax below 12 GW .
+
+## 5.7 From latent error to decision regret 
+
+Corollary 1 (Value transfer) . Let ˜d2 be the bisimulation metric of D2 at discount γ, so that |V ∗ 
+
+> 2
+
+(w) − V ∗ 
+
+> 2
+
+(w′)| ≤  
+
+> 11−γ
+
+˜d2(w, w ′) [21, 22], and suppose the learned latent sat-isfies ˜d2(w, w ′) ≤ Le dZ (w, w ′) [25, 26]. Then acting on the transported model over horizon H incurs value subopti-mality at most Le 
+
+> 1−γ
+
+∆H , with ∆H as in Proposition 2. Proof. Compose the two Lipschitz estimates with Propo-sition 2: a latent discrepancy ∆H maps to a bisimulation discrepancy at most Le∆H and thence to a value gap at most Le 
+
+> 1−γ
+
+∆H .Correspondence quality thus controls not merely repre-sentation similarity but the regret of acting on a transported model. 
+
+## 5.8 The Structured-State Transfer Hypothe-sis 
+
+Propositions 1–3 and Corollary 1 turn the central claim into a quantitative, falsifiable statement. 
+
+Structured-State Transfer Hypothesis (SSTH). 
+
+For admissible domains D1, D2, the transfer gain from reusing the shared core trained on 
+
+D1 when learning D2 is a decreasing function of inf Φ εlax (Φ) , which is bounded below by  
+
+> 12
+
+GW( D1, D2). When this floor is large, core reuse confers no advantage over training from scratch and may degrade performance. SSTH is falsifiable along two axes: an ordering, that smaller discrepancy yields larger transfer, and a null floor, that max-imal discrepancy yields zero transfer. 
+
+## 5.9 Identifiability of the correspondence 
+
+For the bound to be usable the correspondence must be recoverable from data. Recovery requires that action se-quences sufficiently excite the dynamics, so that T1 is ob-servable on the support of interest, and that the canonical encoder is injective up to the symmetries of the domain, so that ϕZ is determined rather than free. Under these conditions estimating Φ is an alignment problem and the Gromov-Wasserstein coupling of Proposition 3 provides an initializer; without them the discrepancy is only an upper estimate and the transfer prediction weakens accordingly. 
+
+# 6 TERRA: The Substrate 
+
+We retain the architecture only as the concrete core. The context encoder fθ and the target encoder f¯θ , the latter an exponential moving average of the former for anti-collapse in the manner of BYOL and I-JEPA [12, 1], produce patch latents. The tokenizer applies learned vector quantization. The predictor gϕ cross-attends over context latents, action tokens, and target queries, and outputs future or masked la-tents, never observations. Training combines masked-latent prediction with action-conditioned trajectory forecasting, 
+
+L = Lmask + λ Ltraj , (6) 
+
+Ltraj = 1
+
+H
+
+> H
+
+X
+
+> h=1
+
+ˆsVt+h − f¯θ (Vt+h) 22. (7) This objective is a tractable surrogate for predicting future latents from present latents and an action plan, in the spirit of predictive coding [30]; the masked term supplies the static structural component and the trajectory term the dynamic one. The substrate is unchanged from prior latent world models and matters only insofar as it realizes the interface of Section 4 and meets Assumptions 2 and 3 closely enough for the bound to bite. 
+
+# 7 A Taxonomy of Transfer 
+
+The experimental program must separate three regimes, each reusing a different part of the homomorphism. 1. Representation reuse: freeze the core trained on D1 and train only the adapters of D2. Tests whether the state map ϕZ alone transfers. 2. Few-shot core adaptation: fine-tune the core on a small fraction of D2 data. Tests sample efficiency, the practi-cally important case. 3. Predictor reuse: reuse gϕ specifically, isolating whether learned dynamics, and not merely static features, carry across. The bound predicts that the strength of all three decreases with discrepancy, but at different rates, since each is sensi-tive to a different term in εlax .
+
+# 8 Experimental Program 
+
+The program tests the functional form of Proposition 2, beginning in the best-instrumented domain and ending at the boundary the hypothesis is about. These are experiments to be run, not results: the paper reports no findings. 
+
+Phase 1, within-domain sanity. Train the substrate on synthetic driving and navigation (CARLA, Habitat). Con-firm that masked-latent prediction and short-horizon fore-casting beat trivial baselines. No later phase runs until this gate passes. 4Phase 2, near transfer. Pretrain on driving voxels (nuScenes, Waymo, KITTI) and transfer to indoor manipula-tion and navigation (Open X-Embodiment). These plausibly admit a small discrepancy, so SSTH predicts strong repre-sentation reuse and few-shot transfer. 
+
+Phase 3, far transfer, the decisive test. Pretrain on driv-ing voxels and transfer to limit-order-book prediction on public market data under all three regimes. SSTH predicts that transfer strength tracks the measured discrepancy be-tween driving and order-book dynamics, and that if the discrepancy is large the transfer is near zero. This phase is the decisive test of the hypothesis. 
+
+Phase 4, discrepancy calibration. Estimate εlax and the Gromov-Wasserstein lower bound of Proposition 3 for each domain pair, then plot transfer gain against discrepancy and against horizon. The bound would be supported if transfer gain decreases in discrepancy and decays in horizon at the rate set by the measured Lipschitz constant, and would be refuted otherwise. 
+
+## 8.1 Metrics 
+
+Representation transfer would be measured by linear-probe accuracy on D2 tasks using the frozen D1 core and by cen-tered kernel alignment between native and transported la-tents. Sample efficiency is the performance gap between pretrained and scratch cores at labeled budgets of one, ten, twenty-five, and one hundred percent. Predictor transfer is the forecasting error of a D1 predictor on D2 with adapters only. Discrepancy is the estimated εlax and its Gromov-Wasserstein lower bound on held-out paired trajectories. 
+
+## 8.2 Preregistered predictions 
+
+These are hypotheses to be tested, not findings; no experi-ment has been run. (P1) We predict that Phase 2 will show positive few-shot transfer. (P2) Phase 3 transfer is expected to be bounded above by a decreasing function of the Phase 4 discrepancy. (P3) For the highest-discrepancy pair, represen-tation reuse is expected to be statistically indistinguishable from scratch. (P4) For every pair, transfer error is expected to grow with horizon at a rate consistent with the measured Lipschitz constant in Proposition 2. All four would be re-ported regardless of outcome. 
+
+# 9 What Would Falsify the Theory 
+
+SSTH and the bound are wrong if any of the following holds: transfer gain is uncorrelated with measured discrepancy across pairs; a low-discrepancy pair such as driving to ma-nipulation shows no transfer; a near-maximal-discrepancy pair shows strong transfer, which would attribute transfer to a mechanism other than shared structure; or horizon decay is independent of the measured Lipschitz constant, which would refute Proposition 2 specifically while leaving the qualitative hypothesis open. Each negative outcome is infor-mative and is reported as such. 
+
+# 10 Limitations and Risks 
+
+Estimating the discrepancy between very different domains is itself hard and noisy, which weakens the sharpness of the test. The Gromov-Wasserstein floor of Proposition 3 holds cleanly only under the isometric normalization of ϕZ ;a general map carries a bi-Lipschitz constant that must be estimated. Admissibility is restrictive, since many decision problems are not naturally grid-structured, and forcing a grid may destroy the structure transfer would rely on. The sub-strate inherits representation-collapse and distribution-shift risks from the world-model literature, and Assumption 3 may hold only locally. Most importantly, this paper presents no empirical results. SSTH is a hypothesis with a test at-tached, not a finding, and the cross-domain claim, including any application to financial or risk systems, is unvalidated and must not be represented as a demonstrated capability. 
+
+# 11 Conclusion 
+
+The contribution of this work is not a new architecture, since the architecture recombines validated parts. It is a theory of transfer: transfer between structured-state decision domains is governed by a measurable structural discrepancy, certified from below by a Gromov-Wasserstein distance, controlling a predictive error that separates source-model error from structural mismatch, grows geometrically in horizon, and maps to decision regret through the Lipschitz value property of bisimulation metrics, all testable behind a fixed domain-invariant interface with preregistered conditions for failure. Whether the hypothesis holds is unknown. That it is now answerable is the contribution. 
+
+## Acknowledgments 
+
+The author thanks the broader research community whose published work forms the foundation of this proposal. 
+
+# References 
+
+[1] Assran, M., Duval, Q., Misra, I., Bojanowski, P., Vin-cent, P., Rabbat, M., LeCun, Y., & Ballas, N. (2023). Self-supervised learning from images with a joint-embedding predictive architecture. CVPR .[2] Bardes, A., Garrido, Q., Ponce, J., Chen, X., Rabbat, M., LeCun, Y., Assran, M., & Ballas, N. (2024). V-JEPA: Latent video prediction for visual representation learning. Meta AI Technical Report .5[3] Assran, M., Ballas, N., et al. (2025). V-JEPA 2: Self-supervised video models enable understanding, predic-tion and planning. arXiv:2506.09985 .[4] Brohan, A., et al. (2023). RT-2: Vision-language-action models transfer web knowledge to robotic con-trol. CoRL .[5] Kim, M. J., et al. (2024). OpenVLA: An open-source vision-language-action model. arXiv:2406.09246 .[6] Black, K., et al. (2024). π0: A vision-language-action flow model for general robot control. 
+
+arXiv:2410.24164 .[7] Ha, D., & Schmidhuber, J. (2018). World models. 
+
+arXiv:1803.10122 .[8] Hafner, D., Pasukonis, J., Ba, J., & Lillicrap, T. (2023). Mastering diverse domains through world models. 
+
+arXiv:2301.04104 .[9] Zhou, G., Pan, H., LeCun, Y., & Pinto, L. (2024). DINO-WM: World models on pre-trained visual fea-tures enable zero-shot planning. arXiv:2411.04983 .[10] Sobal, V., et al. (2025). PLDM: Pixel-space latent JEPA world models. [11] LeCun, Y. (2022). A path towards autonomous ma-chine intelligence. OpenReview .[12] Grill, J.-B., et al. (2020). Bootstrap your own latent. 
+
+NeurIPS .[13] He, K., Chen, X., Xie, S., Li, Y., Doll ´ar, P., & Girshick, R. (2022). Masked autoencoders are scalable vision learners. CVPR .[14] Saito, A., et al. (2025). Point-JEPA: A joint-embedding predictive architecture for self-supervised learning on point clouds. WACV .[15] Hu, N., Cheng, H., Xie, Y., Li, S., & Zhu, J. (2024). 3D-JEPA: A joint-embedding predictive archi-tecture for 3D self-supervised representation learning. 
+
+arXiv:2409.15803 .[16] Tian, X., et al. (2023). GeoMAE: Masked geometric target prediction for self-supervised point-cloud pre-training. CVPR .[17] Zhu, H., & Choromanska, A. (2026). Self-supervised JEPA-based world models for LiDAR occupancy com-pletion and forecasting. arXiv:2602.12540 .[18] Qi, C. R., Su, H., Mo, K., & Guibas, L. J. (2017). Point-Net: Deep learning on point sets for 3D classification and segmentation. CVPR .[19] Zhou, Y., & Tuzel, O. (2018). VoxelNet: End-to-end learning for point cloud based 3D object detection. 
+
+CVPR .[20] Choy, C., Gwak, J., & Savarese, S. (2019). 4D spatio-temporal ConvNets: Minkowski convolutional neural networks. CVPR .[21] Ferns, N., Panangaden, P., & Precup, D. (2004). Met-rics for finite Markov decision processes. UAI .[22] Ferns, N., Panangaden, P., & Precup, D. (2011). Bisim-ulation metrics for continuous Markov decision pro-cesses. SIAM J. Computing .[23] Ravindran, B., & Barto, A. G. (2003). SMDP homo-morphisms: An algebraic approach to abstraction in semi-Markov decision processes. IJCAI .[24] Taylor, J., Precup, D., & Panangaden, P. (2009). Bounding performance loss in approximate MDP ho-momorphisms. NeurIPS .[25] Gelada, C., Kumar, S., Buckman, J., Nachum, O., & Bellemare, M. G. (2019). DeepMDP: Learning contin-uous latent space models for representation learning. 
+
+ICML .[26] Zhang, A., McAllister, R., Calandra, R., Gal, Y., & Levine, S. (2021). Learning invariant representa-tions for reinforcement learning without reconstruc-tion. ICLR .[27] Rezaei-Shoshtari, S., Zhao, R., Panangaden, P., Meger, D., & Precup, D. (2022). Continuous MDP homomor-phisms and homomorphic policy gradient. NeurIPS .[28] Tao, Z., Xu, W., & You, X. (2025). A generalized bisimulation metric of state similarity between Markov decision processes. arXiv:2509.18714 .[29] M ´emoli, F. (2011). Gromov-Wasserstein distances and the metric approach to object matching. Foundations of Computational Mathematics .[30] van den Oord, A., Li, Y., & Vinyals, O. (2018). Repre-sentation learning with contrastive predictive coding. 
+
+arXiv:1807.03748 .6
