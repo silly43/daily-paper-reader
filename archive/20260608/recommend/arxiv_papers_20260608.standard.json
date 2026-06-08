@@ -1,0 +1,458 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-08T21:16:52.864862+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 10,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2606.05558v1",
+      "source": "arxiv",
+      "title": "Autoregressive Diffusion World Models for Off-Policy Evaluation of LLM Agents",
+      "abstract": "Evaluating large language model (LLM) agents in multi-turn interactive environments is expensive and risky, as it requires online environment interaction. We propose ADWM (Autoregressive Diffusion World Model), an evaluation framework that estimates the performance of a new LLM agent policy purely from pre-collected trajectories. The core idea is to learn a latent diffusion world model that simulates how the environment responds to the evaluation policy, without ever executing it in the real environment. Existing diffusion-based OPE methods guide full trajectories in a single pass by jointly diffusing states and actions, an assumption that breaks down for LLM agents whose actions are discrete text that must be sampled from the policy after observing the environment. Unlike autoregressive world models that suffer from compounding errors, ADWM models each transition as an independent denoising process, enabling reliable step-by-step rollouts where the world model and agent alternate in causal order. Crucially, the LLM agent under evaluation directly guides the diffusion generation at each step via a policy-conditioned score function, ensuring that simulated trajectories accurately reflect its decision-making patterns. Empirically, ADWM achieves accurate value estimates and evaluation reliability across diverse multi-turn agent tasks, demonstrating its promise as a practical framework for offline LLM agent evaluation.",
+      "authors": [
+        "Kaixuan Liu",
+        "Guojun Xiong",
+        "Weinan Zhang",
+        "Shengpu Tang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-04T01:13:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.05558v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latent diffusion world model for off-policy evaluation",
+      "llm_evidence_cn": "潜在扩散世界模型用于离策略评估",
+      "llm_evidence": "潜在扩散世界模型用于离策略评估",
+      "canonical_evidence": "潜在扩散世界模型用于离策略评估",
+      "llm_tldr_en": "ADWM uses a latent diffusion world model to simulate environment responses to LLM agent policies purely from pre-collected trajectories, enabling risk-free off-policy evaluation.",
+      "llm_tldr_cn": "评估多轮交互环境中新语言智能体策略代价高昂且有风险。本文提出ADWM框架，学习一个潜在扩散世界模型，仅从预先收集的轨迹模拟环境对评估策略的响应，无需真实环境交互。该模型克服了现有扩散OPE方法对离散文本动作的不适用性。实验证明ADWM能准确估计策略性能，为安全评估提供了有效工具。",
+      "llm_tldr": "评估多轮交互环境中新语言智能体策略代价高昂且有风险。本文提出ADWM框架，学习一个潜在扩散世界模型，仅从预先收集的轨迹模拟环境对评估策略的响应，无需真实环境交互。该模型克服了现有扩散OPE方法对离散文本动作的不适用性。实验证明ADWM能准确估计策略性能，为安全评估提供了有效工具。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.06832v1",
+      "source": "arxiv",
+      "title": "STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images",
+      "abstract": "Robots performing long-horizon visual manipulation observe high-dimensional images, but successful plans depend on action-relevant facts: what can be done now and what changes afterward. A useful planning representation should discard irrelevant visual details while preserving action applicability and effects. Classical task planners exploit this structure through symbolic operators with preconditions and effects, but obtaining such representations from raw visual experience remains challenging. We study a visual task-planning setting in which a robot receives only image transitions: the current image, executed high-level action, and the resulting image. At test time, given a start image and a goal image, the robot must produce a sequence of high-level actions that reaches the goal. To address this problem, we introduce STRIPS-WM, a framework for learning image-grounded STRIPS-style world models directly from visual transitions. STRIPS-WM first induces a finite abstract transition graph from images, then learns latent binary predicates and one grounded propositional operator per action label. The learned operators form a symbolic action model with sparse preconditions and add/delete effects. Finally, the learned predicates are distilled into a visual encoder, enabling classical planning directly from novel start and goal images. Experiments on visual rearrangement tasks show that STRIPS-WM improves image-to-plan success over the tested visual rollout, latent graph-search and latent-symbolic baselines.",
+      "authors": [
+        "Abhiroop Ajith",
+        "Constantinos Chamzas"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-05T02:16:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.06832v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "learns STRIPS-style world models from image transitions",
+      "llm_evidence_cn": "从图像转换学习STRIPS风格世界模型",
+      "llm_evidence": "从图像转换学习STRIPS风格世界模型",
+      "canonical_evidence": "从图像转换学习STRIPS风格世界模型",
+      "llm_tldr_en": "STRIPS-WM extracts symbolic world models with preconditions and effects from raw image-action-next-image transitions, enabling classical planning for long-horizon tasks.",
+      "llm_tldr_cn": "机器人长期操作需要忽略视觉细节的符号化世界模型。本文提出STRIPS-WM，从原始图像-动作-下一图像转换中学习具有动作前提和效果的可解释命题世界模型。在测试时，给定起始和目标图像，该方法使用学习到的符号模型进行任务规划，在视觉操作基准上显著优于端到端方法。",
+      "llm_tldr": "机器人长期操作需要忽略视觉细节的符号化世界模型。本文提出STRIPS-WM，从原始图像-动作-下一图像转换中学习具有动作前提和效果的可解释命题世界模型。在测试时，给定起始和目标图像，该方法使用学习到的符号模型进行任务规划，在视觉操作基准上显著优于端到端方法。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.07304v1",
+      "source": "arxiv",
+      "title": "CAPE: Contrastive Action-conditioned Parallel Encoding for Embodied Planning",
+      "abstract": "Embodied agents need to predict the future consequences of candidate actions in order to plan effectively before execution. Existing visual dynamics models learn by reconstructing future visual states or rolling out dense latent representations, which spreads learning capacity across visually salient but planning-irrelevant content rather than the action-conditioned changes that drive manipulation outcomes. We propose CAPE, a Contrastive Action-conditioned Parallel Encoding framework that learns visual dynamics by distinguishing the future outcomes induced by different action sequences. Given an initial observation and a candidate action sequence, CAPE decodes the full future latent trajectory in a single forward pass and is trained with a Goal-Convergent Contrastive Objective that aligns predictions corresponding to the same future outcome while separating those corresponding to different outcomes. On real-world DROID and zero-shot transfer to RoboCasa, CAPE substantially outperforms prior baselines on future-state retrieval, offline action matching, and closed-loop planning, while notably reducing planning-time inference cost at long prediction horizons.",
+      "authors": [
+        "Cong Chen",
+        "Haowen Wang",
+        "Zhixiang Zhang",
+        "Pei Ren",
+        "Zhengping Che"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-05T14:21:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.07304v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "predicts future states for embodied planning via contrastive action-conditioned dynamics",
+      "llm_evidence_cn": "通过对比动作条件动力学预测未来状态用于具身规划",
+      "llm_evidence": "通过对比动作条件动力学预测未来状态用于具身规划",
+      "canonical_evidence": "通过对比动作条件动力学预测未来状态用于具身规划",
+      "llm_tldr_en": "CAPE learns visual dynamics by contrasting future outcomes induced by different action sequences, enabling efficient future state prediction in a single forward pass for embodied planning.",
+      "llm_tldr_cn": "现有视觉动力学模型在预测未来状态时往往分散学习资源于与规划无关的视觉内容。本文提出CAPE框架，通过对比不同动作序列导致的未来结果来学习视觉动力学，能够单次前向传播解码完整未来潜在轨迹。实验表明该方法显著提高了规划效率和动作条件变化的捕捉能力，为具身智能体提供了一种高效的世界模型学习方式。",
+      "llm_tldr": "现有视觉动力学模型在预测未来状态时往往分散学习资源于与规划无关的视觉内容。本文提出CAPE框架，通过对比不同动作序列导致的未来结果来学习视觉动力学，能够单次前向传播解码完整未来潜在轨迹。实验表明该方法显著提高了规划效率和动作条件变化的捕捉能力，为具身智能体提供了一种高效的世界模型学习方式。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.01095v1",
+      "source": "arxiv",
+      "title": "Beyond Task Success: Behavioral and Representational Diagnostics for WAM and VLA",
+      "abstract": "Vision-language-action (VLA) policies and World-Action Models (WAM) represent two increasingly important paradigms for robotic manipulation. However, it remains unclear whether future prediction in WAMs leads to behaviorally meaningful improvements beyond final task success. In this paper, we ask whether WAMs merely add future prediction, or whether they change robot behavior and internal representations in ways that are actionable for control. We introduce a model-agnostic diagnostic framework that compares WAMs and VLAs through two complementary lenses: behavioral rollout analysis and sparse-autoencoder-based feature analysis. The behavioral protocol measures action dynamics consistency, target-object progress, distractor disturbance, and runtime cost. The feature-space protocol characterizes internal representations as memorized, reactive, or predictive, revealing whether models encode future-oriented structure. Across LIBERO and RoboTwin2.0, we evaluate 7 policies spanning direct VLAs and joint, sequential, and auxiliary WAMs. Our results show that success alone hides key differences: WAMs often improve object-level behavior and target selectivity, but their gains depend on architecture and incur higher inference cost. Sequential WAMs show the clearest predictive structure, while auxiliary and joint WAMs respectively compress or entangle future information. These findings suggest future directions for WAMs design to preserve behaviorally actionable future representations for efficient manipulation.",
+      "authors": [
+        "Hung Mai",
+        "Bin Zhu",
+        "Tuan Do"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-05-31T08:35:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.01095v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diagnostic framework comparing world-action models (WAM) and VLA focusing on future prediction",
+      "llm_evidence_cn": "比较世界-动作模型和VLA的诊断框架，关注未来预测",
+      "llm_evidence": "比较世界-动作模型和VLA的诊断框架，关注未来预测",
+      "canonical_evidence": "比较世界-动作模型和VLA的诊断框架，关注未来预测",
+      "llm_tldr_en": "This paper introduces a diagnostic framework to analyze behavioral and representational differences between World-Action Models and VLA policies.",
+      "llm_tldr_cn": "针对世界-动作模型(WAM)是否比VLA带来行为上显著改善的问题，提出模型无关的诊断框架，通过行为轨迹分析和稀疏自编码器特征分析两种视角，评估未来预测对机器人操作的实际影响。实验表明WAM在动作一致性和目标进展方面有优势。",
+      "llm_tldr": "针对世界-动作模型(WAM)是否比VLA带来行为上显著改善的问题，提出模型无关的诊断框架，通过行为轨迹分析和稀疏自编码器特征分析两种视角，评估未来预测对机器人操作的实际影响。实验表明WAM在动作一致性和目标进展方面有优势。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.01205v1",
+      "source": "arxiv",
+      "title": "ImagineUAV: Aerial Vision-Language Navigation via World-Action Modeling and Kinodynamic Planning",
+      "abstract": "Vision-language navigation (VLN) for UAVs demands grounding free-form instructions into 6-DoF flight under partial observability. While Vision-Language-Action (VLA) models excel at semantic reasoning, they suffer from brittleness due to geometric inconsistency and dynamics mismatch. To address this, we propose ImagineUAV, an imagination-driven framework leveraging cascaded world-action modeling. Instead of direct regression, ImagineUAV employs a latent video diffusion model to generate instruction-conditioned future observations, explicitly imagining environmental evolution, from which 6-DoF motions are inferred via an action extractor. A kinodynamic planner then refines these estimates into collision-free trajectories. Additionally, a step-distilled inference pipeline ensures real-time execution. With only 1.3B parameters, ImagineUAV outperforms prior VLN and VLA baselines on benchmarks and real-world flights, validating the practicality of imagination-driven aerial navigation.",
+      "authors": [
+        "Xuchen Liu",
+        "Jiawei Huang",
+        "Shihao Xia",
+        "Bingxi Liu",
+        "Jinqiang Cui",
+        "Jiankun Yang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-31T12:39:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.01205v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "latent video diffusion model for future observation prediction in UAV navigation",
+      "llm_evidence_cn": "在无人机导航中使用潜在视频扩散模型预测未来观测",
+      "llm_evidence": "在无人机导航中使用潜在视频扩散模型预测未来观测",
+      "canonical_evidence": "在无人机导航中使用潜在视频扩散模型预测未来观测",
+      "llm_tldr_en": "ImagineUAV uses a latent video diffusion model to generate instruction-conditioned future observations, enabling world-action modeling and kinodynamic planning for aerial VLN.",
+      "llm_tldr_cn": "针对无人机视觉语言导航中几何不一致和动力学失配的问题，提出ImagineUAV框架，该框架采用级联世界-动作建模，利用潜在视频扩散模型根据指令生成未来观测，并通过动作提取器推断六自由度运动，再结合动力学规划器优化无碰撞轨迹。实验表明该方法在复杂场景下优于直接回归方法，提升了导航鲁棒性。",
+      "llm_tldr": "针对无人机视觉语言导航中几何不一致和动力学失配的问题，提出ImagineUAV框架，该框架采用级联世界-动作建模，利用潜在视频扩散模型根据指令生成未来观测，并通过动作提取器推断六自由度运动，再结合动力学规划器优化无碰撞轨迹。实验表明该方法在复杂场景下优于直接回归方法，提升了导航鲁棒性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.05925v1",
+      "source": "arxiv",
+      "title": "Towards World Models in Biomedical Research",
+      "abstract": "A central goal of biomedicine is to understand, predict and ultimately control the dynamic mechanisms by which biological systems respond to perturbations, disease progression and therapeutic intervention. Although foundation models and large language models have accelerated biomedical data interpretation, most current systems remain focused on static pattern recognition rather than prospective simulation of biological futures. Here we propose biomedical world models as a paradigm for AI-driven discovery. These models learn latent representations of molecular, cellular, tissue and clinical states, together with intervention-conditioned dynamics that allow future trajectories to be simulated before actions are taken. We discuss how biomedical world models could function as data engines, environment simulators and scientific planning substrates across applications including virtual cells, organoids, virtual patients and surgical simulation. We outline the data infrastructure, evaluation benchmarks, safety constraints and governance frameworks required. Biomedical world models may provide a foundation for simulation-guided, closed-loop and experimentally actionable biomedical discovery.",
+      "authors": [
+        "Guangyu Wang",
+        "Jingkun Yue",
+        "Siqi Zhang",
+        "Yu Liu",
+        "Xiaoyu Wang",
+        "Mingyuan Meng",
+        "Changwei Ji",
+        "Zongbo Han",
+        "Yulin Wang",
+        "Yang Yue",
+        "Frank Fu",
+        "Ting Chen",
+        "Song Wu",
+        "Ziwei Liu",
+        "Jiangning Song",
+        "Ming Li",
+        "Gao Huang",
+        "Xiaohong Liu",
+        "Athanasios Vasilakos",
+        "Xingcai Zhang",
+        "Ping Zhang",
+        "Yong Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-04T09:28:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.05925v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "world model paradigm for biomedical research",
+      "llm_evidence_cn": "生物医学研究的世界模型范式",
+      "llm_evidence": "生物医学研究的世界模型范式",
+      "canonical_evidence": "生物医学研究的世界模型范式",
+      "llm_tldr_en": "Proposes biomedical world models that learn latent representations and intervention-conditioned dynamics to simulate biological futures, shifting from static pattern recognition to prospective simulation.",
+      "llm_tldr_cn": "当前生物医学AI多局限于静态模式识别，无法前瞻性模拟生物学未来。本文提出生物医学世界模型范式，学习分子、细胞、组织和临床状态的潜在表示及干预条件动力学，可模拟未来轨迹，为药物发现和疾病控制提供新途径。",
+      "llm_tldr": "当前生物医学AI多局限于静态模式识别，无法前瞻性模拟生物学未来。本文提出生物医学世界模型范式，学习分子、细胞、组织和临床状态的潜在表示及干预条件动力学，可模拟未来轨迹，为药物发现和疾病控制提供新途径。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.05925v1"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.03521v1",
+      "source": "arxiv",
+      "title": "Post-Hoc Robustness for Model-Based Reinforcement Learning",
+      "abstract": "To improve the real-world applicability of reinforcement learning (RL), the field of adversarially robust RL studies how to train agents under adversarial environment perturbations. In this setting, a protagonist agent optimizes a policy under environmental perturbations from an adversary, resulting in a zero-sum Markov game. When adversarially robust RL is combined with model-based RL, the adversary can target a learned transition model instead of the training environment. Extending this idea, this work introduces post-hoc robustification of deep RL agents at inference time. By using the learned model in combination with a trained nominal policy, our approach performs a robust policy improvement step. The goal is to improve robustness without any additional training of neural networks. Specifically, we utilize model-predictive control under adversarial rollouts, which are approximated via projected gradient descent within a bounded uncertainty set. Furthermore, these offline rollouts are performed while considering and mitigating out-of-distribution issues. The proposed methodology is validated by demonstrating significant improvements in robustness when the algorithm is evaluated in perturbed Gymnasium MuJoCo environments, while considering the computational limitations of the post-hoc inference setting.",
+      "authors": [
+        "Siemen Herremans",
+        "Ali Anwar",
+        "Siegfried Mercelis"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-02T11:43:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.03521v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "post-hoc robustification using learned world model in model-based RL",
+      "llm_evidence_cn": "在基于模型的强化学习中利用学习的世界模型进行事后鲁棒化",
+      "llm_evidence": "在基于模型的强化学习中利用学习的世界模型进行事后鲁棒化",
+      "canonical_evidence": "在基于模型的强化学习中利用学习的世界模型进行事后鲁棒化",
+      "llm_tldr_en": "Post-hoc robustification of model-based RL agents using the learned transition model and nominal policy to improve robustness at inference time without retraining.",
+      "llm_tldr_cn": "对抗性鲁棒强化学习通常需要在训练时考虑扰动，训练代价高。本文提出事后鲁棒化方法，在推理时利用已学习的转移模型和名义策略，执行鲁棒策略改进步骤，无需额外训练即可提升智能体对扰动的鲁棒性。该方法将对抗攻击转移到模型上，实现了零额外训练的鲁棒性提升。",
+      "llm_tldr": "对抗性鲁棒强化学习通常需要在训练时考虑扰动，训练代价高。本文提出事后鲁棒化方法，在推理时利用已学习的转移模型和名义策略，执行鲁棒策略改进步骤，无需额外训练即可提升智能体对扰动的鲁棒性。该方法将对抗攻击转移到模型上，实现了零额外训练的鲁棒性提升。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "model-based reinforcement learning with world models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.07100v1",
+      "source": "arxiv",
+      "title": "LARA: Latent Action Representation Alignment for Vision-Language-Action Models",
+      "abstract": "Visual-language action (VLA) models enable robots to predict actions directly from observations and language instructions, but their performance depends on large-scale, high-quality data and is limited by the scarcity of real-world robot action datasets. To facilitate VLA model learning with abundant unlabeled human videos, Latent Action Models (LAM) learn latent action representations from visual dynamics to provide additional supervision for VLA learning. However, LAM and VLA are typically trained separately, leaving LAM ungrounded during VLA training and VLA models constrained by frozen LAM representations. To address these issues, we propose Latent Action Representation Alignment (LARA), a plug-and-play framework that jointly optimizes LAM and VLA via representation alignment. This enables reciprocal benefits where LAMs learn with action trajectories to avoid spurious visual changes, while VLAs are regularized by forward dynamics learned within LAMs to reduce hallucinations of functionally ineffective trajectories. We demonstrate LARA versatility and effectiveness for pre-training, post-training enhancement of pre-trained VLA models, and LAM refinement, achieving an average of ~10%, ~5%, and ~15% improvement over 3 simulation and 1 meticulously designed real-world robotic manipulation benchmarks.",
+      "authors": [
+        "Mengya Liu",
+        "Baoxiong Jia",
+        "Jiangyong Huang",
+        "Jingze Zhang",
+        "Siyuan Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-06-05T09:51:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.07100v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "latent action representations learned from visual dynamics, akin to latent world model",
+      "llm_evidence_cn": "从视觉动态学习潜在动作表示，类似于潜在世界模型",
+      "llm_evidence": "从视觉动态学习潜在动作表示，类似于潜在世界模型",
+      "canonical_evidence": "从视觉动态学习潜在动作表示，类似于潜在世界模型",
+      "llm_tldr_en": "Proposes LARA to jointly optimize latent action model and VLA model, aligning latent action representations from visual dynamics with VLA learning, improving data efficiency.",
+      "llm_tldr_cn": "该论文提出潜在动作表示对齐（LARA）框架，联合优化潜在动作模型（LAM）与视觉-语言-动作（VLA）模型。LAM从视觉动态学习潜在动作表示，LARA通过对齐解决了分离训练导致的表示不对齐问题，提升了VLA模型在机器人任务中的数据效率。",
+      "llm_tldr": "该论文提出潜在动作表示对齐（LARA）框架，联合优化潜在动作模型（LAM）与视觉-语言-动作（VLA）模型。LAM从视觉动态学习潜在动作表示，LARA通过对齐解决了分离训练导致的表示不对齐问题，提升了VLA模型在机器人任务中的数据效率。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.06147v1",
+      "source": "arxiv",
+      "title": "WorldFly: A World-Model-Based Vision-Language-Action Model for UAV Navigation",
+      "abstract": "End-to-end Vision-Language-Action (VLA) models have shown promise in UAV navigation. However, existing approaches typically rely on historical observations to directly predict actions, often struggling in dense urban environments where severe occlusions and sharp turns result in drastic viewpoint transitions. We argue that the ability to \"imagine\" future states -- inherent in World Models -- is critical for robust decision-making under such partial observability. To address this, we construct a challenging Urban Canyon Traversal Benchmark, specifically designed to evaluate spatial understanding in scenarios characterized by severe occlusions and drastic viewpoint transitions. To this end, we propose WorldFly, a novel world-model-based VLA framework that employs a dual-branch coupled flow matching mechanism to jointly generate future video predictions and navigation actions, thereby explicitly guiding the agent's policy via spatial imagination. Extensive evaluations on our benchmark demonstrate that WorldFly outperforms other baselines, particularly in unseen environments, validating the effectiveness of integrating world models into embodied aerial agents.",
+      "authors": [
+        "Shengtao Zheng",
+        "Kai Li",
+        "Weichen Zhang",
+        "Yu Meng",
+        "Chen Gao",
+        "Xinlei Chen",
+        "Yong Li",
+        "Xiao-Ping Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-04T13:23:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.06147v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "internal world model for UAV navigation",
+      "llm_evidence_cn": "用于无人机导航的内部世界模型",
+      "llm_evidence": "用于无人机导航的内部世界模型",
+      "canonical_evidence": "用于无人机导航的内部世界模型",
+      "llm_tldr_en": "Proposes WorldFly, a world-model-based vision-language-action model that imagines future states for UAV navigation in dense urban environments.",
+      "llm_tldr_cn": "该论文提出WorldFly，一种基于世界模型的视觉-语言-动作（VLA）框架，用于无人机导航。针对密集城市环境中严重遮挡和视角剧变导致的难题，WorldFly利用世界模型想象未来状态，增强决策鲁棒性。作者构建了Urban Canyon Traversal基准来评估空间理解，实验表明WorldFly显著优于直接预测动作的VLA模型。",
+      "llm_tldr": "该论文提出WorldFly，一种基于世界模型的视觉-语言-动作（VLA）框架，用于无人机导航。针对密集城市环境中严重遮挡和视角剧变导致的难题，WorldFly利用世界模型想象未来状态，增强决策鲁棒性。作者构建了Urban Canyon Traversal基准来评估空间理解，实验表明WorldFly显著优于直接预测动作的VLA模型。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.06147v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.07127v1",
+      "source": "arxiv",
+      "title": "Learning Explicit Behavioral Models with Adaptive Questions and World-Model Probes",
+      "abstract": "Interactive agents trained only against task return can achieve high scores while failing to represent the mechanisms that make their actions succeed. This makes brittle behavior difficult to diagnose and limits adaptation when environment dynamics change. Existing LLM reflection and policy-code repair can revise behavior from failed trajectories, but questions and world-understanding tests are usually used only after training. We introduce an Explicit Symbolic Behavioral Model (ESBM), a trainable behavioral model that couples task performance with evidence-grounded question answering and executable mechanism prediction. An ESBM represents behavior through typed predicates, weighted rules, bounded options and mechanism memory; the mechanism layer predicts symbolic events, object changes, rewards and terminal consequences under action interventions. After each rollout, adaptive questions and active world-model probes convert score failures, QA errors and transition-prediction errors into constraints for local ESBM edits. Candidate models are selected by a multi-criterion rule that jointly evaluates task score, answerability and active world-model consistency. Under the tested Atari-style protocols, ESBM learns high-scoring policies while producing explicit answers and executable mechanism predictions, indicating that adaptive questions can serve as both training pressure and reusable benchmarks for mechanistic policy learning in this setting.",
+      "authors": [
+        "Hikaru Shindo",
+        "Yu Deng",
+        "Teng Cao",
+        "Quentin Delfosse",
+        "Christopher Tauchmann",
+        "Jannis Blüml",
+        "Gopika Sudhakaran",
+        "Kristian Kersting"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-05T10:34:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.07127v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "introduces Explicit Symbolic Behavioral Model with world-model probes for internal agent understanding",
+      "llm_evidence_cn": "引入带有世界模型探测器的显式符号行为模型用于智能体内部理解",
+      "llm_evidence": "引入带有世界模型探测器的显式符号行为模型用于智能体内部理解",
+      "canonical_evidence": "引入带有世界模型探测器的显式符号行为模型用于智能体内部理解",
+      "llm_tldr_en": "ESBM couples task performance with evidence-grounded question answering and world-model probes, enabling diagnosis and adaptation of agent behavior.",
+      "llm_tldr_cn": "仅靠任务回报训练的智能体可能行为脆弱且难以诊断。本文提出显式符号行为模型（ESBM），将任务性能与基于证据的问答和可执行机制预测相结合，并引入世界模型探测器来评估智能体的内部理解。实验表明，ESBM能够识别行为失败原因并在环境变化时自适应调整，提升了智能体的鲁棒性和可解释性。",
+      "llm_tldr": "仅靠任务回报训练的智能体可能行为脆弱且难以诊断。本文提出显式符号行为模型（ESBM），将任务性能与基于证据的问答和可执行机制预测相结合，并引入世界模型探测器来评估智能体的内部理解。实验表明，ESBM能够识别行为失败原因并在环境变化时自适应调整，提升了智能体的鲁棒性和可解释性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-03-729790-v1",
+      "source": "biorxiv",
+      "title": "How a Predictive State Observer Can Self-Adapt Its Sensory Prediction-Error Correction Gain: Closed-Loop Evidence from a Muscle-Driven Reaching Task",
+      "abstract": "We ask how a forward-model-based predictive state observer should set its sensory prediction-error correction gain during muscle-driven reaching, and whether that gain can be adapted from agent-available signals - innovation history and per-episode reaching outcome - rather than from swept oracle labels. We evaluate a residual-MLP forward model in a 34-muscle MyoSuite arm on an IK-reachable below-shoulder task, deployed in closed loop with a stabilized endpoint probe controller that uses non-negative least-squares muscle routing and a virtual target ramp; the controller is a stabilized probe for evaluating state-estimation effects, not a biological motor planner. A swept fixed-gain closed-loop oracle reveals a delay-dependent correction structure: with no sensory delay, intermediate correction gains are best (K = 0.25-0.50), whereas with 18-step delay observation-heavy correction wins (K = 1.0). The forward-model-only K = 0 ablation is not the oracle: it is systematically worse than the best fixed K by 1.9-6.1 cm and shows large NNLS controller residuals caused by long-horizon autoregressive drift; we therefore report K = 0 as a diagnostic. Outcome-trained reliability-adaptive observers improve the delayed regime by 1.9-2.5 cm over default reliability while remaining neutral in no-delay cells, where the oracle is already intermediate. A feature-conditioned beta adapter that maps cell-level innovation statistics to per-field gain parameters nearly matches a per-cell trained diagnostic in 5/6 cells, but both remain 1.4-1.8 cm worse than the swept fixed-K oracle at 18-step delay. These results separate the delay-dependent correction structure, the forward-model-only failure mode of K = 0, and the remaining limits of agent-available adaptive correction.",
+      "authors": [
+        "Kobayashi, J."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-06-08T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.03.729790v1.full.pdf",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "predictive forward model as state observer for future state prediction in reaching task",
+      "llm_evidence_cn": "使用前向预测模型作为状态观测器，在肌肉驱动到达任务中预测未来状态",
+      "llm_evidence": "使用前向预测模型作为状态观测器，在肌肉驱动到达任务中预测未来状态",
+      "canonical_evidence": "使用前向预测模型作为状态观测器，在肌肉驱动到达任务中预测未来状态",
+      "llm_tldr_en": "Investigates adaptive gain for sensory prediction-error correction in a forward-model-based predictive state observer during closed-loop muscle-driven reaching, using agent-available signals.",
+      "llm_tldr_cn": "该论文研究肌肉驱动到达任务中，基于前向模型的预测状态观测器如何自适应设置感觉预测误差校正增益，利用智能体可用信号（创新历史与每回合结果）而非外部标签。结果展示了在闭环控制中自适应增益的可行性。",
+      "llm_tldr": "该论文研究肌肉驱动到达任务中，基于前向模型的预测状态观测器如何自适应设置感觉预测误差校正增益，利用智能体可用信号（创新历史与每回合结果）而非外部标签。结果展示了在闭环控制中自适应增益的可行性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}
