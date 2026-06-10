@@ -6,46 +6,46 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-09
-- 运行时间：2026-06-09 21:55:35 UTC
+- 最新运行日期：2026-06-10
+- 运行时间：2026-06-10 22:42:35 UTC
 - 运行状态：成功
 - 本次总论文数：8
 - 精读区：6
 - 速读区：2
 
 ### 今日简报（AI）
-1) 今日精读8篇论文，核心聚焦世界模型与智能体规划，两篇9分力作《PRISM》和《Light-WAM》领衔。
-2) 最值得看《PRISM》的优先引导想象采样方法，以及《Light-WAM》的状态融合动作解码技术，均为世界模型效率提升关键突破。
-3) 普通读者建议优先精读这两篇高分论文，速读《前额叶皮层规划理论》可作为认知科学拓展。
-- 详情：[/202606/09/README](/202606/09/README)
+1. 今日8篇论文聚焦世界模型与动作学习，精读6篇，最高分达10.0。  
+2. 最值得关注的方向：世界模型作为可行世界耦合核（《WorldKernel》），以及统一离散视觉-动作令牌编辑的世界策略学习（《Discrete-WAM》）。  
+3. 建议普通读者优先精读这两篇高分论文，关注世界模型与动作决策的融合思路；速读中关于安全社交导航的视觉-语言-动作模型也值得留意。
+- 详情：[/202606/10/README](/202606/10/README)
 
 ### 精读区论文标签
-1. [PRISM: PRior-guided Imagination Sampling in world Models](/202606/09/2606.07974v1-prism-prior-guided-imagination-sampling-in-world-models)  
+1. [WorldKernel: A World Model is the Coupling Kernel of Admissible Possible Worlds](/202606/10/2606.10934v1-worldkernel-a-world-model-is-the-coupling-kernel-of-admissible-possible-worlds)  
+   标签：评分：10.0/10、query:world-models
+   evidence：世界模型定义为可行可能世界的耦合核
+2. [Discrete-WAM: Unified Discrete Vision-Action Token Editing for World-Policy Learning](/202606/10/2606.05645v2-discrete-wam-unified-discrete-vision-action-token-editing-for-world-policy-learning)  
    标签：评分：9.0/10、query:world-models
-   evidence：直接研究世界模型中的先验引导想象采样
-2. [Light-WAM: Efficient World Action Models with State-Fusion Action Decoding](/202606/09/2606.08242v1-light-wam-efficient-world-action-models-with-state-fusion-action-decoding)  
+   evidence：统一世界-策略框架，含潜在世界模型用于未来预测
+3. [One Lens, Many Worlds : A Capability-Typed Interface for World-Model Interpretability](/202606/10/2606.09936v1-one-lens-many-worlds--a-capability-typed-interface-for-world-model-interpretability)  
    标签：评分：9.0/10、query:world-models
-   evidence：世界行动模型与未来预测
-3. [Unifying Object-Centric World Models and Diffusion Policy: A Hierarchical Framework for Multi-Stage Robotic Tasks](/202606/09/2606.08775v1-unifying-object-centric-world-models-and-diffusion-policy-a-hierarchical-framework-for-multi-stage-robotic-tasks)  
+   evidence：直接针对不同架构（如PlaNet和Dreamer）的世界模型可解释性
+4. [ReflectiChain: Epistemic Grounding in LLM-Driven World Models for Supply Chain Resilience](/202606/10/2606.10359v1-reflectichain-epistemic-grounding-in-llm-driven-world-models-for-supply-chain-resilience)  
    标签：评分：9.0/10、query:world-models
-   evidence：明确提出基于对象中心世界模型的机器人操作框架
-4. [$ω$-EVA: Envision, Verify, and Act with Latent Interactive World Models](/202606/09/2606.09457v1--eva-envision-verify-and-act-with-latent-interactive-world-models)  
+   evidence：提出了一个具有潜在空间和双循环学习的生成式供应链世界模型
+5. [Role-Agent: Bootstrapping LLM Agents via Dual-Role Evolution](/202606/10/2606.10917v1-role-agent-bootstrapping-llm-agents-via-dual-role-evolution)  
    标签：评分：9.0/10、query:world-models
-   evidence：具有想象-验证-行动循环的潜交互世界模型
-5. [Bridging the Agent-World Gap: Text World Models for LLM-based Agents](/202606/09/2606.09032v1-bridging-the-agent-world-gap-text-world-models-for-llm-based-agents)  
-   标签：评分：8.0/10、query:world-models
-   evidence：针对LLM代理的文本世界模型综述
-6. [Hidden-state inference aligns attention and neural representational geometry during flexible behaviour](/202606/09/biorxiv-10-1101-2025-10-10-681143-v3-hidden-state-inference-aligns-attention-and-neural-representational-geometry-during-flexible-behaviour)  
-   标签：评分：8.0/10、query:world-models
-   evidence：研究隐藏状态推断作为内部世界模型指导灵活行为
+   evidence：LLM智能体具有内部世界模型，预测未来状态作为过程奖励
+6. [Next Forcing: Causal World Modeling with Multi-Chunk Prediction](/202606/10/2606.11187v1-next-forcing-causal-world-modeling-with-multi-chunk-prediction)  
+   标签：评分：9.0/10、query:world-models
+   evidence：因果世界建模；面向世界动作模型的多块预测
 
 ### 速读区论文标签
-1. [A mechanistic theory of planning in prefrontal cortex](/202606/09/biorxiv-10-1101-2025-09-23-677709-v2-a-mechanistic-theory-of-planning-in-prefrontal-cortex)  
+1. [Act on What You See: Unlocking Safe Social Navigation in Vision-Language-Action Models](/202606/10/2606.10495v1-act-on-what-you-see-unlocking-safe-social-navigation-in-vision-language-action-models)  
    标签：评分：7.0/10、query:world-models
-   evidence：通过吸引子动力学预测未来状态
-2. [Scaling Self-Evolving Agents via Parametric Memory](/202606/09/2606.04536v1-scaling-self-evolving-agents-via-parametric-memory)  
-   标签：评分：6.0/10、query:world-models
-   evidence：智能体通过参数记忆更新从经验中学习，类似于从经验学习世界模型
+   evidence：利用内部表示中的未来碰撞信号实现安全导航
+2. [Predictive learning induces Bayesian cognitive maps in the hippocampus](/202606/10/biorxiv-10-64898-2026-06-03-729991-v1-predictive-learning-induces-bayesian-cognitive-maps-in-the-hippocampus)  
+   标签：评分：7.0/10、query:world-models
+   evidence：预测下一感官输入的学习诱导了贝叶斯认知地图
 
 
 <div class="dpr-home-promo-card">
