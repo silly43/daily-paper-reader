@@ -1,0 +1,379 @@
+Title: Generating whole-brain neural activity and behavior through unified latent dynamics
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.06.05.730482v1.full.pdf
+
+Number of Pages: 21
+
+Markdown Content:
+# Generating whole-brain neural activity and behavior through unified latent dynamics 
+
+## Davide Nuzzi 1,* , Maurizio Mattia 2, and Giovanni Pezzulo 1,* 1Institute of Cognitive Sciences and Technologies, National Research Council, Rome, Italy 
+
+> 2
+
+Natl. Center for Radiation Protection and Computational Physics, Istituto Superiore di Sanit` a, Rome, Italy 
+
+> *
+
+Corresponding authors: davide.nuzzi@istc.cnr.it; giovanni.pezzulo@istc.cnr.it 
+
+## June 5, 2026 
+
+Abstract 
+
+Understanding how high-dimensional neural activity and behavior emerge from shared underlying dynamics remains a fundamental challenge in neuroscience. Addressing this problem is key to enabling digital twins that can faithfully reproduce and predict the multiscale brain–behavior dynamics of liv-ing systems. Here we present NEBULA (NEural and Behavioral modeling through Unified LAtent dynamics), a generative framework that jointly models whole-brain neural activity and behavior. Us-ing brain-wide recordings from C. elegans , the model learns a unified latent dynamical structure that supports long-horizon generation of neural and behavioral trajectories, realistic simulations of behavior, and targeted virtual interventions. Perturbations of the learned dynamics reveal behaviorally relevant transition points, whereas steering interventions enable controlled manipulation of neural and behavioral states without retraining. These results establish a framework for linking brain dynamics to behavior in a living organism and provide a foundation for scalable virtual experimentation in neuroscience. 
+
+Keywords: whole-brain activity; generative model; digital twin; behavior simulation; C. elegans 
+
+1
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint 1 Introduction 
+
+In neuroscience, the increasing availability of large-scale neural and behavioral datasets has highlighted the importance of computational models — or brain digital twins — capable of integrating these data to enable large-scale simulations and virtual interventions that emulate realistic experimental manipulations in animals (Wang et al., 2024; Mathis and Mathis, 2026). However, developing a computational model that jointly captures brain activity and naturalistic behavior, while also enabling long-horizon generative prediction and virtual interventions, remains a major challenge. State-of-the-art methods that derive low-dimensional manifolds from neural activity typically focus on rep-resentation learning, rather than on developing models with robust generative capabilities (Schneider et al., 2023; Kumar et al., 2023). Similarly, state-of-the-art models of human brain activity — whether “foundation models” based on deep learning approaches (d’Ascoli et al., 2026; D’Angelo and Jirsa, 2022; Hashemi et al., 2025; Wang et al., 2025b; Jiang et al., 2024; Wang et al., 2025a; Ortega Caro et al., 2024; Schneider et al., 2023) or biophysically inspired digital twins (Monteverdi et al., 2023; Hashemi et al., 2025; Albor´ e et al., 2025; Di Antonio et al., 2026; Kringelbach et al., 2024; Jirsa et al., 2023; Morrison and Young, 2025) — primarily aim to predict neural activity and the effects of virtual lesions, rather than to link neural dynam-ics and behavior. Other studies have simulated neural population dynamics in C. elegans using a variety of approaches — including dynamical systems, switching linear systems, and maximum entropy models — sometimes incorporating biophysical constraints such as the connectome (Kunert et al., 2014; Kunert-Graf et al., 2017; Kunert et al., 2017; Chen et al., 2019; Morrison et al., 2021; Linderman et al., 2019). While these approaches capture important aspects of neurodynamics, they generally treat neural activity in isola-tion from physical kinematics. Related efforts have also explored whole-body physics-based simulations of animal behavior, including biomechanical models of the fruit fly (Vaxenburg et al., 2025) and virtual rodents controlled by neural networks (Aldarondo et al., 2024). Nevertheless, establishing mechanistic links between brain activity and behavior remains a major challenge, particularly in ways that generalize beyond the distri-butions encountered during training and support virtual interventions capable of generating realistic neural and behavioral dynamics in previously unseen conditions. To address these challenges, we introduce a deep generative framework for jointly modeling neural ac-tivity and behavior through a unified latent dynamical structure. The framework, called NEBULA (NEural and Behavioral modeling through Unified LAtent dynamics), learns a probabilistic representation of cou-pled brain–behavior dynamics, enabling representation learning, accurate prediction, and counterfactual simulation under virtual perturbations. We adopt the framework to characterize locomotion behavior and associated whole-brain neural activity in the nematode C. elegans (Kato et al., 2015). We evaluate the framework across several tasks. First, in the encoding setting, NEBULA learns a joint latent manifold of neural and behavioral dynamics. Second, through generative rollouts, it produces realistic long-timescale trajectories of both behavior and neural activity. Third, in the intervention setting, the model enables virtual perturbations that steer both latent model dynamics and behavior toward desired dynamical regimes. These results demonstrate the model’s ability to jointly capture, generate, and control coupled brain–behavior dynamics within a unified framework. 2
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+# 2 Results 
+
+## 2.1 Characterization of empirical data and virtual kinematic reconstruction 
+
+To establish a quantitative foundation for our generative modeling framework, we first characterized the empirical neural and behavioral dataset (see Methods 4.1). We analyzed whole-brain calcium imaging recordings of an immobilized C. elegans subject originally acquired by Kato et al. Kato et al. (2015), which capture the simultaneous, continuous activity of 109 neurons (Figure 1a). Although the animal was physically restrained, specific neurons exhibited activity patterns that reliably differentiated distinct fictive locomotor states (“forward”, “slow”, “reverse 1”, “reverse 2”, “reverse sus”, “dorsal turn”, and “ventral turn”). For example, the activity of the AVA command interneuron varied systematically across various locomotor behaviors, enabling their accurate discrimination (Figure 1b). Applying Principal Component Analysis (PCA) to the full multi-neuron timeseries demonstrates that the global neural dynamics occupy a low-dimensional latent space, wherein the latent state trajectory naturally clusters according to seven locomotor behaviors (Figure 1c). Because the original recording of (Kato et al., 2015) inherently lacks physical tracking data, we imple-mented a kinematic reconstruction pipeline to bridge the discrete fictive locomotor behaviors and continuous spatial movements of the worm (see Methods 4.4). We mapped the sequence of behavioral labels into dy-namic body postures using a basis set of the first three principal eigenworms (Stephens et al., 2008). By deterministically modulating the phase and amplitude of these postural components based on the active locomotor behavior, we generated a continuous, temporally smoothed sequence of body shapes (Figure 1d). This ego-centric postural evolution is visualized as a kymogram, illustrating the relative angular curvature across 25 adjacent body segments over time (Figure 1e). Finally, to translate these relative postural changes into ecologically valid spatial locomotion, we pro-cessed the synthetic kymograms through the ElegansBot (Chung et al., 2024) biomechanical simulation environment (see Methods 4.4). The simulation resolves the dynamic physical forces between the undulating body segments and a virtual substrate, converting the ego-centric shape changes into absolute 2D spatial coordinates. This pipeline successfully yields a full, continuous spatial trajectory of the virtual worm that corresponds directly to the fictive behaviors from the original 15-minute empirical recording (Figure 1f), establishing a physical kinematic baseline for evaluating the subsequent generative model outputs. 3
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+a�
+
+b) c�
+
+e�
+
+f) d) 
+
+> 3
+
+Figure 1: Characterization of empirical data and virtual kinematic reconstruction. a) Calcium signals recorded by Kato et al. (2015). Each row represents a single neuron. b) Trace of the AVA neuron colored by the behavioral state as identified by Kato et al. (2015). c) PCA of the neural signals. Only the first three components are shown. Each point is colored by the corresponding behavioral state. d) Postural reconstruction from discrete behavioral states. The bottom plot shows the temporal evolution of the first three postural components (eigenworm amplitudes): first (black), second (blue), and third (red). Shaded regions denote discrete behavioral states over a 25 seconds window. Top panels display representative reconstructed body shapes at t = 10 , 220 , 500 and 740, with red circles indicating the head position. e) Kymogram of body curvature. Postural dynamics reconstructed from the eigenworm amplitudes over the same period as panel d. The heatmap illustrates the relative angle (radians) between 25 adjacent body segments from head (top) to tail (bottom). Red and blue colors denote dorsal and ventral bending, respectively. f ) Simulated spatial trajectory. The path of the worm in the xy -plane reconstructed from the sequence of behavioral states over the full 15-minute recording. The trace is colored by elapsed time (seconds), as indicated by the colorbar. 
+
+4
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint 2.2 Neural and behavioral modeling 
+
+To capture the complex temporal dependencies linking neural activity and behavior, we developed NEB-ULA: a probabilistic deep generative framework based on variational state-space modeling (see Methods 4.2). Briefly, the framework consists of three core components: a filtering encoder that compresses the causal his-tory of high-dimensional neural activity into a continuous, low-dimensional latent trajectory; a stochastic transition function that models the forward temporal evolution of these latent states; and recurrent observa-tion models (decoders) that project the latent trajectory back into the empirical neural and behavioral data spaces. By jointly optimizing these components, the model learns a temporally predictive and dynamically consistent latent manifold that encapsulates the animal’s sensorimotor repertoire. We applied the framework to the neurobehavioral dataset of Kato et al. (2015), using a three-dimensional continuous latent space. This low-dimensional representation was sufficient to accurately reconstruct both neural and behavioral dynamics while enabling direct visualization of the learned manifold, as each axis corresponds to one of the latent dimensions. Projecting the training dataset into this space via the encoder revealed a highly structured, continuous manifold (Figure 2a) with cyclic trajectories. When the encoded latent coordinates were colored according to the simultaneous output of the behavioral decoder, the man-ifold naturally organized into distinct regions associated with different locomotion behaviors. Because the observation models utilize recurrent network architectures, the decoded behavioral state is dynamically con-ditioned on the preceding states, allowing intersecting paths in the latent space to seamlessly resolve into distinct sequences of behaviors and associated neural activity. The temporal evolution along this manifold is governed by the learned transition function. By evaluating this transition function across the encoded coordinates, we can visualize the latent vector field that drives the system’s dynamics, where arrows indicate the instantaneous magnitude and direction of the temporal deriva-tive (Figure 2c). Furthermore, because the framework is probabilistic, it yields localized, state-dependent estimations of uncertainty for both the inference and generation processes. Mapping the standard deviation of the distributions across the manifold reveals that the encoder and the transition function exhibit entirely distinct spatial profiles of variance. The uncertainty of the filtering encoder (Figure 2d) is highly localized, reaching its maximum values near the centers of large, stable behavioral arcs, away from critical trajectory bifurcations or sub-loops. Conversely, the intrinsic stochasticity of the transition function (Figure 2e) exhibits less overall variation across the manifold but is noticeably elevated within the specific lobe corresponding to forward and slow locomotion. To test the stability and autonomy of the local dynamics learned by the model, we decoupled it from the empirical data and generated a long-horizon, unsupervised rollout of 30000 timesteps, corresponding to roughly 168 minutes (see Methods 4.2). Guided solely by autoregressive sampling from the transition function, the generated trajectory remains dynamically stable. The generative rollout accurately reproduces the topological structure, cyclical patterns, and behavioral partitioning of the original training data without collapsing or diverging (Figure 2b), thus characterizing this manifold as an attractor. For visual clarity regarding the underlying structural geometry, the plotted trajectories in these low-dimensional latent space represent the sequence of distribution means ( μ) rather than the raw stochastic samples ( z). 5           
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint a) b) c) d) e) f) g)
+> True Transition Matrix Generated Transition Matrix
+> True Func �onal Connec �vity Generated Func �onal Connec �vity
+> Component 3
+> t = 12.5 s t = 25 s t = 37.5 s t = 50 s
+> Component 3 Component 3 Component 3
+> h) i) j) k)
+
+Figure 2: Neural and behavioral modeling through NEBULA. a) Encoded latent manifold. The training dataset represented within the three-dimensional latent space of the encoder. Each point is colored according to its ground-truth behavioral label. b) Generative rollout. Latent trajectories produced by the transition module over 30000 timesteps within the three-dimensional manifold. Points are colored by the decoded behavioral state. c) Latent transition function. Arrows indicate the direction and magnitude (color) of the vector field corresponding to the transition function, visualized only at points on the manifold from panel a for clarity. d) Encoder standard deviation. Manifold points colored by the standard deviation of the encoder’s output distribution. e) Transition standard deviation. Manifold points colored by the standard deviation of the transition function. f ) Behavioral state frequencies. Comparison between the true distribution of behaviors from the training set and the distribution decoded from the 30000 timesteps generative rollout visualized in panel b. g) Correlation between real and generated functional connectivity. Comparison of functional connectivity (computed via pairwise linear correlations) between the original neural timeseries and that decoded from generated latent trajectories. Each point represents a unique pair of neural channels. Black points include all channel pairs, while red points denote a subset of consistent neurons identifiable across all worms (see text and (Kato et al., 2015)). The data for the comparisons are illustrated in the functional connectivity matrices of panel k. h) Decoded neural activity. Heatmap showing the activity across all neural channels decoded from the generative rollout trajectories over the first 15000 timesteps ( ≈ 85 minutes). Color indicates simulated activity magnitude. i) 
+
+Behavioral transition matrices. Comparison of transition probabilities between states in the training data (left) and the decoded generative rollout (right). Values denote non-zero probabilities. j) Stochastic divergent trajectories. Snapshots at four time points ( t = 12 .5, 25 , 37 .5, 50 s) showing the spatial dispersal of 500 simulated worms. All simulations begin from the same latent state and spatial origin. The diversity in trajectory and body posture is driven by the stochasticity of the latent transition function. k) Functional connectivity matrices. Pairwise linear correlations between all neural channels for the original data (left) and those decoded from the generative rollout (right). 
+
+6
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint 2.3 Quantitative assessment of the model’s generative dynamics 
+
+To quantitatively determine whether the generative rollouts of NEBULA faithfully capture the statistical structure of the biological data, we compared the macroscopic properties of the generated 30000-timestep sequence against the empirical training dataset. We first evaluated the accuracy of the behavioral decoding. The framework accurately reproduced the global behavioral state frequencies observed in the original data (Figure 2f), yielding a Kullback-Leibler (KL) divergence of 2 .7 · 10 −3. Beyond static frequencies, the gener-ative rollout successfully internalized the temporal syntax of the animal’s motor repertoire, demonstrating a high degree of concordance between the empirical and generated behavioral transition matrices (Figure 2i; KL divergence = 7 · 10 −3). Simultaneously, the framework decodes continuous neural activity from this same autonomous latent tra-jectory. Over the roughly 168-minute simulated duration, the generated neural timeseries exhibits complex, non-periodic population dynamics that remain stable without collapsing to a single and stable equilibrium point (Figure 2h). Because the generative rollout is a novel stochastic realization governed by the latent transition prior, the resulting timeseries diverges from the exact temporal sequence of the original 15-minute empirical recording. Therefore, rather than comparing direct temporal alignments, we quantified neural fidelity by assessing the preservation of the population’s functional connectivity. We computed the pairwise Pearson correlation matrices for all 109 neural channels across both the true and generated datasets (Figure 2k). Drawing on the analytical framework of Representational Similarity Analysis (RSA) (Kriegeskorte et al., 2008), we extracted the unique pairwise correlations (the upper trian-gular elements of the functional connectivity matrices) and evaluated the correlation between the empirical and generated network states (Figure 2g). The global network topology is highly conserved, demonstrating a strong linear relationship across all neuron pairs ( R2 = 0 .81, black points). Interestingly, this functional preservation is most precise within the subset of neurons most involved in locomotion. We isolated a specific subset of 15 extensively characterized command and premotor neurons (including the AVA, AVB, and AIB classes; see Methods 4.1) that were unambiguously identified in the physical recording (Kato et al., 2015). When restricting the comparative analysis to correlation pairs containing at least one of these neurons, the correlation between the empirical and generated network states increases ( R2 = 0 .99, red points). Finally, to visualize how the latent transition dynamics translate into physical movement, we simulated the spatial dispersal of an ensemble of virtual worms. We initialized 1000 independent generative rollouts from the same starting condition ( z0, the encoded latent state of the first empirical sample) and tracked their continuous spatial trajectories over a 60-second physical simulation horizon. Snapshots of this ensemble at progressively longer timescales reveal the rich unfolding of the model’s behavioral repertoire (Figure 2j). During the early phases ( t = 12 .5 and 25 s), the trajectories diverge relatively slowly, clustering along the primary longitudinal axis as individual rollouts sample sustained, stable locomotor states (forward or backward propulsion). However, at longer horizons ( t = 37 .5 and 50 s), the accumulated stochasticity within the latent manifold triggers probabilistic bifurcations into turning states. This causes the paths to branch outward, demonstrating the model’s capacity to spontaneously generate diverse, multi-step behavioral sequences. Notably, the final spatial distribution of the ensemble at 50 seconds is highly anisotropic, forming distinct, asymmetric spatial lobes. This physical asymmetry is a macroscopic manifestation of the biological biases encoded within the latent manifold—capturing the unequal transition probabilities between dorsal and ventral turns that were present in the empirical training data. 7
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+## 2.4 Robustness of generative dynamics to latent perturbations 
+
+To evaluate the structural stability of the learned manifold, we investigated how the generative dynamics respond to varying degrees of stochastic perturbation. We first analyzed the effect of applying continuous, global noise across the entire three-dimensional latent space during 30000-step generative rollouts. The injected noise was sampled from an isotropic multivariate Gaussian distribution with a diagonal covariance matrix, parameterized by a scalar noise intensity (standard deviation). We quantified the degradation of the model’s output as a function of this noise intensity. For the behavioral output (Figure 3a), we measured the Kullback-Leibler (KL) divergence between the generated and empirical behavioral state distributions. Notably, the behavioral frequencies show no appreciable divergence until the noise intensity reaches approximately 3 on the logarithmic scale. For the neural output (Figure 3b), we computed the Mean Squared Error (MSE) between the functional connectivity matrices of the generated and original neural timeseries. The neural dynamics demonstrate a slightly higher sensitivity, with the MSE lifting above zero around an intensity of 0.3, followed by a steady increase at higher noise levels. Crucially, in both panels, the red vertical shaded region denotes the standard operating regime of the system, representing the minimum-to-maximum range of stochasticity natively expressed by the learned transition function. The low error rates extending far to the right of this red zone demonstrate that the generative model is highly robust, maintaining its topological integrity and dynamic stability even when subjected to continuous perturbations orders of magnitude larger than the stochasticity it experienced during training or autonomous generation. We next examined the sensitivity of different regions of the manifold by applying localized, non-directional noise. We considered 3137 equally spaced points across the encoded empirical manifold and defined a local boundary (a sphere of radius 1) around each coordinate. We then initiated 30000-step generative rollouts, injecting a severe isotropic Gaussian noise ( σ = 5) strictly when the latent trajectory zt entered the specific spherical region. The resulting discrepancies were then mapped back onto the originating manifold coordinates as a color gradient. The spatial sensitivity of the manifold varies significantly depending on the decoded modality. The behavioral sensitivity map (KL divergence, Figure 3c) reveals that the most critical points of failure occur just before major trajectory bifurcations. For instance, high sensitivity is localized in the reverse sus region immediately preceding the split into dorsal or ventral turns. A similarly sensitive zone appears along the 
+
+reverse 2 arc , where localized noise is sufficient to kick the latent trajectory against the directed flow of the transition function, forcing it prematurely back into the forward/slow cycle. Conversely, the sensitivity map for the neural functional connectivity (MSE, Figure 3d) exhibits a different spatial profile. While the regions corresponding to reversals and turns remain highly susceptible to noise-induced disruption, the region representing forward and slow locomotion exhibits high dynamic robustness, absorbing the high-intensity localized noise with almost negligible impact on the fidelity of the decoded neural signals. 8        
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint a) b) c) d) e) f) g) h) i) j) k) l)
+> i
+> Component 3
+> Component 3
+
+Figure 3: Robustness to latent perturbations and targeted steering of behavioral dynamics. a) Behavioral distribu-tion robustness. KL divergence between the behavioral state frequencies of a baseline (noise-free) generative rollout and those subjected to varying intensities of white Gaussian noise. The red shaded region indicates the standard deviation range of the inherent transition function. Error bars represent the standard deviation across 20 independent generative samples per inten-sity level. b) Functional connectivity robustness. MSE between the functional connectivity matrices of the baseline generative rollout and those generated under varying intensities of latent noise. The red shaded region indicates the standard deviation range natively expressed by the learned transition function. Error bars represent the standard deviation across 20 independent generative samples per intensity level. c) Behavioral sensitivity to localized noise. KL divergence between the behavioral distributions of a baseline generative rollout and trajectories subjected to localized latent perturbations ( σ = 5 within radius 1). Color indicates the discrepancy resulting from noise applied at each manifold location. d) Connectivity sensitivity to localized noise. MSE between functional connectivity matrices of baseline and locally perturbed rollouts. Color maps represent the local impact of noise on the accuracy of decoded neural interactions. e-h) Steering toward ventral turns. Targeted intervention on the transition function to modulate behavioral priors, specifically to increase the frequency of ventral turns. In panel e, baseline manifold is shown in grey, while the steered trajectory is colored by its decoded behavioral state. White arrows represent the learned steering field vectors (magnitude > 0.05). Panel f shows the behavioral state frequencies, providing a comparison between the distribution of behaviors from the baseline generative rollout and the distribution decoded from the steered gen-erative rollout. Panel g shows the spatial dispersal of simulated worms driven by the steered latent transition function. All simulations begin from the same latent state and spatial origin. Panel h shows the activity across all neural channels decoded from the steered generative rollout trajectories over 18 minutes. Color indicates simulated activity magnitude. i-l) Steering toward forward and slow locomotion. A second targeted intervention on the transition function designed to incentivize forward and slow behaviors while suppressing reversals and turns. Panels i through l mirror the data modalities of panels e through h,respectively illustrating the steered latent manifold, the corresponding shift in behavioral state frequencies, the resulting spatial dispersal of simulated worms, and the decoded neural activity under this alternative steering policy. 
+
+## 2.5 Targeted modulation of behavior via latent manifold steering 
+
+While our generative framework simulates spontaneous behavior, investigating goal-directed control requires a mechanism to actively influence these dynamics. To achieve this, we introduced a latent steering module that applies sparse, targeted perturbations to the transition function, pushing the system toward specific 9
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint behavioral patterns without retraining the underlying manifold (see Methods 4.5). We first tested the system’s ability to incentivize a specific turning behavior by explicitly incentivizing the ventral turn state while suppressing all others. A 10000-step generative rollout under this steering policy demonstrates that the model successfully achieves the behavioral goal while maintaining the structural in-tegrity of the continuous latent space (Figure 3e). The steered trajectory (colored) remains closely anchored to the baseline encoded manifold (grey), but the dorsal turn arc is completely circumvented. Visualizing the learned steering field (white arrows, filtered for magnitude > 0.1) reveals that interventions are highly localized, acting only at critical junction points rather than uniformly across the space. The resulting be-havioral frequencies (Figure 3f) confirm the targeted increase in ventral turns and the suppression of dorsal turns. Crucially, this localized intervention triggers a cascading effect across the entire behavioral distribu-tion: because the neural manifold enforces strict transition dynamics, reaching a turn requires transitioning through specific reversal states. Consequently, incentivizing the ventral turn inherently increases the fre-quency of the reverse sus state and proportionally decreases time spent in forward and slow locomotion, highlighting the deeply intertwined, complex nature of the neurobehavioral manifold. This targeted behav-ioral shift physically manifests in the spatial dispersal of the simulated worms (Figure 3g), which, unlike the unsteered baseline, lacks a concentration of trajectories in the bottom-left region. This behavioral modula-tion is accompanied by the corresponding neural activity decoded directly from the steered latent trajectory (Figure 3h). In a second experiment, we inverted the objective, incentivizing only the forward and slow locomotor states while suppressing all reversals and turns. The resulting rollout (Figure 3i) shows the trajectory ef-fectively trapped within the region where forward and slow locomotor states are expressed. The learned steering vectors emerge at the bifurcation boundaries leading toward the reverse 2 state, pointing in direct opposition to the natural dynamical flow to prevent the system from exiting the forward – slow locomotor cycle. Furthermore, this structural confinement leaves the lowermost arcs of the forward region entirely unvisited, indicating that these specific paths represent return trajectories exclusively accessed following turning events. The behavioral distribution (Figure 2j) confirms the near-total suppression of non-locomotor states. Interestingly, while both forward and slow behaviors were equally incentivized, the dynamical con-straint causes slow locomotion to become the overwhelmingly dominant state (comprising > 80% of the rollout), while the frequency of forward locomotion actually decreases relative to the baseline spontaneous dynamics. Accordingly, the spatial dispersal of the simulated ensemble exhibits minimal lateral spread, re-sulting in extended, primarily forward trajectories devoid of turning events (Figure 3k), supported by the steady-state neural activity decoded under this constrained steering policy (Figure 3l). 
+
+# 3 Discussion 
+
+In this study, we aimed to bridge a critical gap in computational neuroscience: the development of a gen-erative digital twin capable of jointly modeling whole-brain neural dynamics and continuous naturalistic behavior (Wang et al., 2024; Mathis and Mathis, 2026). To address this challenge, we introduced NEBULA (NEural and Behavioral modeling through Unified LAtent dynamics), a generative framework that learns the probabilistic, continuous transition dynamics underlying neural population activity and behavior within a shared latent space. We applied the framework to 10 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+the nematode C. elegans , an organism chosen because its fully characterized nervous system exhibits strong, state-dependent correlations between global neural activity and locomotor output (Kato et al., 2015). We demonstrated that NEBULA can simultaneously generate stable, long-horizon trajectories of both neural and behavioral dynamics, providing a tractable in-silico environment for counterfactual simulations and targeted virtual interventions. NEBULA maps high-dimensional neural and behavioral time series from C. elegans onto a highly struc-tured, continuous low-dimensional manifold (here, three-dimensional) and internalizes the underlying neu-robehavioral dynamics through a learned stochastic transition function that governs latent-state evolution. As demonstrated in our results, when decoupled from the empirical data, the model can autonomously gen-erate long-horizon synthetic rollouts that remain dynamically stable. These generated trajectories strictly preserve the temporal syntax of the animal’s natural motor repertoire and maintain near-perfect functional connectivity ( R2 = 0 .99) among the core command and premotor neurons governing locomotion. Finally, we demonstrated the physical validity of these latent dynamics by translating the discrete behavioral outputs into continuous spatial locomotion using a set of eigenworms as low-dimensional basis (Stephens et al., 2008) and the ElegansBot biomechanical simulator (Chung et al., 2024). This complete generative pipeline, from stochastic latent transitions to simulated 2D spatial trajectories, confirms that the framework successfully captures the mechanistic link between abstract neural population states and physical movement. Beyond generation, a true digital twin must support counterfactual simulations and targeted interven-tions. We validated this capability by subjecting the learned manifold to both unstructured perturbations and goal-directed steering. Noise-injection experiments revealed that the generative dynamics are robust to global stochasticity while exhibiting localized sensitivity at trajectory bifurcations, mirroring the biological topology where specific neurobehavioral transitions (such as the initiation of a turn) represent critical dy-namical junctions. Furthermore, by introducing a deterministic latent steering module, we demonstrated the ability to enact targeted in-silico interventions without retraining the base model. By applying sparse, minimal perturbations to the transition dynamics, we directed the virtual animal to adopt specific behavioral regimes, such as prioritizing ventral turns or remaining confined to forward locomotion. This steering mecha-nism provides a computational analog to experimental virtual lesions or optogenetic stimulations (Deisseroth, 2015). Together, these results demonstrate that the framework provides a controllable, dynamic environment to test hypotheses about how targeted latent modulations cascade into physical behavior. Our framework combines the strengths of existing approaches that either focus on representation learning without robust generative capabilities (Schneider et al., 2023; Kumar et al., 2023) or model neural and behavioral dynamics in isolation in C. elegans (Kunert et al., 2014; Kunert-Graf et al., 2017; Kunert et al., 2017; Chen et al., 2019; Morrison et al., 2021; Linderman et al., 2019) and other animals (d’Ascoli et al., 2026; D’Angelo and Jirsa, 2022; Hashemi et al., 2025; Wang et al., 2025b; Jiang et al., 2024; Wang et al., 2025a; Ortega Caro et al., 2024; Schneider et al., 2023; Monteverdi et al., 2023; Hashemi et al., 2025; Albor´ e et al., 2025; Di Antonio et al., 2026; Kringelbach et al., 2024; Jirsa et al., 2023; Morrison and Young, 2025; Aldarondo et al., 2024; Vaxenburg et al., 2025). The key innovation of NEBULA is the integration of manifold learning and latent transition dynamics within a unified generative framework, enabling robust generation of coupled neural and behavioral trajectories, realistic simulations of behavior, and targeted virtual interventions that steer neural and behavioral states in a controlled manner without retraining. Together, these capabilities establish a digital twin that jointly captures brain and behavior. 11 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+While our results demonstrate the stability and flexibility of the NEBULA framework, the current im-plementation relies on a dataset derived from an immobilized animal exhibiting fictive locomotion. Conse-quently, the generated trajectories operate in an open-loop regime, lacking the real-time sensory and propri-oceptive feedback that naturally constrains and drives biological movement. Future iterations of this digital twin must integrate multi-modal data from freely moving subjects to explicitly model these closed-loop sen-sorimotor interactions (Nguyen et al., 2016). Expanding the framework to capture continuous environmental feedback will be essential for modeling the continuous dynamics of planning and acting in naturalistic tasks. Furthermore, although we demonstrate our framework using neurobehavioral trajectories from C. elegans ,the framework is general and could be extended in future studies to model the coupled brain–behavior dy-namics of other organisms. It can also be used to test theories that describe brain function in terms of generative modeling and statistical inference (Parr et al., 2022; Keller and Mrsic-Flogel, 2018; Knill and Pouget, 2004; Doya, 2007; Pezzulo et al., 2018), by learning generative models directly from data to inter-pret neural activity and perform virtual experiments. Ultimately, scaling this unified latent space approach to incorporate active sensory loops and behavior in more complex organisms will provide a foundation for advancing theoretical understanding as well as enabling large-scale virtual interventions in neuroscience. 
+
+# 4 Methods 
+
+## 4.1 Dataset 
+
+The empirical data used to train our generative model were obtained from previously published whole-brain calcium imaging experiments of C. elegans Kato et al. (2015), publicly accessible via the Open Science Framework ( https://osf.io/2395t/ ). For our modeling, we utilized a single recording session of a wild-type subject (dataset TS20140715e lite-1 punc-31 NLS3 2eggs 56um 1mMTet basal 1080s contained in the 
+
+WT NoStim.mat file). During data acquisition, the animal was physically immobilized within a microfluidic chamber to enable stable, single-cell resolution pan-neuronal imaging. The continuous neural observation matrix, x, comprises the simultaneously recorded activities of 109 neurons. The physiological signal is quantified as the normalized variation in calcium fluorescence (∆ F/F ), serving as a proxy for intracellular neural activation. This recorded ensemble spans the head ganglia and includes the majority of head motor neurons, sensory neurons, interneurons, and anterior ventral cord motor neurons. A core subset of 15 extensively characterized command and premotor neurons (AIBL, AIBR, ALA, AVAL, AVAR, AVBL, AVER, RID, RIML, RIMR, RMED, RMEL, RMER, VB01, and VB02) were unambiguously identified within this population. This inclusion ensures that the multi-dimensional latent manifold inherently captures the fundamental sensorimotor networks driving locomotion. The corresponding discrete behavioral sequence, y, consists of “fictive” locomotor states. Because physi-cal locomotion was prevented by immobilization, we utilized the behavioral assignments established by Kato et al. Kato et al. (2015). By validating that specific neural activation patterns in freely moving animals strongly predict kinematic outputs, the original authors successfully assigned a fictive motor command to each temporal frame of the immobilized recording. We adopt this validated annotation scheme directly, classifying the sequence into seven mutually exclusive states: “forward”, “slow”, “reverse 1”, “reverse 2”, “reverse sus”, “dorsal turn”, and “ventral turn”. In our framework, this discrete sequence provides the 12 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+empirical ground truth for optimizing the behavioral decoder and serves as the driving input for subsequent kinematic simulations. 
+
+## 4.2 Variational latent dynamics framework 
+
+Let x denote the continuous multivariate neural recordings, y denote the corresponding discrete behavioral states, and z represent the underlying low-dimensional latent variables. Bold variables indicate temporal sequences (e.g., z0: T denotes the latent trajectory up to timestep T , and zt specifies the state at time t). We formulate a probabilistic generative model parameterized by neural network weights θ. The joint probability over a trajectory of length T factorizes as: 
+
+pθ (x0: T , y0: T , z0: T ) = pθ (z0)
+
+> T
+
+Y
+
+> t=1
+
+pθ (zt|zt−1)
+
+> T
+
+Y
+
+> t=0
+
+pθ (yt|z0: t)pθ (xt|z0: t). (1) The generative process is initialized with a standard isotropic Gaussian prior, pθ (z0) = N (z0; 0 , I). Subse-quent latent evolution follows a stochastic Markovian process defined by the transition function pθ (zt|zt−1) = 
+
+N (zt; μθ (zt−1), σ 2 
+
+> θ
+
+(zt−1)). To stabilize optimization and ensure bounded latent trajectories, the transition mean is parameterized as a residual update: μθ (zt−1) = zt−1 + α tanh( fθ (zt−1)). Here, fθ is a non-linear mapping realized by a neural network, the hyperbolic tangent restricts the maximal per-step deviation, and 
+
+α is a learnable scaling factor determining the transition magnitude. During optimization, latent states zt
+
+are differentiably sampled using the standard reparameterization trick. The observation models map the latent trajectories to the data spaces. Unlike the Markovian state tran-sitions, the decoding of both modalities at time t depends on the entire latent history z0: t, implemented via recurrent neural networks (RNNs). This recurrent architecture allows the decoders to integrate information across longer temporal scales than the immediate Markovian latent transitions, thereby capturing the long-range dependencies inherent in both neural and behavioral dynamics. The behavioral decoder outputs the logits of a categorical distribution over the discrete states yt. Simultaneously, the neural decoder predicts the continuous signals xt, serving as the mean of a Gaussian emission distribution with unit standard deviation. Because exact inference in this non-linear generative model is computationally intractable, we employ amortized variational inference, framing the system as a deep variational state-space model. We introduce an amortized variational posterior, qϕ, which serves as the encoder mapping the high-dimensional neural data into the continuous latent space. The joint posterior over the full latent trajectory is factorized as: 
+
+qϕ(z0: T |x0: T ) = 
+
+> T
+
+Y
+
+> t=0
+
+qϕ(zt|x0: t). (2) This formulation restricts the latent state estimate zt strictly to the causal history of the neural signals up to time t. By constraining the encoder to act as a filtering distribution that precludes non-causal access to future observations, we enforce the discovery of a temporally predictive and dynamically consistent latent manifold. Architecturally, the encoder is parameterized by a recurrent neural network that outputs the parameters (mean and diagonal covariance) of a Gaussian distribution at each timestep. The latent representations zt are subsequently drawn using the standard reparameterization trick to maintain end-to-end differentiability during optimization. 13 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+To optimize the model parameters, we maximize the log-evidence (marginal likelihood) of the observed sequences. The exact marginal likelihood is obtained by integrating out the latent variables from the joint distribution: 
+
+pθ (x0: T , y0: T ) = 
+
+Z
+
+pθ (x0: T , y0: T , z0: T ) d z0: T (3) By introducing the variational posterior, we can rewrite the marginal likelihood as an expectation over the latent trajectories. Dropping the time subscripts for notational brevity this becomes: 
+
+pθ (x, y) = 
+
+Z
+
+qϕ(z|x) pθ (x, y, z)
+
+qϕ(z|x) dz = Eqϕ(z|x)
+
+ pθ (x, y, z)
+
+qϕ(z|x)
+
+
+
+= Eqϕ(z|x) [w(x, y, z)] (4) where w(x, y, z) represents the importance weight of a given trajectory. Standard optimization of the Evidence Lower Bound (ELBO) using a single trajectory sample can suffer from instability and representation collapse during long autoregressive generative rollouts. To obtain a tighter and more robust bound, we adopt an Importance-Weighted Autoencoder (IWAE) framework. We draw K independent latent trajectories z(k)
+
+from the filtering encoder, with the expectation taken over the product distribution q⊗Kϕ = QKk=1 qϕ(z(k)|x). Applying Jensen’s inequality to the logarithm of the K-sample expected value yields the importance-weighted lower bound: log pθ (x, y) ≥ Eq⊗Kϕ
+
+"
+
+log 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+w
+
+
+
+x, y, z(k)!# 
+
+(5) Due to the concavity of the logarithm, this multi-sample bound is strictly closer to the true log-evidence than the standard ELBO. For numerical stability during gradient descent optimization, the objective we maximize is computed using the log-sum-exp formulation: 
+
+LIW = Eq⊗Kϕ
+
+"
+
+log 
+
+> K
+
+X
+
+> k=1
+
+elog w(x,y,z(k))
+
+!
+
+− log K
+
+#
+
+(6) The explicit log-weight of a trajectory decomposes sequentially into the initial prior divergence, the transition dynamics divergence, and the observation likelihoods for both modalities: log w(x, y, z) = log pθ (z0)
+
+qϕ(z0|x0) +
+
+> T
+
+X
+
+> t=1
+
+log pθ (zt|zt−1)
+
+qϕ(zt|x0: t) +
+
+> T
+
+X
+
+> t=0
+
+log pθ (xt|z0: t) + 
+
+> T
+
+X
+
+> t=0
+
+log pθ (yt|z0: t) (7) Finally, to ensure the encoded latent states are adequately spaced out across the manifold and to prevent representational crowding, we augment the final optimization objective with a repulsive regularization term applied to the latent states: 
+
+Lrep (z) = X
+
+> i̸=j
+
+exp 
+
+
+
+−∥ zi − zj ∥22
+
+
+
+(8) While such structural manifold constraints could theoretically be embedded within a more complex initial prior p(z0), enforcing them via an explicit auxiliary penalty keeps the core variational formulation highly tractable and simplifies the optimization dynamics. During training we introduce scalar weighting coefficients to each constituent term within the log-weight function and to the repulsive loss term to balance the relative influence of the prior, transition dynamics, multimodal observation likelihoods and repulsion force during 14 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+optimization. To optimize the model, the algorithmic forward pass strictly separates the encoding of latent states from the evaluation of the transition dynamics. During training, latent trajectories z0: T are sampled entirely through the filtering encoder qϕ conditioned on the empirical data x0: T . The transition model pθ is never used to sample states during optimization. Instead, for each encoded state zt−1, the transition network computes the Gaussian parameters of the conditional prior pθ (zt|zt−1). These parameters are then evaluated against the subsequent encoded state zt to compute the transition likelihood within the importance weight. This one-step evaluation prevents the accumulation of recursive errors during optimization, effectively acting as a data-driven forcing mechanism that grounds the transition function directly in the encoded manifold. Once optimized, the model is decoupled from the data and deployed as an autoregressive generative system. Starting from an initial condition z0, long-horizon latent trajectories are synthesized entirely in the latent space by recursively sampling from the learned transition function, zt ∼ pθ (zt|zt−1). Despite the transition function being trained exclusively on single-step conditional targets, these autoregressive rollouts remain dynamically stable over extended timescales. Finally, these stochastically generated latent trajectories are passed through the recurrent observation models to emit the corresponding synthetic neural signals and behavioral sequences, allowing for the autonomous generation of dynamically consistent neurobehavioral rollouts. 
+
+## 4.3 Network architecture and optimization details 
+
+Across all neural network modules, the internal hidden dimension was fixed to 128, and the continuous latent space was defined with a dimensionality of 3. The filtering encoder qϕ is composed of an initial linear mapping followed by three residual blocks, terminating in a Gaussian head that outputs the mean and diagonal covariance of the latent state. The non-linear mapping fθ within the transition model pθ
+
+mirrors this architecture exactly, consisting of a linear projection, three residual blocks, and a final layer that parameterizes the Gaussian transition distribution. To capture temporal dependencies, both decoders utilize Gated Recurrent Unit (GRU) networks. The behavioral decoder consists of a single GRU layer that projects directly to the discrete state logits. The neural decoder is more expressive, passing the output of a GRU layer through two additional residual blocks before a final linear readout generates the continuous neural predictions. The model was optimized over 5000 iterations using the Adam optimizer with a learning rate of 3 × 10 −4. During training, we sampled mini-batches of 256 trajectory segments, each with a fixed temporal window of T = 128 timesteps. Note that providing a history of past observations is crucial for enabling the model to learn generative capabilities. In a control experiment with the temporal window set to T = 1, the model recovers a sufficiently differentiated internal manifold but does not support generative rollouts (Supplementary Figure S1). For the estimation of the importance-weighted bound, we drew K = 5 independent latent trajectories per sequence. Finally, to balance the constituent terms of the objective function, the following scalar weights were applied: 1 × 10 −5 for the initial prior divergence, 1 for the transition dynamics divergence, 1 for the neural observation likelihood, 5 for the behavioral observation likelihood, and 5 for the auxiliary repulsive regularization term. 15 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+## 4.4 Kinematic reconstruction via eigenworm projection 
+
+To translate the discrete sequences of generated behavioral labels into continuous, visually interpretable locomotion, we map the model’s state outputs onto a virtual worm model. This is achieved using the established “eigenworms” framework (Stephens et al., 2008) which demonstrates that the vast majority of C. elegans postural variance can be captured by a low-dimensional basis set of postural modes. Any specific body shape can be expressed as a linear combination of these basis vectors and their time-varying scalar coefficients. For our kinematic reconstruction, we restricted the basis set to the first three principal eigenworms. Through heuristic evaluation of empirical video recordings, we found that modulating just these three primary components was sufficient to capture the core behavioral repertoire, yielding sequences of body postures that visually align with expected biological kinematics. To ensure realistic, continuous motion and prevent disjointed transitions when the behavioral label changes, the postural dynamics are governed by a continuous phase variable, ϕt, which accumulates over time. The first two eigenworm coefficients, c1 and c2, generate the primary undulatory waves underlying locomotion and are defined as: 
+
+c1(t) = A cos( ϕt) (9) 
+
+c2(t) = A cos 
+
+
+
+ϕt + π
+
+2
+
+
+
+(10) where the global amplitude is fixed at A = 7 and the second component is uniformly phase-shifted by π/ 2. The temporal evolution of the phase variable is governed by a behavior-dependent angular frequency, 
+
+ω(yt). The phase updates at each timestep according to: 
+
+ϕt = ϕt−1 + ω(yt)∆ t (11) where ∆ t = 1 /32s corresponds to the temporal resolution of the reconstructed kinematic sequence (32 frames per second). This angular frequency dictates the speed and direction of the underlying undulatory wave. For standard forward locomotion, the angular frequency is set to ωfwd = 1 .14 π rad/s. During slow forward locomotion, the frequency is attenuated to ωslow = 0 .6π rad/s. For all reverse states (aggregating “reverse 1”, “reverse 2”, and “reverse sus”), the wave direction is inverted by applying a negative angular frequency, 
+
+ωrev = −π rad/s. When the model enters a turning state (“ventral turn” or “dorsal turn”), the first two coefficients continue to update using the forward locomotion phase step, while the third eigenworm coefficient, c3(t), is recruited to execute the turn. The raw turning signal is set to +4 for dorsal turns, −4 for ventral turns, and 0 otherwise. To prevent unrealistic, instantaneous postural twitches caused by discrete state transitions, this step-like c3(t) sequence is smoothed over time. Specifically, we convolve the c3(t) signal with a Gaussian temporal window (2 seconds in duration, truncated symmetrically at 3 standard deviations) to ensure smooth kinematic transitions into and out of turns. Finally, having generated the continuous time series for the three coefficients, we reconstruct the relative angles between adjacent body segments by multiplying the coefficients by their respective eigenworm basis vectors. These relative angles are spatially resampled to define a uniform model comprising 25 discrete segments. By integrating these relative angles along the body axis, we calculate the cumulative, absolute 16 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+spatial coordinates of the virtual worm segments, enabling the 2D visualization of the generated behavioral trajectories. While the eigenworm projection yields a continuous sequence of postural configurations (a synthetic kymogram), these relative angles describe the worm’s shape in an ego-centric frame, effectively depicting the animal undulating “in place.” To translate these postural sequences into 2D spatial trajectories, we utilize the ElegansBot biomechanical simulation framework (Chung et al., 2024). The synthetic kymograms serve as the kinematic driving input for the ElegansBot model, which numerically simulates the dynamic physical interactions between the multi-segmented body and a virtual environment. The model transforms the relative postural changes into absolute, time-resolved spatial coordinates for each body segment within a global reference frame, yielding realistic 2D simulated trajectories of the virtual worm navigating its environment. 
+
+## 4.5 Latent manifold steering for goal-directed behavior 
+
+The base generative framework autonomously simulates spontaneous neural and behavioral activity. To transition from modeling spontaneous dynamics to enacting goal-directed control, we introduce a latent steering mechanism. This allows us to perturb the autonomous latent trajectory to reach specific behavioral targets without retraining the foundational generative manifold. We formalize these goals by defining a set of desired, incentivized behaviors Yg and a set of undesired, disincentivized behaviors Yb. Rather than imposing a complex prior over the entire trajectory, we introduce a deterministic steering module, Tψ , parameterized by a distinct set of neural network weights ψ. This steering network operates as a residual correction mechanism on the autonomous transition dynamics. At each generative timestep, the base transition model proposes a new state zt. The steering network takes both this proposed state and the preceding state zt−1 as inputs to compute a targeted intervention, yielding the steered latent state: ˆzt = zt + Tψ (zt, z t−1) (12) To optimize the steering parameters ψ, we freeze the weights of the base encoder, transition, and decoder models ( ϕ and θ). We then perform long autoregressive rollouts starting from random initial conditions sampled from the learned latent manifold. The steering network is trained to shift the decoded behavioral probabilities toward Yg and away from Yb by minimizing the following objective: 
+
+Lsteer = X
+
+> t
+
+∥Tψ (zt, z t−1)∥22 − λ
+
+ X
+
+> y∈Yg
+
+pθ (yt|ˆz0: t) − X
+
+> y∈Yb
+
+pθ (yt|ˆz0: t)
+
+ (13) The objective function balances two competing forces. The terms scaled by λ drive the behavioral distri-bution toward the target sets using the differentiable logits of the behavioral decoder. Conversely, the L2
+
+regularization term on the output of Tψ penalizes the magnitude of the steering interventions. This regular-ization is critical: it ensures that the applied perturbations are as sparse and minimal as possible, forcing the steered trajectory to remain biologically plausible and bound to the natural dynamical manifold discovered during the initial training phase. To ensure stable convergence and prevent the steering module from immediately forcing the trajectory 17 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+off the manifold before finding valid dynamical paths, we employ a deterministic annealing schedule for the balancing parameter λ. Optimization begins with λ = 0, meaning the steering network initially learns to output zero vectors (acting as an identity mapping). The parameter is then linearly increased to a maximum value of λ = 2 over the first 50 training iterations, smoothly introducing the behavioral constraints into the optimization landscape. 
+
+# Acknowledgments 
+
+This research received funding from the European Research Council under the Grant Agreement No. 820213 (ThinkAhead), the Italian National Recovery and Resilience Plan (NRRP), M4C2, funded by the Euro-pean Union – NextGenerationEU (Project IR0000011, CUP B51E22000150006, ‘EBRAINS-Italy’; Project PE0000013, ‘FAIR’; Project PE0000006, ‘MNESYS’), and the Ministry of University and Research, PRIN PNRR P20224FESY and PRIN 20229Z7M8N. The GEFORCE Quadro RTX6000 and Titan GPU cards used for this research were donated by the NVIDIA Corporation. We used a Generative AI model to correct typographical errors and edit language for clarity. 
+
+# References 
+
+Albor´ e, N., Galluzzi, A., Pani, P., Ferraina, S., and Mattia, M. (2025). In search for the invisible: motor inhibition in monkey premotor cortex and its RNN replicas. bioRxiv , page 2025.11.24.690225. Aldarondo, D., Merel, J., Marshall, J. D., Hasenclever, L., Klibaite, U., Gellis, A., Tassa, Y., Wayne, G., Botvinick, M., and ¨Olveczky, B. P. (2024). A virtual rodent predicts the structure of neural activity across behaviours. Nature , 632(8025):594–602. Chen, X., Randi, F., Leifer, A. M., and Bialek, W. (2019). Searching for collective behavior in a small brain. 
+
+Physical Review E , 99(5):052418. Chung, T., Chang, I., and Kim, S. (2024). Development of equation of motion deciphering locomotion including omega turns of caenorhabditis elegans. Elife , 12:RP92562. d’Ascoli, S., Rapin, J., Benchetrit, Y., Brooks, T., Begany, K., Raugel, J., Banville, H., and King, J.-R. (2026). A foundation model of vision, audition, and language for in-silico neuroscience. arXiv preprint arXiv:2605.04326 .Deisseroth, K. (2015). Optogenetics: 10 years of microbial opsins in neuroscience. Nature neuroscience ,18(9):1213–1225. Di Antonio, G., Gili, T., Gabrielli, A., and Mattia, M. (2026). Linearizing and forecasting: A reservoir computing route to digital twins of the brain. Advanced Science , 13:e17234. Doya, K. (2007). Bayesian brain: Probabilistic approaches to neural coding . MIT press. D’Angelo, E. and Jirsa, V. (2022). The quest for multiscale brain modeling. Trends in neurosciences ,45(10):777–790. 18 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+Hashemi, M., Depannemaecker, D., Saggio, M., Triebkorn, P., Rabuffo, G., Fousek, J., Ziaeemehr, A., Sip, V., Athanasiadis, A., Breyton, M., et al. (2025). Principles and operation of virtual brain twins. IEEE Reviews in Biomedical Engineering , 19:111–139. Jiang, W.-B., Zhao, L., and Lu, B.-L. (2024). Large brain model for learning generic representations with tremendous eeg data in bci. In International Conference on Learning Representations , volume 2024, pages 16405–16426. Jirsa, V., Wang, H., Triebkorn, P., Hashemi, M., Jha, J., Gonzalez-Martinez, J., Guye, M., Makhalova, J., and Bartolomei, F. (2023). Personalised virtual brain models in epilepsy. The Lancet Neurology ,22(5):443–454. Kato, S., Kaplan, H. S., Schr¨ odel, T., Skora, S., Lindsay, T. H., Yemini, E., Lockery, S., and Zimmer, M. (2015). Global brain dynamics embed the motor command sequence of caenorhabditis elegans. Cell ,163(3):656–669. Keller, G. B. and Mrsic-Flogel, T. D. (2018). Predictive processing: a canonical cortical computation. 
+
+Neuron , 100(2):424–435. Knill, D. C. and Pouget, A. (2004). The bayesian brain: the role of uncertainty in neural coding and computation. TRENDS in Neurosciences , 27(12):712–719. Kriegeskorte, N., Mur, M., and Bandettini, P. A. (2008). Representational similarity analysis-connecting the branches of systems neuroscience. Frontiers in systems neuroscience , 2:249. Kringelbach, M. L., Perl, Y. S., and Deco, G. (2024). The thermodynamics of mind. Trends in Cognitive Sciences , 28(6):568–581. Kumar, A., Gilra, A., Gonzalez-Soto, M., Meunier, A., and Grosse-Wentrup, M. (2023). Bunddle-net: Neuronal manifold learning meets behaviour. bioRxiv , pages 2023–08. Kunert, J., Shlizerman, E., and Kutz, J. N. (2014). Low-dimensional functionality of complex network dynamics: Neurosensory integration in the caenorhabditis elegans connectome. Physical Review E ,89(5):052805. Kunert, J. M., Proctor, J. L., Brunton, S. L., and Kutz, J. N. (2017). Spatiotemporal feedback and network structure drive and encode caenorhabditis elegans locomotion. PLoS computational biology ,13(1):e1005303. Kunert-Graf, J. M., Shlizerman, E., Walker, A., and Kutz, J. N. (2017). Multistability and long-timescale transients encoded by network structure in a model of c. elegans connectome dynamics. Frontiers in computational neuroscience , 11:53. Linderman, S., Nichols, A., Blei, D., Zimmer, M., and Paninski, L. (2019). Hierarchical recurrent state space models reveal discrete and continuous dynamics of neural activity in c. elegans. BioRxiv , page 621540. Mathis, M. W. and Mathis, A. (2026). Joint modelling of brain and behaviour dynamics with artificial intelligence. Nature Reviews Neuroscience , 27(2):87–100. 19 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+Monteverdi, A., Palesi, F., Schirner, M., Argentino, F., Merante, M., Redolfi, A., Conca, F., Mazzocchi, L., Cappa, S. F., Cotta Ramusino, M., et al. (2023). Virtual brain simulations reveal network-specific parameters in neurodegenerative dementias. Frontiers in Aging Neuroscience , 15:1204134. Morrison, M., Fieseler, C., and Kutz, J. N. (2021). Nonlinear control in the nematode c. elegans. Frontiers in Computational Neuroscience , 14:616639. Morrison, M. and Young, L.-S. (2025). A data-driven biology-based network model reproduces c. elegans premotor neural dynamics. PLOS Computational Biology , 21(12):e1013818. Nguyen, J. P., Shipley, F. B., Linder, A. N., Plummer, G. S., Liu, M., Setru, S. U., Shaevitz, J. W., and Leifer, A. M. (2016). Whole-brain calcium imaging with cellular resolution in freely behaving caenorhabditis elegans. Proceedings of the National Academy of Sciences , 113(8):E1074–E1081. Ortega Caro, J., de Oliveira Fonseca, A. H., Rizvi, S., Rosati, M., Averill, C., Cross, J., Mittal, P., Zappala, E., Dhodapkar, R., Abdallah, C., et al. (2024). Brainlm: A foundation model for brain activity recordings. In International Conference on Learning Representations , volume 2024, pages 565–576. Parr, T., Pezzulo, G., and Friston, K. J. (2022). Active inference: the free energy principle in mind, brain, and behavior . MIT Press. Pezzulo, G., Rigoli, F., and Friston, K. J. (2018). Hierarchical active inference: a theory of motivated control. 
+
+Trends in cognitive sciences , 22(4):294–306. Schneider, S., Lee, J. H., and Mathis, M. W. (2023). Learnable latent embeddings for joint behavioural and neural analysis. Nature , 617(7960):360–368. Stephens, G. J., Johnson-Kerner, B., Bialek, W., and Ryu, W. S. (2008). Dimensionality and dynamics in the behavior of c. elegans. PLoS computational biology , 4(4):e1000028. Vaxenburg, R., Siwanowicz, I., Merel, J., Robie, A. A., Morrow, C., Novati, G., Stefanidi, Z., Both, G.-J., Card, G. M., Reiser, M. B., et al. (2025). Whole-body physics simulation of fruit fly locomotion. Nature ,643(8074):1312–1320. Wang, C., Jiang, Y., Peng, Z., Li, C., Bang, C., Zhao, L., Fu, W., Lv, J., Sepulcre, J., Yang, C., et al. (2025a). Towards a general-purpose foundation model for fmri analysis. arXiv preprint arXiv:2506.11167 .Wang, E. Y., Fahey, P. G., Ding, Z., Papadopoulos, S., Ponder, K., Weis, M. A., Chang, A., Muhammad, T., Patel, S., Ding, Z., et al. (2025b). Foundation model of neural activity predicts response to new stimulus types. Nature , 640(8058):470–477. Wang, H. E., Triebkorn, P., Breyton, M., Dollomaja, B., Lemarechal, J.-D., Petkoski, S., Sorrentino, P., Depannemaecker, D., Hashemi, M., and Jirsa, V. K. (2024). Virtual brain twins: from basic neuroscience to clinical use. National Science Review , 11(5):nwae079. 20 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
+
+# A Supplementary Figures a) b) d) c) 
+
+> Component 3
+
+Figure S1: Ablation of recurrent temporal integration. We evaluated the necessity of temporal integration by restricting the training sequence window to a single transition step (containing only xt and xt+1 ). a) Encoded manifold under temporal ablation. The training dataset represented within the three-dimensional latent space. A broad topological structure remains visible, but the distinct behavioral partitioning is noticeably degraded compared to the full recurrent model. b) Generative rollout failure. Latent trajectories produced by the transition module over 30,000 timesteps. Devoid of recurrent history to stabilize the dynamics, autonomous generation collapses into a localized, noisy distribution. c) Generative behavioral state frequencies. Comparison of behavioral frequencies demonstrating the complete failure of the generative process, with the collapsed latent trajectory decoded exclusively as “forward” locomotion with a probability of 1. d) Static generated neural activity. Heatmap showing the neural channels decoded from the generative rollout over 18 minutes. The collapsed, noisy latent dynamics result in completely static, featureless neural predictions across all channels. 
+
+21 
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted June 10, 2026. ;https://doi.org/10.64898/2026.06.05.730482 doi: bioRxiv preprint
