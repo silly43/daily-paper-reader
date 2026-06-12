@@ -1,0 +1,744 @@
+Title: WorldReasoner: Evaluating Whether Language Model Agents Forecast Events with Valid Reasoning
+
+URL Source: https://arxiv.org/pdf/2606.11816v1
+
+Published Time: Thu, 11 Jun 2026 00:46:29 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+## WORLD REASONER : Evaluating Whether Language Model Agents Forecast Events with Valid Reasoning 
+
+Yizhou Chi Eric Chamoun Zifeng Ding Andreas Vlachos 
+
+Department of Computer Science and Technology University of Cambridge 
+
+{yc697, ec806, zd320, av308}@cam.ac.uk 
+
+Abstract 
+
+Forecasting real-world events requires language-model agents to reason under uncertainty from incomplete, time-bounded information. Yet evaluating whether agents genuinely forecast requires more than final-answer accuracy: a model may be correct by recalling memorized training facts, citing fabri-cated evidence, or producing an unsupported causal story. We present W ORLD REASONER 1,an evaluation framework for temporally valid event forecasting. Each task gives an agent a resolved forecasting question, a simulated forecast date, and access only to evidence available before that date; after resolution, the framework scores the submitted probability, cited evidence, and optional causal event graph. WORLD REASONER reports three complemen-tary axes: outcome quality against resolved answers, evidence quality over cited sources, and reasoning quality against post-resolution hindsight graphs. The benchmark is built by an agentic construction pipeline that generates forecasting questions, collects time-stamped evidence, and builds hindsight reference graphs at scale, yielding 345 resolved tasks derived from 14,141 articles with graphs covering 8,087 extracted events. Across six controlled agent settings, temporally valid retrieval is the strongest driver of outcome accuracy; causal graph construction improves key-event recovery; and correct graph-enabled forecasts are more strongly grounded in key events and relevant sources, yet agents still struggle to convert grounded evidence into calibrated probabilities. 
+
+1 Introduction 
+
+To forecast real-world events, large language model (LLM) agents must reason from partial evidence       
+
+> 1Code and benchmark artifacts are available at github.com/cyzus/worldreasoner.
+
+under strict temporal constraints. As agents in-creasingly use search tools, databases, and struc-tured reasoning modules, evaluation must measure whether they can make prospective judgments from only the information available at forecast time, rather than merely know the answer after the fact. A fundamental obstacle is temporal data leakage. Static resolved benchmarks such as Autocast (Zou et al., 2022) are fast and reproducible, but quickly become contaminated as LLM training corpora ad-vance. An agent backed by a model trained through 2025 that answers a question about a 2022 election is not forecasting; it is recalling history. This tem-poral leakage makes outcome accuracy alone an unreliable measure of predictive reasoning. Live benchmarks address leakage by asking questions whose answers are still unknown. Sys-tems such as RealTime QA (Kasai et al., 2023) and FutureX (Zeng et al., 2025) therefore guarantee a clean temporal boundary. However, live evaluation is inherently slow, since events may take weeks or months to resolve; it is difficult to scale; and it is hard to reproduce, because the information envi-ronment changes between evaluation runs. This creates a tradeoff between contamination control and experimental practicality. Even with a clean temporal boundary, most benchmarks score only the resolved answer. Amodel may be correct by recalling memorized facts, citing hallucinated evidence, or producing an un-supported causal story; conversely, it may retrieve relevant evidence but fail to convert it into a cali-brated probability. Forecasting is therefore also an evidence-grounding and causal-reasoning task. We propose W ORLD REASONER , an evaluation framework for reproducible historical forecasting. Each task presents a resolved real-world question at a simulated historical forecast date and restricts all tool access to evidence available at that date. The agent submits a probabilistic forecast, sources, and optionally a causal event graph; W ORLD REA -1  
+
+> arXiv:2606.11816v1 [cs.CL] 10 Jun 2026 Example Forecasting Task
+> Forecast Card
+> QUESTION
+> Will Netflix close its Warner Bros. acquisition by the end of 2026?
+> Forecast date
+> 2025-12-24
+> Resolution date
+> 2026-03-02
+> CANDIDATE ANSWERS
+> Yes 10% No agent assigns 90%
+> Temporal View
+> AS OF 2025-12-24
+> Visible to agent
+> Netflix bid for WBD
+> reported acquisition proposal
+> Paramount counter-bid
+> rival bid and bidding-war coverage
+> Antitrust scrutiny
+> regulatory and concentration concerns
+> Hidden from agent
+> Paramount follow-up
+> later bid or deal-structure news
+> Resolved market outcome
+> used only for evaluation
+
+→  
+
+> Agent Submission
+> P(No) 0.90
+> P(Yes)=0.10; forecast submitted before outcome is known.
+> CITED EVIDENCE
+> A1: Netflix bid A2: Paramount bid A3: antitrust coverage
+> FORECAST GRAPH SKETCH
+> Netflix bid
+> Paramount bid
+> Antitrust review
+> Deal closes
+> +
+> +
+> −
+> −
+
+→
+
+> Post-Resolution Scoring
+> REFERENCE DATA
+> Answer: No
+> revealed only after resolution
+> Paramount follow-up
+> later competing-bid and deal reporting
+> Hindsight graph
+> reference causal events
+> SCORES
+> Outcome
+> accuracy, Brier, log score
+> Evidence
+> were cited sources relevant and time-valid?
+> Reasoning
+> does the graph match hindsight events?
+
+Figure 1: Example forecasting task in W ORLD REASONER . The agent answers a resolved question from a simulated forecast date, using only evidence visible at that time, and submits a probability, cited evidence, and a causal forecast graph. The graph shown is a simplified rendering of an actual submitted forecast graph for this task. After resolution, WORLD REASONER evaluates outcome quality, evidence quality, and reasoning quality against held-out reference data. 
+
+SONER scores the submission immediately while preserving the temporal boundary that makes the task a forecast rather than a history lookup (Fig-ure 1). A scalable construction pipeline gener-ates questions from prediction markets and news streams and builds post-resolution hindsight graphs automatically. WORLD REASONER evaluates each submission along three axes: outcome quality , whether the forecast assigns probability to the resolved answer; 
+
+evidence quality , whether cited or accessed sources are time-valid and relevant; and reasoning qual-ity , whether the forecast graph recovers hindsight-validated causal events. Together these axes dis-tinguish outcome success from memorized recall, hallucinated grounding, and unsupported causal stories. We evaluate representative frontier models across six controlled agent settings. Temporally valid retrieval is the strongest driver of outcome ac-curacy; explicit causal graph construction improves key-event recovery but does not by itself guaran-tee better answer selection. Conditional analysis shows that correct Search-Enabled Graph forecasts have higher key-event recall and source precision than incorrect forecasts, but this also exposes a re-maining bottleneck: agents can retrieve relevant evidence and identify causal events, yet still fail to convert them into calibrated probabilities. Our contributions are threefold: 1. We introduce W ORLD REASONER , a tempo-rally grounded forecasting evaluation frame-work that scores LLM agents along three axes: outcome quality, evidence quality, and reason-ing quality. 2. We propose an agentic benchmark construc-tion pipeline that generates forecasting ques-tions, collects time-stamped evidence, and builds post-resolution hindsight graphs, en-abling scalable and reproducible expansion of the benchmark. 3. We evaluate representative frontier models across controlled agent settings, showing that temporally valid retrieval drives outcome ac-curacy, evidence-grounded graph reasoning is associated with correctness, and convert-ing grounded causal evidence into calibrated probabilities remains an open challenge. 
+
+2 Related Work 
+
+Forecasting benchmarks. Table 1 summarizes the benchmark landscape. Early LLM forecasting benchmarks such as Autocast (Zou et al., 2022) and FOReCAst (Yuan et al., 2025) evaluate resolved world events, but fixed datasets become vulnerable to temporal leakage as model training corpora ad-vance. Continuous and live benchmarks, including ForecastBench (Karger et al., 2025), RealTime QA (Kasai et al., 2023), Daily Oracle (Dai et al., 2025), FutureX (Zeng et al., 2025), Prophet Arena (Yang et al., 2025), and Mirai (Ye et al., 2024), improve temporal validity but are slow to resolve and hard to replay. Closest to our setting, Bench to the Future (Wildman et al., 2025) uses simulated historical dates. W ORLD REASONER extends this replayable 2Paradigm Benchmark Immediate Contam. Control Reproducible Reasoning Ref.                                             
+
+> Static resolved Autocast (Zou et al., 2022) ✓✗✓✗
+> FOReCAst (Yuan et al., 2025) ✓✗✓✗
+> Live / continuous RealTime QA (Kasai et al., 2023) ✗✓✗✗
+> ForecastBench (Karger et al., 2025) ✗✓△✗
+> MIRAI (Ye et al., 2024) ✓△✓✗
+> Daily Oracle (Dai et al., 2025) ✗✓△✗
+> Prophet Arena (Yang et al., 2025) ✗✓✗△
+> FutureX (Zeng et al., 2025) ✗✓✗✗
+> Simulated-date replay Bench to the Future (Wildman et al., 2025) ✓✓✓✗
+> WORLD REASONER (Ours) ✓✓✓✓
+
+Table 1: Comparison of representative forecasting and time-sensitive evaluation benchmarks. ✓ indicates explicit support, ✗ indicates no support, and △ indicates partial support, e.g., the property holds only for some task types, evaluation stages, or replay settings. W ORLD REASONER combines immediate scoring, contamination control, reproducible simulated-date replay, and post-resolution reasoning references. 
+
+paradigm with automated task construction and post-resolution reasoning references. 
+
+Temporal and event-centered forecasting. 
+
+Forecasting work spans numerical time-series settings and semantic event reasoning. Forecast-TKGQA (Ding et al., 2023) forecasts future events from temporal knowledge graphs, while Time-LLM (Jin et al., 2024), zero-shot language-model extrapolation (Gruver et al., 2024), TimeLlama (Yuan et al., 2024), and Time-R1 (Luo et al., 2025) study numerical or temporal reasoning. Work on temporal generalization further shows that models can exhibit temporal degradation and nostalgia bias (Zhu et al., 2025), motivating time-aware evaluation. W ORLD REASONER instead evaluates semantic event forecasts using dated articles, ex-tracted events, and causal hypotheses as evidence and reasoning artifacts. 
+
+Reasoning verification and grounding. Our benchmark also relates to factuality, attribution, and causal event reasoning. AIS (Rashkin et al., 2022), FActScore (Min et al., 2023), FELM (Chen et al., 2023), and FACTS Grounding (Jacovi et al., 2025) evaluate evidence support, while Causal-BERT (Khetan et al., 2020), ECHo (Xie et al., 2023), and CRAB (Romanou et al., 2023) study event causality. W ORLD REASONER connects these threads to forecasting by evaluating answer accu-racy, time-valid evidence, and alignment with post-resolution hindsight. 
+
+3 WORLD REASONER 
+
+Benchmark Usage. WORLD REASONER is a controlled evaluation framework for historical event forecasting. For each resolved question, the framework supplies the question text, answer for-mat, and a simulated forecast date. The agent sub-mits an answer probability, cited or accessed evi-dence, and, when graph tools are enabled, a causal forecast graph. WORLD REASONER then scores outcome, evidence, and reasoning quality. 
+
+Reproducible replay. The simulated-date design separates evaluation time from historical time. The evidence repository, question metadata, and resolu-tion outcome are fixed for each task, while the sim-ulated date is a controlled parameter chosen within the forecast window. The Temporal Gateway hides evidence and hindsight artifacts unavailable at that date, so later runs can reconstruct the same infor-mation state even after the event has resolved. 
+
+3.1 Formal Task Definition 
+
+Each benchmark instance is a resolved forecasting task 
+
+qi = ( xi, t 0 
+
+> i
+
+, t sim  
+
+> i
+
+, t res  
+
+> i
+
+, y i), (1) where xi is the question text, t0 
+
+> i
+
+is the earliest fore-castable date, tsim  
+
+> i
+
+is the simulated date given to the agent, tres  
+
+> i
+
+is the resolution date, and yi is the re-solved outcome. Let Ai denote the evidence repos-itory associated with qi, and let τ (a) be the times-tamp of evidence item a. The Temporal Gateway exposes only the simulated-date evidence set 
+
+Asim  
+
+> i
+
+= {a ∈ A i : τ (a) < t sim  
+
+> i
+
+}. (2) The agent produces a forecast 
+
+fi = (ˆ yi, p i, C i, r i, G Fi ), (3) where ˆyi is the predicted answer, pi is the re-ported probability, Ci is the set of cited or ac-cessed sources, ri is the natural-language rationale, and GFi = ( V Fi , E Fi ) is the agent’s forecast-time 3Figure 2: The forward and backward pipelines jointly construct the benchmark. The Forward Pipeline ingests news streams and prediction markets, generates forecasting questions, and filters them through quality assurance before storing them in the central event repository. The Backward Pipeline uses hindsight after resolution to collect evidence, synthesize causal explanations, and build structured event graphs used as reasoning references. 
+
+causal graph when graph tools are enabled. Af-ter resolution, the Hindsight Agent constructs a reference evidence set CHi and reference graph 
+
+GHi = ( V Hi , E Hi ) from evidence available up to 
+
+tres  
+
+> i
+
+.
+
+3.2 Three-Axis Evaluation 
+
+Each task is evaluated along three complementary axes: 
+
+Eval( qi) =   Sout (ˆ yi, y i, p i),Sevid (Ci, C Hi ),Sreason (GFi , G Hi ),
+
+(4) separating outcome quality, evidence quality, and reasoning quality rather than collapsing them into a single scalar. 
+
+Outcome quality (Sout ) measures whether the forecast is correct: accuracy, Brier score, and log score. 
+
+Evidence quality (Sevid ) measures whether the forecast drew on causally relevant sources, via source precision against the hindsight evidence cor-pus. 
+
+Reasoning quality (Sreason ) measures whether the forecast graph recovers the events that proved causally important, via key-event recall against the hindsight graph. Key events are the top-K hind-sight events ranked by impact magnitude × con-fidence; a match requires both text similarity and date proximity. 
+
+Primary metrics. The main experiments report one headline metric for each axis. Outcome accu-racy is 
+
+Acc = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1[ˆ yi = yi]. (5) For retrieval-enabled agents, source precision mea-sures how many cited sources appear in the hind-sight evidence set: 
+
+SrcP i = |Ci ∩ CHi ||Ci| . (6) For graph-enabled agents, key-event recall mea-sures recovery of the top-K hindsight events Ki ⊆
+
+V Hi :
+
+KER i = 1
+
+|Ki|
+
+X
+
+> e∈Ki
+
+1∃ ˆe ∈ V Fi : match(ˆ e, e ) .
+
+(7) We average SrcP and KER over applicable tasks; full definitions are in Appendix F. 4Will ChatGPT reach 1b monthly active users in 2025?      
+
+> -6.52 -3.26 0+3.26 +6.52 causal pressure 0% 25% 50% 75% 100% Yes
+> resolved
+> Apr 24 2025 Jan 01 2026 Aug 28 2025 positive negative neutral mixed market price
+> Net -6.525
+
+Figure 3: From outcome label to reasoning reference. For “Will ChatGPT reach 1 billion users?” (No), each dot is a dated hindsight event linked to the outcome with a signed impact score; the step curve shows cumulative evidence direction over time; the blue line shows the contemporaneous Polymarket price. High-impact events define the reference set used by evidence and reasoning metrics. 
+
+4 Benchmark Construction Pipeline 
+
+WORLD REASONER is backed by two coordinated construction pipelines that create task instances and reference artifacts (Figure 2). 
+
+Forward Pipeline. The forward pipeline ingests prediction markets and news streams. An LLM-driven generator proposes forecasting questions from article clusters, recording answer format, do-main, resolution criteria, and provenance articles. For prediction markets, a parser maps market meta-data into the same schema. A quality-assurance module scores questions for clarity, measurability, answerability, and temporal validity before they enter the benchmark database. 
+
+Backward Pipeline. After resolution, a
+
+HindsightAgent collects post-resolution evi-dence and synthesizes a causal explanation. A
+
+GraphBuilderAgent converts it into a structured event graph with dated event nodes and directed causal edges. Automated checks assess source diversity, temporal logic, and graph connectivity; a feedback loop triggers self-correction when quality criteria are not met. The resulting graphs serve as structural references for reasoning quality evaluation. The full schema and thresholds are in Appendix B. Figure 3 illustrates how a resolved question is converted into dated hindsight events with signed causal impact links. 
+
+4.1 Hindsight Reference Quality 
+
+Because hindsight graphs serve as references, we audit them separately from model forecasts. Hu-man annotators review each hindsight event for factual accuracy, temporal correctness, source sup-port, causal relevance, and uniqueness, using the protocol in Appendix C. The reference graphs are not treated as perfect causal ground truth. Event nodes are checked for factual and temporal validity, while source over-lap and key-event recall provide conservative evi-dence and reasoning signals. For Polymarket ques-tions, hindsight pressure curves are also compared with market-price movements as an external san-ity check (Appendix D). Causal edge strengths and outcome-impact scores remain approximate, so rea-soning metrics should be read as structured align-ment with hindsight rather than exhaustive proof of causal validity. 
+
+Temporal Gateway. The Temporal Gateway en-forces the simulated-date information boundary at query time. When a forecasting agent queries the article or event database, the gateway filters results to exclude any record dated after the simulated forecast date. Agents therefore operate on a pre-collected, time-bounded repository rather than live web access, making evaluation states reproducible. Per-model knowledge cutoff metadata is recorded separately and used to construct the contamination filter described in Section 3 (§ Handling Knowl-edge Cutoffs). Table 2 summarizes the resulting benchmark scale. 
+
+5 Experiments 
+
+We evaluate forecasting performance across six agent settings that progressively expand the infor-5Apr Jul Oct 2024 Apr Jul Oct 2025 Apr Jul Oct 2026 Apr 
+
+> Question estimated start date
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Rolling accuracy, window=40 (%)
+> Vanilla LLM Performance Over Time
+> Qwen3.5 397B
+> DeepSeek V4 Flash
+> DeepSeek V4 Pro
+> Gemini 3 Flash
+> Gemini 3 Pro
+> GPT-4o
+> GPT-5.4
+> Knowledge cutoff
+
+Figure 4: Vanilla-only rolling accuracy by question start time. Since Vanilla LLM uses no retrieval or tools, post-cutoff declines motivate contamination-filtered reporting. 
+
+Statistic Count 
+
+Resolved questions 345 Domains 10 Polymarket questions 97 News-derived questions 248 Collected articles 14,141 Extracted events 8,087 Questions with hindsight graphs 345 Annotation questions 120 
+
+Table 2: Summary statistics for the W ORLD REASONER 
+
+benchmark. Detailed answer-format, domain, and tem-poral distributions are reported in Appendix A. 
+
+mation and reasoning available at a simulated his-torical date. In temporally constrained settings, the Temporal Gateway exposes only evidence available at the simulated forecast time. 
+
+5.1 Evaluation Setup Agent conditions. Six conditions expand agent capabilities: Vanilla LLM uses parametric knowl-edge only; Causal Simulation adds internal causal graph reasoning; Search-Enabled adds simulated-date retrieval; Search-Enabled Graph combines retrieval and graph construction; Near-Resolution Topline sets the Temporal Gateway one day before resolution; and Real-Time Agent uses live web ac-cess as a non-reproducible upper-bound reference. 
+
+Simulated forecast date. Unless otherwise spec-ified, the simulated forecast date is set to the mid-point of each question’s forecast window, between the estimated start date and the resolution date. The temporal-sensitivity experiment in Section 5.3 varies this date across Early, Mid, Late, Near-Resolution, and Real-Time settings. 
+
+Models and question subset. The main fil-tered comparison evaluates Gemini 3 Flash/Pro, DeepSeek V4 Flash/Pro, GPT-4o, and GPT-5.4. All conditions start from the same fixed 120-question stratified subset; contamination filtering is applied per model-question pair, producing different fil-tered sample sizes by model. 
+
+Contamination filtering. The contamination fil-ter excludes a model-question pair when the ques-tion’s estimated start time precedes the model’s knowledge cutoff, as the model may have encoun-tered resolution-relevant information during pre-training. The Temporal Gateway controls run-time retrieval; the cutoff filter controls which pairs are included in cross-model comparison. Per-model cutoffs and filtering effects are in Appendix E. 
+
+Metrics. Each submission is evaluated along three axes (Section 3; Appendix F): accu-racy/Brier/log score for outcome quality, source precision (SrcP) for evidence quality when retrieval is available, and key-event recall (KER) for graph reasoning. KER is intentionally strict: it requires recovery of top-5 hindsight events under both tex-tual similarity and a 7-day date gate, so absolute values are conservative. 6Vanilla Causal Sim. Search-En. SE Graph Near-Res. Real-Time 
+
+Model Cutoff Acc Acc KER Acc SrcP Acc KER SrcP Acc KER SrcP Acc KER Gemini Flash Jan 2025 65.7 64.8 5.2 72.2 58.8 64.8 6.4 52.5 76.9 11.2 64.8 88.0 9.8 Gemini Pro Jan 2025 66.7 59.3 5.2 74.1 70.4 73.1 12.2 66.6 79.6 13.3 71.6 91.7 10.4 DS V4 Flash May 2025 52.9 57.4 4.7 73.5 65.2 69.1 12.0 57.4 77.9 18.1 66.6 95.6 15.0 
+
+DS V4 Pro May 2025 54.4 57.4 5.7 67.6 65.2 66.2 13.7 58.7 76.5 20.4 71.4 95.6 12.0 GPT-4o Oct 2023 53.4 46.6 3.4 59.3 59.7 55.1 7.2 56.0 66.9 12.6 70.4 82.2 8.2 GPT-5.4 Aug 2025 52.7 54.5 6.3 67.3 61.2 58.2 9.5 54.3 70.9 14.9 68.1 81.8 9.8 
+
+Weighted avg. – 58.7 56.6 4.9 68.8 62.9 64.4 9.8 58.5 74.7 14.4 68.4 88.8 10.5 
+
+Table 3: Per-model three-axis results across all six conditions (contamination-filtered). DS = DeepSeek. Acc = outcome quality (%); KER = reasoning quality (%, 7-day date gate); SrcP = evidence quality (%); see Section 5.1 for definitions. Only metrics defined for each condition are shown: Vanilla has no graph or retrieval, Causal Simulation has no retrieval, Search-Enabled has no graph, and Real-Time lacks article provenance for SrcP. The weighted-average row averages over 525 contamination-filtered model-question pairs. Brier and log scores in Appendix G. GPT-5.4’s unfiltered Vanilla accuracy is 69.2%. Early Mid Late Near-res Real-time 
+
+> Forecast horizon (simulated date position)
+> 60%
+> 70%
+> 80%
+> 90%
+> 100%
+> Accuracy (%)
+> Gemini 3 Flash
+> Gemini 3 Pro
+> DeepSeek V4 Flash
+
+Figure 5: Accuracy of the Search-Enabled Graph Agent across simulated forecast horizons. Accuracy generally rises as the horizon approaches resolution, confirming that the benchmark rewards later access to evidence. 
+
+5.2 Aggregate Results 
+
+We report contamination-filtered scores; Table 3 gives the full per-model breakdown across all six conditions. Temporally situated retrieval is the primary driver of accuracy: weighted over the filtered per-model rows in Table 3, Causal Simulation does not improve over Vanilla LLM (56.6% vs. 58.7%), while Search-Enabled reaches 68.8%. Near-Resolution reaches 74.7%, confirming corpus solvability close to resolution; Real-Time reaches 88.8% but is not a reproducible historical setting. Search-Enabled Graph trails search-only accuracy (64.4% vs. 68.8%), but it is the first retrieval-based setting that produces forecast graphs, yielding 9.8% KER. This suggests that graph construction adds measurable causal-event recovery, although it does not automatically improve answer selection. 
+
+5.3 Temporal Sensitivity 
+
+We run the Search-Enabled Graph Agent at five horizon positions for Gemini 3 Flash/Pro and DeepSeek V4 Flash. Early/Mid/Late correspond to the 0–33%, 33–67%, and 67–95% percentiles of each question’s forecast window; Near-res is set one day before resolution; Real-time uses live web access as an upper bound. Figure 5 shows accuracy rising from Early ( ≈62–65%) through Near-res (≈77–80%) to Real-time ( ≈86–94%), confirming that the Temporal Gateway makes early forecasts genuinely harder. 
+
+5.4 Per-Model Analysis 
+
+Table 3 shows model heterogeneity: Gemini 3 Pro has the highest SE Graph accuracy and source pre-cision, while DeepSeek V4 Pro has the highest SE Graph KER. KER improves from SE Graph to Near-Resolution across models, indicating that reasoning quality is gated by temporal evidence access. 
+
+5.5 Correctness and Grounding 
+
+Table 4 conditions grounding metrics on forecast correctness. Causal Simulation shows almost no KER gap (5.1% vs. 4.7%), and Search-Enabled shows only a small SrcP gap (63.7% vs. 61.5%). The separation is larger only when retrieval and graph construction are combined: correct SE Graph forecasts have higher KER (10.8% vs. 8.0%) and much higher SrcP (62.6% vs. 48.0%). Thus, grounding matters most when causal graphs are built from temporally valid evidence. 7Condition N KER SrcP                             
+
+> Causal Sim. Correct 297 5.1 –Incorrect 228 4.7 –Search-Enabled Correct 361 –63.7 Incorrect 164 –61.5 SE Graph Correct 338 10.8 62.6 Incorrect 187 8.0 48.0 Near-Res. Correct 392 15.0 70.1 Incorrect 133 12.9 64.8
+> Table 4: Key-event recall (KER, %) and source pre-cision (SrcP, %) conditioned on forecast correctness (contamination-filtered). In Causal Simulation the near-zero KER gap shows that causal chain quality is only weakly correlated with outcome accuracy. SE Graph shows the largest SrcP gap, indicating that source qual-ity is a stronger predictor of correctness when agents both retrieve and reason explicitly.
+
+6 Discussion 
+
+Three-axis evaluation catches what accuracy misses. Table 4 shows that correctness is only im-perfectly coupled to grounding: Causal Simulation barely separates correct from incorrect forecasts, while SE Graph shows a larger but still incomplete separation. This is the central reason for evaluat-ing outcome, evidence, and reasoning separately. A single-axis leaderboard cannot tell whether an agent was right because it retrieved useful time-valid evidence, because it reconstructed the relevant causal chain, or because the model had memorized post-resolution facts. Conversely, it cannot reveal cases where an agent retrieved useful evidence but failed at the final probability conversion step. 
+
+Per-model heterogeneity in correctness– grounding coupling. The aggregate gaps also mask model-level variation (Appendix G.3). In SE Graph, Gemini 3 Pro and GPT-4o show large SrcP gaps between correct and incorrect forecasts, while DeepSeek V4 Flash shows the opposite sign: its incorrect forecasts sometimes cite more relevant sources than its correct ones. These splits are small after filtering and should not be read as definitive rankings, but they illustrate why the benchmark is useful as an analysis tool. Models with similar aggregate accuracy may differ in whether correctness is tied to evidence retrieval, event recovery, or downstream answer selection. 
+
+Why graph construction may not improve accu-racy. The results also clarify why explicit graph construction can improve reasoning metrics with-out improving accuracy. The graph encourages agents to identify dated events and causal links, which raises KER, but the final answer still requires weighing conflicting evidence and converting qual-itative causal pressure into a calibrated probability. GPT-4o illustrates this failure mode: despite the lowest SE Graph accuracy (55.1%), it achieves 12.6% Near-Resolution KER, on par with higher-accuracy models such as Gemini 3 Pro (13.3%) and GPT-5.4 (14.9%). This suggests that the next bot-tleneck is not only retrieval or graph construction, but the decision layer that maps grounded causal evidence to a calibrated forecast probability. 
+
+Contamination is the “memorized facts” fail-ure mode. GPT-5.4’s unfiltered Vanilla accuracy (69.2%) looks competitive, but removing pairs whose start dates precede its August 2025 cutoff drops accuracy to 52.7%. DeepSeek V4’s May 2025 cutoff also excludes 52 pairs and reduces Vanilla accuracy by 7.1–10.6 points. Without the contamination filter, knowledge-only comparisons conflate memorization with forecasting ability. The Temporal Gateway and the cutoff filter therefore address different forms of temporal validity: the gateway constrains run-time evidence access, while the filter controls whether a model could already know resolution-relevant facts from pre-training. 
+
+7 Conclusion 
+
+We presented W ORLD REASONER , an evaluation framework for LLM agent forecasting under strict temporal validity constraints. Agents are situated at a simulated historical date, with all evidence access mediated by a Temporal Gateway that enforces the information boundary reproducibly. Post-resolution hindsight graphs and human-annotated event validity labels support three-axis evaluation: outcome quality, evidence quality, and reasoning quality. Our results show that temporally situated evi-dence access substantially improves outcome qual-ity, while explicit graph construction improves rea-soning alignment without automatically improving answer selection. A forecast can be correct without time-valid evidence, or incorrect despite retrieving causally relevant sources (Table 4). Reporting all three axes surfaces where forecasting failures arise, a distinction that matters when reasoning validity is as important as outcome accuracy. 8Limitations 
+
+Coverage Bias News-based benchmarks reflect media coverage patterns, so less-covered domains are underrepresented and fast-moving public topics are over-sampled. 
+
+Resolution and Time Granularity Some ques-tions have ambiguous resolutions in subjective or institution-dependent domains, and day-level Tem-poral Gateway access can miss intra-day leakage. Explicit criteria mitigate these issues, but some outcomes remain definition-sensitive. 
+
+Model Knowledge Cutoffs Training-data cut-offs vary across providers and are imperfect proxies for the information present in a model’s parameters. 
+
+Evaluation and Annotation Scope Human an-notation covers a fixed subset, so graph-quality met-rics remain approximate. Hindsight graphs may inherit source or model biases; review validates event-node factuality, dates, source support, rele-vance, and uniqueness, but not every causal edge or impact score. Exact source matching may under-count relevant evidence from different articles. 
+
+Ethical Considerations 
+
+Intended Use and Risks WORLD REASONER 
+
+is a research evaluation framework for studying whether forecasting agents use time-valid evidence and causally relevant reasoning, not a decision-support system for high-stakes forecasting. To re-duce over-interpretation of benchmark scores as real-world predictive reliability, we report decom-posed outcome, evidence, and reasoning metrics rather than a single leaderboard score. 
+
+Data and Privacy The benchmark uses public news articles, prediction-market metadata, gener-ated forecasting questions, model forecasts, and de-rived event-graph annotations. These sources may mention public figures, organizations, or events, but the benchmark is not designed to collect private user data or infer sensitive attributes. Released arti-facts will be for research use and follow applicable source terms and artifact licenses. 
+
+Human Annotation Human annotators were re-cruited through Prolific, compensated at approxi-mately US$20 per hour, and shown task instruc-tions and informed-consent information. They re-viewed factuality, dates, source support, relevance, and uniqueness of generated hindsight events, with-out predicting outcomes or providing sensitive per-sonal information. 
+
+References 
+
+Shiqi Chen, Yiran Zhao, Jinghan Zhang, I-Chun Chern, Siyang Gao, Pengfei Liu, and Junxian He. 2023. FELM: benchmarking factuality evaluation of large language models. In Advances in Neural Information Processing Systems 36: Annual Conference on Neu-ral Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .Hui Dai, Ryan Teehan, and Mengye Ren. 2025. Are llms prescient? a continuous evaluation using daily news as the oracle. Preprint , arXiv:2411.08324. Zifeng Ding, Zongyue Li, Ruoxia Qi, Jingpei Wu, Bailan He, Yunpu Ma, Zhao Meng, Shuo Chen, Ruo-tong Liao, Zhen Han, and Volker Tresp. 2023. Fore-casttkgquestions: A benchmark for temporal question answering and forecasting over temporal knowledge graphs. In The Semantic Web – ISWC 2023 , pages 541–560, Cham. Springer Nature Switzerland. Nate Gruver, Marc Finzi, Shikai Qiu, and Andrew Gor-don Wilson. 2024. Large language models are zero-shot time series forecasters. In Advances in Neural Information Processing Systems .Alon Jacovi, Andrew Wang, Chris Alberti, Connie Tao, Jon Lipovetz, Kate Olszewska, Lukas Haas, Michelle Liu, Nate Keating, Adam Bloniarz, Carl Saroufim, Corey Fry, Dror Marcus, Doron Kuklian-sky, Gaurav Singh Tomar, James Swirhun, Jinwei Xing, Lily Wang, Madhu Gurumurthy, and 7 others. 2025. The facts grounding leaderboard: Benchmark-ing llms’ ability to ground responses to long-form input. Preprint , arXiv:2501.03200. Ming Jin, Shiyu Wang, Lintao Ma, Zhixuan Chu, James Y. Zhang, Xiaoming Shi, Pin-Yu Chen, Yux-uan Liang, Yuan-Fang Li, Shirui Pan, and Qingsong Wen. 2024. Time-llm: Time series forecasting by re-programming large language models. In The Twelfth International Conference on Learning Representa-tions .Ezra Karger, Houtan Bastani, Chen Yueh-Han, Zachary Jacobs, Danny Halawi, Fred Zhang, and Philip E. Tet-lock. 2025. Forecastbench: A dynamic benchmark of ai forecasting capabilities. In International Con-ference on Learning Representations , volume 2025, pages 93943–93980. Jungo Kasai, Keisuke Sakaguchi, Yoichi Takahashi, Ronan Le Bras, Akari Asai, Xinyan Yu, Dragomir Radev, Noah A. Smith, Yejin Choi, and Kentaro Inui. 2023. Realtime qa: What’s the answer right now? In 
+
+Advances in Neural Information Processing Systems .
+
+9Vivek Khetan, Roshni R. Ramnani, Mayuresh Anand, Shubhashis Sengupta, and Andrew E. Fano. 2020. Causal-bert : Language models for causality detec-tion between events expressed in text. Yucong Luo, Yitong Zhou, Mingyue Cheng, Jiahao Wang, Daoyu Wang, Tingyue Pan, and Jintao Zhang. 2025. Time series forecasting as reasoning: A slow-thinking approach with reinforced llms. Preprint ,arXiv:2506.10630. Sewon Min, Kalpesh Krishna, Xinxi Lyu, Mike Lewis, Wen-tau Yih, Pang Koh, Mohit Iyyer, Luke Zettle-moyer, and Hannaneh Hajishirzi. 2023. FActScore: Fine-grained atomic evaluation of factual precision in long form text generation. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pages 12076–12100, Singa-pore. Association for Computational Linguistics. Hannah Rashkin, Vitaly Nikolaev, Matthew Lamm, Lora Aroyo, Michael Collins, Dipanjan Das, Slav Petrov, Gaurav Singh Tomar, Iulia Turc, and David Reitter. 2022. Measuring attribution in natural language generation models. Preprint ,arXiv:2112.12870. Angelika Romanou, Syrielle Montariol, Debjit Paul, Leo Laugier, Karl Aberer, and Antoine Bosselut. 2023. CRAB: Assessing the strength of causal rela-tionships between real-world events. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pages 15198–15216, Singapore. Association for Computational Linguis-tics. Jack Wildman, Nikos I. Bosse, Daniel Hnyk, Peter Mühlbacher, Finn Hambly, Jon Evans, Dan Schwarz, and Lawrence Phillips. 2025. Bench to the fu-ture: A pastcasting benchmark for forecasting agents. 
+
+Preprint , arXiv:2506.21558. Yuxi Xie, Guanzhen Li, and Min-Yen Kan. 2023. Echo: A visio-linguistic dataset for event causality infer-ence via human-centric reasoning. In Findings of the Association for Computational Linguistics: EMNLP 2023 .Qingchuan Yang, Simon Mahns, Sida Li, Anri Gu, Jibang Wu, and Haifeng Xu. 2025. Llm-as-a-prophet: Understanding predictive intelligence with prophet arena. Preprint , arXiv:2510.17638. Chenchen Ye, Ziniu Hu, Yihe Deng, Zijie Huang, Mingyu Derek Ma, Yanqiao Zhu, and Wei Wang. 2024. Mirai: Evaluating llm agents for event fore-casting. Preprint , arXiv:2407.01231. Chenhan Yuan, Qianqian Xie, Jimin Huang, and Sophia Ananiadou. 2024. Back to the future: Towards ex-plainable temporal reasoning with large language models. In Proceedings of the ACM Web Conference 2024 , pages 1963–1974. ACM. Zhangdie Yuan, Zifeng Ding, and Andreas Vlachos. 2025. Forecast: The future outcome reasoning and confidence assessment benchmark. Preprint ,arXiv:2502.19676. Zhiyuan Zeng, Jiashuo Liu, Siyuan Chen, Tianci He, Yali Liao, Yixiao Tian, Jinpeng Wang, Zaiyuan Wang, Yang Yang, Lingyue Yin, Mingren Yin, Zhenwei Zhu, Tianle Cai, Zehui Chen, Jiecao Chen, Yantao Du, Xiang Gao, Jiacheng Guo, Liang Hu, and 12 others. 2025. Futurex: An advanced live bench-mark for llm agents in future prediction. Preprint ,arXiv:2508.11987. Chenghao Zhu, Nuo Chen, Yufei Gao, Yunyi Zhang, Prayag Tiwari, and Benyou Wang. 2025. Is your llm outdated? a deep look at temporal generalization. In Proceedings of the 2025 Conference of the Na-tions of the Americas Chapter of the Association for Computational Linguistics: Human Language Tech-nologies (Volume 1: Long Papers) , pages 7433–7457. Association for Computational Linguistics. Andy Zou, Tristan Xiao, Ryan Jia, Joe Kwon, Mantas Mazeika, Richard Li, Dawn Song, Jacob Steinhardt, Owain Evans, and Dan Hendrycks. 2022. Forecast-ing future world events with neural networks. In 
+
+Advances in Neural Information Processing Systems .
+
+10 Appendix A Dataset Statistics 
+
+The benchmark contains 345 resolved questions drawn from 14,141 collected articles across 10 domains. Questions originate from two sources: 248 are derived from news articles and 97 from Polymarket prediction markets. The dataset is dominated by binary questions (69.0%) reflecting the prevalence of yes/no forecasting tasks in both sources, with a smaller number of multiple-choice, quantity, and timeframe questions covering more structured prediction targets. Across domains, Pol-itics, Culture, and Health together account for 58% of questions. Figure 6 shows the resolution date distribution and domain breakdown; Table 5 gives the corresponding counts. The resolution date histogram (Figure 6a) shows that the majority of questions resolved in December 2025 through February 2026, with a long sparse tail extending back to late 2023. This reflects the pipeline’s focus on a near-term forecasting window: questions are opened when events are uncertain and collected as they resolve, so the density naturally concentrates around recent resolution months. The sparse early tail consists of older Polymarket mar-kets and long-running news events that resolved before the primary collection period.                           
+
+> Type N%Domain N
+> Binary 238 69.0% Politics 88 Multiple choice 46 13.3% Culture 58 Quantity 40 11.6% Health 54 Timeframe 21 6.1% Sports 39 Finance 37 Climate 25 Technology 20 General 11 Business 10 Science 3
+
+Table 5: Question type and domain distributions. Fore-cast horizons: ≤30 d: 142; 31–90 d: 32; >90 d: 171; median: 86 d; mean: 174 d. 
+
+B Hindsight Graph Construction 
+
+After a question resolves, the backward pipeline constructs a structured causal graph that serves as the reference artifact for both evidence and reason-ing evaluation. This appendix describes the graph schema, the construction procedure, and the quality enforcement mechanism. 
+
+B.1 Graph Schema 
+
+A hindsight graph GH = ( V H , E H , I H ) for ques-tion qi consists of event nodes V H , causal edges 
+
+EH , and outcome impact records IH .
+
+Event nodes. Each node v ∈ V H represents a dated real-world event with the following fields: • Text : a title and description of the event (vali-dated for length and specificity). • Date : the date the event occurred (occurred_date ), used for temporal matching during KER evaluation. • Type : one of D ECISION , O UTCOME , I NDI -
+
+> CATOR
+
+, M ILESTONE , or E XTERNAL SHOCK .• Source articles : the set of article identifiers that document the event, used to compute source precision. • Review status : P ENDING , A PPROVED , R E-
+
+> JECTED
+
+, or R EVISED , set by human annota-tors (Appendix C). One node is designated the outcome event, linked to the question’s resolved answer. 
+
+Causal edges. Each directed edge (u → v) ∈
+
+EH represents a causal relationship between two events with: • Relation type : one of C AUSES , E NABLES ,PREVENTS , I NHIBITS , A MPLIFIES , T RIG -
+
+> GERS
+
+, or C ORRELATES .• Strength s ∈ [−1, 1] : causal effect magni-tude, LLM-assigned with calibration rubric (0.1–0.3 weak; 0.4–0.6 moderate; 0.7–0.9 ma-jor). • Confidence c ∈ [0 , 1] : the graph builder’s cer-tainty in the link, based on available evidence. • Reasoning : a natural-language mechanistic explanation. • Evidence articles : supporting article identi-fiers. 
+
+Outcome impact records. Each record ι ∈ IH
+
+captures a direct event-to-outcome impact: • Impact direction : P OSITIVE (increases reso-lution likelihood), N EGATIVE , N EUTRAL , or MIXED .11 Oct’23 
+
+> Nov’24
+> Jan’25
+> Mar’25
+> May’25
+> Jun’25
+> Jul’25
+> Sep’25
+> Oct’25
+> Nov’25
+> Dec’25
+> Jan’26
+> Feb’26
+> Mar’26
+> 0
+> 25
+> 50
+> 75
+> 100
+
+(a) Questions by resolution month     
+
+> 025 50 75 100
+> Science
+> Business
+> General
+> Technology
+> Climate
+> Finance
+> Sports
+> Health
+> Culture
+> Politics
+> 3
+> 10
+> 11
+> 20
+> 25
+> 37
+> 39
+> 54
+> 58
+> 88
+
+(b) Questions by domain 
+
+Figure 6: (a) Resolution date distribution across the 345 resolved questions. The spike in late 2025 and early 2026 reflects the benchmark’s coverage of that forecasting window. (b) Domain breakdown; Politics, Culture, and Health account for 58% of questions. Estimated start dates range from March 29, 2023 to February 28, 2026; resolution dates range from October 13, 2023 to April 11, 2026. 
+
+• Impact magnitude m ∈ [0 , 1] : strength of the push/pull on the outcome (0.1–0.3 weak; 0.4–0.6 moderate; 0.7–0.9 major; 1.0 deci-sive). Neutral impacts are constrained to 
+
+m ≤ 0.3.• Confidence c ∈ [0 , 1] : certainty in the impact assessment. The product m × c defines the event’s impact score ,used to rank and select key events for KER evalua-tion. 
+
+B.2 Construction Procedure 
+
+The backward pipeline runs in two stages after a question resolves. 
+
+Stage 1: Evidence collection (HindsightAgent). 
+
+The HindsightAgent retrieves post-resolution arti-cles and synthesizes a causal explanation of how the outcome came about, identifying the key events and their temporal order. 
+
+Stage 2: Graph construction (GraphBuilder-Agent). The GraphBuilderAgent converts the causal explanation into the structured graph schema. It uses dedicated tools to propose event nodes (ProposeSubgraphTool ), record causal edges, and assign outcome impact records (RecordOutcomeImpactTool ). All magnitude and confidence values are LLM-assigned under explicit calibration guidelines that require concrete evi-dence for high values; the guidelines discourage uniform scoring. 
+
+B.3 Quality Enforcement 
+
+After construction, the graph is validated against the following satisfaction thresholds: • Minimum graph depth (causal chain length): 
+
+≥ 3 hops from an initiating event to the out-come. • Minimum event count: ≥ 10 nodes. • Minimum supporting articles: ≥ 20 distinct sources. • Minimum causal hypotheses: ≥ 1 directed edge. • Edge confidence ≥ 0.6 and strength ≥ 0.3 for included edges. If any threshold is unmet, the GraphBuilder-Agent automatically adds intermediate cause events and retries (DeleteEventTool 
+
+/ DeleteHypothesisTool are available for correc-tion). This self-correction loop continues until all constraints are satisfied or the maximum iteration budget is exhausted. Graphs that fail to satisfy the thresholds are flagged ( graph_built=False ) and excluded from evaluation. 
+
+B.4 Key Event Selection for KER 
+
+Key events Ki ⊆ V H are the top-K nodes by im-pact score m × c, where K = 5 in all reported experiments. Only nodes with an associated out-come impact record contribute to Ki; structural intermediate nodes without a direct impact assess-ment are excluded. This selection ensures that KER 12 measures recovery of the most causally decisive events rather than all graph nodes. 
+
+C Annotation Protocol and Taxonomy 
+
+Human annotators review hindsight graph events to validate the reference artifacts used for evidence and reasoning evaluation. Each event is assessed independently of any forecast agent’s output. An-notators judge whether an event is: (1) real and factually accurate; (2) assigned the correct date; (3) supported by the cited source article; (4) causally relevant to the resolved outcome; and (5) not a du-plicate of another event in the same graph. Events that pass all checks are approved; events that fail one or more checks are rejected with a reason label.                         
+
+> Quality signal N%Interpretation
+> Accepted events 336/492 68.3 Real, correctly dated, source-supported, relevant. Factual-error rejections 113/492 23.0 Fabricated, wrong-date, or source-mismatch. Skipped/unverifiable 43/492 8.7 Left unresolved rather than forced into a label. Source mismatch 60/492 12.2 Most common factual-error mode. Wrong date 27/492 5.5 Event real but not at the graph date. Fabricated 26/492 5.3 Could not be verified as described.
+
+Table 6: Annotation-quality summary. Annotation re-view serves as a conservative validation layer for hind-sight graphs. 
+
+Participant instructions and consent. Before annotation, participants were told that the task helps build causal event timelines for resolved fore-casting questions. The instructions emphasized that annotators were not asked to predict the answer; instead, they were asked to verify whether each event card actually happened, was supported by the cited source, was dated correctly, and was causally relevant to the resolved question. Annotators were recruited through Prolific and paid approximately US$20 per hour. The consent screen stated that participation was voluntary, that participants could withdraw at any time, that responses would be used for research purposes and handled confidentially, and that AI-assisted annotation was not permitted. The task then required annotators to review the question-level hindsight report before validating event cards chronologically. 
+
+Reject-reason taxonomy. 
+
+• Fabricated : The event did not occur as de-scribed, or no credible source confirms it. • WrongDate : The event is real but is assigned an incorrect date (off by days, weeks, or more). • SourceMismatch : The cited source article does not support the described event. • PredictionNotEvent : The entry describes a forecast or prediction, not a historical occur-rence. • Noise : The event is real but causally irrelevant to the resolved outcome. • Duplicate : The event is substantively identi-cal to another event already in the graph. • TooBroad : The event description is too vague or sweeping to be meaningfully evaluated. • Unverifiable : The event cannot be confirmed or refuted from publicly available sources. The taxonomy was developed from an initial pi-lot annotation session and revised before the main annotation phase. Event validity is assessed inde-pendently of the model-generated causal explana-tion: a real, temporally correct, source-supported event may be approved even if the attached impact reasoning is debatable. Table 6 summarizes the main quality checks for the annotation batch. 
+
+Annotation interface. The interface first presents task instructions and consent information, then requires annotators to review the resolved question and hindsight report before validating individual event cards. 
+
+D Causal Pressure Charts 
+
+Chart construction. Pressure charts visualize hindsight reference graphs after resolution; they are not inputs to forecast agents. Dots are dated hindsight events, coloured by signed direction to-ward or against a “Yes” resolution. The step curve is cumulative causal pressure, Pk = Pki=1 dimici,where direction di ∈ { +1 , 0, −1} is weighted by impact magnitude mi and confidence ci. For Poly-market questions, the blue line overlays the con-temporaneous market price as an external check on the timing and direction of the hindsight graph. Annotation protocol and event-quality checks are in Appendix C. 13 Reference graph alignment with market moves. 
+
+Using the reproducible market-check script, 81 Polymarket questions have enough pressure and price variation for a net-direction comparison; 75.3% have the same sign for net cumulative pressure and net market movement. Among 83 questions with defined pressure/price correlations, 71.1% are positive, with median correlation 0.595. A stricter event-local check gives 59.7% agreement over 278 usable event-level checks, reflecting that markets often anticipate information before the event date or react to several signals at once. 
+
+Examples. Figure 3 in the main paper shows a negative-pressure case. Figure 7 adds two positive-outcome examples: Starship is a monotone case where event pressure and market price rise to-gether, while NVIDIA is a compressed-window case where the market was already high before most reference events arrived. 
+
+E Knowledge-Cutoff Filtering and Parametric Leakage 
+
+The knowledge-cutoff contamination filter ex-cludes model-question pairs whose estimated start time precedes the model’s recorded training cutoff. This is intentionally conservative: a cutoff date is only a coarse proxy for what appears in a model’s parameters, but if a question was already open be-fore that date, resolution-relevant information may have appeared in the training corpus. The filter is applied per model-question pair, not per question, because models have different cutoff dates. This appendix examines the effect of the filter in the Vanilla LLM condition, where models receive only the question and cannot retrieve evidence or use tools. Vanilla performance is therefore the cleanest diagnostic for parametric leakage: any improvement on pre-cutoff questions must come from internal knowledge or generalization rather than benchmark evidence access. Table 7 compares unfiltered and filtered accuracy by model. The filter has asymmetric effects across models. Gemini’s January 2025 cutoff removes only 12 of 120 Vanilla pairs, and filtered accuracy changes by less than two points. DeepSeek V4’s May 2025 cutoff removes 52 pairs, reducing Vanilla accu-racy by 7.1 points for Flash and 10.6 points for Pro. GPT-4o’s October 2023 cutoff removes only 2 pairs, so its filtered and unfiltered Vanilla scores are nearly identical. By contrast, GPT-5.4’s August 2025 cutoff overlaps heavily with the benchmark’s late-2025/early-2026 resolution window: 65 pairs are excluded and Vanilla accuracy falls from 69.2% to 52.7%. This is the clearest evidence that unfil-tered knowledge-only evaluation can substantially overstate forecasting ability for models with recent training cutoffs. Figure 4 in the main text provides the corre-sponding temporal view, plotting accuracy against each question’s estimated start time rather than its resolution date. The rolling curves should not be read as precise estimates for any single month be-cause the evaluation set is small after stratification and the window is smoothed. The diagnostic supports three qualitative conclu-sions. First, model comparisons are most reliable to the right of each model’s cutoff line, where Vanilla performance cannot be attributed to post-start train-ing exposure. Second, recent-cutoff models can look artificially strong in unfiltered Vanilla eval-uation because many benchmark questions were already underway during their training horizon. Third, the post-cutoff performance drop shows why outcome accuracy alone is not enough: without the Temporal Gateway and evidence/reasoning metrics, a model’s apparent forecasting ability may partly reflect stale or memorized knowledge rather than genuine prospective reasoning. For this reason, all main cross-model results report the contamination-filtered setting; unfiltered results are retained only as diagnostics. 
+
+F Evaluation Metric Definitions 
+
+This appendix gives the full formal definitions of the three-axis evaluation metrics introduced in Sec-tion 3. Each axis maps to one or more scalar met-rics; Table 3 reports all three axes jointly. 
+
+F.1 Outcome Quality 
+
+Outcome quality measures whether the agent’s probabilistic forecast is correct. Forecasts are stored as a predicted answer plus a confidence value. For binary questions, let yi ∈ { 0, 1} be the resolved outcome and let pi ∈ [0 , 1] be the probability assigned to the positive answer. For multiple-choice questions, the predicted option is the option with the highest reported confidence. Quantity and timeframe questions are included in accuracy, but Brier and log scores are reported only where a categorical probability score is defined. 14 Will SpaceX Starship Flight Test 11 launch by October 31?      
+
+> -10.78 -5.39 0+5.39 +10.78 causal pressure 0% 25% 50% 75% 100% Yes
+> resolved
+> May 25 2025 Oct 14 2025 Aug 04 2025 positive negative neutral mixed market price
+> Net +10.777
+
+(a) Starship launch by October 31 (Yes) Will NVIDIA (NVDA) beat quarterly earnings?      
+
+> -8.81 -4.40 0+4.40 +8.81 causal pressure 0% 25% 50% 75% 100% Yes
+> resolved
+> Jan 01 2025 Nov 19 2025 Jun 11 2025 positive negative neutral mixed market price
+> Net +8.805
+
+(b) NVIDIA quarterly earnings beat (Yes) 
+
+Figure 7: Additional causal pressure charts. (a) Starship is a monotone positive-pressure case: all 17 hindsight events support the resolved outcome and market price rises with the pressure curve. (b) NVIDIA is a compressed-window case: the market was already high before most reference events arrived, illustrating why W ORLD REASONER 
+
+evaluates event-level reasoning separately from final forecast accuracy. 
+
+Model Cutoff All N All Acc. Filt. N Filt. Acc. Excl. ∆Acc. 
+
+Gemini 3 Pro 2025-01 120 67.5 108 66.7 12 −0.8 Gemini 3 Flash 2025-01 120 67.5 108 65.7 12 −1.8 DeepSeek V4 Pro 2025-05 120 65.0 68 54.4 52 −10.6 DeepSeek V4 Flash 2025-05 120 60.0 68 52.9 52 −7.1 GPT-5.4 2025-08 120 69.2 55 52.7 65 −16.4 GPT-4o 2023-10 120 53.3 118 53.4 2 +0.1 Qwen3.5 397B Unknown † 120 66.7 120 66.7 0 +0.0 
+
+Table 7: Vanilla LLM condition: unfiltered vs. contamination-filtered accuracy by model. Cutoff is the model’s recorded knowledge cutoff (year-month); Excl. is the number of model-question pairs removed because the question start date precedes that cutoff. GPT-5.4’s August 2025 cutoff overlaps substantially with the question pool, causing 54% of pairs to be excluded and a 16.4-point drop. DeepSeek V4’s May 2025 cutoff excludes 52 pairs, while Gemini’s January 2025 cutoff excludes 12 pairs. GPT-4o (gpt-4o-2024-11-20) has an October 2023 cutoff; only 2 of 120 questions have start dates before that cutoff, leaving 118 clean pairs. Qwen3.5 397B has no official disclosed cutoff; †we therefore report it as an unfiltered diagnostic reference. 
+
+Accuracy. 
+
+Acc = 1
+
+N
+
+NX
+
+i=1 
+
+1[correct i], (8) where correct i indicates that the submitted an-swer matches the resolved answer under the type-specific rules below. For binary questions, the hard prediction is ˆyi = 1[pi ≥ 0.5] . For multiple-choice questions, ˆyi is the answer option with the highest assigned confidence. For quantity questions, a point prediction is counted correct if it falls within 10% of the resolved numeric value; interval predictions are counted cor-rect if the resolved value lies inside the predicted interval. For timeframe questions, accuracy re-quires an exact normalized match to the resolved timeframe. When binary or multiple-choice predic-tions are phrased differently from the stored option 15 string, an LLM judge is used only as a semantic-equivalence fallback. 
+
+Brier Score. 
+
+BS = 1
+
+|C| 
+
+X
+
+> i∈C
+
+(pi − yi)2, (9) where C is the set of binary and multiple-choice forecasts for which a categorical confidence score is defined. Lower is better. Brier score penalises both direction errors and overconfidence. For multiple-choice questions, we use the con-fidence assigned to the selected option: if the se-lected option is correct, the score is (1 − ci)2; other-wise it is c2 
+
+> i
+
+. Because the current interface records a selected answer and confidence rather than a full probability vector over all options, this is a reduced multiclass scoring rule. Brier score is omitted for quantity and timeframe questions. 
+
+Log Score. 
+
+Log = 1
+
+|C| 
+
+X
+
+> i∈C
+
+log p(yi) 
+
+> i
+
+, (10) where C is again the set of binary and multiple-choice forecasts with defined categorical confi-dence scores, and p(yi) 
+
+> i
+
+is the probability assigned to the resolved answer. Higher is better (less neg-ative). Log score strictly rewards calibrated con-fidence and penalises near-zero probabilities on correct answers. For multiple-choice questions, p(yi) 
+
+> i
+
+is the confi-dence assigned to the selected option if it is correct and the complement probability otherwise. As with Brier score, log score is omitted for quantity and timeframe questions. Condition- and model-level Brier/log averages are computed over forecasts for which the corresponding score is defined. 
+
+F.2 Evidence Quality 
+
+Evidence quality measures whether the agent cited or accessed sources that are causally relevant to the question outcome. Let Ci be the set of sources ac-cessed or cited by the agent, and CHi the reference evidence set constructed by the hindsight pipeline. 
+
+Source Precision. 
+
+SrcP = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+|Ci ∩ CHi ||Ci| , (11) with SrcP i = 0 when |Ci| = 0 . Precision is re-ported rather than recall because the agent’s source budget is constrained and the hindsight set is ex-haustive; we care whether the sources the agent chose were relevant, not whether it found every relevant source. Source overlap is determined by exact article identifier match. Conditions that produce no re-trieval (Vanilla LLM, Causal Simulation) receive no SrcP score; Real-Time is excluded because its sources lack comparable article provenance. 
+
+F.3 Reasoning Quality 
+
+Reasoning quality measures whether the agent’s causal forecast graph recovers the events that proved most important to the outcome. Let GFi =(V Fi , E Fi ) be the agent’s forecast graph and GHi =(V Hi , E Hi ) the hindsight reference graph. 
+
+Key Events. The reference key-event set Ki ⊆
+
+V Hi consists of the top-K hindsight events ranked by impact score sj = magnitude j × confidence j ,where magnitude and confidence are assigned by the hindsight pipeline. We use K = 5 in all re-ported experiments. 
+
+Event Matching. A forecast event v ∈ V Fi
+
+matches a hindsight event u ∈ V Hi if two con-ditions hold simultaneously: 1. Text similarity : the hybrid BM25+lexical score sim( v, u ) ≥ θ, where θ = 0 .45 and the score is 0.6 × BM25 -RS( v, u ) + 0 .4 ×
+
+TokF1( v, u ). BM25-RS is BM25 reverse-scored to [0 , 1] ; TokF1 is token-level F1 over unigrams. 2. Date proximity : |d(v) − d(u)| ≤ δ days, where δ = 7 in all reported experiments. Each hindsight event is matched to at most one fore-cast event (greedy assignment by similarity score). 
+
+Key-Event Recall. 
+
+KER = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1
+
+|Ki|
+
+X
+
+> u∈Ki
+
+1[∃ v ∈ V Fi : M (v, u )] .
+
+(12) Here M (v, u ) denotes a successful textual and tem-poral match. KER measures what fraction of the most causally important hindsight events appear in the agent’s forecast graph. Conditions that produce no graph (Vanilla LLM, Search-Enabled) receive no KER score. 16 Vanilla LLM Causal Sim. Search-Enabled                                                                                                                                                                 
+
+> Model NAcc Br Log Acc Br Log Acc Br Log Gemini 3 Pro 108 66.7 .210 −.661 59.3 .241 −.761 74.1 .183 −.611 Gemini 3 Flash 108 65.7 .244 −.926 64.8 .214 −.639 72.2 .203 −.671 DeepSeek V4 Pro 68 54.4 .271 −.770 57.4 .251 −.718 67.6 .200 −.616 DeepSeek V4 Flash 68 52.9 .244 −.705 57.4 .263 −.727 73.5 .146 −.442
+> GPT-5.4 55 52.7 .240 −.679 54.5 .235 −.665 67.3 .181 −.543 GPT-4o 118 53.4 .258 −.725 46.6 .299 −.806 59.3 .273 −1.153
+> Qwen3.5 397B (diag., unfilt.) 66.7 .199 −.582 71.7 .191 −.570 72.5 .184 −.567
+> SE Graph Near-Resolution Real-Time
+> Model NAcc Br Log Acc Br Log Acc Br Log Gemini 3 Pro 108 73.1 .192 −.685 79.6 .162 −.671 91.7 .077 −.702 Gemini 3 Flash 108 64.8 .242 −.934 76.9 .182 −.803 88.0 .115 −1.774 DeepSeek V4 Pro 68 66.2 .209 −.632 76.5 .174 −.638 95.6 .028 −.107
+> DeepSeek V4 Flash 68 69.1 .182 −.542 77.9 .171 −.590 95.6 .030 −.137 GPT-5.4 55 58.2 .182 −.528 70.9 .185 −.602 81.8 .138 −.539 GPT-4o 118 55.1 .283 −.969 66.9 .238 −.718 82.2 .159 −.736
+> Qwen3.5 397B (diag., unfilt.) 69.2 .202 −.605 73.3 .180 −.563 89.2 .087 −.315
+
+Table 8: Per-model results (contamination-filtered) across all six conditions (see Appendix G). Top : knowledge-only and search-enabled conditions. Bottom : graph-enabled and real-time conditions. Acc = accuracy (%); Br = Brier; Log = log score. Bold indicates the best contamination-filtered model per condition and metric (higher is better except Br); Qwen3.5 397B is unfiltered and excluded from bolding. GPT-5.4 contributes 55 pairs (65 excluded); DeepSeek V4 models contribute 68 pairs (52 excluded). 
+
+Semantic Matching Robustness. The pri-mary metric uses the hybrid lexical matcher because it is reproducible without model weights. Appendix G.3.2 reports a parallel evaluation using sentence-transformer cosine similarity (all-MiniLM-L6-v2 , threshold 0.55), confirming that all condition-level rankings are preserved un-der the alternative matcher, with scores uniformly 1–5 pp higher due to paraphrase tolerance. 
+
+G Detailed Model Results 
+
+Tables 8 and 8 report per-model contamination-filtered Brier score and log score across all six conditions, complementing the accuracy and rea-soning metrics in Table 3 of the main text. Table 9 gives the per-model reasoning and evidence qual-ity breakdown. Qwen3.5 397B is included as an unfiltered diagnostic row; see Appendix E for con-tamination filter details. 
+
+G.1 Outcome Quality 
+
+Table 8 (in Appendix F) reports Brier and log scores across all six conditions. Higher accuracy and log score are better; lower Brier score is better. 
+
+G.2 Reasoning and Evidence Quality 
+
+Table 9 reports key-event recall (KER) and source precision (SrcP) per model. KER is only defined for graph-enabled conditions; SrcP is only defined for retrieval-enabled conditions with article prove-nance. 
+
+G.3 Per-Model Conditional Quality 
+
+Table 4 in the main text reports the aggregate correctness-conditioned split. Table 10 gives the same split by model for the Search-Enabled Graph condition, where both graph and source metrics are defined. These rows should be read as exploratory diagnostics rather than model rankings, because the correct/incorrect splits are small after contamina-tion filtering, especially for recent-cutoff models. 
+
+G.3.1 Forecast Graph Alignment with Market Moves 
+
+For Polymarket questions, forecast-time graph quality can also be evaluated against market move-ment. Unlike the hindsight reference graph in Ap-pendix D, forecast graphs do not provide a common signed pressure curve against the resolved outcome; they contain model-generated events and causal links whose node set varies by run. We therefore use market prices to define an external subset of important reference events, then ask whether each forecast graph recovers those events. Market-signal recall is the fraction of market-aligned hindsight events recovered by the forecast graph, where a hindsight event is market-aligned when its signed impact agrees with a nearby price move. Market-signal precision is the fraction of forecast graph events that match such market-aligned hindsight events. We additionally report a stricter turning-point variant that only counts market-aligned hind-sight events occurring near detected market turning 17 Causal Sim. Search-En. SE Graph Near-Res. Real-Time                                                                
+
+> Model KER SrcP SrcP KER SrcP KER SrcP KER SrcP Gemini 3 Pro 5.2 –70.4 12.2 66.6 13.3 71.6 10.4 –Gemini 3 Flash 5.2 –58.8 6.4 52.5 11.2 64.8 9.8 –DeepSeek V4 Pro 5.7 –65.2 13.7 58.7 20.4 71.4 12.0 –DeepSeek V4 Flash 4.7 –65.2 12.0 57.4 18.1 66.6 15.0 –GPT-5.4 6.3 –61.2 9.5 54.3 14.9 68.1 9.8 –GPT-4o 3.4 –59.7 7.2 56.0 12.6 70.4 8.2 –
+
+Table 9: Per-model reasoning and evidence quality (contamination-filtered). KER = key-event recall (%, 7-day date gate); SrcP = source precision (%). Bold indicates the best contamination-filtered model within each condition and metric. Causal Simulation has no retrieval so SrcP is not applicable; Real-Time lacks article provenance so SrcP is omitted. Vanilla LLM and Search-Enabled have no graph so KER is not applicable.                                                           
+
+> Correct forecasts Incorrect forecasts Gap
+> Model NKER SrcP NKER SrcP ∆KER ∆SrcP
+> Gemini 3 Flash 70 7.2 55.5 38 4.9 46.7 2.4 8.8 Gemini 3 Pro 79 12.9 74.4 29 10.3 45.3 2.6 29.1 DeepSeek V4 Flash 47 13.2 56.4 21 9.3 60.0 3.9 −3.6 DeepSeek V4 Pro 45 14.2 61.0 23 12.6 53.6 1.6 7.4 GPT-4o 65 8.3 64.6 53 5.9 44.8 2.4 19.8 GPT-5.4 32 10.0 60.0 23 8.9 46.1 1.1 13.9
+
+Table 10: Per-model conditional quality for the Search-Enabled Graph condition (contamination-filtered). KER and SrcP are percentages. Gaps are correct minus incorrect, so positive values mean the metric is higher among correct forecasts. These splits are diagnostic only: each row is further divided by correctness, and DeepSeek V4/GPT-5.4 have smaller filtered sample sizes because of later knowledge cutoffs. 
+
+points. Table 11 reports this market-aligned recov-ery split by model and graph-enabled condition. 
+
+G.3.2 Semantic Matching Robustness 
+
+Our primary reasoning evaluation uses BM25+lexical hybrid matching (0.6 ×BM25 reverse-scored + 0.4 ×token-F1, threshold = 0.45) because it is reproducible without model weights or API calls. To validate that this choice does not introduce systematic bias, we re-ran the full evaluation using sentence-transformer cosine similarity ( all-MiniLM-L6-v2 , threshold = 0.55) under the same 7-day date gate and compared the results. Table 12 shows that semantic matching raises absolute scores while preserving the condition ordering. The robustness check shows that the lexical matcher is conservative rather than misleading. Se-mantic matching raises all reasoning scores by 1–5 percentage points, with the largest gains for key-event recall in Near-Resolution and SE Graph set-tings, where agents often describe the same event using different wording from the hindsight graph. This is expected: paraphrase-tolerant matching re-covers semantically equivalent event mentions that fail token-level overlap. Crucially, the condition ordering is unchanged. Near-Resolution remains the strongest graph-enabled setting, SE Graph remains above Causal Simulation, and Real-Time remains competitive but not directly comparable because it lacks the same simulated-date evidence constraint. We there-fore report the hybrid lexical metric in the main tables as a reproducible lower bound, while using the semantic check to verify that the main conclu-sions do not depend on a brittle string-matching choice. 
+
+H Frontend Inspection Views 
+
+WORLD REASONER includes a frontend for inspect-ing benchmark artifacts during construction, re-view, and analysis. These views are not shown to forecast agents during evaluation; agents interact with the benchmark through the controlled Tempo-ral Gateway and the configured agent tools. The frontend instead supports auditability by exposing resolved questions, source-backed hindsight ex-planations, event timelines, and market-alignment checks in a human-readable form. Figure 8 shows two representative inspection views. 
+
+I Use of AI Assistance 
+
+AI assistants were used to support coding, data-processing checks, LaTeX editing, and writing re-vision during the preparation of this work. The authors reviewed, edited, and approved all final text, analyses, experimental results, and scientific 18 Condition Model Mkt R Mkt P TP R TP P                                                   
+
+> Causal Sim. Gemini 3 Flash 2.0% 2.6% 2.1% 2.3% Gemini 3 Pro 0.9% 0.7% 1.2% 0.9% DeepSeek V4 Flash 2.6% 1.7% 1.1% 0.7% DeepSeek V4 Pro 1.6% 1.1% 0.9% 0.4% GPT-4o 0.3% 0.2% 0.0% 0.0% GPT-5.4 2.8% 3.9% 2.5% 3.1%
+> SE Graph Gemini 3 Flash 8.8% 5.7% 6.9% 4.2% Gemini 3 Pro 8.1% 6.5% 4.9% 4.6% DeepSeek V4 Flash 15.0% 6.8% 11.1% 4.9%
+> DeepSeek V4 Pro 14.4% 8.0% 9.7% 4.0% GPT-4o 8.4% 3.1% 6.4% 2.2% GPT-5.4 12.3% 6.1% 9.4% 4.7%
+
+Table 11: Per-model forecast graph recovery of market-aligned hindsight events. Mkt R/P use local before/after price movement around each hindsight event. TP R/P use the stricter subset requiring the hindsight event to fall within the 3-day market window of a detected turning point. Bold indicates the best model within each condition and metric.                                             
+
+> Condition Metric Hybrid Semantic ∆
+> Causal Sim. Event F1 13.1% 13.9% +0.8pp KE Recall 4.9% 6.9% +2.0pp KE Precision 5.1% 7.5% +2.4pp SE Graph Event F1 17.8% 20.4% +2.6pp KE Recall 9.8% 14.2% +4.4pp KE Precision 10.1% 14.2% +4.2pp Near-Res. Event F1 20.7% 24.5% +3.8pp KE Recall 14.4% 19.6% +5.1pp KE Precision 14.6% 19.7% +5.1pp Real-Time Event F1 17.4% 20.9% +3.4pp KE Recall 10.6% 14.6% +4.1pp KE Precision 12.9% 17.3% +4.4pp
+
+Table 12: Hybrid BM25+lexical vs. sentence-transformer semantic matching ( all-MiniLM-L6-v2 ,threshold = 0.55), both under a 7-day date gate. Seman-tic matching yields uniformly higher scores ( +1–5 pp), as it recognises paraphrases that lexical overlap misses; however, all relative rankings between conditions are preserved, confirming that the lexical evaluation is a valid lower bound for comparative analysis. 
+
+claims. 
+
+J Artifact License and Terms 
+
+The W ORLD REASONER code and derived bench-mark artifacts are released for research use at github.com/cyzus/worldreasoner, subject to the li-censes and terms of the original data sources. The released artifacts include generated forecasting questions, metadata, evaluation scripts, model out-puts, and derived event-graph annotations. Source articles and prediction-market records may be rep-resented through identifiers, metadata, timestamps, and derived summaries rather than redistributed wholesale when source terms restrict redistribution. Users should comply with the applicable li-censes of any underlying news, prediction-market, or model-provider data sources; the artifact is in-
+
+(a) Event-graph explorer for a resolved benchmark question 
+
+(b) Market-history view with extracted events and turning points 
+
+Figure 8: Frontend inspection views for W ORLD REA -
+
+> SONER
+
+. (a) The event-graph explorer exposes each resolved question with metadata, ground truth, forecast count, source-backed causal explanation, and dated key events, supporting manual audit of benchmark artifacts. 
+
+(b) The market-history view overlays prediction-market prices with extracted hindsight events and turning points, supporting inspection of whether post-resolution event graphs align with external market signals. These in-terfaces are used for benchmark construction and re-view; forecast agents are evaluated through the con-trolled Temporal Gateway rather than through these UI views. 
+
+tended for research evaluation and should not be used as a deployed decision-support system for high-stakes forecasting. 19

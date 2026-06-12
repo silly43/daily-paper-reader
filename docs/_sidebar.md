@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-06-12 <!--dpr-date:20260612-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/12/2606.11816v1-worldreasoner-evaluating-whether-language-model-agents-forecast-events-with-valid-reasoning" data-sidebar-item="{&quot;title&quot;: &quot;WorldReasoner: Evaluating Whether Language Model Agents Forecast Events with Valid Reasoning&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.11816v1-worldreasoner-evaluating-whether-language-model-agents-forecast-events-with-valid-reasoning&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;world-models&quot;}], &quot;evidence&quot;: &quot;评估语言模型代理预测未来事件的推理有效性，与预测世界模型评估相关&quot;}">WorldReasoner: Evaluating Whether Language Model Agents Forecast Events with Valid Reasoning</a>
   * 2026-06-11 <!--dpr-date:20260611-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/11/2606.08737v1-dream-tac-a-unified-tactile-world-action-model-for-contact-rich-robot-manipulation" data-sidebar-item="{&quot;title&quot;: &quot;Dream-Tac: A Unified Tactile World Action Model for Contact-Rich Robot Manipulation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.08737v1-dream-tac-a-unified-tactile-world-action-model-for-contact-rich-robot-manipulation&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;world-models&quot;}], &quot;evidence&quot;: &quot;触觉-世界动作模型预测未来视觉和触觉状态&quot;}">Dream-Tac: A Unified Tactile World Action Model for Contact-Rich Robot Manipulation</a>
