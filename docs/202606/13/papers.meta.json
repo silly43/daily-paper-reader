@@ -1,0 +1,69 @@
+{
+  "label": "2026-06-13",
+  "date": "2026-06-13",
+  "generated_at": "2026-06-13T20:25:17",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202606/13/2606.09311v1-ff-jepa-long-horizon-planning-in-world-models-with-latent-planners",
+      "section": "deep",
+      "title_en": "FF-JEPA: Long-Horizon Planning in World Models with Latent Planners",
+      "authors": "Sergi Masip, Jonathan Swinnen, Yutong Hu, Renaud Detry, Tinne Tuytelaars",
+      "date": "2026-06-08",
+      "pdf": "https://arxiv.org/pdf/2606.09311v1",
+      "score": "9.0",
+      "evidence": "提出FF-JEPA框架，利用潜在规划器在世界模型中进行长期规划，预测未来状态",
+      "tldr": "现有联合嵌入预测架构在潜在空间规划时计算昂贵且对长期规划无效，同时需要显式目标图像。FF-JEPA提出层次化方法，引入无动作潜在规划器预测下一子目标，将复杂轨迹分解为短程优化问题。在PushT任务上的初步结果表明，该方法成功克服了平坦世界模型的长期规划崩溃问题。",
+      "tags": "query:world-models",
+      "abstract_en": "Joint Embedding Predictive Architectures (JEPAs) have shown promising world modeling capabilities, enabling planning in latent space by optimizing action trajectories using methods like the Cross-Entropy Method (CEM). These methods are, however, too computationally expensive and ineffective for long-horizon planning. Furthermore, these methods typically require an explicit image of the goal state, which is not always possible in real-world tasks. In this work, we tackle these limitations by proposing Forward-Forward-JEPA (FF-JEPA), a hierarchical approach leveraging two forward dynamics models. Alongside a standard action-conditioned forward model, we introduce an action-free latent planner that predicts the next subgoal given the current state. This approach removes the need for goal images and enables long-horizon planning by decomposing complex trajectories into a sequence of tractable, short-term optimization problems. Preliminary results on PushT demonstrate that FF-JEPA successfully overcomes flat world models' long-horizon collapse, highlighting this approach as a promising direction for goal-free planning.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/13/2606.09811v1-aha-wamasynchronous-horizon-adaptive-world-action-modeling-with-observation-guided-context-routing",
+      "section": "deep",
+      "title_en": "AHA-WAM:Asynchronous Horizon-Adaptive World-Action Modeling with Observation-Guided Context Routing",
+      "authors": "Jisong Cai, Long Ling, Shiwei Chu, Zhongshan Liu, Jiayue Kang, Zhixuan Liang, Wenjie Xu, Yinan Mao, Weinan Zhang, Xiaokang Yang, Ru Ying, Ran Zheng, Yao Mu",
+      "date": "2026-06-08",
+      "pdf": "https://arxiv.org/pdf/2606.09811v1",
+      "score": "9.0",
+      "evidence": "用于机器人操作的世界-动作模型",
+      "tldr": "现有世界-动作模型将世界预测与动作执行绑定在相同时间分辨率，导致世界分支建模冗余的近程帧变化。本文提出AHA-WAM，采用异步双Diffusion Transformer架构：低频视频DiT作为世界规划器，通过滚动记忆维护长程场景上下文；高频动作DiT通过分层联合注意力查询该上下文，执行短动作片段。引入视野自适应偏移训练和观测引导视频上下文路由，支持异步执行。在RoboTwin和真实操作任务上取得92.80%和78.3%成功率，实现24.17Hz闭环控制，速度提升4.59倍。",
+      "tags": "query:world-models",
+      "abstract_en": "World-action models have emerged as a promising paradigm for robot manipulation, jointly modeling visual scene dynamics and actions to inject physical priors into policy learning. However, existing world-action models couple world prediction and action execution at the same temporal resolution, forcing the world branch to model near-term frame variations that are redundant and weakly informative. We posit that strictly binding world prediction and action execution to the same temporal rhythm may underutilize the potential of the video branch for embodied control. Therefore, we propose AHA-WAM, an Asynchronous Horizon-Adaptive World-Action Model built on a dual Diffusion Transformer (DiT) architecture that reorganizes world-action modeling around this temporal asymmetry. AHA-WAM instantiates the video DiT as a low-frequency world planner that maintains rolling key-value memory over past observations and exposes reusable layerwise latent context encoding long-horizon scene evolution, while a high-frequency action DiT executes short action chunks in closed loop by querying this context through layerwise joint attention. To support asynchronous execution, we introduce horizon-adaptive offset training and Observation-Guided Video-Context Routing (OVCR), which together let the action expert exploit long-horizon world context while remaining responsive to real-time execution state without rerunning the video DiT. Experiments on RoboTwin and real-world manipulation tasks show that AHA-WAM achieves state-of-the-art performance without any robot-data pretraining, attaining 92.80% average success on RoboTwin and 78.3% success across 4 real-world tasks, while reaching 24.17 Hz closed-loop control with a 4.59x speedup over Fast-WAM.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/13/2606.10825v1-modip-efficient-model-based-optimization-for-diffusion-policies",
+      "section": "deep",
+      "title_en": "MODIP: Efficient Model-Based Optimization for Diffusion Policies",
+      "authors": "Zakariae El Asri, Philippe Gratias-Quiquandon, Nicolas Thome, Olivier Sigaud",
+      "date": "2026-06-09",
+      "pdf": "https://arxiv.org/pdf/2606.10825v1",
+      "score": "9.0",
+      "evidence": "使用世界模型进行基于模型的强化学习微调",
+      "tldr": "扩散策略（DP）在行为克隆中表现优异，但直接强化学习微调因多步去噪过程而困难。本文提出MODIP，利用世界模型进行模型预测控制生成高质量轨迹，作为监督信号微调DP，并通过终端状态值替代策略依赖的Q值降低推理时间，使用策略无关的TD目标减少训练时间。在D4RL和RoboMimic任务上，MODIP提升了DP性能，超越行为克隆，与DP强化学习微调方法及TD-MPC2等基线相当或更优。",
+      "tags": "query:world-models",
+      "abstract_en": "Diffusion policies (DPs) have emerged as expressive policy representations for robot learning, often used with imitation learning methods such as behavioral cloning (BC). However, while their success has largely been confined to BC, direct reinforcement learning (RL) fine-tuning remains challenging because actions are generated through a multi-step denoising process. In this work, we propose MODIP, a framework for the offline-to-online fine-tuning of DPs. Rather than directly applying RL to the DPs, MODIP leverages a world model (WM) to guide policy adaptation and keeps the simplicity and stability of BC. We utilize model predictive control (MPC) to generate high-quality trajectories within the WM, and use them as supervised targets for fine-tuning the DP. To make MPC planning efficient, MODIP uses a terminal state value instead of a policy-dependent state-action value, reducing inference time. Additionally, MODIP trains critics with policy-independent TD targets, reducing training time. Experiments on D4RL (MuJoCo, Kitchen) and RoboMimic tasks show that MODIP improves diffusion policies beyond BC, and is competitive with or outperforms diffusion policy RL fine-tuning methods and strong model-based baselines such as TD-MPC2.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/13/2606.12072v1-world-model-self-distillation-training-world-models-to-solve-general-tasks",
+      "section": "deep",
+      "title_en": "World Model Self-Distillation: Training World Models to Solve General Tasks",
+      "authors": "Sebastian Stapf, Pablo Acuaviva Huertos, Aram Davtyan, Paolo Favaro",
+      "date": "2026-06-10",
+      "pdf": "https://arxiv.org/pdf/2606.12072v1",
+      "score": "9.0",
+      "evidence": "提出世界模型自蒸馏结合强化学习，激发预训练世界模型的任务解决能力",
+      "tldr": "预训练视频生成器虽具备涌现任务解决能力，但依赖详细文本描述限制了直接规划决策。现有方法要么外借语言模型，要么需昂贵配对视频监督。本文提出结合自蒸馏与强化学习的框架：由VLM生成任务与步骤方案，条件化视频扩散模型（Demonstrator），再将其知识蒸馏为仅以图像和短任务提示为条件的Executor，并用VLM反馈的强化学习进一步优化。在WorldTasks-Benchmark和DreamGen机器人基准上，Executor超越Demonstrator，并竞争性迁移至机器人任务，无需配对任务-执行视频监督。",
+      "tags": "query:world-models",
+      "abstract_en": "Pretrained video generators are promising visual world models that exhibit emergent task-solving abilities; however, their reliance on detailed textual descriptions limits their direct use for planning and decision-making. Existing approaches either outsource this reasoning to language or vision-language models, or rely on supervised fine-tuning with paired task-execution videos, which are costly to collect and difficult to scale. We propose a scalable framework that elicits task-solving ability in such models by combining self-distillation with reinforcement learning. Given an unlabeled scene image, a vision-language model generates a candidate task and a detailed step-by-step solution. The solution conditions a pretrained video diffusion model, the Demonstrator; we distill its behavior into an Executor conditioned only on the image and a short task prompt. This transfers execution knowledge from caption-guided generation to instruction-conditioned task solving without curated task-video supervision. We further improve the Executor with reinforcement learning from VLM feedback, exploiting the asymmetry between judging whether a sampled video satisfies a task and generating the solution. Experiments on our proposed WorldTasks-Benchmark and the DreamGen robotics benchmark show that the Executor surpasses the Demonstrator under our VLM-based evaluation protocol and transfers competitively to robotic tasks.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
