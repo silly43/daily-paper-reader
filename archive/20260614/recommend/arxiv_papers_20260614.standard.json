@@ -1,0 +1,775 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-14T20:11:35.652810+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 18,
+    "deep_cap": 6,
+    "deep_selected": 16,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2606.09028v1",
+      "source": "arxiv",
+      "title": "ATM: Action-Consistency Transfer Matrix for Diagnosing and Improving Latent World Models",
+      "abstract": "Latent world models are increasingly used for control and goal-conditioned planning, yet assessing whether their learned representations are useful for planning usually requires slow, planner-coupled simulator evaluation with CEM or similar planners. Such evaluation is black-box and model-complexity-dependent: under the same protocol, different world models may require minutes to hours per checkpoint. In this work, we propose ATM, an Action-Consistency Transfer Matrix for diagnosing whether latent transitions preserve action semantics relevant to planning. ATM compares action information in real encoded transitions and model-predicted transitions through lightweight post-hoc probes, producing an interpretable matrix that reveals representation quality, transition-domain inconsistency, and failure modes without simulator rollout. It can also be collapsed into a simple screening score for within-task ranking across checkpoints, variants, and world models. When the true success gap is non-trivial, ATM achieves highly reliable pairwise ranking, while reducing minutes-to-hours CEM evaluation to seconds-level transition analysis, yielding more than 100x speedup in our setup. We further introduce AITS, showing that action-identifiability is not only diagnostic but also a useful training signal for improving downstream planning without changing the planner.",
+      "authors": [
+        "Jiaheng Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published": "2026-06-08T04:53:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.09028v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "directly addresses diagnosing and improving latent world models",
+      "llm_evidence_cn": "直接关注潜在世界模型的诊断与改进",
+      "llm_evidence": "直接关注潜在世界模型的诊断与改进",
+      "canonical_evidence": "直接关注潜在世界模型的诊断与改进",
+      "llm_tldr_en": "ATM introduces an Action-Consistency Transfer Matrix to diagnose whether latent world models preserve action semantics for planning.",
+      "llm_tldr_cn": "本文针对潜在世界模型评估耗时且黑箱的问题，提出动作一致性迁移矩阵（ATM）。ATM通过轻量级探针比较真实编码状态转换和模型预测转换中的动作信息，生成可解释矩阵揭示表示质量。该方法无需完整模拟即可诊断潜在世界模型的规划适用性，并能指导模型改进。实验证明ATM能有效识别表示缺陷并提升规划性能。",
+      "llm_tldr": "本文针对潜在世界模型评估耗时且黑箱的问题，提出动作一致性迁移矩阵（ATM）。ATM通过轻量级探针比较真实编码状态转换和模型预测转换中的动作信息，生成可解释矩阵揭示表示质量。该方法无需完整模拟即可诊断潜在世界模型的规划适用性，并能指导模型改进。实验证明ATM能有效识别表示缺陷并提升规划性能。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09215v1",
+      "source": "arxiv",
+      "title": "MotionWAM: Towards Foundation World Action Models for Real-Time Humanoid Loco-Manipulation",
+      "abstract": "World Action Models (WAMs) couple a video dynamics prior to the policy and have shown encouraging results on tabletop manipulation, but iterative denoising over high-dimensional video-action latents leaves them too slow for real-time humanoid loco-manipulation. The problem is compounded by the dominant hierarchical paradigm, in which a high-level manipulation policy controls only the upper body while a low-level controller tracks coarse base commands -- placing upper and lower body in inconsistent action spaces and reducing the legs to balance-preserving locomotion. We present MotionWAM, a real-time WAM that drives autonomous humanoid loco-manipulation from a single egocentric camera by conditioning the policy on the intermediate denoising features of a video world model. MotionWAM replaces the upper-lower split with a unified motion latent and predicts whole-body motion tokens that jointly cover locomotion, torso motion, height regulation, foot interaction, and hand manipulation in a single action space. A three-stage learning framework progressively adapts the video world model to egocentric visual dynamics and to the target humanoid embodiment. On nine real-world Unitree G1 tasks, MotionWAM runs in real time, substantially outperforms Vision-Language-Action (VLA) baselines fine-tuned on the same demonstrations by over 30% in overall success rate, and executes task-driven foot interaction that decoupled upper-lower policies cannot reach. Our results suggest that video-pretrained WAMs can be lifted from tabletop manipulation to coordinated, human-like whole-body humanoid control.",
+      "authors": [
+        "Jia Zheng",
+        "Teli Ma",
+        "Yudong Fan",
+        "Zifan Wang",
+        "Shuo Yang",
+        "Junwei Liang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-08T08:50:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.09215v1",
+      "tags": [
+        "keyword:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "real-time World Action Model for humanoid loco-manipulation",
+      "llm_evidence_cn": "用于人形机器人全身操纵的实时世界动作模型",
+      "llm_evidence": "用于人形机器人全身操纵的实时世界动作模型",
+      "canonical_evidence": "用于人形机器人全身操纵的实时世界动作模型",
+      "llm_tldr_en": "MotionWAM presents a real-time World Action Model that drives autonomous humanoid loco-manipulation from a single egocentric camera, conditioning on the intermediate denoising latents.",
+      "llm_tldr_cn": "针对现有世界动作模型因迭代去噪导致速度慢、无法用于实时人形机器人操控的问题，论文提出MotionWAM，一种实时世界动作模型。它从单目第一视角相机驱动自主人形机器人全身操纵，通过将策略建立在中间去噪潜在变量上，避免了高昂的迭代计算。实验表明，MotionWAM在多种人形操作任务上实现了实时闭环控制，显著优于此前依赖分层架构的方法。",
+      "llm_tldr": "针对现有世界动作模型因迭代去噪导致速度慢、无法用于实时人形机器人操控的问题，论文提出MotionWAM，一种实时世界动作模型。它从单目第一视角相机驱动自主人形机器人全身操纵，通过将策略建立在中间去噪潜在变量上，避免了高昂的迭代计算。实验表明，MotionWAM在多种人形操作任务上实现了实时闭环控制，显著优于此前依赖分层架构的方法。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09813v1",
+      "source": "arxiv",
+      "title": "iMaC: Translating Actions into Motion and Contact Images for Embodied World Models",
+      "abstract": "Embodied world models have emerged as a pivotal paradigm for visual robotic decision-making and interactive environment simulation. However, conventional embodied frameworks rely on low-dimensional structured action vectors (e.g., joint angles and end-effector poses), which suffer from limited expressive capacity, poor generalization across diverse embodiments, and unnatural dynamic modeling for complex physical interactions. To address these limitations, this paper proposesiMac (Image as Action Control), a novel unified control paradigm that treats raw visual images as native action representations for embodied world models. Departing from traditional explicit kinematic action encoding, iMac formulates continuous visual manipulation as image-based action tokens, which inherently encapsulate spatial motion intentions, interactive geometric constraints and subtle physical dynamics. We construct a dual-branch embodied architecture consisting of an image-action encoder and a dynamic world predictor: the encoder compresses target-driven visual images into compact action embeddings, while the predictor learns environment transition rules conditioned on image actions to achieve high-fidelity future state prediction and closed-loop embodied control. Extensive experiments are conducted on public embodied manipulation benchmarks and real-world robotic scenarios. The results demonstrate that iMac outperforms vector-based action control baselines in prediction accuracy, task success rate and cross-scene generalization ability. Moreover, our image-action design eliminates the reliance on manually defined action spaces, realizing flexible and universal control for heterogeneous embodied agents. This work provides an innovative visual-action perspective for embodied world models, offering a simple yet effective paradigm for scalable robotic perception and manipulation.",
+      "authors": [
+        "Zhenyu Wu",
+        "Xiuwei Xu",
+        "Yukun Zhou",
+        "Yifan Li",
+        "Qiuping Deng",
+        "Xiaofeng Wang",
+        "Zheng Zhu",
+        "Bingyao Yu",
+        "Ziwei Wang",
+        "Jiwen Lu",
+        "Haibin Yan"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-08T17:55:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.09813v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes embodied world models with image-based action representation",
+      "llm_evidence_cn": "提出以图像作为动作表示的具身世界模型",
+      "llm_evidence": "提出以图像作为动作表示的具身世界模型",
+      "canonical_evidence": "提出以图像作为动作表示的具身世界模型",
+      "llm_tldr_en": "iMaC introduces a novel paradigm that uses raw visual images as native action representations for embodied world models, overcoming limitations of traditional kinematic action encoding.",
+      "llm_tldr_cn": "针对传统具身世界模型中低维动作向量表达能力有限、泛化性差的问题，论文提出iMaC范式，将原始视觉图像作为原生动作表示，替代传统的运动学编码。该方法将连续视觉操作转化为图像空间中的动作，提升了模型对不同形态机器人的适应能力和复杂物理交互的建模效果。实验表明，iMaC在多种操作任务中优于基线方法，为具身智能提供了更灵活的动作表征新思路。",
+      "llm_tldr": "针对传统具身世界模型中低维动作向量表达能力有限、泛化性差的问题，论文提出iMaC范式，将原始视觉图像作为原生动作表示，替代传统的运动学编码。该方法将连续视觉操作转化为图像空间中的动作，提升了模型对不同形态机器人的适应能力和复杂物理交互的建模效果。实验表明，iMaC在多种操作任务中优于基线方法，为具身智能提供了更灵活的动作表征新思路。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09828v1",
+      "source": "arxiv",
+      "title": "Latent Spatial Memory for Video World Models",
+      "abstract": "Video world models that maintain 3D spatial consistency across generated frames typically rely on explicit point cloud memory constructed in RGB space. This design is both computationally expensive, requiring repeated rendering and VAE encoding, and inherently lossy, as the round trip through pixel space discards rich features of the learned latent representation. In this paper, we introduce \\emph{latent spatial memory} for video world models, a persistent 3D cache that stores scene information directly in the diffusion latent space, avoiding pixel-space reconstruction. Building on this, we propose Mirage, a latent-space spatial memory framework that constructs the memory by lifting latent tokens into 3D via depth-guided back-projection and queries it by synthesizing novel views through direct latent-space warping. This unified formulation eliminates both the information loss of pixel-space reconstruction and the computational burden of repeated encoding and rendering. Experiments show that latent spatial memory achieves up to \\textbf{10.57}$\\times$ faster end-to-end video generation and \\textbf{55}$\\times$ reduction in memory footprint relative to explicit 3D baselines. Leveraging the geometric prior of the diffusion model, Mirage attains state-of-the-art performance on WorldScore and strong reconstruction quality on RealEstate10K.",
+      "authors": [
+        "Weijie Wang",
+        "Haoyu Zhao",
+        "Yifan Yang",
+        "Feng Chen",
+        "Zeyu Zhang",
+        "Yefei He",
+        "Zicheng Duan",
+        "Donny Y. Chen",
+        "Yuqing Yang",
+        "Bohan Zhuang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T17:59:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.09828v1",
+      "tags": [
+        "keyword:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latent spatial memory for video world models",
+      "llm_evidence_cn": "视频世界模型中的潜在空间记忆",
+      "llm_evidence": "视频世界模型中的潜在空间记忆",
+      "canonical_evidence": "视频世界模型中的潜在空间记忆",
+      "llm_tldr_en": "Mirage introduces latent spatial memory for video world models, storing 3D scene information directly in diffusion latent space to avoid pixel-space reconstruction.",
+      "llm_tldr_cn": "现有视频世界模型依赖像素空间的点云记忆，造成计算昂贵和特征损失。本文提出潜在空间记忆框架Mirage，将潜在token通过深度引导反投影构建3D缓存，避免像素空间重建，实现高效且保持3D一致性的视频生成。",
+      "llm_tldr": "现有视频世界模型依赖像素空间的点云记忆，造成计算昂贵和特征损失。本文提出潜在空间记忆框架Mirage，将潜在token通过深度引导反投影构建3D缓存，避免像素空间重建，实现高效且保持3D一致性的视频生成。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10363v1",
+      "source": "arxiv",
+      "title": "HiMem-WAM: Hierarchical Memory-Gated World Action Models for Robotic Manipulation",
+      "abstract": "World Action Models (WAMs) have emerged as a new powerful paradigm for embodied intelligence, learning action-relevant visual dynamics that significantly enhance generalization and robustness. However, existing WAMs still struggle with task-relevant memory in long-horizon robotic manipulation. To address this, we present HiMem-WAM, a Hierarchical Memory-Gated WAM that integrates motion-centric latent actions, high-level skill latents, and boundary-triggered memory updates. Specifically, we develop a hierarchical latent action framework that jointly learns low-level motion and high-level skill latents, providing structured temporal abstraction. Meanwhile, a boundary-aware memory gate writes compact task states at predicted skill transitions, enabling causal inference without test-time generation of future video or optical flow estimation. Evaluated on LIBERO, LIBERO-PLUS, RMBench and real-world tasks, HiMem-WAM shows that hierarchical latents improve robustness under deployment perturbations, and the memory module substantially benefits memory-dependent long-horizon manipulation.",
+      "authors": [
+        "Xiaoquan Sun",
+        "Ruijian Zhang",
+        "Chen Cao",
+        "Yihan Sun",
+        "Jiahui Chen",
+        "Zetian Xu",
+        "Bo Chen",
+        "Haijier Chen",
+        "Zhen Yang",
+        "Jiarun Zhu",
+        "Yijun Hong",
+        "JingZhe Xu",
+        "Jingrui Pang",
+        "Mingqi Yuan",
+        "Jiayu Chen"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-09T03:22:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.10363v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "hierarchical memory-gated World Action Model for long-horizon manipulation",
+      "llm_evidence_cn": "分层记忆门控世界动作模型用于长时域操作",
+      "llm_evidence": "分层记忆门控世界动作模型用于长时域操作",
+      "canonical_evidence": "分层记忆门控世界动作模型用于长时域操作",
+      "llm_tldr_en": "HiMem-WAM integrates hierarchical latent actions and boundary-triggered memory updates into WAMs, enabling structured temporal abstraction for long-horizon robotic manipulation.",
+      "llm_tldr_cn": "针对现有世界动作模型在长时域机器人操作中缺乏任务相关记忆的问题，论文提出HiMem-WAM，一种分层记忆门控世界动作模型。它构建了分层潜在动作框架，联合学习底层运动和上层技能潜在变量，提供结构化时间抽象。同时，边界感知记忆门在预测的技能转换处写入紧凑任务状态。实验表明，HiMem-WAM在长时域操作任务中显著增强了泛化性和鲁棒性，尤其是在需要记忆先前步骤的场景中。",
+      "llm_tldr": "针对现有世界动作模型在长时域机器人操作中缺乏任务相关记忆的问题，论文提出HiMem-WAM，一种分层记忆门控世界动作模型。它构建了分层潜在动作框架，联合学习底层运动和上层技能潜在变量，提供结构化时间抽象。同时，边界感知记忆门在预测的技能转换处写入紧凑任务状态。实验表明，HiMem-WAM在长时域操作任务中显著增强了泛化性和鲁棒性，尤其是在需要记忆先前步骤的场景中。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11184v1",
+      "source": "arxiv",
+      "title": "TacForeSight: Force-Guided Tactile World Model for Contact-Rich Manipulation",
+      "abstract": "Contact-rich manipulation requires robots to continuously perceive and regulate evolving physical interactions under dynamic contact transitions or complex surface geometries. Recent imitation learning methods improve contact-aware control by incorporating tactile or force feedback, but they rarely model the asymmetric spatiotemporal roles of global force and local tactile sensing. To address this, we propose TacForeSight, a lightweight force-conditioned tactile foresight framework for real-time manipulation. The core component is TacForceWM, a tactile world model that predicts short-horizon tactile latent dynamics from dual-finger tactile observations conditioned on high-frequency wrist force and torque signals. Another key component, the Predictive Tactile-Conditioned Policy, leverages the predicted latents as anticipatory contact priors, models the current-to-future tactile evolution via cross-attention, and adaptively fuses visuo-tactile features through a tactile-guided gating module. By forecasting purely within a compact latent space, TacForeSight enables proactive contact reasoning with efficient real-time inference suitable for high-frequency manipulation control. Real-robot experiments on five representative tasks and three in-process perturbation settings show that TacForeSight consistently outperforms existing baselines, particularly under dynamic contact disturbances. All models and datasets will be made publicly available on the project website at https://tacforesight.github.io/ProjectPage.",
+      "authors": [
+        "Yujie Zang",
+        "Yuhang Zheng",
+        "Xian Nie",
+        "Yupeng Zheng",
+        "Shuai Tian",
+        "Songen Gu",
+        "Chen Gao",
+        "Zining Wang",
+        "Shuicheng Yan",
+        "Wenchao Ding"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-09T17:59:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.11184v1",
+      "tags": [
+        "keyword:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "tactile world model predicting short-horizon tactile latent dynamics conditioned on force signals",
+      "llm_evidence_cn": "触觉世界模型，根据力信号预测短时程触觉潜在动态",
+      "llm_evidence": "触觉世界模型，根据力信号预测短时程触觉潜在动态",
+      "canonical_evidence": "触觉世界模型，根据力信号预测短时程触觉潜在动态",
+      "llm_tldr_en": "TacForeSight proposes TacForceWM, a tactile world model that predicts tactile latent dynamics from dual-finger observations conditioned on force and torque, enabling real-time contact-rich manipulation.",
+      "llm_tldr_cn": "针对富含接触操作中现有方法忽略全局力和局部触觉不对称时空角色的问题，论文提出TacForeSight框架，核心是TacForceWM触觉世界模型。该模型从双指触觉观测出发，以高频腕部力和力矩为条件，预测短时程触觉潜在动态。结合预测编码损失，该框架在实时操作中实现了更精准的接触感知控制，实验证明在复杂表面几何和动态接触转换下表现优于基线。",
+      "llm_tldr": "针对富含接触操作中现有方法忽略全局力和局部触觉不对称时空角色的问题，论文提出TacForeSight框架，核心是TacForceWM触觉世界模型。该模型从双指触觉观测出发，以高频腕部力和力矩为条件，预测短时程触觉潜在动态。结合预测编码损失，该框架在实时操作中实现了更精准的接触感知控制，实验证明在复杂表面几何和动态接触转换下表现优于基线。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11396v1",
+      "source": "arxiv",
+      "title": "PLUME: Probabilistic Latent Unified World Modeling and Parameter Estimation for Multi-Finger Manipulation",
+      "abstract": "Dexterous manipulation with multi-finger hands can be sensitive to physical parameters such as object shape, pose, and friction coefficients. While simulation enables large-scale data collection with known parameter values, simulation-trained policies must still handle uncertainty at deployment, where the true parameters and therefore the true dynamics are unknown. Standard domain randomization strategies may be insufficient for precise tasks like screwdriver turning, as manipulation strategies may need to change depending on specific parameter values. To address this, we propose Probabilistic Latent Unified world Modeling and parameter Estimation (PLUME), a world model that jointly learns to evolve a belief over parameter values as well as the system dynamics conditioned on those parameters. We learn a latent space to jointly represent multiple qualitatively different physical parameters along with rewards, themselves functions of partially-observable variables, to inform planning. Our novel learning framework leads to efficient alignment of the world model to true dynamics through online parameter inference as opposed to re-training or fine-tuning. We evaluate our method on simulated screwdriver turning, valve turning, bucket lifting, and disk flicking tasks, as well as a hardware screwdriver turning task, where we achieve successful zero-shot transfer of our simulation-trained policy and outperform state-of-the-art offline reinforcement learning and world-model-augmented behavior cloning baselines. Please see our website at https://plume-world-model.github.io for videos.",
+      "authors": [
+        "Abhinav Kumar",
+        "Soshi Iba",
+        "Rana Soltani Zarrin",
+        "Dmitry Berenson"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-09T19:36:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.11396v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "probabilistic latent unified world modeling",
+      "llm_evidence_cn": "概率潜在统一世界建模",
+      "llm_evidence": "概率潜在统一世界建模",
+      "canonical_evidence": "概率潜在统一世界建模",
+      "llm_tldr_en": "PLUME jointly learns a world model and belief over physical parameters for precise multi-finger manipulation under uncertainty.",
+      "llm_tldr_cn": "多指灵巧操作对物理参数敏感，标准域随机化不足以应对不确定性。本文提出PLUME，一个联合学习参数信念演化的概率潜在统一世界模型，在螺丝刀旋转等精密任务中显著优于基线。",
+      "llm_tldr": "多指灵巧操作对物理参数敏感，标准域随机化不足以应对不确定性。本文提出PLUME，一个联合学习参数信念演化的概率潜在统一世界模型，在螺丝刀旋转等精密任务中显著优于基线。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12471v1",
+      "source": "arxiv",
+      "title": "Identifiability Without Gaussianity: Symbolic World Models and Near-Infinite Temporal Consistency",
+      "abstract": "Klindt, LeCun, and Balestriero (arXiv:2605.26379) proved that Joint-Embedding Predictive Architectures (JEPAs) achieve linear identifiability, the linear recovery of the world's true latent variables, if and only if the world's latent dynamics follow a Gaussian, stationary process. This Gaussian boundary implies a fundamental limit on temporal consistency: for any non-Gaussian physical system, the representation error of a statistical World Model grows monotonically with time. We prove that this limit is an artifact of the statistical alignment mechanism, not a property of World Models in general. We introduce the Physics-Grounded Symbolic Architecture (PGSA) and prove three results: (1) a PGSA achieves exact linear identifiability for all physical regimes, regardless of the latent distribution; (2) the per-step error of a PGSA is bounded by numerical precision alone; and (3) as a direct consequence, a PGSA maintains temporal consistency for an unbounded number of transitions, a property we term near-infinite temporal consistency. We further prove that statistical World Models cannot achieve this property for any non-Gaussian system, regardless of model capacity or the volume of training data. The algebraic cores of four of the theorems are formalized in Lean 4 with Mathlib4 v4.31.0 (zero sorry placeholders); the Klindt et al. converse is taken as an external premise. The contrast establishes that symbolic grounding in the causal generator of the world's dynamics is the sufficient condition and, in non-Gaussian regimes, the only condition for near-infinite temporal consistency.",
+      "authors": [
+        "Seth Dobrin",
+        "Łukasz Chmiel"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.CL",
+        "cs.ET",
+        "cs.LG"
+      ],
+      "published": "2026-06-09T23:00:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.12471v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes symbolic world models achieving near-infinite temporal consistency, directly on world models",
+      "llm_evidence_cn": "提出符号世界模型实现近乎无限的时间一致性，直接针对世界模型",
+      "llm_evidence": "提出符号世界模型实现近乎无限的时间一致性，直接针对世界模型",
+      "canonical_evidence": "提出符号世界模型实现近乎无限的时间一致性，直接针对世界模型",
+      "llm_tldr_en": "PGSA proves that symbolic world models can achieve exact linear identifiability and near-infinite temporal consistency, overcoming Gaussian limitations of statistical world models.",
+      "llm_tldr_cn": "该论文指出传统联合嵌入预测架构（JEPA）仅在高斯平稳动态下可线性辨识，导致非高斯系统中世界模型误差随时间累积。作者引入基于物理的符号架构（PGSA），证明其能实现精确线性辨识且时间一致性几乎无限，突破了统计对齐机制的根本限制。理论分析表明，符号世界模型为长期可靠的预测和规划提供了理论基础。",
+      "llm_tldr": "该论文指出传统联合嵌入预测架构（JEPA）仅在高斯平稳动态下可线性辨识，导致非高斯系统中世界模型误差随时间累积。作者引入基于物理的符号架构（PGSA），证明其能实现精确线性辨识且时间一致性几乎无限，突破了统计对齐机制的根本限制。理论分析表明，符号世界模型为长期可靠的预测和规划提供了理论基础。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12780v1",
+      "source": "arxiv",
+      "title": "ProPlay: Procedural World Models for Self-Evolving LLM Agents",
+      "abstract": "Self-evolving agents are expected to improve through interaction without external supervision, but this remains difficult in partially observable environments where agents must explore actively, learn from limited feedback, and decide when to trust prior experience. Existing LLM-agent methods often rely on memory or planning modules, yet they rarely close the loop between them to continually refine an internal understanding of environment dynamics. We introduce ProPlay, a procedural world model that supports procedure-level preplay, where agents can rehearse future procedural paths using the learned world knowledge. Rather than representing experience as isolated rules or low-level action constraints, ProPlay abstracts successful trajectories into procedures and organizes them in a procedure graph that captures causal transitions among task stages. Each transition is associated with a reliability record embedding to estimate its task-specific contribution from past outcomes. Before each episode, ProPlay simulates future procedural trajectories over known graph structures as structured soft guidance; after execution, it refines the graph using environment feedback. Experiments on public benchmarks show that ProPlay consistently improves environment understanding and self-evolution capability over strong baselines. Our code has been released in https://github.com/antman9914/proplay.",
+      "authors": [
+        "Yijun Ma",
+        "Zehong Wang",
+        "Yiyang Li",
+        "Ziming Li",
+        "Xiaoguang Guo",
+        "Weixiang Sun",
+        "Chuxu Zhang",
+        "Yanfang Ye"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-06-11T00:47:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.12780v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes procedural world model for self-evolving LLM agents, directly relevant to internal world model in agents",
+      "llm_evidence_cn": "提出过程性世界模型用于自演化LLM智能体，直接关联智能体内部世界模型",
+      "llm_evidence": "提出过程性世界模型用于自演化LLM智能体，直接关联智能体内部世界模型",
+      "canonical_evidence": "提出过程性世界模型用于自演化LLM智能体，直接关联智能体内部世界模型",
+      "llm_tldr_en": "ProPlay introduces procedural world models enabling LLM agents to rehearse future procedural paths, improving self-evolution in partially observable environments.",
+      "llm_tldr_cn": "ProPlay提出过程性世界模型，允许LLM智能体通过程序级预演来模拟未来程序路径，从而在部分可观察环境中持续改进内部环境动态理解，实现自我进化。该方法解决了现有方法中记忆与规划模块脱节的问题，在多个交互任务上展示了更高效的探索和适应能力。",
+      "llm_tldr": "ProPlay提出过程性世界模型，允许LLM智能体通过程序级预演来模拟未来程序路径，从而在部分可观察环境中持续改进内部环境动态理解，实现自我进化。该方法解决了现有方法中记忆与规划模块脱节的问题，在多个交互任务上展示了更高效的探索和适应能力。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12783v1",
+      "source": "arxiv",
+      "title": "A Tutorial on World Models and Physical AI",
+      "abstract": "World modeling is emerging as a central principle for building intelligent systems capable of prediction, reasoning, and decision making. A central distinction can be drawn between explicit world models, which learn structured dynamics for rollout-based reasoning and planning, and implicit world models, which encode predictive structure within scalable learned representations. These complementary paradigms provide a foundation for physical AI in domains such as robotics and autonomous driving, enabling intelligence beyond reactive control under real-world constraints. Recent foundation models further suggest a pathway toward unified systems integrating perception, prediction, and action. Despite rapid progress, major challenges remain in hierarchical reasoning, long-horizon planning, and autonomous goal formation, which are critical for advancing toward artificial general intelligence. This tutorial presents a coherent framework in which diverse world modeling approaches are unified through shared predictive structure and differentiated by how such structure is represented and exploited.",
+      "authors": [
+        "Il-Seok Oh"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-11T00:52:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.12783v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "tutorial covering world models, both explicit and implicit",
+      "llm_evidence_cn": "涵盖显式和隐式世界模型的教程",
+      "llm_evidence": "涵盖显式和隐式世界模型的教程",
+      "canonical_evidence": "涵盖显式和隐式世界模型的教程",
+      "llm_tldr_en": "A comprehensive tutorial on world models in physical AI, distinguishing explicit and implicit paradigms, and discussing challenges and future directions.",
+      "llm_tldr_cn": "该教程系统梳理了世界模型在物理AI中的核心地位，区分了显式世界模型（学习结构化动态进行推理与规划）和隐式世界模型（在可扩展学习表征中编码预测结构）。文章指出两类范式为机器人、自动驾驶等领域提供了超越反应式控制的智能基础，并探讨了基础模型如何整合感知、预测与行动。尽管进展迅速，但分层推理、长时域规划等挑战仍然存在。",
+      "llm_tldr": "该教程系统梳理了世界模型在物理AI中的核心地位，区分了显式世界模型（学习结构化动态进行推理与规划）和隐式世界模型（在可扩展学习表征中编码预测结构）。文章指出两类范式为机器人、自动驾驶等领域提供了超越反应式控制的智能基础，并探讨了基础模型如何整合感知、预测与行动。尽管进展迅速，但分层推理、长时域规划等挑战仍然存在。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12987v1",
+      "source": "arxiv",
+      "title": "Diffusion Transformer World-Action Model for AV Scene Prediction",
+      "abstract": "Action-conditioned world models let an autonomous vehicle predict future camera scenes from its own planned controls, enabling planning and simulation without real-world rollouts, but at compact, trainable scale the futures are ambiguous and the field's standard distortion metrics actively mislead: they reward a blurry regression mean over a realistic prediction. We confront this with a compact latent world model that, given the present front-camera latent and a sequence of ego-actions, predicts future scene latents a frozen decoder renders to $256 \\times 256$ frames up to 8 seconds ahead, evaluated on 150 held-out nuScenes scenes. We first benchmark where to predict: across six frozen encoders spanning four representation families, V-JEPA2 with temporal context reduces steering RMSE by 40% over the best single-frame encoder. We then train a latent Diffusion Transformer (DiT) and, through a controlled diagnosis, identify the four ingredients it needs: spatial tokens, the $x_0$ objective, residual anchoring, and sampling matched to target uncertainty. In a Stable-Diffusion-VAE encode-predict-decode pipeline we expose the central tension: distortion metrics (cosine similarity, SSIM) favor the blurry mean, masking that the diffusion model is far closer to the real frame distribution. Inception-based FID and KID reveal a clean perception-distortion frontier: diffusion attains KID 0.078 versus 0.375 for regression ($4.8\\times$ better), and a deployable train-derived calibration makes this practical without test-time ground truth. The model is genuinely action-controllable (steering drives scene displacement, Spearman $ρ= 0.81$, vs $-0.18$ for regression). We trace limited single-pass motion to a shared-present anchor and engineer a compact 1.7M-parameter \"jump\" model that recovers full ground-truth motion magnitude ($1.02\\times$ GT), where single-pass models capture less than half.",
+      "authors": [
+        "Ruslan Sharifullin",
+        "Benjamin Jiang",
+        "Kai Xi Chew"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG",
+        "cs.RO"
+      ],
+      "published": "2026-06-11T07:24:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.12987v1",
+      "tags": [
+        "keyword:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "compact latent world model for action-conditioned future scene prediction",
+      "llm_evidence_cn": "紧凑型潜在世界模型用于动作条件未来场景预测",
+      "llm_evidence": "紧凑型潜在世界模型用于动作条件未来场景预测",
+      "canonical_evidence": "紧凑型潜在世界模型用于动作条件未来场景预测",
+      "llm_tldr_en": "Proposes a compact latent world model for autonomous driving that predicts future camera scenes from ego-actions, using a frozen decoder to render realistic frames up to 8 seconds ahead, evaluated on nuScenes.",
+      "llm_tldr_cn": "自动驾驶中常用动作条件世界模型预测未来场景，但紧凑模型会产生模糊预测。本文提出紧凑型潜在世界模型，将当前前摄像头潜变量与自车动作序列结合，预测未来场景潜变量，并由冻结解码器渲染为256x256图像，最远预测8秒。在nuScenes 150个场景上评估，基准测试显示V-JEPA2等编码器表现最佳。",
+      "llm_tldr": "自动驾驶中常用动作条件世界模型预测未来场景，但紧凑模型会产生模糊预测。本文提出紧凑型潜在世界模型，将当前前摄像头潜变量与自车动作序列结合，预测未来场景潜变量，并由冻结解码器渲染为256x256图像，最远预测8秒。在nuScenes 150个场景上评估，基准测试显示V-JEPA2等编码器表现最佳。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13053v1",
+      "source": "arxiv",
+      "title": "EA-WM: Event-Aware World Models with Task-Specification Grounding for Long-Horizon Manipulation",
+      "abstract": "Pretrained-feature world models provide a useful substrate for robot imagination, but visual or latent prediction alone does not determine whether an imagined future satisfies task-relevant events. Long-horizon manipulation requires progress signals that are relational, predicate-level, and physically grounded: whether an object has moved, whether a drawer or contact state has changed, whether a placement predicate is satisfied, and whether a candidate future is reliable enough for execution. We introduce EA-WM, an event-aware world-model framework that augments frozen visual-feature dynamics with task-specification-grounded event prediction and verification. EA-WM rolls out candidate futures in pretrained visual-feature space, decodes them into structured event states, and scores them using task-progress, semantic-consistency, physical-feasibility, and uncertainty terms. The verifier guides sampling-based planning, gates candidate actions, and, in the contact-sensitive LIBERO wine-rack setting, selects among PPOgenerated proposals. Across navigation, deformable-object, wall-constrained, and languagedescribed manipulation studies, EA-WM shows that event-aware verification can make featurespace world models more interpretable and better aligned with task progress.",
+      "authors": [
+        "Kailin Wang",
+        "Haoxiang Jie",
+        "Yaoyuan Yan",
+        "Jiacheng Zhou",
+        "Zhiyou Heng"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-11T08:35:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.13053v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "event-aware world model that predicts task-relevant events in long-horizon manipulation",
+      "llm_evidence_cn": "事件感知世界模型，预测长程操作中任务相关事件",
+      "llm_evidence": "事件感知世界模型，预测长程操作中任务相关事件",
+      "canonical_evidence": "事件感知世界模型，预测长程操作中任务相关事件",
+      "llm_tldr_en": "EA-WM augments pretrained visual-feature dynamics with task-specification-grounded event prediction for long-horizon manipulation, enabling verification of future events.",
+      "llm_tldr_cn": "长程操作中仅预测视觉或潜变量不足以判断任务事件是否满足。本文提出EA-WM事件感知世界模型，在预训练视觉特征动态基础上，增加任务规范引导的事件预测与验证。EA-WM利用潜变量滚动未来候选状态，并评估事件谓词是否成立，从而提升操作可靠性。",
+      "llm_tldr": "长程操作中仅预测视觉或潜变量不足以判断任务事件是否满足。本文提出EA-WM事件感知世界模型，在预训练视觉特征动态基础上，增加任务规范引导的事件预测与验证。EA-WM利用潜变量滚动未来候选状态，并评估事件谓词是否成立，从而提升操作可靠性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13092v1",
+      "source": "arxiv",
+      "title": "Scale Buys Interpolation, Structure Buys a Horizon: Certified Predictability for Equivariant World Models",
+      "abstract": "Scale buys interpolation; structure buys a certified horizon. A world model's average error says nothing about whether a particular prediction can be trusted, or for how long. For equivariant latent world models we give a computable, multi-step certificate of the predictable horizon: $T$-step rollout error is provably constant over each symmetry orbit (Theorem A) and stratified channel-by-channel by the predictor's Lyapunov spectrum, $T_j(ε)\\sim\\log(1/ε)/λ_j$. The horizon is two-sided -- a matching lower bound makes approximate equivariance provably horizon-limited -- and the certificate is exclusive to structure: orbit-constant error characterizes equivariance, so no non-equivariant model has it at any scale. Empirically, on 40-D Lorenz-96 only a $\\mathbb{Z}_N$-equivariant network recovers the full Lyapunov spectrum ($R^2{=}0.98$); dense and recurrent baselines fail.   Because the spectrum is faithful, the certificate acts, a priori: under a fixed sensing budget a $c\\times$-inflated certificate provably needs $c\\times$ the budget, and the equivariant certificate meets a budget its inflated dense counterpart cannot -- with zero calibration data. The same read-out, unchanged, audits public pretrained world models training-free: TD-MPC2 checkpoints land on the certificate's own scope taxonomy -- calibrated where strongly expansive (ratio 0.94-1.02), optimistic where weakly expansive, correctly abstaining where contracting -- a map a deployed monitor replicates cell-by-cell, out-of-sample. Across the official 1M-317M multitask ladder, calibration does not improve with parameters. On V-JEPA 2-AC (1B, real robot data) the measured cross-check correctly overrides an over-promising tangent spectrum -- the cross-validated audit, not the raw number, is the deployable object. Scale buys interpolation, not a calibrated horizon.",
+      "authors": [
+        "Hongbo Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.RO",
+        "math.DS"
+      ],
+      "published": "2026-06-11T09:21:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.13092v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "certified predictability horizon for equivariant latent world models",
+      "llm_evidence_cn": "对等变潜在世界模型的可认证预测地平线",
+      "llm_evidence": "对等变潜在世界模型的可认证预测地平线",
+      "canonical_evidence": "对等变潜在世界模型的可认证预测地平线",
+      "llm_tldr_en": "Provides a computable certificate of predictable horizon for equivariant latent world models, proving rollout error is constant over symmetry orbits and has a Lyapunov spectrum bound.",
+      "llm_tldr_cn": "世界模型平均误差无法保证单次预测可信。本文为等变潜在世界模型提供可计算的多步预测地平线证书：T步展开误差在对称轨道上恒定，并由Lyapunov谱分层界定。理论和实验验证了等变结构独有的可预测边界。",
+      "llm_tldr": "世界模型平均误差无法保证单次预测可信。本文为等变潜在世界模型提供可计算的多步预测地平线证书：T步展开误差在对称轨道上恒定，并由Lyapunov谱分层界定。理论和实验验证了等变结构独有的可预测边界。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13494v1",
+      "source": "arxiv",
+      "title": "NavWAM: A Navigation World Action Model for Goal-Conditioned Visual Navigation",
+      "abstract": "Goal-conditioned visual navigation requires a robot to act under partial observability by anticipating how its motion will change the future egocentric view and whether that change brings it closer to the goal. Navigation world models provide such visual foresight, but they remain prediction modules that require an external planner to convert predicted futures into closed-loop control. We propose Navigation World Action Model (NavWAM), a diffusion-transformer policy that turns navigation world-model prediction into executable action by representing future observations, goal-progress values, and action chunks in a shared latent sequence. By learning future prediction jointly with the action and value targets that determine closed-loop behavior, NavWAM makes visual foresight directly usable for robot control. We build NavWAM through simulation pretraining and real-robot adaptation, and evaluate it on image-goal navigation against planning-based world models and a representative direct navigation policy. Across offline benchmarks and closed-loop real-robot deployment, NavWAM improves over planning-based world-model baselines in our evaluations while using the default policy mode without CEM-style action search. Project page: https://dachii-azm.github.io/navwam/",
+      "authors": [
+        "Daichi Azuma",
+        "Taiki Miyanishi",
+        "Koya Sakamoto",
+        "Shuhei Kurita",
+        "Yaonan Zhu",
+        "Petr Khrapchenkov",
+        "Motoaki Kawanabe",
+        "Yusuke Iwasawa",
+        "Yutaka Matsuo"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-11T15:44:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.13494v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "navigation world model that predicts future observations and actions",
+      "llm_evidence_cn": "预测未来观察和动作的导航世界模型",
+      "llm_evidence": "预测未来观察和动作的导航世界模型",
+      "canonical_evidence": "预测未来观察和动作的导航世界模型",
+      "llm_tldr_en": "NavWAM introduces a diffusion-transformer policy that jointly predicts future observations, goal-progress values, and action chunks, transforming world model prediction into executable closed-loop control for visual navigation.",
+      "llm_tldr_cn": "针对导航世界模型仅作为预测模块、需要外部规划器才能转化为闭环控制的问题，论文提出NavWAM，一种扩散变换器策略，将未来观察、目标进度值和动作块联合建模到共享潜在序列中。通过共同学习未来预测与动作、价值目标，NavWAM实现了端到端的闭环导航。实验表明，在多个视觉导航 benchmark 上，NavWAM 优于依赖独立规划器的方法，展示了世界动作模型在导航中的潜力。",
+      "llm_tldr": "针对导航世界模型仅作为预测模块、需要外部规划器才能转化为闭环控制的问题，论文提出NavWAM，一种扩散变换器策略，将未来观察、目标进度值和动作块联合建模到共享潜在序列中。通过共同学习未来预测与动作、价值目标，NavWAM实现了端到端的闭环导航。实验表明，在多个视觉导航 benchmark 上，NavWAM 优于依赖独立规划器的方法，展示了世界动作模型在导航中的潜力。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13672v1",
+      "source": "arxiv",
+      "title": "$\\texttt{WEAVER}$, Better, Faster, Longer: An Effective World Model for Robotic Manipulation",
+      "abstract": "The potential impacts of world models (WMs, i.e., learned simulators) on robotics are far-reaching -- policy evaluation, policy improvement, and test-time planning -- all with limited real-world interaction. To unlock these downstream capabilities, a WM needs to jointly satisfy three desiderata: $\\textit{(i)}$ fidelity (i.e., producing simulated trajectories that correlate with reality), $\\textit{(ii)}$ consistency (i.e., producing simulated trajectories that are coherent over long horizons), and $\\textit{(iii)}$ efficiency (i.e., producing simulated trajectories quickly). We propose $\\texttt{WEAVER}$ (World Estimation Across Views for Embodied Reasoning): a WM architecture that simultaneously achieves all three desiderata, providing state-of-the-art results on robotic manipulation tasks. $\\texttt{WEAVER}$ is a multi-view WM trained to predict future latents and reward values via a flow-matching loss. We distill the key design decisions across model architecture, memory, and prediction objectives required to unlock the kinds of long-horizon dynamic manipulation tasks that have confounded prior world modeling approaches. We apply $\\texttt{WEAVER}$ in robotic hardware, demonstrating its effectiveness at policy evaluation ($ρ$=0.870 correlation with real-world success rate), policy improvement (real-world success rate improvement of $38\\%$ on top of the $π_{0.5}$ robot foundation model), and test-time planning (real-world success rate improvement of $14\\%$ with a $5-10\\times$ speedup over prior WMs). $\\texttt{WEAVER}$ also demonstrates better performance than prior WMs when evaluated on out-of-distribution scenarios. Code, models, and videos at: https://arnavkj1995.github.io/WEAVER/ .",
+      "authors": [
+        "Arnav Kumar Jain",
+        "Yilin Wu",
+        "Jesse Farebrother",
+        "Gokul Swamy",
+        "Andrea Bajcsy"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-11T17:59:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.13672v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes an effective world model for robotic manipulation, enabling model-based RL capabilities",
+      "llm_evidence_cn": "提出用于机器人操控的有效世界模型，支持基于模型的强化学习",
+      "llm_evidence": "提出用于机器人操控的有效世界模型，支持基于模型的强化学习",
+      "canonical_evidence": "提出用于机器人操控的有效世界模型，支持基于模型的强化学习",
+      "llm_tldr_en": "WEAVER is a world model architecture for robotic manipulation that achieves high fidelity, long-horizon consistency, and fast simulation speed simultaneously.",
+      "llm_tldr_cn": "WEAVER提出一种世界模型架构，用于机器人操控任务，同时满足高保真度、长程一致性和高效模拟三大要求。该模型利用多视图输入和隐空间预测，生成与真实轨迹高度相关的模拟轨迹，并在长时间范围内保持连贯。实验表明，WEAVER在策略评估、策略改进和测试时规划等下游任务中显著优于现有世界模型，推动了学习模拟器在机器人领域的实际应用。",
+      "llm_tldr": "WEAVER提出一种世界模型架构，用于机器人操控任务，同时满足高保真度、长程一致性和高效模拟三大要求。该模型利用多视图输入和隐空间预测，生成与真实轨迹高度相关的模拟轨迹，并在长时间范围内保持连贯。实验表明，WEAVER在策略评估、策略改进和测试时规划等下游任务中显著优于现有世界模型，推动了学习模拟器在机器人领域的实际应用。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "model-based reinforcement learning with world models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13674v1",
+      "source": "arxiv",
+      "title": "RepWAM: World Action Modeling with Representation Visual-Action Tokenizers",
+      "abstract": "This work presents RepWAM, a representation-centric world action model (WAM) built on representation visual-action tokenizers. Existing WAMs typically inherit reconstruction-oriented video tokenizers from pretrained video generation models. Although these tokenizers preserve visual fidelity, pixel reconstruction alone provides limited guidance for learning instruction-following dynamics that connect future prediction with robot control. To address this, we explore a semantic visual-action latent space for representation-centric world action modeling. Specifically, we train a representation visual-action tokenizer that maps visual inputs into aligned visual and latent action tokens. We then pretrain our WAM to jointly model future visual states and the latent actions that connect them under language instructions, followed by adaptation to real robot trajectories for closed-loop manipulation. Experiments on real-world manipulation tasks and simulation benchmarks show that RepWAM delivers strong performance across diverse manipulation settings, while ablations highlight the value of semantic visual-action tokenization over reconstruction-oriented alternatives. These results establish representation visual-action tokenization as a promising foundation for world action models and a step toward generalist robot policies. Code and weights will be available at https://github.com/wdrink/RepWAM.",
+      "authors": [
+        "Junke Wang",
+        "Qihang Zhang",
+        "Shuai Yang",
+        "Yiming Luo",
+        "Yujun Shen",
+        "Zuxuan Wu",
+        "Yu-Gang Jiang",
+        "Yinghao Xu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-11T17:59:43+00:00",
+      "link": "https://arxiv.org/pdf/2606.13674v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes representation visual-action latent space for world action modeling, directly relevant to latent world model",
+      "llm_evidence_cn": "提出表示视觉-动作潜在空间用于世界动作建模，直接关联潜在世界模型",
+      "llm_evidence": "提出表示视觉-动作潜在空间用于世界动作建模，直接关联潜在世界模型",
+      "canonical_evidence": "提出表示视觉-动作潜在空间用于世界动作建模，直接关联潜在世界模型",
+      "llm_tldr_en": "RepWAM trains representation visual-action tokenizers to build a latent world action model that jointly predicts future visual states and latent actions.",
+      "llm_tldr_cn": "RepWAM提出表示中心的世界动作模型，通过训练表示视觉-动作分词器，将视觉输入映射为对齐的视觉和潜在动作令牌。在此基础上预训练世界动作模型，联合预测未来视觉状态和潜在动作。相比于依赖像素重建的传统视频分词器，该潜在表示能更好地捕捉指令跟随动态，连接未来预测与机器人控制，在仿真和真实操控任务上取得了更优的预测和控制性能。",
+      "llm_tldr": "RepWAM提出表示中心的世界动作模型，通过训练表示视觉-动作分词器，将视觉输入映射为对齐的视觉和潜在动作令牌。在此基础上预训练世界动作模型，联合预测未来视觉状态和潜在动作。相比于依赖像素重建的传统视频分词器，该潜在表示能更好地捕捉指令跟随动态，连接未来预测与机器人控制，在仿真和真实操控任务上取得了更优的预测和控制性能。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.08962v1",
+      "source": "arxiv",
+      "title": "C$^3$ache: Accelerating World Action Models with Cross Inference Chunk Cache",
+      "abstract": "World Action Models (WAMs) generalize better than standard Vision-Language-Action (VLA) policies to novel motions and environments, because a video-modeling objective lets them learn from abundant unlabeled video rather than scarce labeled robot demonstrations. This generalization is computationally expensive. To complete a task, a WAM runs over multiple inference chunks, and each chunk requires a costly denoising process. Existing acceleration methods reduce this cost by caching and reusing computation within a single chunk's denoising trajectory. Our empirical analysis reveals a substantial source of redundancy they overlook: redundancy across chunks. When a robot executes a smooth behavior, the residuals computed at a given denoising step are strongly correlated from one chunk to the next. We introduce C$^3$ache, a training-free method that caches and reuses these residuals across inference chunks at the same denoising step. Experiments on benchmarks with a Fast-WAM backbone show that C$^3$ache achieves up to a $2.5\\times$ speedup in total wall-clock inference time, with negligible degradation in task success rate.",
+      "authors": [
+        "Weisen Zhao",
+        "Lam Nguyen",
+        "Zhicong Lu",
+        "Yuzhang Shang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-06-08T03:01:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.08962v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "acceleration of world action models",
+      "llm_evidence_cn": "加速世界动作模型",
+      "llm_evidence": "加速世界动作模型",
+      "canonical_evidence": "加速世界动作模型",
+      "llm_tldr_en": "C^3ache accelerates World Action Models by caching and reusing computations across inference chunks, exploiting redundancy in continuous behavior.",
+      "llm_tldr_cn": "世界动作模型（WAM）因多块迭代去噪推理缓慢。现有加速只减少块内冗余，忽略块间冗余。本文提出C^3ache，利用机器人平滑行为中块间去噪残差的相似性，实现推理加速且不损失精度。",
+      "llm_tldr": "世界动作模型（WAM）因多块迭代去噪推理缓慢。现有加速只减少块内冗余，忽略块间冗余。本文提出C^3ache，利用机器人平滑行为中块间去噪残差的相似性，实现推理加速且不损失精度。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "predictive world model",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.10044v1",
+      "source": "arxiv",
+      "title": "Business World Model",
+      "abstract": "Businesses are increasingly adopting AI-enabled tools to improve productivity, reduce costs, and enhance products and services. However, the transformative potential of AI extends beyond automating predefined tasks: it lies in enabling intelligent systems to plan, optimize, and execute business initiatives from high-level strategic objectives. This paper introduces the concept and architecture of a business world model (BWM), a world model specialized for business and organizational environments. Inspired by world models in artificial intelligence, cognitive science, and control theory, a BWM encodes business states, dynamics, constraints, objectives, and feasible action space to support autonomous decision-making. We propose a business-semantics-centric formulation in which business states, dynamics and actions are linked to key business entities. Within this framework, agents can simulate alternative action sequences, estimate their effects on future business outcomes, and evaluate trade-offs under uncertainty. The proposed architecture integrates semantic data representations, probabilistic machine learning models, deterministic business rules, and explicit action space into a coherent structure for planning and counterfactual reasoning. Although its individual components are not new, the contribution of BWM lies in organizing them as an executable internal simulator for business initiatives. This work establishes a conceptual foundation for autonomous business systems capable of moving from instruction-based execution toward goal-driven planning and execution.",
+      "authors": [
+        "Cecil Pang",
+        "Hiroki Sayama"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-08T18:16:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.10044v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "introduces Business World Model (BWM), a world model specialized for business environments",
+      "llm_evidence_cn": "提出商业世界模型（BWM），是一种专门用于商业环境的世界模型",
+      "llm_evidence": "提出商业世界模型（BWM），是一种专门用于商业环境的世界模型",
+      "canonical_evidence": "提出商业世界模型（BWM），是一种专门用于商业环境的世界模型",
+      "llm_tldr_en": "Proposes Business World Model, integrating AI planning and world model concepts for autonomous business decision-making.",
+      "llm_tldr_cn": "本文针对企业智能决策的需求，提出商业世界模型（BWM）的概念与架构。BWM借鉴人工智能、认知科学和控制理论中的世界模型思想，将企业状态、动态、约束、目标和可行动作空间编码为统一表示，以支持从高层战略到执行层的自主决策。该方法通过业务语义中心化的形式化定义，为商业环境中的智能代理提供可预测和可优化的世界模型基础，有望提升企业AI的自主规划与执行能力。",
+      "llm_tldr": "本文针对企业智能决策的需求，提出商业世界模型（BWM）的概念与架构。BWM借鉴人工智能、认知科学和控制理论中的世界模型思想，将企业状态、动态、约束、目标和可行动作空间编码为统一表示，以支持从高层战略到执行层的自主决策。该方法通过业务语义中心化的形式化定义，为商业环境中的智能代理提供可预测和可优化的世界模型基础，有望提升企业AI的自主规划与执行能力。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.09827v1",
+      "source": "arxiv",
+      "title": "MemoryVLA++: Temporal Modeling via Memory and Imagination in Vision-Language-Action Models",
+      "abstract": "Temporal modeling is essential for robotic manipulation, as effective control requires both memory of past interactions and imagination of future states. However, most VLA models rely primarily on the current observation and therefore struggle with long-horizon, temporally dependent tasks. Cognitive science suggests that humans rely on working memory to buffer short-lived context, the hippocampal system to preserve episodic memory of past experience, and internal models to imagine possible future state evolution. Inspired by these mechanisms, we propose MemoryVLA++, a full temporal modeling framework that equips VLA models with memory and imagination for robotic manipulation. A pretrained VLM encodes the current observation into perceptual and cognitive tokens, forming working memory. These tokens query a Perceptual-Cognitive Memory Bank to retrieve relevant historical context. This bank stores low-level details and high-level semantics from past interactions, and is updated through redundancy-aware consolidation. A world model imagines future states in a denoising latent space, and the imagined latents are integrated under memory guidance to form full temporal-aware tokens. The resulting tokens condition a diffusion action expert to predict temporally consistent action sequences. We conduct extensive experiments on 5 simulation benchmarks and 3 categories of real-robot tasks across 3 robots, covering general manipulation, long-horizon temporal tasks, robustness, and generalization. Our method achieves strong performance across Libero, SimplerEnv, Mikasa-Robo, Calvin, Libero-Plus, and diverse real-robot tasks, validating the effectiveness of full temporal modeling with memory and imagination. For example, on real robots, it achieves +9%, +26%, +28% gains on general, memory-dependent, and imagination-dependent tasks. Project Page: https://shihao1895.github.io/MemoryVLA-PP-Web",
+      "authors": [
+        "Hao Shi",
+        "Weiye Li",
+        "Bin Xie",
+        "Yulin Wang",
+        "Renping Zhou",
+        "Tiancai Wang",
+        "Xiangyu Zhang",
+        "Ping Luo",
+        "Gao Huang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-08T17:59:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.09827v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "internal world model for imagination in VLA",
+      "llm_evidence_cn": "VLA中的内部世界模型用于想象",
+      "llm_evidence": "VLA中的内部世界模型用于想象",
+      "canonical_evidence": "VLA中的内部世界模型用于想象",
+      "llm_tldr_en": "MemoryVLA++ equips VLA models with memory and an internal world model for imagination, improving temporal modeling in robotic manipulation.",
+      "llm_tldr_cn": "现有VLA模型缺乏时间建模，难以处理长期依赖任务。本文受认知科学启发，为VLA添加工作记忆、情景记忆和内部世界模型以想象未来状态，在多种操作任务上显著提升性能。",
+      "llm_tldr": "现有VLA模型缺乏时间建模，难以处理长期依赖任务。本文受认知科学启发，为VLA添加工作记忆、情景记忆和内部世界模型以想象未来状态，在多种操作任务上显著提升性能。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}

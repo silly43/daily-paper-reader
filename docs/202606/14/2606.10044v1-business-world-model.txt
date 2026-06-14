@@ -1,0 +1,1316 @@
+Title: 2606.10044v1.pdf
+
+URL Source: https://arxiv.org/pdf/2606.10044v1
+
+Published Time: Wed, 10 Jun 2026 00:07:55 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Business World Model 
+
+Cecil Pang 1, 2 
+
+> 1
+
+AI Engineering, USA TODAY Co., Inc., New York, USA 
+
+> 2
+
+School of Systems Science and Industrial Engineering , Binghamton University, State University of New York , Binghamton, USA 
+
+ORCID: 0009 -0003 -1725 -7873 
+
+Hiroki Sayama 2, 3, 4 
+
+> 2
+
+School of Systems Science and Industrial Engineering, Binghamton University, State University of New York, Binghamton, USA 
+
+> 3
+
+Binghamton Center of Complex Systems, Binghamton University, State University of New York, Binghamton, USA 
+
+> 4
+
+Waseda Innovation Lab, Waseda University, Tokyo, Japan 
+
+ORCID: 0000 -0002 -2670 -5864 
+
+Abstract — Businesses are increasingly adopting AI -enabled tools 
+
+to improve productivity, reduce costs, and enhance products and 
+
+services. However, the transformative potential of AI extends 
+
+beyond automating predefined tasks: it lies in enabling intelligent 
+
+systems to plan, optimize, and execute business initiatives from 
+
+high -level strategic objectives. This paper introduces the concept 
+
+and architecture of a business world model (BWM), a world model 
+
+specialized for business and organizational environments. 
+
+Inspired by world models in artificial intelligence, cognitive 
+
+science, and control theory, a BWM encodes business states, 
+
+dynamics, constraints, objectives, and feasible action space to 
+
+support autonomous decision -making. We propose a business -
+
+semantics -centric formulation in which business states , dynamics 
+
+and actions are linked to key business entities. Within this 
+
+framework, agents can simulate alternative action sequences, 
+
+estimate their effects on future business outcomes, and evaluate 
+
+trade -offs unde r uncertainty. The proposed architecture 
+
+integrates semantic data representations, probabilistic machine 
+
+learning models, deterministic business rules, and explicit action 
+
+space into a coherent structure for planning and counterfactual 
+
+reasoning. Although its individual components are not new, the 
+
+contribution of BWM lies in organizing them as an executable 
+
+internal simulator for business initiatives. This work establishes a 
+
+conceptual foundation for autonomous business systems capable 
+
+of moving from instru ction -based execution toward goal -driven 
+
+planning and execution .
+
+Keywords —business world model, world model , autonomous 
+
+business system, AI agent 
+
+I. INTRODUCTION 
+
+A. Motivation 
+
+Businesses have rapidly adopted AI -enabled tools to 
+
+introduce new product capabilities, improve productivity, 
+
+reduce operating costs, or pursue all three objectives 
+
+simultaneously. We argue, however, that the significance of AI 
+
+extends well beyond incremental tool support. Contemporary AI 
+
+systems have the potential to ignite business growth by 
+
+fundamentally changing how businesses are planned, 
+
+coordinated, and executed. Rather than requiring executives to 
+
+specify detailed instructions for every task within a business 
+
+initiative, future business systems operate from strategic 
+
+outcome specifications, with intelligent systems performing 
+
+planning and optimization to decompose goals into 
+
+interdependent tasks , execut e the tasks and adapt as internal or 
+
+external conditions change. 
+
+Today, a business initiative of a media subscription company 
+
+might be defined like the following :
+
+“Identify subscribers who pay more than $10 per month, are in 
+
+churn -risk tier 4, and live in cities where their household 
+
+income s are above the median, then send them a 10% discount.” 
+
+According to Pang and Sayama [1] , a neuro -symbolic AI system 
+
+can autonomously and reliably execute an initiative like this. We 
+
+propose going a step further: the autonomous system should not 
+
+only execute a predefined plan but also perform the planning and 
+
+optimization that come before exe cution . Instead of specifying 
+
+the exact execution logic and parameters , the user would specify 
+
+the desired business outcome :
+
+“Reduce the overall churn rate of paid subscribers by 2%. 
+
+Propose two campaigns. Each campaign may target no more 
+
+than 20,000 subscribers, and total revenue must not decline by 
+
+more than 0.1%.” 
+
+The autonomous system would then generate two campaign 
+
+options and execute the one that is selected. For example, it 
+
+might propose: 
+
+Campaign 1: Target subscribers who pay more than $10 per 
+
+month, are in churn -risk tier 4, and have household income 
+
+above their city’s median. Offer them a 10% discount. The 
+
+model estimates that this campaign would reduce the paid -
+
+subscriber churn rate by 2.1%, with n o revenue loss. 
+
+Campaign 2: Target subscribers who pay more than $15 per 
+
+month, are in churn -risk tier 3, and have household income 
+
+above their city’s median. Offer them a 10% discount. The 
+
+model estimates that this campaign would reduce the paid -
+
+subscriber churn rate by 2.1%, while decreasing revenue by 
+
+0.05%. 
+
+To generate campaigns that can achieve the stated business 
+
+goals, the autonomous system must be able to answer three key 
+
+questions :
+
+• What actions can be taken to reduce churn ?
+
+• How does each action affect churn? 
+
+• How does each action affect revenue? 
+
+More generally, for an autonomous system to propose action 
+
+plans that achieve a specified outcome subject to given 
+
+constraints, it must be able to :• identify actions that could help achieve the stated goals ,
+
+• run internal simulations over different parameter settings 
+
+to search for plans that meet those goals , and 
+
+• monitor the side effects of those simulated plans to 
+
+ensure that all specified constraints are satisfied .
+
+Figure 1 is a comparison of the proposed goal -driven 
+
+autonomous business system with today’s instruction -based 
+
+system. 
+
+B. Our Contribution 
+
+We present the concept and architecture of a business world 
+
+model (BWM) as a foundational component of the autonomous 
+
+business system described above. Drawing inspiration from 
+
+world models of the physical world , a BWM encodes the state s,
+
+dynamics, and actions of a business environment, allowing 
+
+intelligent agents to evaluate possible courses of action and plan 
+
+multi -step initiatives toward desired outcomes . To the best of 
+
+our knowledge, this work is the first to introduce the concept of 
+
+a business world mod el. 
+
+We begin by reviewing the concept of world model in the 
+
+literature and its historical foundations. Building on this 
+
+background, we introduce the concept of a BWM and articulate 
+
+the problem context. We then present the architecture of BWM 
+
+in a modern -day data -rich business environment . This work 
+
+focuses on the conceptual architecture and its prospective 
+
+implementation. 
+
+II. BACKGROUND 
+
+A. What is a World Model 
+
+A world model in the context of intelligent agents is an 
+
+internal representation that the agent use to reason about the 
+
+environment in which they operate [2], [3] . Specifically, it 
+
+supports understanding the current state as well as predicting 
+
+future states. In other words, it models the spatial and temporal 
+
+dynamics of the environment: how states evolve over time, what 
+
+plausible future states are, how actions infl uence them, and how 
+
+observations relate to underlying states. When equipped with a 
+
+world model, an agent can simulate possible futures, evaluate 
+
+hypothetical actions, and select one that maximizes the 
+
+likelihood of achieving a goal. This leads to more inte lligent 
+
+behavior than simply reacting to current observations at every 
+
+step. 
+
+One main motivation for world models is inspired by 
+
+biological intelligence . Humans and animals do not learn solely 
+
+by going through all the scenarios by trial and error in the 
+
+physical world, and do not need to know for certain all possible 
+
+consequences before taking actions [4] . This is especially true 
+
+when there is perceived immediate danger. Rather, they 
+
+mentally rehearse actions , perhaps unconsciously , imagine 
+
+consequences based on the current understanding of the 
+
+environment (which could be limited and full of uncertainties), 
+
+generalize when necessary, make decisions, and take actions. 
+
+This is in essence a planning process. This also implies that some 
+
+model (or models ) of the world must exist in the mind so that 
+
+carrying out this planning process is possible. When these world 
+
+models are incomplete or uncertain, surprises may arise when 
+
+predictions about sensations are different from what are 
+
+observed from the environment [5] .
+
+Another motivation is to overcome a major constraint in 
+
+training the current deep learning -based models. Deep learning 
+
+models require a very large number of samples of the 
+
+environment that covers a broad spectrum of the reality in order 
+
+to learn and genera lize [6] . Collecting these training samples are 
+
+often not feasible. Interacting directly with the real environment 
+
+can be expensive, time consuming, and even dangerous in some 
+
+cases. A learned world model allows an agent to shift part of its 
+
+learning and decision -making into an internal simulation, with 
+
+the expectation that it would generalize to the real -world 
+
+scenarios [2], [3] .
+
+In modern AI, world models are typically learned from data 
+
+and often take the form of probabilistic models that map from 
+
+latent states and actions to predicted future states and 
+
+observations [3], [7] . This means it can also suffer from the same         
+
+> Fig .1.Comparison of today's instruction -based system with the proposed goal -driven autonomous business system. In today's approach (top), a human
+> specifies exact execution steps, which the system follows literally to produce a single, fixed output —with no planning and no alternatives. In the proposed approach
+> (bottom), a human specifies only the desired business ou tcome, and the system autonomously plans, optimizes, and executes .It generates multiple candidate action
+> plans, selects the one that best meets the stated goals and constraints, and carries it out. This shift from instructing how to declaring what is ena bled by a Business
+> World Model that allows the system to reason about possible actions, simulate their consequences, and satisfy specified busin ess constraints.
+
+constraint of requiring very large amount of training data. It is 
+
+also possible that parts of the (latent states + actions --> future 
+
+states + observations) pipeline are not differentiable and 
+
+therefore gradient -based learning is not possible. In this case ,
+
+world models need to mix in other gradient -free methods such 
+
+as heuristic search and predicate logic [4] .
+
+In summary, a world model is not just a static description of 
+
+the environment; it is a spatial and temporal model that can be 
+
+rolled forward in time to support prediction, planning, and 
+
+“what -if” analysis. It allows agents to learn from imagined 
+
+experience rather than solely depending on real interactions .
+
+B. Historical Foundation 
+
+The modern idea of a world model is an internal model that 
+
+AI agent s use to dry run scenarios before choosing a course of 
+
+actions. This is important because real interactions with the 
+
+environment in which the agent s operate are often expensive and 
+
+have undesirable side effects. However, this idea did not entirely 
+
+originate from the field of AI. Rather, it emerged gradually 
+
+across multiple fields that were all trying to solve a similar 
+
+problem: how can a system behave intelligently beyond relying 
+
+solely on immediate sensory input? In engineering, the 
+
+challenge was in operating physical systems under 
+
+environments that were not fully under control. In psychology 
+
+and neuroscience, it was in explaining flexible behavior such as 
+
+generalization and skilled movement. In AI, it was in planning 
+
+and decision -making beyond reflexive stimulus -response 
+
+policies. Historically, world model ideas appear ed in: 
+
+• Control theory and cybernetics: internal models as a 
+
+requirement for robust regulation and prediction. 
+
+• Cognitive science and neuroscience: cognitive maps, 
+
+mental models, and simulation as mechanisms for 
+
+intelligent behavior. 
+
+• AI and decision theory: explicit environment models for 
+
+planning (symbolic and probabilistic) and later for 
+
+reinforcement learning .
+
+What is striking is that each of them arrived at a similar thesis: 
+
+to control or understand a system, you need some internal 
+
+structure that models its regularities well enough to support 
+
+prediction and counterfactuals. 
+
+The concept of world models also has its root in the internal 
+
+models in control theory and cybernetics. It was neatly 
+
+summarized in the article title of [8] : “Every good regulator of a 
+
+system must be a model of that system”. This does not mean the 
+
+regulator has an exact copy of the system. It would not be 
+
+practical or even useful that way. Rather, it implies that optimal 
+
+regulation requires modelling of the dynamics of the system. In 
+
+control theory, Francis and Wonham [9] stated the Internal 
+
+Model Principal that “suitably reduplicated model of the 
+
+dynamic structure of the disturbance and reference signals” is 
+
+required in the feedback path to the regulator. In modern 
+
+engineering control, Model Predictive Control (MPC) is a set of 
+
+advanced control methods used in many engineering fields. It 
+
+makes use of a process model to predict the future behavior of 
+
+the controlled system [10] . These are very close to the modern 
+
+world model intuition: good control requires an internal 
+
+predictive model that guides the actions of the agent s.
+
+Cognitive maps and mental models in psychology can also 
+
+be framed as world models. Tolman [11] argued that behavior 
+
+in rat maze experiments was better explained by internal map -
+
+like representations than by simpl y sequences of stimulus -
+
+response. This was historically important because it suggested 
+
+that animals (rats) learned structured internal representations (a 
+
+map) of the environment (maze), which helped them make 
+
+moves to find the food faster (goal) . This cognitive map is 
+
+essentially a world model, which is a reusable representation 
+
+that supports inference and planning. From this angle, the 
+
+cogni tive -map theory contributes two important ideas :
+
+• world models can be latent structures, and 
+
+• these latent structures enable generalization and 
+
+planning, not merely simple reactions to stimulations. 
+
+Another remarkable direct historical statement of the world 
+
+model concept was Kenneth Craik’s work on explanation and 
+
+thought, where he framed cognition in terms of small -scale 
+
+models of external reality that the brain used to make predictions 
+
+and try out possibl e scenarios without physically acting on them 
+
+[12] . Perception and linguistic comprehension yields mental 
+
+models, while “thinking and reasoning are internal manipulation 
+
+of mental models” [13] .
+
+Classical AI treated world models as symbolic logic 
+
+systems, and explicit models were used for planning and acting. 
+
+For example, Fikes and Nilsson [14] encoded actions as 
+
+operators with preconditions and effects such that planning was 
+
+framed as search through a world model of state changes. While 
+
+AI’s earliest successes in planning required a hand -crafted world 
+
+model, by the late 20th century, researcher s were already 
+
+proposing learned, differentiable internal models. Sutton’s Dyna 
+
+architecture [15] explicitly integrated learning a model from 
+
+experience, planning with simulated (“hypothetical”) 
+
+experience, and reactive execution. Schmidhuber [16] used 
+
+supervised recurrent neural networks to model environment 
+
+dynamics for planning and reinforcement learning. These were 
+
+early attempts for learned world models and were direct 
+
+ancestors of modern learned latent dynamics model used for 
+
+planning. In the deep learning era, world models are compressed 
+
+latent variables learned from a large number of data samples and 
+
+then policies are trained using these learned model, as proposed 
+
+by Ha and Schmidhuber [2] .
+
+C. Related Work 
+
+Recent advances in world model research have produced a 
+
+diverse set of systems, many of which are optimized for a 
+
+particular domain or simulation setting. Despite this diversity, 
+
+they have a notable commonality: most of them place strong 
+
+emphasis on video or image generation and on the visual fidelity 
+
+of generated content. This shared focus is especially visible 
+
+across gaming, 3D scene generation, physical control, and 
+
+general -purpose video generation, even though these syste ms 
+
+differ substantially in archi tecture, objectives, and domain 
+
+applications .
+
+In the domain of gaming world models, systems such as 
+
+Project Genie by Google Labs [17] , Muse by Microsoft 
+
+Research [18] , and Oasis [19] use generative models to simulate 
+
+video game environments from visual and action inputs. These 
+
+systems are highly domain specific and produce plausible trajectories and up to minutes of continuous gameplay. There are 
+
+also general -purpose video generation models such as OpenAI 
+
+Sora [20] and Google DeepMind Veo [21] . These models are 
+
+designed to generate high -quality video from textual prompts 
+
+and, in some cases, prior frames. Their outputs can be visually 
+
+striking, but strictly speaking they are not world models because 
+
+they do not explicitly support reasoning and planning. 
+
+A related line of work concerns 3D scene world models, 
+
+such as World Labs [22] and similar efforts. These systems 
+
+focus on visually compelling 3D scene generation and 
+
+egocentric navigation . The y represent important advances in 3D 
+
+scene synthesis by pushing the frontier of spatial realism. They 
+
+are the first to propose 3D as an interface for humans and 
+
+machines to “communicate about space, collaborate on designs, 
+
+and create new environments” .
+
+In physical world modeling, systems such as Wayve GAIA -
+
+2 [23] and NVIDIA Cosmos [24] target domains including 
+
+autonomous driving, robotic manipulation, and embodied 
+
+navigation. These models demonstrate strong capabilities in 
+
+representing low -level physics and sensorimotor dynamics 
+
+across varied environmental conditions such as lighting, 
+
+we ather, and geography. They are typically tightly coupled to 
+
+their task domains and often rely on specialized sensors, data 
+
+pipelines, or control architectures .
+
+A conceptually distinct direction is represented by two 
+
+notable recent developments: joint embedding predictive 
+
+architectures (JEPA) [4] and PAN [25] . The JEPA family of 
+
+systems includ es V-JEPA 1 and 2 [26], [27] , DINO -WM [28] ,
+
+and PLDM [29] . Instead of predicting and generating realistic 
+
+environment scenes ( pixels ), the se JEPA world models predict 
+
+future latent embeddings through encoder -encoder architectures 
+
+trained with energy -based losses. This approach is appealing 
+
+because it avoids the full burden of pixel -level reconstruction of 
+
+the observable world from the latent embeddings and may offer 
+
+a more tractable route to abstraction. However the authors of 
+
+PAN believe that grounding the latent embeddings to the 
+
+environment through real sensor y inputs is necessary to avoid 
+
+representation collapse or unidentifiability [30] . The 
+
+architecture of PAN [25] combines an autoregressive latent 
+
+dynamics model grounded in large -scale text knowledge with a 
+
+video diffusion decoder, allowing it to link language -
+
+conditioned reasoning about future states with detailed visual 
+
+simulation. Trained on diverse video -action data, PAN aims to 
+
+move beyond narrow domain -specific world models by 
+
+supporting open -domain, natural -language -conditioned 
+
+simulation. 
+
+III. BUSINESS WORLD MODEL 
+
+A. Definitions and Problem Context 
+
+Inspired by the concept of world models, and especially by 
+
+architectures such as PAN and JEPA, a business world 
+
+model (BWM) is designed to support planning, counterfactual 
+
+reasoning, and the autonomous execution of business initiatives. 
+
+Figure 2 depicts the core perception –prediction –action loop of a 
+
+BWM . It shows how an agent receives observations from the 
+
+business environment and uses them to build and continuously 
+
+update the BWM, which is an internal representation of the 
+
+business world . Drawing on this representation, the agent 
+
+predicts possible future states and evaluates the likely 
+
+consequences of alternative actions before committing to one. 
+
+Supported by the BWM, the agent goes beyond simple reaction .
+
+It reasons over the modeled states, dynamics, and action space 
+
+to plan multi -step business initiatives, simulate their outcomes, 
+
+and select the most promising course of action s to execute. Once 
+
+an action is taken, it changes the world, producing new 
+
+observations and events that are fed back into the BWM ,
+
+allowing the agent to adapt its understanding and refine future 
+
+action plans. In this way, the BWM serves as the internal 
+
+simulator that enables intelligent agent s to autonomously plan, 
+
+optimize, and execute business initiatives in pursuit of desired 
+
+outcomes. 
+
+A BWM may be understood as a world model specialized 
+
+for business organizational environments . It encodes :
+
+• organization - and market -specific states , including 
+
+customers, demand signals , products, constraints, and 
+
+operational capacity, 
+
+• strategic and operational relationships , such as those 
+
+among pricing, adoption, churn, and revenue, 
+
+• the space of feasible actions available to business 
+
+initiative s, and  
+
+> Fig .2
+
+. Business world model supported agent loop for business                     
+
+> initiatives. The diagram illustrates how an agent interacts with the business
+> environment through acontinuous perception –prediction –action cycle.
+> Observations from the environment are used to update an internal business world
+> model (BWM) , which supports the prediction of future states and the evaluation
+> of alternative paths of actions. This BWM enabl es the agent to simulate
+> scenarios, plan multi -step business initiatives, and execute actions aimed at
+> achieving desired business outcomes. Feedback from the environment is then
+> used to refine the BWM and improve subsequent decisions.
+
+• the state -dependent effects of those actions on future 
+
+outcomes .
+
+As illustrated in Figure 3, BWM provides a foundation for 
+
+autonomous business decision -making through scenario 
+
+simulation, action -sequence evaluation, and trade -off analysis 
+
+under uncertainty .
+
+Business initiatives —such as product launches, market 
+
+expansions , and customer churn reduction —require decisions 
+
+under partial observability, shifting conditions, and strategic 
+
+interaction. Unlike the physical environment , where agent 
+
+behavior can be modeled according to stable and universal 
+
+physical laws that enable reliable trajectory simulation, business 
+
+environments lack universally valid and predictive “laws of 
+
+business” . Business outcomes depend on heterogeneous and 
+
+context -sensitive factors: organiza tional structure, incentives, 
+
+regulation, competition, customer behavior, macro conditions ,
+
+and many more . As a result, business decision support is often 
+
+fragmented across :
+
+• narrative strategy artifacts (e.g. plans, frameworks, 
+
+playbooks), 
+
+• descriptive analytics (e.g. dashboards and KPI 
+
+monitoring), and 
+
+• isolated predictive or optimization tools ( e.g. forecasting 
+
+models, pricing models, capacity planning tools ). 
+
+These components rarely , if ever, compose into a coherent 
+
+architecture that can be queried, simulated, and reused across 
+
+business initiatives. This is what a B WM provides. 
+
+The key challenge of designing a BWM is in grounding and 
+
+executability. While large bodies of codified knowledge exist in 
+
+business management education and practice (e.g., strategy 
+
+frameworks, operational best practices), they are primarily 
+
+represented as text and are difficult to operationalize directly. 
+
+Quantitative tools such as operations research and machine 
+
+learning models can optimize specific subproblems but typically 
+
+presume well -defined objectives, variables, and constraints. The 
+
+central scientifi c and engineering challenge of architecting a 
+
+BWM is therefore to :
+
+1. extract , organize, and integrate heterogeneous business 
+
+knowledge and tools, and 
+
+2. ground it first in the context of a business and then in the 
+
+local context of business initiative s.
+
+BWM provide s a systematic framework to this challenge and 
+
+make the knowledge and tools useful for planning and decision -
+
+making by autonomous AI agents .
+
+B. Business Semantics Centric 
+
+We propose a business semantics centric approach to 
+
+modeling states, dynamics, and action space, following Pang 
+
+[31] . This approach models :
+
+• the entities , attributes and relationships among them that 
+
+shape business performance ,
+
+• the dynamics among them under uncertainty , and 
+
+• the feasible actions that can influence these entities ,
+
+which in turn contribute to the success of business 
+
+initiatives. 
+
+The central idea is that the elements most relevant to business 
+
+initiative s are those tied to the business’s key entities, such 
+
+as consumer , product , and subscription . A BWM should 
+
+therefore not attempt to represent every aspect of a business. 
+
+Instead, it should focus on the aspects of state s, dynamics and 
+
+actions that are useful for scenario simulations in support of 
+
+autonomous agents in business initiatives. This is in line with 
+
+the suggestion by LeCun [4] that “ it would be useful to have a 
+
+way to bias the system towards representations that contain 
+
+information relevant to a class of tasks ”. As shown in Figure 4,
+
+linking these elements to key business entities is the first step 
+
+toward grounding them in business context and rendering them  
+
+> Fig .3
+
+. Conceptual diagram of a Business World Model (BWM). A BWM serves as a specialized world model for organizational environments. It operates by 
+
+> encoding current business states, strategic and operational dynamics, and feasible actions to model the state -dependent effects of potential initiatives. By capturing
+> these elements, the architecture provides a foundation for autonomous decision support, enabling intelligent agents to conduc t scenario simulations, evaluate action
+> sequences, and perform trade -off analysis under uncertainty.
+
+queryable and actionable for the planning and execution of 
+
+business initiatives by autonomous agents .
+
+C. State s, Dynamics and Action Space 
+
+In order for a goal -directed agent to simulate and plan multi -
+
+step trajectory under conditions with uncertainty , it must be able 
+
+to make probabilistic predict ion of the next state based on a 
+
+given current state and a hypothetical action. Formally :
+
+𝑆 !"# ~ 𝑃 (𝑆 !"# | 𝑆 !, 𝑎 !)
+
+𝑎 ! ∈ 𝐴 (𝑆 !)
+
+where 𝑆 ! is the state at time step 𝑡 ; 𝑎 ! is a hypothetical action 
+
+taken ; and 𝐴 (𝑆 !) is the space of feasible actions available when 
+
+the state is 𝑆 !.
+
+Under a business -semantics -centric formulation, the state of 
+
+a business 𝑆 ! is represented by its key entities, the attributes of 
+
+those entities, and the relation ships among them. For example, 
+
+in the context of a media subscription company , consumers and 
+
+their profile attributes represent a central component of the 
+
+business state. Likewise, the subscriptions associated with those 
+
+consumers, along with attributes such as monthly subscription 
+
+rate and tenure of the subscription , constitute an equally 
+
+important part of that state. 
+
+The ability of a business to systematically collect, maintain, 
+
+and update this semantic information contributes to the quality 
+
+and overall usefulness of the state representation available to 
+
+intelligent agents . Given such a state representation, business 
+
+growth can be understood as the selection of actions that move 
+
+the business toward more desirable future states 𝑆 !"$ . This 
+
+requires agents to know not only about which actions are 
+
+feasible 𝐴 (𝑆 !), but also about how the business state is expected 
+
+to evolve in response to those actions —that is, about the 
+
+dynamics of the business system 𝑃 (𝑆 !"# | 𝑆 !, 𝑎 !) . In this 
+
+formulation, feasible actions are actions that a busi ness can take 
+
+and directly modify the value of one or more attributes of a 
+
+business entity. For example, changing the price of a product is 
+
+a feasible action; here, product is the entity, and price is one of 
+
+its attributes .
+
+However , the set of feasible actions a business can take is 
+
+often limited , and not all entity attributes are directly changeable 
+
+through available actions. Indeed, attributes that characterize 
+
+desirable business outcomes are often not directly controllable. 
+
+If they were, business growth would be a trivial optimization 
+
+problem. For this reason, a BWM must maintain an explicit 
+
+action space 𝐴 (𝑆 !) that agents can use to simulate alternatives 
+
+and support decision -making . The central challenge is then to 
+
+understand how feasible actions applied to controllable 
+
+attributes can indirectly influence non -controllable outcome 
+
+attributes. This is where system dynamics become essential —it 
+
+describes how entities interact and how states evolve under 
+
+uncertainty . A BWM must capture how entity attributes are 
+
+interrelated, how changes propagate across entities and 
+
+relationships, and ultimately how controllable inte rventions can 
+
+move the business toward desired future states .
+
+In contemporary data -driven businesses, these dynamics are 
+
+often approximated through multivariate machine learning 
+
+models that estimate relationships among selected entity 
+
+attributes. Trained on historical data from internal operational 
+
+systems and external data providers, such models capture 
+
+recurring patterns in bus iness behavior while accounting for the 
+
+uncertainty inherent in business environments. For example, a 
+
+churn model may predict the likelihood that a consumer will 
+
+discontinue use of the product or service based on the monthly 
+
+subscription rate the customer is paying, recent activity, 
+
+frequency of product website visits, and engagement patterns .
+
+Dynamics are, however, not limited to trained models. 
+
+Depending on the industry and individual business, there may 
+
+be business rules or regulations that are deterministic. These 
+
+rules can be, for example, coded in logic programs. 
+
+Figure 5 illustrates the three core components of a BWM: 
+
+state s, dynamics and action space. 
+
+D. Incremental Development of BWM Capabilities 
+
+An important property of the proposed BWM architecture is 
+
+that it provides a systematic framework for incrementally 
+
+expanding its capabilities over time. At an early stage, a business 
+
+may collect data and build predictive models for only a limited 
+
+set of e ntities, attributes, and relationships. As the business 
+
+grows, additional data sources, entities, and predictive models 
+
+can be incorporated into the BWM, increasing both the breadth 
+
+and depth of its planning capabilities. In this way, the BWM can 
+
+evolve fr om supporting narrow, localized decisions to enabling 
+
+more comprehensive reasoning across business functions. This 
+
+incremental path makes it essential for businesses to adopt a 
+
+business -semantics -centric data system [31] early in their 
+
+development , so that current and future data collection, 
+
+modeling, and planning capabilities can be built on a coherent 
+
+semantic foundation .
+
+IV. CONCLUSIO N, LIMITATION AND FUTURE WORK 
+
+We introduce the novel concept and architecture of a 
+
+business world model (BWM), organized around the framework 
+
+proposed by Xing et al. [30] , which characterizes the 
+
+development and training of world models in terms of five key 
+
+aspects: data, representation, architecture, objective, and usage.  
+
+> Fig .4
+
+. Business -semantics -centric representation in a Business World     
+
+> Model (BWM) .The BWM organizes state s, dynamics, and feasible actions
+> around key business entities in order to ground them in business context. This
+> entity -centered representation makes the modeled elements queryable and
+> actionable for scenario simulation and decision -making, while deliberate ly
+> excluding aspects of the business environment that are not relevant to the
+> business initiative sat hand or not actionable .
+
+Although many individual components of the proposed BWM, 
+
+such as entity relationships and probabilistic machine learning 
+
+models, are not themselves new, the contribution of the BWM 
+
+lies in integrating these components into a coherent structure 
+
+that enables intelligent agents to reason about business states, 
+
+simulate alternative courses of action, and make effective 
+
+autonomous decisions. 
+
+As an initial conceptual contribution, this work focuses on 
+
+defining the conceptual architecture and foundations of a BWM 
+
+rather than presenting a full implementation. This creates a clear 
+
+opportunity for future research to apply the proposed 
+
+architecture into working prototypes and empirically evaluate its 
+
+practical value in real business settings. A useful next step would 
+
+be to conduct a case study, such as a customer churn reduction 
+
+initiative described in the beginning of this paper , to examine 
+
+how a BWM can support goal -driven planning, simulation, and 
+
+autonomous decision -making in practice. 
+
+REFERENCES 
+
+[1] C. Pang and H. Sayama, “Autonomous Business System via Neuro -
+
+symbolic AI,” in 2026 IEEE International Systems Conference (SysCon) ,
+
+Apr. 2026, pp. 1 –8. doi: 10.1109/SysCon66367.2026.11503621. 
+
+[2] D. Ha and J. Schmidhuber, “Recurrent World Models Facilitate Policy 
+
+Evolution,” in Advances in Neural Information Processing Systems ,
+
+Curran Associates, Inc., 2018. Accessed: Jan. 07, 2026. [Online]. 
+
+Available: 
+
+https://proceedings.neurips.cc/paper/2018/hash/2de5d16682c3c35007e4 
+
+e92982f1a2ba -Abstract.html 
+
+[3] D. Hafner, T. Lillicrap, J. Ba, and M. Norouzi, “Dream to Control: 
+
+Learning Behaviors by Latent Imagination,” presented at the 
+
+International Conference on Learning Representations, Sep. 2019. 
+
+Accessed: Jan. 08, 2026. [Online]. Available: 
+
+https://openrevie w.net/forum?id=S1lOTC4tDS 
+
+[4] Y. LeCun, “A Path Towards Autonomous Machine Intelligence Version 
+
+0.9.2, 2022 -06 -27”. 
+
+[5] K. Friston, “The free -energy principle: a unified brain theory?,” Nat. Rev. 
+
+Neurosci. , vol. 11, no. 2, pp. 127 –138, Feb. 2010, doi: 10.1038/nrn2787. 
+
+[6] Y. LeCun, Y. Bengio, and G. Hinton, “Deep learning,” Nature , vol. 521, 
+
+no. 7553, pp. 436 –444, May 2015, doi: 10.1038/nature14539. 
+
+[7] J. Schrittwieser et al. , “Mastering Atari, Go, chess and shogi by planning 
+
+with a learned model,” Nature , vol. 588, no. 7839, pp. 604 –609, Dec. 
+
+2020, doi: 10.1038/s41586 -020 -03051 -4. 
+
+[8] R. C. CONANT and W. and ROSS ASHBY, “Every good regulator of a 
+
+system must be a model of that system †,” Int. J. Syst. Sci. , vol. 1, no. 2, 
+
+pp. 89 –97, Oct. 1970, doi: 10.1080/00207727008920220. 
+
+[9] B. A. Francis and W. M. Wonham, “The internal model principle of 
+
+control theory,” Automatica , vol. 12, no. 5, pp. 457 –465, Sep. 1976, doi: 
+
+10.1016/0005 -1098(76)90006 -6. 
+
+[10] M. Schwenzer, M. Ay, T. Bergs, and D. Abel, “Review on model 
+
+predictive control: an engineering perspective,” Int. J. Adv. Manuf. 
+
+Technol. , vol. 117, no. 5, pp. 1327 –1349, Nov. 2021, doi: 
+
+10.1007/s00170 -021 -07682 -3. 
+
+[11] E. C. Tolman, “Cognitive maps in rats and men,” Psychol. Rev. , vol. 55, 
+
+no. 4, pp. 189 –208, 1948, doi: 10.1037/h0061626. 
+
+[12] D. Williams, “Predictive minds and small -scale models: Kenneth Craik’s 
+
+contribution to cognitive science,” Philos. Explor. , vol. 21, no. 2, pp. 
+
+245 –263, May 2018, doi: 10.1080/13869795.2018.1477982. 
+
+[13] P. N. Johnson -Laird, “The history of mental models,” in Psychology of 
+
+Reasoning , Psychology Press, 2004. 
+
+[14] R. E. Fikes and N. J. Nilsson, “Strips: A new approach to the application 
+
+of theorem proving to problem solving,” Artif. Intell. , vol. 2, no. 3, pp. 
+
+189 –208, Dec. 1971, doi: 10.1016/0004 -3702(71)90010 -5. 
+
+[15] R. S. Sutton, “Dyna, an integrated architecture for learning, planning, and 
+
+reacting,” SIGART Bull , vol. 2, no. 4, pp. 160 –163, Jul. 1991, doi: 
+
+10.1145/122344.122377. 
+
+[16] J. Schmidhuber, “An on -line algorithm for dynamic reinforcement 
+
+learning and planning in reactive environments,” in 1990 IJCNN 
+
+International Joint Conference on Neural Networks , Jun. 1990, pp. 253 –
+
+258 vol.2. doi: 10.1109/IJCNN.1990.137723. 
+
+[17] “LABS.GOOGLE.” Accessed: May 24, 2026. [Online]. Available: 
+
+https://labs.google/ 
+
+[18] A. Kanervisto et al. , “World and Human Action Models towards 
+
+gameplay ideation,” Nature , vol. 638, no. 8051, pp. 656 –663, Feb. 2025, 
+
+doi: 10.1038/s41586 -025 -08600 -3. 
+
+Fig . 5. State s, dynamics , and action space in a Business World Model (BWM). Th is diagram illustrates the three core components of a BWM. Current 
+
+state captures the current values of entity attributes, partitioned into controllable attributes that can be directly modified by feasible actions (e.g., product price o r
+
+discount) and non -controllable attributes that cannot be directly changed (e.g., customer churn risk). Dynamics , typically approximated through machine learning 
+
+models trained on historical data, or coded business rules, describe how entit ies interact and how the business sta te evolves under uncertainty. Together, current 
+
+state, actions and dynamics determine the future state , such as desirable outcome attributes such as revenue and customer retention. The central challenge: feasible 
+
+actions can only indirectly influence desirable outcomes through the system's dynamics by acting on controllable attributes. [19] “Oasis: A Universe in a Transformer.” Accessed: May 24, 2026. 
+
+[Online]. Available: https://openreview.net/forum?id=ocMWhGLHqu 
+
+[20] “Video generation models as world simulators,” OpenAI. Accessed: May 
+
+24, 2026. [Online]. Available: https://openai.com/index/video -
+
+generation -models -as -world -simulators/ 
+
+[21] “Veo 3.1,” Google DeepMind. Accessed: May 25, 2026. [Online]. 
+
+Available: https://deepmind.google/models/veo/ 
+
+[22] “Research & Insights | World Labs.” Accessed: May 24, 2026. [Online]. 
+
+Available: https://www.worldlabs.ai/blog 
+
+[23] L. Russell et al. , “GAIA -2: A Controllable Multi -View Generative World 
+
+Model for Autonomous Driving,” arXiv.org. Accessed: May 24, 2026. 
+
+[Online]. Available: https://arxiv.org/abs/2503.20523v1 
+
+[24] NVIDIA et al. , “Cosmos World Foundation Model Platform for Physical 
+
+AI,” arXiv.org. Accessed: May 24, 2026. [Online]. Available: 
+
+https://arxiv.org/abs/2501.03575v3 
+
+[25] P. A. N. Team et al. , “PAN: A World Model for General, Interactable, 
+
+and Long -Horizon World Simulation,” Nov. 15, 2025, arXiv :
+
+arXiv:2511.09057. doi: 10.48550/arXiv.2511.09057. 
+
+[26] A. Bardes et al. , “Revisiting Feature Prediction for Learning Visual 
+
+Representations from Video,” Trans. Mach. Learn. Res. , May 2024, 
+
+Accessed: May 25, 2026. [Online]. Available: 
+
+https://openreview.net/forum?id=QaCCuDfBk2 
+
+[27] M. Assran et al. , “V -JEPA 2: Self -Supervised Video Models Enable 
+
+Understanding, Prediction and Planning,” 2025, arXiv . doi: 
+
+10.48550/ARXIV.2506.09985. 
+
+[28] G. Zhou, H. Pan, Y. LeCun, and L. Pinto, “DINO -WM: World Models 
+
+on Pre -trained Visual Features enable Zero -shot Planning,” presented at 
+
+the Forty -second International Conference on Machine Learning, Jun. 
+
+2025. Accessed: May 25, 2026. [Online]. Available: 
+
+https://openreview.net/forum?id=D5RNACOZEI 
+
+[29] V. Sobal, W. Zhang, K. Cho, R. Balestriero, T. G. J. Rudner, and Y. 
+
+LeCun, “Learning from Reward -Free Offline Data: A Case for Planning 
+
+with Latent Dynamics Models,” presented at the The Thirty -ninth Annual 
+
+Conference on Neural Information Processing Syst ems, Oct. 2025. 
+
+Accessed: May 25, 2026. [Online]. Available: 
+
+https://openreview.net/forum?id=hTZ0SJCGQX 
+
+[30] E. Xing, M. Deng, J. Hou, and Z. Hu, “Critiques of World Models,” Jul. 
+
+27, 2025, arXiv : arXiv:2507.05169. doi: 10.48550/arXiv.2507.05169. 
+
+[31] C. Pang, “Toward Data Systems That Are Business Semantic Centric and 
+
+AI Agents Assisted,” IEEE Access , vol. 13, pp. 113752 –113762, 2025, 
+
+doi: 10.1109/ACCESS.2025.3583260.

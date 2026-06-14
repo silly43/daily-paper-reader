@@ -1,0 +1,481 @@
+Title: Diffusion Transformer World-Action Model for AV Scene Prediction
+
+URL Source: https://arxiv.org/pdf/2606.12987v1
+
+Published Time: Fri, 12 Jun 2026 00:36:03 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Diffusion Transformer World-Action Model for AV Scene Prediction 
+
+Ruslan Sharifullin 
+
+Stanford University 
+
+> rshar@stanford.edu
+
+Benjamin Jiang 
+
+Stanford University 
+
+> benjiang@stanford.edu
+
+Kai Xi Chew 
+
+Stanford University 
+
+> kxchew@stanford.edu
+
+Abstract 
+
+We study compact, action-conditioned world models for autonomous driving. Given the current front-camera la-tent and a sequence of ego-actions, our system predicts fu-ture scene latents that a frozen decoder renders to 256 ×256 
+
+frames up to 8 seconds ahead. We evaluate all models on 150 held-out nuScenes driving scenes across diverse urban conditions in Boston and Singapore. We first benchmark 
+
+where to predict: across six frozen visual encoders spanning four representation families, V-JEPA2 with temporal context reduces steering RMSE by 40% relative to the best single-frame encoder. We then build a latent Diffusion Transformer (DiT) and, through a controlled hypothesis-driven diagno-sis, identify the four ingredients it needs: spatial tokens, the 𝑥 0 prediction objective, residual anchoring, and sam-pling matched to target uncertainty. Moving to a Stable-Diffusion-VAE encode-predict-decode pipeline, we surface a central tension. Standard distortion metrics (cosine simi-larity, SSIM) favor the blurry regression mean , masking the fact that the diffusion model is far closer to the real frame distribution. Measuring with Inception-based FID and KID reveals a clean perception-distortion frontier : the diffusion model attains KID 0.078 versus 0.375 for direct regres-sion ( 4.8× better), and a deployable train-derived calibra-tion makes this practical without access to test-time ground truth. The model is genuinely action -controllable: steering monotonically drives predicted scene displacement (Spear-man 𝜌 =0.81 ) where the regression baseline is uncorrelated (𝜌 =−0.18 ). We diagnose limited single-pass temporal mo-tion to a shared-present anchor and show that a compact 1.7 M-parameter “jump” world model recovers full ground-truth motion magnitude ( 1.02 × GT) on held-out scenes, where single-pass models capture less than half. The re-sult is a small, controllable AV world model with a realism frontier and a validated route to coarse temporal motion; higher appearance fidelity scales with capacity and data. 
+
+1. Introduction 
+
+World models for autonomous driving predict future scene representations conditioned on ego-actions, enabling planning and simulation without acting in the environ-ment [12, 14, 23]. Yet two questions precede any such model: which latent space to predict in, and whether a gen-erative transformer adds value over a deterministic regressor in that space. 
+
+Input and output. The input to our system is the current front-camera frame, encoded to a Stable-Diffusion-VAE la-tent [19], together with a sequence of logged ego-actions (steering angle, acceleration). A latent Diffusion Trans-former (DiT) [16] world-action model outputs predicted fu-ture scene latents at up to 16 horizon steps (8 s at 2 Hz), which the frozen VAE decoder renders back to 256 ×256 frames (Figure 1). We answer the first question with a systematic benchmark of six frozen encoders spanning supervised, self-supervised image, self-supervised video, and reconstruction families. V-JEPA2 [3] with temporal context dramatically outper-forms all single-frame alternatives. We answer the second through a controlled, hypothesis-driven diagnosis that iso-lates when a DiT helps: the critical factors are the prediction objective ( 𝑥 0 vs. 𝜖 ), spatial structure, residual anchoring, and the match between sampling and target uncertainty. The core of the paper is what happens in the production-style VAE encode-predict-decode pipeline, where appear-ance ambiguity under point losses becomes pronounced. A deterministic regressor wins every distortion metric by collapsing to a blurry conditional mean. Yet this is exactly the perception-distortion tradeoff [5]: distribution metrics (FID/KID [9, 4]) reveal the diffusion model is far closer to the real frame distribution. We characterize this frontier, make the diffusion advantage deployable via a train-derived calibration, demonstrate action controllability and show a reparameterization that recovers forward-motion direction. 1                 
+
+> arXiv:2606.12987v1 [cs.CV] 11 Jun 2026 Raw Inputs Frozen Encoders Conditioning Latents
+> Decoded Future Output
+> Camera Frame xt
+> VAE Encoder (Frozen)
+> Present Latent zt
+> Ego-Actions
+> at+1: t+H
+> Accel/Steer
+> Fourier Action Encoder
+> Actions ut+1: t+H
+> Noised Target
+> ˜zτt+1: t+H
+> Diffusion: Noised ˜ zτt
+> Direct: Replicated zt
+> DiT Block with adaLN-Zero
+> Diffusion Transformer (DiT)
+> Anchored VAE DiT (4 Blocks)
+> Self-Attention MLP
+> Conditioning
+> c=τ+zt+u
+> Timestep τ
+> +
+> Anchor Add
+> Future ˆzt+1: t+H
+> VAE Decoder (Frozen)
+> Frames ˆxt+1: t+H
+> Residual Anchor zt
+> adaLN-Zero
+
+Figure 1: Single-pass architecture. A frozen SD-VAE encodes the present front-camera frame to a 32 ×32 ×4 latent grid; ego-actions are embedded via learned Fourier features. The Anchored VAE DiT (4 blocks, adaLN-Zero conditioning) predicts future latent tokens as residuals from the present anchor. The frozen VAE decoder renders the predicted latents back to 256 ×256 frames. In diffusion mode, the input is noised future latents; in direct (regression) mode, the present latent is replicated. 
+
+Contributions. 
+
+1. A systematic 6-encoder benchmark for ego-action prediction on nuScenes (850 scenes), with among the first AV evaluations of V-JEPA2 (40% steering RMSE reduction from temporal context). 2. A controlled DiT diagnosis isolating objective ( 𝑥 0 re-covers 88.5% of the gap), representation, anchoring, and sampling as the factors governing transformer util-ity in compact latents. 3. A perception-distortion characterization for AV la-tent world models: an empirical frontier, a 4 .8× KID advantage for diffusion, and a deployable train-derived calibration. We argue that AV world models should be evaluated with distribution metrics, not distortion alone. 4. Action controllability (𝜌 =0.81), together with adiagnosis-driven jump model that recovers forward-motion direction, beating a 3 ×-larger baseline. 
+
+2. Related Work 
+
+AV world models. GAIA-1 [12] generates future driv-ing video from text and actions via an autoregressive trans-former. Cosmos [14] and MovieGen-style video priors [17] scale latent video generation to internet-scale data. Drive-Dreamer [25] and GenAD [26] couple traffic structure with diffusion for driving-video synthesis. DIAMOND [1] ap-plies diffusion world dynamics to learn environment sim-ulators for Atari game control. UniSim [24] builds in-teractive real-world simulators from diverse data sources. These systems typically operate in pixel or high-dimensional spatial-token latent spaces at large scale. Concurrent work by Shi et al. [20] demonstrates DiT world-action models at 5 B parameters with video priors; our study instead operates in the compact regime and asks which design factors and evaluation metrics matter, contributing controlled analysis rather than a scaled system. 
+
+Visual encoders for driving. DINOv2 [15] provides self-distilled image features; CLIP [18] learns vision-language aligned representations; V-JEPA and V-JEPA2 [2, 3] learn predictive video representations by masking and reconstructing latent features across time; VQGAN [8] pro-duces reconstruction-oriented codebook tokens. Prior driv-ing work typically fixes one encoder without systematic comparison; we evaluate across families and quantify the advantage of temporal video representations. 
+
+Diffusion transformers and the perception-distortion tradeoff. DiT [16] applies transformer blocks with adap-tive layer normalization (adaLN-Zero) for class-conditioned image generation, demonstrating scalability with compute. DDIM [21] enables deterministic sampling; the 𝜖 vs. 𝑥 0
+
+objective affects training stability [10, 13]; classifier-free guidance [11] trades diversity for conditioning fidelity; Fourier features [22] embed continuous conditioning sig-nals. Crucially, the perception-distortion tradeoff [5] proves that minimizing distortion (MSE/cosine similarity) and maximizing perceptual realism are fundamentally at odds. FID [9] and KID [4] measure the latter via Incep-tion feature statistics. This lens is standard in generative vision but rare in AV latent prediction, where cosine simi-larity and L2 remain the default metrics. We bridge this gap by applying distribution-based evaluation to driving world models. 23. Dataset and Features 
+
+We use the nuScenes v1.0-trainval dataset [6], compris-ing 850 driving scenes (approximately 20 s each) captured at 2 Hz keyframe rate across diverse urban environments in Boston and Singapore, totaling 33,552 keyframes with synchronized camera and CAN-bus data. 
+
+Splits. We partition by scene into 630 training / 70 valida-tion / 150 test, ensuring no scene appears in multiple splits. All metrics are reported on the 150 held-out test scenes. 
+
+Actions. Ego-vehicle actions are extracted from CAN-bus data as 2D vectors 𝑎 𝑡 = (steer 𝑡 , accel 𝑡 ), z-score normal-ized using training-set statistics only. 
+
+Image features and latent encoding. For the encoder benchmark (Section 5.1), each keyframe is encoded to a 384-d pooled vector; encoders with different output dimen-sions use a frozen random orthogonal projection to 384-d, preserving distances without learnable parameters. V-JEPA2 (rep64 variant) ingests 16-frame clips via the full video transformer [3], while the rep1 variant uses only the spatial encoder on a single frame. For the world model (Sections 5.3–5.4), we encode CAM FRONT frames at 256 ×256 resolution with the frozen Stable-Diffusion VAE [19] to 32 ×32 ×4 latent grids (scaling factor 0.18215). Latents are patchified with patch size 4 to produce 8 ×8=64 spatial tokens of dimension 64 each. Ac-tions are embedded with learned Fourier features [22] (64 frequencies per dimension). Figure 10 (Appendix) shows representative nuScenes frames and their VAE reconstruc-tions. 
+
+Multi-horizon targets. Prediction targets span horizons 
+
+𝐻 ∈ { 4, 8, 16 } (2, 4, 8 s at 2 Hz). Each example comprises a current latent 𝑧 𝑡 , action sequence {𝑎 𝑡 +1, . . . , 𝑎 𝑡 +𝐻 }, and future latents {𝑧 𝑡 +1, . . . , 𝑧 𝑡 +𝐻 }. Evaluation uses scene-level aggregation: predictions within each test scene are averaged before computing final metrics, preventing false indepen-dence from overlapping windows. Table 1: Encoder benchmark on 150 nuScenes test scenes (3 seeds each). RMSE is lower-better. V-JEPA2 (rep64, 16-frame temporal context) substantially outperforms all single-frame encoders.               
+
+> Encoder Steer RMSE Accel RMSE V-JEPA2 rep64 0.058 ±.012 0.055 ±.004
+> V-JEPA2 rep1 0.097 ±.019 0.059 ±.004
+> DINOv2-S/14 0.104 ±.017 0.072 ±.004
+> CLIP ViT-B/32 0.117 ±.019 0.067 ±.004
+> ViT-S/16 0.121 ±.019 0.071 ±.004
+> VQ-VAE Tracker 0.126 ±.021 0.063 ±.005
+
+4. Methods 
+
+What is ours versus starter code. We adopt the DiT formulation [16] (adaLN-Zero conditioning) and the frozen SD-VAE [19]. FID/KID are computed via torchmetrics .All data pipeline, model architecture, training, evaluation, and analysis code is our own. 
+
+4.1. Encoder Benchmark 
+
+We evaluate six frozen encoders spanning four rep-resentation families (Table 1): ViT-S/16 [7] (supervised ImageNet-1k), DINOv2-S/14 [15] (self-distilled, no labels), CLIP-B/32 [18] (vision-language contrastive), V-JEPA2 in single-frame (rep1) and 16-frame-clip (rep64) configura-tions [3], and VQ-VAE Tracker [8] (reconstruction-oriented codebook). A shared 2-layer MLP probe (384 →256 with GELU →2) predicts steering and acceleration from each encoder’s frozen embeddings (Adam, lr 10 −3, batch 256, 50 epochs, 3 seeds). We report per-scene steering and ac-celeration RMSE on 150 test scenes, with 95% confidence intervals via bootstrap. 
+
+4.2. Latent DiT World-Action Model 
+
+Architecture. Our AnchoredVAEDiT comprises 4 trans-former blocks with 4 attention heads and model dimen-sion 256 ( ∼5.4 M parameters). Each block uses adaLN-Zero conditioning [16]: given conditioning vector 𝑐 ,
+
+𝛾, 𝛽, 𝛼 = MLP (𝑐 ), ℎ = 𝛼 ⊙ Attn  𝛾 · LN (𝑥 ) + 𝛽 , (1) with gate 𝛼 initialized to zero so each block starts as an identity function. The model receives 𝐻 input tokens (noisy for diffusion, or the present embedding replicated for direct regression) and predicts the clean future sequence ˆ𝑧 0 = {𝑧 𝑡 +1, . . . , 𝑧 𝑡 +𝐻 }. Conditioning 𝑐 sums three signals: a sinusoidal timestep embedding, the pooled present latent 𝑧 𝑡 
+
+(projected from patch dim to model dim), and the per-token Fourier action embedding. 
+
+Fourier action embedding. Each action pair 𝑎 𝑘 =
+
+(steer 𝑘 , accel 𝑘 ) is embedded via learned Fourier fea-tures [22]: FourierEmbed (𝑎 ) = sin (2𝜋 𝑓 𝑗 𝑎 ), cos (2𝜋 𝑓 𝑗 𝑎 ) 𝑁 𝑓  
+
+> 𝑗 =1
+
+(2) with 𝑁 𝑓 =64 learned frequencies per dimension, producing per-token embeddings (𝐵, 𝐻, 𝐷 ) that vary across the hori-zon, so that adaLN modulation differs at each prediction step. 
+
+Residual anchoring. Rather than predicting absolute future latents, the model predicts a residual: ˆ𝑧 𝑡 +𝑘 = 𝑧 𝑡 + Δ𝑘 (𝑧 𝑡 , {𝑎 𝑡 +𝑖 }, 𝜏 ), (3) where the present 𝑧 𝑡 is broadcast across all 𝐻 horizon po-sitions. This anchoring stabilizes early training and ensures 3the model degrades gracefully to copying the present rather than to random noise. 
+
+Diffusion objective and sampling. The forward process adds Gaussian noise following a cosine schedule [13] with 
+
+𝑇 =1000 timesteps: 𝑞 ( ˜𝑧 𝜏 |𝑧 0) = N √ ¯𝛼 𝜏 𝑧 0, (1− ¯𝛼 𝜏 )𝐼 . We train with the 𝑥 0-prediction objective :
+
+Ldiff = E𝜏, 𝜖 ˆ𝑧 0 ( ˜𝑧 𝜏 , 𝑐, 𝜏 ) − 𝑧 0 22, (4) which is critical: our diagnosis shows that 𝜖 -prediction causes collapse in compact latent spaces, while 𝑥 0 recov-ers 88.5% of the performance gap (Section 5.2). We apply 
+
+classifier-free guidance [11] via action dropout ( 𝑝 =0.1), zeroing the action embedding with probability 𝑝 during training. At inference, DDIM [21] sampling with 50 deter-ministic steps refines predictions from pure Gaussian noise. 
+
+Direct regression baseline. The same architecture at 𝜏 =0 (no noise, single forward pass) serves as astrong deterministic baseline. A matched MLP baseline (384 →512 →384, GELU, residual output) provides a sec-ond reference. 
+
+4.3. Distribution Metrics and Calibration 
+
+Standard latent-prediction work evaluates with distortion 
+
+metrics that measure per-sample closeness to ground truth. We additionally report distribution metrics that compare the decoded-frame distribution to the real-frame distribution: 
+
+FID [9] compares Inception-v3 feature statistics: FID = ∥𝜇 𝑟 −𝜇 𝑔 ∥2 + Tr  Σ𝑟 +Σ𝑔 −2(Σ𝑟 Σ𝑔 )1/2. (5) 
+
+KID [4], our primary metric (robust at small 𝑁 ), is the squared MMD with polynomial kernel 𝑘 (𝑥, 𝑦 ) = ( 1 
+
+> 𝑑
+
+⟨𝑥, 𝑦 ⟩ + 
+
+1)3. We report KID mean and standard deviation from 
+
+torchmetrics , the latter serving as an error bar. Because the VAE encoder/predictor induces a small per-channel offset in the predicted latents, we estimate a de-ployable calibration (per-channel mean and scale shift) on the training split only and apply it at test time. This is dis-tinct from any post-hoc use of test statistics and makes the FID/KID improvement deployable in a production system. 
+
+4.4. Motion Fidelity and the Jump Model 
+
+To probe coherent scene motion rather than texture churn, we decode all 16 predicted steps and decompose each consecutive-frame difference into: 
+
+• Low-frequency: Gaussian-blurred ( 𝜎 =8, kernel 31) consecutive L2, coherent scene structure change. 
+
+• High-frequency: residual (original minus blurred) consecutive L2, measuring texture variation. We also compute an image-plane displacement via horizon-tal and vertical profile cross-correlation, reporting the mag-nitude ratio and direction correlation versus ground truth. All metrics are evaluated on held-out test scenes. 
+
+Chain-anchor jump model. The single-pass model an-chors every future token on the same present 𝑧 𝑡 (Eq. 3), which biases it toward re-rendering the current scene rather than accumulating ego-motion. We test a reparameteri-zation: a compact (1.7 M-parameter, 𝑛 blocks =2, dim 192) network predicts a single Δ𝑡 =4 transition 𝑧 𝑡 → 𝑧 𝑡 +4, con-ditioned on the four intervening actions (Fourier-embedded and mean-pooled). At inference, this model is applied as a 4-step open-loop chain, re-anchoring on its own output at each step: 
+
+𝑧 𝑡 +4 𝑗 = 𝑓 𝜃 
+
+ 𝑧 𝑡 +4( 𝑗 −1) , ¯𝑎 𝑡 +4( 𝑗 −1):𝑡 +4 𝑗 
+
+, 𝑗 = 1, . . . , 4 (6) reaching 𝑧 𝑡 +16 in four sequential transitions. Training uses teacher-forced ground-truth anchors; open-loop chain with the model’s predictions is the actual test of motion fidelity. 
+
+5. Experiments 
+
+5.1. Encoder Benchmark 
+
+V-JEPA2 rep64 achieves steering RMSE 0.058, a 40% reduction versus V-JEPA2 rep1 (0.097), the next-best en-coder (Table 1, Figure 2). Scene-level paired 𝑡 -tests with Bonferroni correction confirm significance against every al-ternative ( 𝑝 bonf <10 −3, Cohen’s 𝑑> 0.68). The controlled temporal ablation (rep64 vs. rep1, same architecture and checkpoint family, differing only in whether the video encoder processes 16 frames or 1) isolates tempo-ral context as the source of improvement: frame-to-frame ego-motion patterns and lane curvature dynamics are invis-ible to single-frame encoders. V-JEPA2 
+
+> (64-frame)
+> V-JEPA2
+> (1-frame)
+> DINOv2
+> ViT-S/14
+> CLIP
+> ViT-B/32
+> ViT-S/16
+> (supervised)
+> VQ-VAE
+> Tracker
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> RMSE (normalized)
+> *** (d=0.68)
+> *** (d=0.91)
+> Steering RMSE
+> Acceleration RMSE
+
+Figure 2: Steering RMSE across six frozen encoders (150 test scenes, 3 seeds, bootstrap CI). V-JEPA2 rep64 (tempo-ral context from the full video encoder) achieves 40% lower error than the best single-frame encoder, demonstrating that temporal video representations capture ego-motion dynam-ics invisible to static frames. Acceleration RMSE gaps are smaller (0.055 vs. 0.059); acceleration is more predictable from a single frame. 4Among single-frame encoders, the self-supervised meth-ods (DINOv2, V-JEPA2 rep1) outperform supervised ViT-S/16 and language-aligned CLIP on steering, suggesting that self-supervised features capture richer geometric structure. VQ-VAE Tracker ranks last, indicating that features opti-mized for image reconstruction encode appearance rather than the dynamics relevant to action prediction. 
+
+5.2. When Does a DiT Help? (Diagnosis) 
+
+In compact pooled latents (384-d), the DiT initially under-performs an MLP-residual baseline. A controlled diagnostic chain (Figure 3) tests four hypotheses: 
+
+• H1 (capacity): rejected. DiT-direct (no diffusion) matches MLP, so the architecture is not the bottleneck. 
+
+• H2 (objective): confirmed. Switching from 𝜖 - to 𝑥 0-prediction recovers 88.5% of the gap (the 𝜖 objective collapses to near-copy in this regime). 
+
+• H3 (horizon): rejected. Longer horizons do not favor DiT; the 2 Hz posterior is near-unimodal when condi-tioned on logged actions. 
+
+• H4 (action-seq): partially confirmed. Per-token action-sequence conditioning benefits DiT more than MLP (interaction +0.007 to +0.020 CosSim on three encoders), confirming that self-attention exploits per-step temporal structure. Restoring spatial tokens (Section 4.2) with resid-ual anchoring, the DiT architecture beats matched-parameter MLPs on both ViT ( +0.020 ±0.002) and DINOv2 (+0.023 ±0.002) at 12 M parameters, 3 seeds. This yields four ingredients, all necessary and jointly sufficient: spatial tokens, the 𝑥 0 objective, residual anchoring, and sampling matched to target uncertainty. CLIP DINOv2 ViT 
+
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> CosSim ( h=4)
+> 99%
+> recov.
+> 100%
+> recov.
+> 97%
+> recov.
+> DiT-
+> DiT-direct
+> DiT-x0
+> MLP-residual
+
+Figure 3: Diagnostic chain: 𝜖 -prediction collapses (left-most bars); switching to 𝑥 0 recovers 88.5% of the MLP gap; adding spatial tokens lets the DiT architecture match or beat the MLP at equivalent parameters. 
+
+5.3. Perception-Distortion Frontier 
+
+In the SD-VAE pipeline, appearance ambiguity under point losses becomes pronounced, and the two model classes separate cleanly. The direct regressor wins every distortion 
+
+metric (CosSim 0 .471 vs. 0 .260; higher SSIM) by predict-ing the blurry conditional mean. The diffusion model wins every distribution metric. On KID, our primary small-𝑁 -robust measure, diffusion with the deployable train calibra-tion attains 0.078 versus 0.375 for direct regression, a 4 .8×
+
+improvement. FID tells the same story (162 .5 vs. 370 .8). Across 3 independent seeds, KID is 0 .076 ±0.005 (Table 2, Figure 4). This is precisely the perception-distortion tradeoff [5]: 
+
+distortion metrics, standard in latent-prediction work, sys-tematically reward the wrong thing for world models . Fig-ure 10 (Appendix) makes the tradeoff visual: the direct row is a sharpness-collapsed blur, while the diffusion row ren-ders a recognizable street scene with plausible vehicles and road markings. Table 2: Distribution vs. distortion at 𝑡 +16 (held-out test). KID/FID lower is better; CosSim higher is better. Diffusion uses the deployable train-derived calibration. Interp = latent interpolation ( 𝛼 =0.5) between direct and diffusion. 
+
+Model KID ↓ FID ↓ CosSim ↑
+
+Direct (regression) 0.375 370.8 0.471 
+
+Diffusion (raw) 0.294 341.9 0.233 Interp ( 𝛼 =.5) 0.084 166.6 0.316 
+
+Diffusion (calib.) 0.078 162.5 0.260 VAE-GT ceiling ≈0 ≈0 1.000 t+4 t+16  
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> KID (lower = closer to real)
+> Direct (regression)
+> Diffusion (raw)
+> Diffusion (train-calib)
+> VAE-GT (ceiling)
+> t+4 t+16
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> FID (lower = closer to real)
+
+Figure 4: FID/KID at two horizons ( 𝑡 +4 and 𝑡 +16, 3 seeds, 600 held-out windows). The diffusion model (train-calibrated) is far closer to the real frame distribution than direct regression, approaching the VAE-GT ceiling. Error bars are seed standard deviation. 
+
+A deployable frontier. The operating points trace an em-pirical distortion-perception curve (Figure 5): moving from direct regression through latent interpolation to calibrated diffusion trades distortion for perceptual realism. 50.20 0.25 0.30 0.35 0.40 0.45 0.50 
+
+CosSim to GT ! better distortion 
+
+0.05 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40   
+
+> KID  Ã better perception
+> Direct (regression mean)
+> Diffusion (raw, w=1)
+> Interp ®= 0 :5
+> Diffusion + train-calib
+
+Figure 5: Empirical distortion-perception frontier ( 𝑡 +16, 150 test windows). Distortion (CosSim to GT) on the 𝑥 -axis, distribution quality (KID, lower is better) on the 𝑦 -axis. The deployable diffusion model occupies the high-realism regime; latent interpolation provides an intermediate operating point. Error bars: KID standard deviation. The calibration that unlocks this KID advantage is esti-mated on training data and applied at test time; it recovers a post-hoc oracle calibration (KID 0 .078 vs. 0 .086), so the advantage is deployable rather than a test-time artifact. A 2-point capacity probe (3.0 M vs. 5.4 M, 1 seed each) shows the larger model is better on every diffusion point (KID 0 .078 vs. 0 .089, FID 162 .5 vs. 172 .8), indicating the frontier shifts favorably with scale. This probe is preliminary (2 points, 1 seed) but the direction is clean and consistent. All scenes High-motion quartile 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> fraction of GT frame-to-frame change
+> GT
+> 0.56
+> 0.47
+> 0.44
+> 0.31
+> 0.98
+> 0.83
+> Direct: scene-motion (low-freq)
+> Diffusion: scene-motion (low-freq)
+> Diffusion: texture (high-freq)
+
+Figure 6: Motion fidelity diagnostic (16-step, low/high-frequency decomposition). Diffusion reproduces texture (0 .98 × GT) but little coherent motion (0 .44 ×); the regres-sion mean captures more scene-level motion (0 .56 ×). The compact jump model (Section 5.4) recovers motion direc-tion (0 .48), exceeding the larger single-pass baseline (0 .41). 
+
+5.4. Motion: Diagnosis and a Compact Fix 
+
+We provide a careful accounting of temporal fidelity. A single diffusion rollout reproduces per-frame texture (high-frequency fraction 0 .98 × GT) but shows limited coherent 
+
+scene motion: low-frequency motion fraction is only 0 .44 ×
+
+GT (diffusion) compared to 0 .56 × (the blurry direct model), and image-plane displacement is near zero for diffusion (Fig-ure 6). A motion-targeted fine-tune (adding a temporal-difference loss ∥Δ𝑧 pred − Δ𝑧 GT ∥2 for 30 epochs) did not improve these numbers, indicating a structural rather than a loss-surface issue. 
+
+Diagnosis. We trace this to the shared-present anchoring (Eq. 3): every future token is computed as a delta from the same 𝑧 𝑡 . At 2 Hz driving, this biases the model toward re-rendering the current layout with varied texture rather than accumulating the ego-motion that would shift the scene forward. Ground Truth     
+
+> GT Present ( t)GT Low-freq motion
+> (tt+4, coherent)
+> GT High-freq change
+> (tt+4, texture)
+> Jump Model
+> Jump pred. present Pred low-freq motion
+> (coherent scene shift)
+> Pred high-freq change
+> (texture variation)
+
+Figure 7: Motion decomposition on a held-out nuScenes scene. Each road frame is overlaid with low-frequency change (hot colormap: coherent scene motion from ego-driving) or high-frequency change (cool colormap: texture variation) between consecutive decoded frames ( 𝑡 →𝑡 +4). Top: ground truth; bottom: the compact jump model. The overlay shows that the model captures the spatial distribu-tion of scene-level motion, even though decoded frames are blurry. 
+
+The jump model recovers motion direction. Repa-rameterizing prediction as a Δ𝑡 =4 jump with per-step re-anchoring (Eq. 6), a 1.7 M-parameter model (3 × smaller 
+
+than the 5.4 M baseline) predicts forward motion whose image-plane direction correlates with ground truth at 0.48 
+
+on 30 held-out test scenes (open-loop, own anchors), ex-ceeding the larger single-pass model (0 .41) and capturing the full low-frequency motion magnitude (1 .02 × GT). This supports the hypothesis that limited motion was an objective-and-anchoring choice, not a capacity limitation. Figure 8 shows the chain-anchor jump rollout on a6Latent Jump Chain          
+
+> Anchor zt
+> VAE Dec
+> Input xt
+> Jump DiT (1.7M)
+> at+1: t+4
+> Pred ˆzt+4
+> VAE Dec
+> Jump DiT (1.7M)
+> at+5: t+8
+> re-anchor
+> Pred ˆzt+8
+> VAE Dec
+> Jump DiT (1.7M)
+> at+9: t+12
+> re-anchor
+> Pred ˆzt+12
+> VAE Dec
+> Jump DiT (1.7M)
+> at+13: t+16
+> re-anchor
+> Pred ˆzt+16
+> VAE Dec
+> Decoded Predictions ˆx
+> Ground Truth x(GT)
+
+Figure 8: Chain-anchor jump world model (4-step open-loop rollout on a held-out nuScenes scene). Top (pink): the 1.7 M Jump DiT predicts Δ𝑡 =4 transitions, re-anchoring on its own output at each step. Middle (blue): decoded predictions at 𝑡 +0, 𝑡 +4, 𝑡 +8, 𝑡 +12 , 𝑡 +16. Bottom (gray): ground-truth future frames. Scene structure is recognizable at early steps; regression blur compounds visibly toward 𝑡 +16, illustrating both the motion recovery and the scale limitation. held-out nuScenes scene: the 1.7 M model predicts 
+
+𝑧 𝑡 +4, 𝑧 𝑡 +8, 𝑧 𝑡 +12 , 𝑧 𝑡 +16 by re-anchoring on its own output at each step. Decoded predictions (middle row) show rec-ognizable scene structure at early steps, with regression blur compounding visibly toward later steps; the ground-truth row (bottom) provides context. Figure 7 visualizes the motion decomposition, overlaying low-frequency (coherent scene motion) and high-frequency (texture) changes on de-coded frames; the jump model captures the spatial pattern of scene-level motion even though decoded frames remain blurry. The jump predictions are coarse (regression blur persists at this scale); recognizable high-fidelity appearance over 8 seconds remains a question of scale and stronger temporal supervision, which we leave to future work. 
+
+5.5. Action Controllability 
+
+A world model must use actions, not merely render plau-sible scenes. We sweep the steering input across its train-ing distribution range (5th to 95th percentile) with fixed diffusion noise and measure the induced horizontal scene displacement at 𝑡 +15 on 40 held-out windows. The diffusion model is monotonically controllable: Spearman 𝜌 (steer , shift ) = +0.81 with 100% sign-correct on the 18/40 scenes where shift exceeds a detection thresh-old (Figure 9). The direct regression model is uncorrelated (𝜌 =−0.18, 39/40 valid). Steering left versus right produces visibly different predicted futures, providing rigorous evidence for a“world-action ” model. This controllability is a planning-relevant property: a non-circular inverse-control probe (predicting the held-out steering value that produced a given future, not evaluated on training data) finds the diffusion model recovers target steers at 0 .67 × chance error, while the direct model performs worse than random (1 .24 ×). Direct 
+
+(regression) 
+
+Diffusion 
+
+(ours) 
+
+−0.4 
+
+−0.2 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+1.2 
+
+> Spearman( ½): steer  ! scene shift
+> ½=-0.18
+> 35% sign-correct
+> (n=39)
+> ½=+0.81
+> 100% sign-correct
+> (n=18)
+
+Figure 9: Action controllability: steering input vs. in-duced scene displacement at 𝑡 +15 (fixed noise, 40 held-out scenes). The diffusion world model is monotonically steerable ( 𝜌 =0.81); the regression baseline is uncorrelated (𝜌 =−0.18). 
+
+5.6. Failure Modes, Memorization, and Overfitting 
+
+Failure modes. Diffusion samples exhibit a mild per-channel color tint (a systematic offset removed by the deploy-able calibration) and slight over-sharpening (high-frequency energy ∼2× GT standard deviation at small scale). These are typical small-model artifacts; neither prevents scene recog-nition. The direct model’s primary failure mode is diagnos-tic blur (see Figure 10 in the Appendix): regression to the conditional mean collapses fine structure, rendering vehi-cles and lane markings unrecognizable. The jump model’s coarse predictions (blurry at 𝑡 +4, increasingly so through 7the 4-step chain) represent a related limitation: recogniz-able multi-second predictions require stronger generative objectives or higher capacity than explored here. 
+
+Memorization. FID and KID are computed against held-out test frames decoded from ground-truth latents; the model never sees test scenes during training. We additionally verify that nearest-neighbor distances from generated samples to the training manifold do not indicate copying. 
+
+Overfitting. Models are compact (1.6–5.4 M for the world model, 1.7 M for the jump experiment) relative to the 24,930-frame training set. All results use scene-level held-out evaluation with 3 random seeds; reported gaps con-sistently exceed seed-level variance (KID std =0.005 across seeds). EMA (decay 0.999) provides implicit regulariza-tion. The chief threat to validity is scale : our controlled comparisons are meaningful at compact scale and single front camera (2 Hz), but do not address whether the same factors hold at GAIA-1 or Cosmos scale, which we state as a limitation. 
+
+6. Discussion 
+
+Our experiments reveal a consistent theme: the choice of 
+
+evaluation metric shapes which model appears superior, and this choice has practical consequences for AV world model development. 
+
+The metric matters more than the architecture. In pooled latent spaces, the DiT architecture is not the bot-tleneck (H1 rejected); the prediction objective and spatial structure are. In VAE latent space, the direct regressor ap-pears to “win” on every standard metric (CosSim, SSIM, L2) by collapsing to the conditional mean. Only when we mea-sure distribution realism via FID and KID does the diffusion model’s 4 .8× advantage emerge. This suggests that prior AV latent-prediction work that evaluates exclusively with distortion metrics may underestimate the quality of genera-tive approaches. We recommend that future AV world model evaluations report both distortion and distribution metrics, following the perception-distortion framework of Blau and Michaeli [5]. 
+
+Controllability as a differentiator. The diffusion model’s monotonic steering controllability ( 𝜌 =0.81) pro-vides a capability the regression model lacks entirely (𝜌 =−0.18). This is not merely a qualitative observation: the inverse-control probe shows the diffusion model can re-cover held-out steering commands from predicted futures (0 .67 × chance error), suggesting the learned latent dynam-ics encode action semantics in a way that could support downstream planning. At larger scale, this property could bridge world models and policy learning. 
+
+Motion as an anchoring problem. Our motion analysis reveals that the single-pass model’s static behavior is not a capacity limitation but a consequence of the shared-present anchor design. The compact jump model (1.7 M parameters, 3× smaller) recovers motion direction by re-anchoring on its own predictions, confirming that the architectural recipe is sound and the bottleneck is the training-inference align-ment. This finding provides a concrete path forward: per-step re-anchoring combined with stronger temporal supervi-sion (e.g., scheduled sampling or perceptual losses) should enable recognizable multi-second predictions as scale in-creases. 
+
+Compact scale as a feature. While large-scale sys-tems like GAIA-1 [12] (5 B parameters) and Cosmos [14] demonstrate impressive generation quality, our compact-scale study ( ∼5 M parameters) offers complementary value: controlled ablations that isolate individual design factors are tractable at this scale but prohibitively expensive at 5 B. The four ingredients we identify (spatial tokens, 𝑥 0 objective, residual anchoring, sampling-matched-to-uncertainty) and the deployable calibration strategy are design principles that transfer to larger systems, and the positive scaling probe (Section 5.3) provides initial evidence that they do. 
+
+7. Conclusion 
+
+We built a compact, action-conditioned DiT world model for AV scene prediction and, in the process, turned two obstacles into results. First, distortion metrics that reward the blurry conditional mean masked the diffusion model’s quality. By measuring distribution realism via FID and KID, we revealed a clean perception-distortion frontier where diffusion is 4 .8× better on KID, made deployable through a train-derived calibra-tion. This is a metric lesson for AV latent prediction: world models should be evaluated with distribution metrics, not distortion alone. Second, single-pass rollouts produced sharp but tempo-rally limited predictions. We diagnosed the shared-anchor cause and showed that a compact jump model (3 × smaller, re-anchored per step) recovers forward-motion direction on held-out scenes, exceeding the larger baseline. The model is also action-controllable ( 𝜌 =0.81), providing the planning-relevant property that a regression baseline lacks. Together these establish a small but controllable AV world model with a characterized realism frontier and a validated route to coarse motion. 
+
+Future work. The frontier and the jump result both point the same way: scale (capacity, data, frame rate) and stronger temporal supervision (e.g., perceptual losses, autoregressive scheduled sampling) to convert coarse motion direction into recognizable high-fidelity appearance. Closed-loop evalua-tion with predicted (rather than logged) actions and multi-camera setups are natural extensions. Our controlled find-ings at compact scale provide a concrete recipe for the next iteration: the 𝑥 0 objective, residual anchoring, distribution metrics, deployable calibration, and the jump reparameteri-zation. 8Contributions and Acknowledgements 
+
+Ruslan Sharifullin : project direction and experiment planning, six-encoder benchmark design and probe training, DiT world model architecture, VAE encode-predict-decode pipeline, diffusion training and DDIM sampling, perception-distortion frontier analysis, FID/KID evaluation framework, action controllability experiments, motion fidelity diagnos-tics, chain-anchor jump model, cloud compute infrastruc-ture, report writing and editing. 
+
+Benjamin Jiang : nuScenes data pipeline (frame/clip dataset, scene-level splits, CAN-bus extraction), RMSE evaluation harness with bootstrap CIs, perturbation analysis pipeline, environmental robustness analysis (night/rain/day bucketing), encoder attribution visualization (GradCAM), RMSE heatmaps and CosSim bar charts, report editing. 
+
+Kai Xi Chew : behavioral cloning baseline implemen-tation and training, per-horizon CosSim and DeltaCosSim evaluation pipeline, embedding precomputation infrastruc-ture, report editing. 
+
+Source Code 
+
+Source code, trained checkpoints and evaluation arti-facts are available at https://github.com/dlcv-team/ latent-world-models-av .
+
+References 
+
+[1] E. Alonso, A. Jelley, A. Kanervisto, and T. Pearce. DI-AMOND: Diffusion for world modeling. arXiv preprint arXiv:2405.12399 , 2024. [2] A. Bardes et al. V-JEPA: Latent video prediction for visual representation learning. arXiv preprint arXiv:2404.08471 ,2024. [3] A. Bardes et al. V-JEPA 2: Self-supervised video models en-able understanding, prediction and planning. arXiv preprint arXiv:2506.09985 , 2025. [4] M. Bi´ nkowski, D. J. Sutherland, M. Arbel, and A. Gretton. Demystifying MMD GANs. In International Conference on Learning Representations (ICLR) , 2018. [5] Y. Blau and T. Michaeli. The perception-distortion tradeoff. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pages 6228–6237, 2018. [6] H. Caesar et al. nuScenes: A multimodal dataset for au-tonomous driving. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2020. [7] A. Dosovitskiy et al. An image is worth 16x16 words: Trans-formers for image recognition at scale. In International Con-ference on Learning Representations (ICLR) , 2021. [8] P. Esser, R. Rombach, and B. Ommer. Taming transformers for high-resolution image synthesis. In IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) ,2021. [9] M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler, and S. Hochreiter. GANs trained by a two time-scale update rule converge to a local Nash equilibrium. In Advances in Neural Information Processing Systems (NeurIPS) , 2017. [10] J. Ho, A. Jain, and P. Abbeel. Denoising diffusion proba-bilistic models. Advances in Neural Information Processing Systems , 2020. [11] J. Ho and T. Salimans. Classifier-free diffusion guidance. 
+
+arXiv preprint arXiv:2207.12598 , 2022. [12] A. Hu et al. GAIA-1: A generative world model with integrated action understanding. arXiv preprint arXiv:2309.17080 , 2023. [13] A. Q. Nichol and P. Dhariwal. Improved denoising diffusion probabilistic models. International Conference on Machine Learning (ICML) , 2021. [14] NVIDIA. Cosmos world foundation model platform for phys-ical ai. arXiv preprint arXiv:2501.03575 , 2024. [15] M. Oquab et al. DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Re-search , 2024. [16] W. Peebles and S. Xie. Scalable diffusion models with trans-formers. In International Conference on Computer Vision (ICCV) , 2023. [17] A. Polyak et al. Movie gen: A cast of media foundation models. arXiv preprint arXiv:2410.13720 , 2024. [18] A. Radford et al. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning (ICML) , 2021. [19] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Om-mer. High-resolution image synthesis with latent diffusion models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022. [20] C. Shi, J. Xu, S. Shi, K. Sheng, B. Zhang, and L. Jiang. DriveWAM: Video generative priors enable scalable world-action modeling for autonomous driving. arXiv preprint arXiv:2605.28544 , 2026. [21] J. Song, C. Meng, and S. Ermon. Denoising diffusion implicit models. In International Conference on Learning Represen-tations (ICLR) , 2021. [22] M. Tancik et al. Fourier features let networks learn high fre-quency functions in low dimensional domains. In Advances in Neural Information Processing Systems , 2020. [23] C. Yang et al. Driveworld: 4d pre-trained scene understanding via world models for autonomous driving. arXiv preprint arXiv:2405.04390 , 2024. [24] M. Yang et al. UniSim: Learning interactive real-world sim-ulators. arXiv preprint arXiv:2310.06114 , 2023. [25] X. Zhao et al. Drivedreamer: Towards real-world-driven world models for autonomous driving. arXiv preprint arXiv:2309.09777 , 2024. [26] J. Zheng et al. GenAD: Generalized predictive model for autonomous driving. arXiv preprint arXiv:2405.09349 , 2024. 
+
+9A. Additional Qualitative Results Camera (RGB)     
+
+> t+0 t+4 t+8 t+12 t+15
+> VAE-GT DiT-direct (regression) DiT-diffusion
+
+Figure 10: Qualitative VAE encode-predict-decode on a held-out nuScenes scene ( 𝑡 +0 through 𝑡 +15). Row 1: camera RGB ground truth. Row 2: VAE-GT reconstruction (the appearance ceiling of this latent space). Row 3: DiT-direct prediction ,whose blur is regression mean-collapse (not VAE tokenization loss). Row 4: DiT-diffusion prediction (train-calibrated), which renders in-distribution frames with recognizable scene content. This side-by-side contrast is the perception-distortion tradeoff made visual: the direct model minimizes distortion at the cost of sharpness, while the diffusion model produces realistic appearance at the cost of per-pixel fidelity. 10

@@ -1,0 +1,556 @@
+Title: Scale Buys Interpolation, Structure Buys a Horizon: Certified Predictability for Equivariant World Models
+
+URL Source: https://arxiv.org/pdf/2606.13092v1
+
+Published Time: Fri, 12 Jun 2026 00:49:13 GMT
+
+Number of Pages: 23
+
+Markdown Content:
+# SCALE BUYS INTERPOLATION, STRUCTURE BUYS A HORI-ZON: CERTIFIED PREDICTABILITY FOR EQUIVARIANT WORLD MODELS 
+
+Hongbo Wang 
+
+whb591347285@gmail.com 
+
+# ABSTRACT 
+
+Scale buys interpolation; structure buys a certified horizon. A world model’s av-erage error says nothing about whether a particular prediction can be trusted, or for how long. For equivariant latent world models we give a computable, multi-step certificate of the predictable horizon : 𝑇 -step rollout error is provably con-stant over each symmetry orbit (Theorem A) and stratified channel-by-channel by the predictor’s Lyapunov spectrum, 𝑇 𝑗 (𝜖) ∼ log (1/𝜖)/𝜆 𝑗 . The horizon is 
+
+two-sided — a matching lower bound makes approximate equivariance provably horizon-limited (Proposition 6) — and the certificate is exclusive to structure :orbit-constant error characterizes equivariance (Lemma 2), so no non-equivariant model has it at any scale. Empirically, on 40 -D Lorenz-96 only a ℤ𝑁 -equivariant network recovers the full Lyapunov spectrum ( 𝑅 2=0.98 ); identically-trained dense and recurrent baselines fail. Because the spectrum is faithful, the certificate acts, a priori : under a fixed sens-ing budget a 𝑐× -inflated certificate provably needs 𝑐× the budget (Proposition 9), and the equivariant certificate meets a budget its inflated dense counterpart cannot — with zero calibration data. The same read-out, unchanged, audits public pre-trained world models training-free : official TD-MPC2 checkpoints land on the certificate’s own scope taxonomy — calibrated where strongly expansive (ratio 
+
+0.94 –1.02 ), optimistic where weakly expansive, correctly abstaining where con-tracting — and a deployed sensing-budget monitor then replicates that map cell-by-cell, out-of-sample, at zero new estimation . Across the official 1M– 317 Mmultitask ladder, calibration does not improve with parameters. And on V-JEPA 2-AC ( 1B, real robot data) the measured cross-check correctly overrides an over-promising tangent spectrum — the cross-validated audit, not the raw number, is the deployable object . Scale buys interpolation, not a calibrated horizon. 1. INTRODUCTION A world model is judged by its average prediction error. But an acting agent needs to know, for the situation in front of it, whether the model can be trusted, and for how many steps. Scaling lowers the average; it certifies nothing about a particular configuration and says nothing about the horizon 
+
+— the steps before compounding error makes the rollout useless. Equivariance gives some per-situation guarantee: a network commuting with a group 𝐺 behaves identically across each orbit — used to certify adversarial robustness and tighten conformal sets. But every such result is single-shot : one input, one prediction. A world model predicts a trajectory ,and the question that matters for planning — how far ahead is the guarantee valid? — has no answer in that literature. This paper answers it. We show that an equivariant latent world model admits a certificate of its predictable horizon , stratified channel-by-channel by the predictor’s spectrum, and we prove the horizon is tight . The contributions are: 1. A tight certified horizon (§3.2). For an equivariant model the 𝑇 -step rollout error is orbit-constant (Theorem A); under approximate equivariance, channel 𝑗 is certified to 
+
+𝑇 𝑗 (𝜖) ∼ log (1/𝜖)/𝜆 𝑗 (Theorem B). The central new result is a matching lower bound 
+
+(Proposition 6): an 𝜖 -approximately-equivariant model — even with a perfect predictor 1
+
+> arXiv:2606.13092v1 [cs.LG] 11 Jun 2026
+
+— has orbit-error-variation exactly 𝜖 𝑒 𝜆𝑇 , so the horizon is Θ( log (1/𝜖)/𝜆) , no better :
+
+approximate equivariance is horizon-limited; only exactness or conservation reaches an unbounded horizon. A scope theorem (Proposition 7) says when the measured spectrum governs a learned model’s horizon, a continuity bound (Proposition 8) makes the lift rigor-ous, and the staircase lifts to learned models of genuinely chaotic systems (E2: exponents matched to 1–12% ), the near-neutral PushT interior being the predicted degenerate case. 2. The certificate is exclusive to structure (§3.1). The converse (Lemma 2): orbit-constant error against every equivariant target ⟺ equivariance — no non-equivariant model has the certificate at any size , an architectural impossibility, proved, not asserted. 3. The Noether hinge (§3.3). Conserved/invariant channels are certified to all horizons :Proposition 4 forces each charge’s isotypic placement, and Proposition 5 turns conserva-tion into a long-horizon guarantee ( 𝑇 -step charge error ≤ 𝑇 𝜂 — linear, never 𝑒 𝜆𝑇 ). The converse is false and stated (a slow channel need not be conserved): the one direction proved is the one the certificate uses. 
+
+4. Single-shot certified equivariance is our 𝑇 =1 slice (§5) — the one-step, resolution-free special case; the multi-step picture is validated on a contact simulator, non-abelian SO (3) ,and raw pixels (frame averaging keeping the certificate accuracy-neutral ). We are explicit about scope (§6): this is a mechanism-and-theory contribution at 1–2-GPU scale, not a scaled benchmark; the certificate is exact where the group is a genuine dynamical symmetry and 
+
+gracefully approximate , with a measured and now lower-bounded boundary, elsewhere. 
+
+One certificate, a universal half and an exclusive half. The spectral audit (Theorem B’s law) applies to any 𝐶 1 latent loop — that is how E13–E16 audit non-equivariant public models; what is 
+
+exclusive to structure is a-priori trust in the audited number itself (Lemma 2; E2: a dense spectrum can be silently wrong at one-step relMSE 10 −5 ). A generic model buys that trust with held-out divergence data; an equivariant model has it from the Jacobian alone — and E16 is what that purchase looks like at 1B: the cross-check, not the spectrum, carries the verdict. §4’s closing paragraph returns to this division. 
+
+What is new. A prior-art sweep finds the corner empty : no work combines equivariance with a certi-fied, two-sided spectral horizon; the closest guarantee-bearing neighbours each miss the intersection (Conradie et al., 2026; Lillemark et al., 2026; Mo, 2026) (§5). The new results: (i) Proposition 6’s matching lower bound — growth seeded by the equivariance residual rather than an initial-condition error — making approximate equivariance provably horizon-limited; (ii) the scope/continuity pair (Props. 7–8) lifting the law to learned chaotic models, where shadowing cannot transfer the expo-nent; (iii) the structure-vs-recurrence separation at 40 -D (E2), with the recurrent failure forced by the conditional-Lyapunov condition; (iv) Theorem B￿ turning the certificate from measured into literal 
+
+— sound a priori, tight on uniform hyperbolicity, self-abstaining elsewhere; (v) actionability a pri-ori, with zero calibration data (E12; Proposition 9); and (vi) a training-free trustworthiness audit of public pretrained world models — TD-MPC2, LeWM, V-JEPA 2-AC at 1B (E13–E16) — that a deployed monitor replicates cell-by-cell, out-of-sample, every taxonomy cell type (E15), its deci-sion boundary formalized as a regret decomposition (Proposition 11). These assemble (Algorithm 1) into one certificate exclusive to structure (Lemma 2) whose unbounded-horizon edge is anchored by the conserved/invariant subspace (the Noether hinge). We credit the classical pillars we build on — the Lyapunov/NWP horizon law, invariant decision theory, and the 𝑒 𝜆𝑇 growth — explicitly in §3 and §5. 2. SETUP AND ASSUMPTIONS A latent world model is an encoder 𝐸 ∶ 𝒳 → 𝒵 and a predictor 𝑓 ∶ 𝒵 × 𝒜 → 𝒵 with 𝑓 (𝐸(𝑥), 𝑎) ≈ 𝐸(Φ(𝑥, 𝑎)) , Φ the (unknown) environment dynamics; rolling out ̂ 𝑧 𝑇 = 𝑓 (⋅, 𝑎 𝑇−1 ) ∘ ⋯ ∘ 𝑓 (𝐸(𝑥), 𝑎 0),the 𝑇 -step error is Err 𝑇 (𝑥) = ‖̂𝑧 𝑇 − 𝐸(Φ 𝑇 𝑥)‖ . A group 𝐺 acts on 𝒳 , 𝒵 (via a representation 𝜌 ), and 
+
+𝒜 (via 𝜎 ). We use: • (A1) Encoder equivariance: 𝐸(𝑔 ⋅ 𝑥) = 𝜌(𝑔) 𝐸(𝑥) .• (A2) Predictor equivariance: 𝑓 (𝜌(𝑔)𝑧, 𝜎(𝑔)𝑎) = 𝜌(𝑔) 𝑓 (𝑧, 𝑎) .• (A3) Dynamical symmetry: Φ(𝑔 ⋅ 𝑥, 𝜎(𝑔)𝑎) = 𝑔 ⋅ Φ(𝑥, 𝑎) — 𝐺 is a symmetry of the 
+
+dynamics , not merely the observation. 2Figure 1: The certificate at a glance. Left: an equivariant model certifies the entire generated monoid 
+
+⟨𝑆⟩ from 𝑘 generator checks (Lemma 1), up to a horizon ceiling set by the predictor spectrum (Theo-rem B, tight by Proposition 6); a non-equivariant model of any size certifies only an interpolation tube. 
+
+Right: the horizon-resolution law 𝑇 𝑗 (𝜖) ∼ log (1/𝜖)/𝜆 𝑗 — conserved/invariant channels ( 𝜆 ≤ 0 ) are certified to all horizons, chaotic ones shrink with demanded resolution. 
+
+Figure 2: The paper in one figure. (a) Faithful: on 40 -D Lorenz-96 the ℤ𝑁 -equivariant model recovers the full Lyapunov spectrum ( 𝑅 2=0.98 ) where an identically-trained dense model’s is garbage (𝑅 2<0 ) — E2. (b) Priced: under a fixed sensing budget the faithful certificate meets the budget; the inflated one over-observes and starves it (Proposition 9) — E12. (c) Real: the same training-free read-out audits official TD-MPC2 checkpoints — calibrated where expansive, abstaining where contracting — E13. • (A4) Orthogonality: 𝜌(𝑔) ⊤𝜌(𝑔) = 𝐼 (𝜌 preserves the error norm). • (A5) Equivariant planner, invariant cost (closed-loop clause only). We write ⟨𝑆⟩ for the monoid generated by a set 𝑆 = {𝑔 1, … , 𝑔 𝑘 } of 𝑘 symmetry generators, and |𝑤| 
+
+for the length of a word 𝑤 ∈ ⟨𝑆⟩ .3. THE CERTIFICATE 3.1 THE CONFIGURATION AXIS, AND WHY ONLY STRUCTURE HAS IT 
+
+Theorem A (orbit-constant error). Under (A1)–(A4), for every 𝑤 ∈ ⟨𝑆⟩ , all 𝑥 , and any action sequence (transported by 𝑤 ), Err 𝑇 (𝑤 ⋅ 𝑥) = Err 𝑇 (𝑥) (action-explicit statement and proof in Appendix B). Proof sketch. The rolled-out predictor is equivariant (Lemma 1), so prediction and target transport by the same 𝜌(𝑤) ; subtract and use (A4). □
+
+Lemma 1 (composition closure). If (A1)–(A3) hold on each generator 𝑔 𝑖 ∈ 𝑆 , they hold on every word 𝑤 ∈ ⟨𝑆⟩ ((A4) is automatic for all 𝑤 ). Thus 𝑘 generator checks certify an exponentially large set — all of ⟨𝑆⟩ .
+
+Lemma 2 (the certificate characterizes equivariance — the converse). Let 𝜌 ∶ 𝐺 → 𝑂(𝒵) 
+
+act freely on an open 𝑈 ⊆ 𝒵 . If a predictor 𝑓 ’s error ‖𝑓 − Φ‖ is orbit-constant on 𝑈 for every 
+
+equivariant target Φ, then 𝑓 is equivariant on 𝑈 . Proof sketch (full proof and the continuity refinement in Appendix B). Freeness makes Φ(𝜌(ℎ)𝑧) ∶= 𝜌(ℎ)𝑐 a well-defined equivariant probe target for any 𝑐 ;orbit-constancy then gives ‖𝑓 (𝑧) − 𝑐‖ = ‖𝑓 (𝜌(𝑔)𝑧) − 𝜌(𝑔)𝑐‖ = ‖𝜌(𝑔) −1 𝑓 (𝜌(𝑔)𝑧) − 𝑐‖ (the last step by (A4)) for every 𝑐 — two points equidistant from every 𝑐 coincide, so 𝑓 (𝜌(𝑔)𝑧) = 𝜌(𝑔)𝑓 (𝑧) . □ With Theorem A this is a characterization : orbit-constant error ⟺ equivariance — no non-equivariant model possesses the certificate at any size ; the impossibility is a theorem, not an observation. 33.2 THE HORIZON AXIS, AND ITS TIGHTNESS (THE CENTRAL RESULT) Real models are only approximately equivariant. Let 𝜖 max = max 𝑖 sup 𝑥 ‖𝐸(𝑔 𝑖 ⋅ 𝑥) − 𝜌(𝑔 𝑖 )𝐸(𝑥)‖ be the encoder residual, 𝛿 the per-step predictor error, and let the latent Jacobian be locally diagonalized on channel 𝑗 with multiplier 𝑒 𝜆 𝑗 .
+
+Theorem B (spectral degradation — upper bound). For constants 𝑐 𝑗 depending on local geometry, 
+
+∣Err 𝑇 (𝑤 ⋅ 𝑥) − Err 𝑇 (𝑥)∣ ≤ ∑ 
+
+> channels 𝑗
+
+𝑐 𝑗 (𝑚 𝜖 max + 𝑇 𝛿) 𝑒 𝜆 𝑗 𝑇 , 𝑚 = |𝑤|, 
+
+so channel 𝑗 is certified only to horizon 𝑇 𝑗 (𝜖) ∼ 1𝜆 𝑗 log 1𝜖 (𝜆 𝑗 > 0 ), or 𝑇 𝑗 = ∞ (𝜆 𝑗 ≤ 0 ). As 
+
+𝜖 max , 𝛿 → 0 the configuration term vanishes and Theorem A is recovered. 
+
+Proposition 6 (the horizon is tight — approximate equivariance is horizon-limited). Theorem B is an upper bound; here is a matching lower bound. Fix an expansive channel on which the latent map is locally linear with multiplier 𝑎 = 𝑒 𝜆 , 𝜆 > 0 (the local diagonalization of Theorem B). There exist an exactly equivariant target Φ and a model that is 𝜖 -approximately equivariant — a perfect 
+
+equivariant predictor 𝑓 = Φ (𝛿 = 0 ) and an encoder that intertwines the dynamics along 𝑥 ’s trajectory and differs from exact equivariance only by a single defect 𝐸(𝑔 ⋅ 𝑥) = 𝜌(𝑔)𝐸(𝑥) + 𝜖𝑢 at one orbit point — for which 
+
+∣Err 𝑇 (𝑔 ⋅ 𝑥) − Err 𝑇 (𝑥)∣ = 𝜖 𝑒 𝜆𝑇 .
+
+Proof sketch (Appendix B). Along 𝑥 the model is exact, Err 𝑇 (𝑥) = 0 ; at 𝑔 ⋅ 𝑥 the single defect propagates linearly, 𝑓 𝑇 (𝐸(𝑔 ⋅ 𝑥)) = 𝜌(𝑔)Φ 𝑇 (𝐸𝑥) + 𝑎 𝑇 𝜖𝑢 , while the target is 𝜌(𝑔)Φ 𝑇 (𝐸𝑥) ; subtract and use (A4): 𝜖𝑒 𝜆𝑇 . □
+
+Hence the certified horizon 𝑇 (𝜖 res ) = 1𝜆 log 𝜖 res  
+
+> 𝜖
+
+= Θ( 1𝜆 log 1𝜖 ), matching Theorem B: the horizon’s form is two-sided, not merely an upper estimate. The conceptual payload is sharp: 
+
+No certificate derived from an 𝜖 > 0 equivariance residual can promise pre-dictability beyond 𝑇 ∼ 1𝜆 log 1𝜖 on an expansive channel (worst case over ad-missible targets). Only exactness ( 𝜖 = 0 ) or conservation ( 𝜆 𝑗 ≤ 0 ) yields an unbounded horizon. 
+
+This is the horizon-domain companion of Lemma 2: scale and data buy approximate equivariance at best (a fair augmentation baseline floors at 𝜖 ≈ 10 −4 , never exact), and Proposition 6 amplifies that residual 𝑒 𝜆𝑇 — a single-step tie between augmentation and equivariance must break over horizon .
+
+The prefactor is the splitting conditioning (Proposition 6￿, Appendix B): 𝑐 𝑗 = 1/ sin 𝜃 𝑗 — exactly 
+
+1 on orthogonal invariant splittings (isotypic blocks — Schur placement and zero leakage at machine precision), attained to four digits under controlled shears with the predicted log 𝜅/𝜆 haircut; on real loops it is computable from the audited Jacobian field — honestly a distribution (median 𝜅 1 ≈ 20 ,heavy tail) — while measured calibration stays 0.83 –1.02 (step65b , step95 ). 
+
+Figure 3: Proposition 6, numerically (the central claim). Left: orbit-error-variation of an 𝜖=10 −3 -approximately-equivariant model (markers) equals the analytic 𝜖 𝑒 𝜆𝑇 (dashed) to relative error 
+
+10 −14 –10 −13 , 3 seeds; an exactly equivariant model sits at the machine-precision floor; 𝜆 ≤ 0 chan-nels stay bounded (infinite horizon). Right: certified horizon linear in log (1/𝜖) with slope exactly 
+
+1/𝜆 (𝑅 2=1.000 ) — the Θ( log (1/𝜖)/𝜆) law ( step65 ). 4Proposition 7 (scope — when the local spectrum certifies a learned model’s horizon). On a learned model the answer splits a rigorous rate half from an orbit-error lift half. Let 𝜙 have an ergodic invariant measure 𝜇 with log +‖𝐷𝜙‖ ∈ 𝐿 1(𝜇) . By Oseledets (Oseledets, 1968), 1𝑡 log ‖𝛿 𝑡 ‖ → 𝜆 1 𝜇 -a.e. for generic perturbations. (a) Non-degenerate ( 𝜆 1 > 0 ): 𝑇 (𝜖) = 1𝜆 1 log (𝜖 res /𝜖) (1 + 𝑜(1)) —Theorem B’s law with 𝜆 1 the measurable asymptotic rate. For a learned ̂ 𝜙 , shadowing (Pilyugin, 1999) bounds only the forecast-horizon floor ∼ 1𝜆 1 log (1/𝛿) — trajectory closeness, not the asymp-totic exponent — so that ̂ 𝜙 reproduces 𝜆 1 is a finite-horizon continuity statement (Proposition 8), confirmed in E2. (b) Degenerate ( 𝜆 1 ≈ 0 ): the log-law degenerates; the one-step spectrum carries no horizon rate. This dichotomy is the certificate’s scope — and it predicts where the certificate is vacuous (E2’s PushT-interior probe, 𝑅 2=0.02 ). 
+
+Proposition 8 (finite-horizon exponent transfer). The asymptotic exponent is only upper-semicontinuous (why shadowing cannot transfer it), but the certified horizon is finite , and the finite-time exponent 𝜆 (𝑇) 1 is locally Lipschitz over a finite orbit: a learned ̂ 𝜙 with one-step fidelity 𝛿 recovers the staircase slope up to 𝑂(𝛿) plus finite-𝑇 truncation, 𝑇 -uniform under a dominated splitting (Bochi & Viana, 2005). Falsifiable — the exponent must tighten as one-step error drops — confirmed in E2 (Rössler: 44% → 8% ). 3.3 THE NOETHER HINGE: WHICH CHANNELS ARE UNBOUNDED Theorem B leaves the 𝜆 𝑗 ≤ 0 (unbounded-horizon) channels unidentified; the Noether hinge identi-fies which channels are guaranteed to sit there: the conserved/invariant ones. 
+
+Proposition 4 (isotypic placement). A conserved charge of the dynamics must live in a specific isotypic block of 𝜌 : a scalar invariant (energy) in the trivial ( ℓ=0 ) block; a vector charge (angular momentum) in the ℓ=1 block, recoverable only through the unique degree-2 cross-product equivari-ant. Placement is forced by representation theory (Goodman & Wallach, 2009), not chosen. 
+
+Proposition 5 (conservation ⇒ unbounded horizon). Let 𝑄 ∶ 𝒵 → 𝑊 be a charge the model conserves to one-step defect 𝜂 (i.e. ‖𝑄(𝑓 𝑧) − 𝑄(𝑧)‖ ≤ 𝜂 ). Then the 𝑇 -step charge-value prediction error satisfies ‖𝑄(̂𝑧 𝑇 ) − 𝑄(𝑧 𝑇 )‖ ≤ 𝑇 𝜂 — linear in 𝑇 , never the chaotic 𝑒 𝜆𝑇 — and at 𝜂=0 the charge value is certified to all horizons. (About the charge value; exact under an equivariant symplectic discretization; the converse fails — slow need not be conserved.) Together: the certified region is the coarse, invariant/conserved, low-composition corner —reachable only with structure (Lemma 2). 3.4 THE CERTIFICATE IS A PROCEDURE The certificate is computable a priori . Algorithm 1: (i) check (A1)–(A4) on the 𝑘 genera-tors to residual 𝜖 max ; (ii) estimate the predictor spectrum at the query latent (block-bootstrap CI, Liouville-anchored; step78 ); (iii) report whether (𝑤, 𝑇 , 𝜖) lies in the certified region of Theorem B/Proposition 6, escalating conserved channels via Proposition 5. Proposition 10 gives the finite-sample rate ( 𝑛 ≍ log (1/𝛿)/𝜀 2; the bootstrap CI brackets 𝑇 1). 4. EXPERIMENTS All experiments are CPU/ 1-GPU, seeded, and honestly gated (a run reports INCONCLUSIVE rather than loosen a threshold). Proofs: Appendix B ; reproducibility map (anonymized code, seeds, gates): 
+
+Appendix C ; the supporting suite (E1, E3–E8) is summarized below and written up in Appendix D .
+
+(E2) The horizon staircase — and where structure becomes necessary. On a controlled latent with a planted spectrum the certified-horizon slope brackets the predicted 1/𝜆 (chaotic exponent recovered to 0.4% ). The law lifts to learned models of real chaotic dynamics: one-step models of Lorenz , Hénon , Rössler give staircases linear in log (1/𝜖) (𝑅 2=0.975 –0.995 , 3 seeds) whose slopes recover the textbook exponents to 1–12% — Proposition 8’s continuity at work, not a shad-owing corollary — while the near-neutral PushT interior is Proposition 7’s predicted degenerate 
+
+branch ( 𝑅 2=0.02 ). At high dimension structure becomes necessary : on 40 -D Lorenz-96 (Lorenz, 1996) (the Liouville identity ∑𝑗 𝜆 𝑗 = − 𝑁 recovered to 0.0% — the estimator is anchored before any learned spectrum is trusted) a ℤ𝑁 -equivariant cyclic-conv recovers the full spectrum ( 𝑅 2=0.98 –0.99 ,
+
+3 seeds; Kaplan–Yorke ∼ 27 ) — hence the per-channel certified horizons — while an identically-5trained dense MLP fails (𝑅 2<0 , 𝜆 1 inflated ∼ 3.4× ) and a GRU-BPTT (Vlachas et al., 2020) fails the same way, its joint-state Jacobian breaking the conditional-Lyapunov condition (Hart, 2024). Sweep-ing 𝑁 ∈ {12, 20, 28, 40} shows a phase transition : all three architectures tie through 𝑁=28 ; only the equivariant one survives 𝑁=40 (step83 ). 
+
+(Figure A1, Appendix A.) (Figure A2, Appendix A.) (E1, E3–E8: the supporting suite — Appendix D.) 𝑘 generator checks certify all 2𝑘 compositions ( ℤ62: error ∼ 10 −33 vs a baseline’s 0.59 ) (E1). Symmetry breaking degrades the certificate linearly — Proposition 6’s predicted crossing — and a fair augmentation baseline is horizon-limited at its ∼ 10 −4 floor (E3). An 88× -scaled non-equivariant model buys interpolation, never the orbit-floor (E4); on PushT contact dynamics a learned SO (2) -equivariant model is orbit-flat to ratio 1.000 with no baseline in a 160× sweep reaching its out-of-distribution floor — the impossibility carried by Lemma 2, not E5’s magnitude (E5). The certificate lifts to non-abelian SO (3) and, via frame averaging, accuracy-neutrally to pixels (E6); becomes orbit-invariant closed-loop control (E7); and drives a noise-immune epistemic explorer — 27 compositions certified in 7 observations where prediction-error curiosity is lured by distractors to 1% (E8). 
+
+(E9) Both axes on one system; the certificate acts. On controlled Lorenz-96 (exact ℤ𝑁 , 𝜆 1≈1.8 )an equivariant planner gives orbit-flat control (residual 8 × 10 −16 ) while 𝑇 1(𝜖) drives an active re-observation schedule on the accuracy-observation frontier untuned (2/3 seeds; tight-𝜖 honestly opti-mistic per Prop. 8); the pattern lifts to a pendulum ring and a double pendulum ( step79 –step81 ). 
+
+(E10) The certified horizon, made literal — and its exact regime. E2 measures the exponent; Theorem B￿ certifies it: a computable cone/adapted-metric certificate reads a sound, a-priori bound on the model’s top exponent off its Jacobian field alone. On uniformly-hyperbolic dynamics it is 
+
+tight : cat-map certified exponent exact on the true map, 1.17× on a learned net ( 3 seeds, sound), 
+
+1.06× on a nonlinear Anosov perturbation. On non-uniformly-hyperbolic Hénon a single metric is provably limited — sound but ∼ 3× conservative — and the certificate’s own cone-margin diagnostic turns negative: it abstains rather than over-claim. A tight a-priori horizon is achievable exactly in the uniformly-hyperbolic regime, and the certificate self-diagnoses its regime ( step82 ). 
+
+(E11) On a recognized control benchmark — honest INCONCLUSIVE. On Acrobot-v1 (𝜆 1=0.094 ) the certified horizon tracks the measured one (ratio 0.42 → 0.93 as 𝜖 coarsens) and 
+
+binds : planning past ∼ 𝑇 1 fails outright, and capping depth at 𝑇 1 solves the task ( 67 –100% ) — but the return-optimum sits at ∼ 𝑇 1/2 , so two pre-registered no-tuning rules are INCONCLUSIVE 
+
+against the best-tuned blind depth ( step84 ). 
+
+(E12) The certificate’s trustworthiness changes a budgeted decision — a priori. On 40 -D Lorenz-96 an agent schedules sparse re-observations under a fixed sensing budget; the forecaster is held fixed (both models identically trained, one-step relMSE ∼ 10 −5 ) and only the certificate timing re-observation varies: the equivariant certificate yields 8–16% aggregate violation at the knee budget vs. 61 –65% for the dense certificate, whose 𝜆 1 is inflated ∼ 3.4× and which therefore over-observes and starves the budget (margins +0.45 –+0.57 , 3/3 ; Proposition 9 makes the cost a law — 𝑐× inflation needs 𝑐× budget; measured catch-up 2.7 –3.5× ). Two controls: a certificate-free adaptive scheduler matches only after ∼ 3× the budget (the certificate is an a-priori warm-start); a recalibrated dense certificate closes the gap ( 3/3 ) but spends a calibration set — the equivariant one is correct from the Jacobian with zero rollout data . Standard UQ baselines (a 4-model ensemble, a 10 -rollout conformal quantile) calibrate tighter by spending training or truth access the certificate does not: no method dominates the accuracy–cost Pareto; the certificate is its only a-priori point (step90 ). The contrast replicates conditionally — the condition being the mechanism — on a pendulum ring (𝑁=24 , 5 seeds): the gap appears exactly where the dense 𝜆 1 inflates ( 2/5 ) and vanishes where it is incidentally faithful — chance vs. structure. (A budget allocation across a chaoticity ensemble did 
+
+not win; reported honestly.) ( step85 /85b /85c , step88 , step90 .) 
+
+(E13) The certificate audits a public pretrained world model — training-free. We rebuild the latent slices of official TD-MPC2 checkpoints and run the unchanged machinery on the policy-prior loop 𝑔(𝑧) = 𝑑(𝑧, tanh 𝜇 𝜋 (𝑧)) — no training, no environment access on the certified side — across 5 tasks × 3 seeds (15 loops) : a scope map tracking the theory cell-by-cell. Where the loop is strongly expansive (𝜆 1=0.25 –0.30 ) the certificate is calibrated — measured/certified 0.83 –1.02 
+
+(walker 0.94/0.95/1.02 ; tight-𝜖 optimistic as everywhere, Prop. 8). As expansion weakens the cer-tificate turns optimistic (cheetah 0.43/0.50 ; hopper-hop 0.13/0.38 at 𝜆 1=0.05 –0.09 ): model bias outpaces Lyapunov amplification — the degeneracy direction Proposition 7 flags. Where the loop 6contracts (6/15 : acrobot 3/3 , finger-spin 2/3 , hopper seed 1) the certificate abstains, correctly in both sub-cases : finger-spin’s stable loops genuinely do not diverge (nothing to certify; 15 –19/20 
+
+starts censored), while acrobot’s and hopper-1’s residual divergence is bias-driven — outside a Lya-punov certificate’s jurisdiction. SimNorm’s structural zero-directions appear as a strongly-negative band — reported, not hidden; the certified scope is the prior loop, not the planner. A Jacobian certifi-cate of a public zoo’s learned latent map , cross-validated against true-environment divergence and stratified by the certificate’s own scope theory, is new (nearest prior: true-environment Lyapunov un-der RL policies, arXiv:2410.10674). ( step89 .) A second, architecturally disjoint family lands on the same map: the official LeWM checkpoint (pixel-input ViT+transformer JEPA, loaded bit-faithfully into the authors’ own code) has 𝜆 1=0.001 with CI straddling zero — the certificate abstains , and the observed 1–2-step divergence is pure one-step bias, the same sub-case as acrobot. Two families, one read-out, one taxonomy ( step91 ). 
+
+(E14) Scale does not rescue trustworthiness ( step92 ). Across the official TD-MPC2 multitask 
+
+ladder (mt30, 1M– 317 M, same walker-walk task, one official checkpoint per size) the loop’s regime flips non-monotonically with scale — contracting at 1M and 48 M, expansive at 5M/ 19 M/ 317 M — and calibration scatters ( 0.37/1.87/1.16 at 𝜖=0.2 where expansive; mt80 likewise mixed), no size matching the single-task 0.94 –1.02 . One checkpoint per cell — a descriptive scope-map extension, unambiguous in direction: trust in a rollout is a property of the loop’s dynamics, not of parameter count — scale buys interpolation, not a calibrated horizon. (Figure A3, Appendix A.) (E15) The published certificate prices a deployed monitor, out-of-sample ( step94 ). The scope law’s positive instance: a sensor-only monitor watches cheetah-run under its nominal policy, reads the expensive sensor every 𝑘 steps, and between reads forecasts with the certified loop 𝑔 itself (no action telemetry), flagging at a read iff relative error exceeds 𝜃=0.2 .Certificate numbers are loaded from the E13 artifact (issued before this experiment existed); gates frozen before seeds 1–2 ever ran. The in-situ staleness clock replicates the published map cell-by-cell :in-situ-vs-bench ratio 0.43 vs 0.43 and 0.50 vs 0.50 on the out-of-sample cells (optimism predicted ), 
+
+0.67 vs 0.83 on the calibrated cell — its [2/3, 3/2] check landing 7×10 −4 below the edge on an integer-valued median, recorded at-the-edge, not rounded up . A frozen-actuator fault is then de-tected at the certificate-derived cadence with recall 1.00 on 3/3 seeds (median delay ≤ 𝑘 op on 2/3 ). Proposition 11 formalizes both sides: an aligned decision transfers certificate value with zero new estimation (clause i); step93’s dilution is a resolution mismatch, 𝐻(𝜃 ∗) ≈ 2 vs 𝐻(0.2) ≈ 6 (clause ii). Honest notes: on walker the deterministic prior is regime-bimodal and clock replication breaks (0.32 –0.47 vs 0.94 –1.02 , 0/3 ; fault recall intact) — a monitor presumes a nominal regime, Proposi-tion 7 load-bearing in deployment .
+
+step96 –step97 complete the map: the stable-abstain cells deploy as free monitoring (93 –94% 
+
+of windows never cross; invalid 4.0 –4.4% ; recall 1.00 ), the bias-driven cells land inside the ×1.5 
+
+band of bench (hopper-1: 7.0 vs 5.5 — the clock the certificate rightly refused to price) or buy zero sensing savings on the architecturally disjoint pixel family (LeWM/PushT: usable cadence 1, alarm channel flooded at every 𝑘 ≥ 2 , fault detection inseparable from drift — all stated before the run), and a further replication cell lands 1.04 vs 0.95 (finger-spin-1). Every taxonomy cell type now has a deployment instance, predicted a-priori — and the taxonomy orders deployment value: stable-abstain (free monitoring) > expansive (priced savings) > bias-abstain (do not deploy). (E16) At foundation-model scale the cross-check column is load-bearing ( step98 –step99 ). V-JEPA 2-AC (1B encoder, official checkpoint, authors’ code; 𝑑=360,448 ) reads expansive (𝜆 1=0.178 ,two seeds agreeing to 1.8% ) — yet on 20 real DROID episodes the deployment error starts at the representation’s native step motion ( 0.63 one-step vs 0.68 consecutive-latent distance) and grows at log-slope 0.03 ≪ 𝜆 1: it never enters the linearization neighborhood, and the pre-registered pricing gate fails as registered (measured sub-class: bias — Proposition 7’s degeneracy at 1B scale). A spectrum-only audit would over-promise 𝑇 1≈9 ; the cross-validated audit is the deployable object .Thresholds are representation-relative; rates price only errors inside the linearization neighborhood (Appendix D). 
+
+What does structure buy, if the read-out audits any smooth model? The law applies to any 𝐶 1
+
+latent map — hence E13–E16. What it cannot supply there is trust in the number : a dense spectrum can be silently wrong while predictions stay good (E2), so a generic certificate must be cross-validated against held-out divergence — E13’s per-model check, load-bearing by E16 . Structure removes that 7requirement where it holds (E2 ⇒ E12’s zero-calibration action), exclusively so (Lemma 2). The audit is universal; the a-priori guarantee is structure’s. 
+
+5. RELATED WORK 
+
+Single-shot certified equivariance is our 𝑇 =1 slice. Orbit-constant margins (orb, 2025), invariance-aware smoothing (ran, 2022), and equivariantized conformal prediction (Bousias et al., 2026) are 
+
+single-shot, forward-only, with no horizon, spectrum, or conservation axis — the 𝑇 =1 , 𝜖 -independent slice of our certificate; ours adds the multi-step stratification (Theorem B, tight by Propo-sition 6), the converse (Lemma 2), and the Noether bridge (Proposition 5). 
+
+Learned conservation laws. Noether Networks (Alet et al., 2021) and Noether’s Razor (noe, 2024) 
+
+learn conserved quantities to improve average prediction; we certify — Proposition 5 turns a con-served charge into an a-priori long-horizon guarantee, Proposition 4 forces its isotypic placement. Guarantee versus average accuracy. 
+
+Jacobian-regularized world models. (jac, 2025) penalizes the latent-transition Jacobian to damp rollout error — a heuristic. Theorem B is the provable version: read a per-channel certified hori-zon off the spectrum instead of regularizing toward stability; Proposition 6 prices its decay under approximate symmetry. 
+
+Equivariant predictors and latent-geometry priors. Cyclic/unitary predictors (BRo-JEPA, arXiv:2606.01372; UWM-JEPA, arXiv:2605.25313) report strong zero-shot transfer; Theorem A explains why and Lemma 1 quantifies how far (the generated monoid). LeJEPA-style isotropic latent priors target a distributional property; ours is a first-order, per-situation guarantee that predicts when a data-discovered anisotropy fails off the orbit. 
+
+Predictability horizons. The 𝑇 (𝜖) ∼ log (1/𝜖)/𝜆 law is classical (Lyapunov; NWP); the local-to-asymptotic link is Oseledets (Oseledets, 1968); shadowing (Pilyugin, 1999) bounds a perturbed model’s horizon floor , not its exponent. We (i) prove the law tight for a learned latent world model and measure it on a class of genuinely chaotic dynamics ( 1–12% , E2), rigorous via Proposition 8 where shadowing fails; (ii) characterize when it lifts (Proposition 7); (iii) tie the unbounded-horizon subspace to the invariant one (Noether); (iv) prove the converse (Lemma 2). Spectrum recovery from a learned model is known conditionally on contracting modes (Hart, 2024) — why the recurrent baseline fails at high 𝑁 ; the closest concurrent guarantees (Conradie et al., 2026; Lillemark et al., 2026; Mo, 2026) each miss the equivariance-certified-horizon intersection. 
+
+Concurrent work (2026, briefly). The nearest neighbors are symmetry-protected neutral Lyapunov modes (Mo, arXiv:2605.03338 — constrains the spectrum’s kernel where we certify the horizon; for our discrete ℤ𝑁 systems their bound is vacuously zero), conformal rollout bounds (Geng et al., arXiv:2512.08991 — statistical and rollout-hungry where ours is a-priori and training-free), and flow-equivariant world models ((Lillemark et al., 2026) — an exactness/closure property, not a quan-titative horizon). A Jacobian certificate of a public model’s latent map, cross-validated against true-environment divergence, is to our knowledge new. Appendix E gives the full sweep (through 2026-06) and the per-work distinctions. 6. LIMITATIONS • Exactness needs a genuine dynamical symmetry (A3). Exact where 𝐺 is a symmetry of the dynamics, gracefully approximate elsewhere — the degradation two-sidedly bounded (Theorem B, Proposition 6) and measured (E3). • Prefactor: computable and measured — worst-case vs typical disclosed. 𝑐 𝑗 = 1/ sin 𝜃 𝑗 
+
+(Prop. 6￿) is exactly 1 on isotypic splittings (measured at machine precision), but on au-dited chaotic loops the worst-case 𝜅 1 carries a heavy near-tangency tail (median ∼ 20 , max 
+
+∼ 10 2–10 3): the measured calibration ( 0.83 –1.02 ) reflects typical , not adversarial, defect alignment — an adversarially-aligned defect could spend the log 𝜅 1/𝜆 1 haircut, and the Lorenz-96 angle estimator fails its own convergence check (disclosed). • The Noether hinge: forward direction proved, hypotheses measured, emergence open. 
+
+Proposition 5 assumes a 𝐺 -invariant Hamiltonian latent flow (the defect 𝜂 exact only under 8an equivariant symplectic discretization), and the converse fails (slow ⇏ conserved). The hinge is moreover validated on constructed equivariant teachers — the real-ish experiments (E5 PushT, E6 SO (3) ) validate flatness , not the hinge’s emergence in a learned model of un-constructed dynamics; that remains open. • The horizon law lifts to learned chaotic models and is vacuous on near-neutral dynam-ics (scope, not a bug). Validated on a synthetic spectrum, a class of low-D chaotic systems (exponents to 1–12% ), and a 40 -D learned model ( 𝑅 2=0.98 –0.99 ); informative iff 𝜆 1 > 0 
+
+— the PushT interior is the predicted degenerate branch ( 𝑅 2≈0.02 , Prop. 7(b)). Caveats: the lift rests on Proposition 8 (not shadowing), and we verify 𝐶 1-closeness only via one-step 𝐿 2
+
+error — a real gap in high 𝑁 (one-step-accurate dense and recurrent models mis-estimate the 40 -D spectrum; structure closes it); the real-dynamics evidence is ODEs/maps, not a contact simulator. • Downstream value is budgeted efficiency, not safety. The catastrophe-avoidance test was 
+
+inconclusive at our scale (escape was re-observation-interval-invariant — control-quality-limited); safety necessity is open. • Where decision value concentrates — and where it dilutes. Closing the loop on the real TD-MPC2 agent (faithful MPPI replica; cadence-1 anchor return 994 vs the official 977 –
+
+983 band), return degrades from replan cadence 𝑘=2 — well inside 𝑇 1(0.2) ≈ 5.4 –6.4 ;the control-relevant resolution is finer and sits in the certificate’s known tight-𝜖 optimistic regime ( step93 ). With E11, the honest scope law: value concentrates where the decided quantity IS the certified quantity (E12’s re-observation win, E15’s deployed monitor) and dilutes behind a task-level map (return, gait quality). Proposition 11 makes the law a theorem : an aligned decision inherits certificate value at calibration cost alone (zero regret at 𝑐=1 ); a task-mapped decision pays an irreducible mis-resolution penalty | log (𝜖/𝜃 ∗)|/𝜆 1
+
+— and 𝜃 ∗ is the task’s to give, not the certificate’s. • Scale and modality. All experiments are 1–2-GPU. The certificate’s exact flatness transfers across modalities (state, SO (3) point clouds, pixels), but absolute multi-step accuracy on raw pixels is poor for every architecture at this scale (the anti-collapse JEPA latent, not equivariance); a strong few-step pixel predictor is an architecture-agnostic open problem orthogonal to the certificate. 7. CONCLUSION An equivariant world model can certify, a priori and without retraining, which situations it will handle and for how many steps — and the horizon is tight. The certified region is the coarse-invariant-slow-low-composition corner — boundary set by the spectrum, unbounded edge anchored by the conserved subspace, reachable only with structure. Because the horizon is faithful it is actionable — budgeting sensing (E12), auditing public world models (E13–E16), pricing a deployed monitor (E15). Scale buys interpolation; structure buys a certified horizon. 
+
+# REFERENCES 
+
+Invariance-aware randomized smoothing certificates, 2022. Noether’s razor: learning conserved quantities, 2024. Towards unraveling and improving generalization in world models, 2025. Orbit-constant margins for equivariant networks, 2025. Ferran Alet, Dylan Doblar, Allan Zhou, Joshua Tenenbaum, Kenji Kawaguchi, and Chelsea Finn. Noether networks: meta-learning useful conserved quantities, 2021. Jairo Bochi and Marcelo Viana. The Lyapunov exponents of generic volume-preserving and sym-plectic maps. Annals of Mathematics , 161(3):1423–1485, 2005. Nikolaos Bousias, Lars Lindemann, and George J. Pappas. eCP: Informative uncertainty quantifica-tion via equivariantized conformal prediction with pre-trained models, 2026. 9Gustav Conradie, Nicolas Boullé, Jean-Christophe Loiseau, Steven L. Brunton, and Matthew J. Col-brook. Trustworthy Koopman operator learning: Invariance diagnostics and error bounds, 2026. Roe Goodman and Nolan R. Wallach. Symmetry, Representations, and Invariants . Springer, 2009. Joseph D. Hart. Attractor reconstruction with reservoir computers: The effect of the reservoir’s conditional Lyapunov exponents on faithful attractor reconstruction. Chaos , 34(4):043123, 2024. arXiv:2401.00885. Hansen Jin Lillemark, Benhao Huang, Fangneng Zhan, Yilun Du, and T. Anderson Keller. Flow equivariant world models: Memory for partially observed dynamic environments, 2026. ICML 2026. Edward N. Lorenz. Predictability: A problem partly solved. In Proceedings of the Seminar on Predictability , volume 1, pp. 1–18. ECMWF, Reading, UK, 1996. Hanson Hanxuan Mo. Symmetry-protected Lyapunov neutral modes in equivariant recurrent net-works, 2026. Valery I. Oseledets. A multiplicative ergodic theorem. characteristic Lyapunov exponents of dynam-ical systems. Transactions of the Moscow Mathematical Society , 19:197–231, 1968. Sergei Yu. Pilyugin. Shadowing in Dynamical Systems , volume 1706 of Lecture Notes in Mathemat-ics . Springer, 1999. Pantelis R. Vlachas, Jaideep Pathak, Brian R. Hunt, Themistoklis P. Sapsis, Michelle Girvan, Edward Ott, and Petros Koumoutsakos. Backpropagation algorithms and reservoir computing in recurrent neural networks for the forecasting of complex spatiotemporal dynamics. Neural Networks , 126: 191–217, 2020. arXiv:1910.05266. 10 A. ADDITIONAL FIGURES Supporting figures relocated from the main text (the main-text figures are the hero schematic, the tightness construction, the Lorenz horizon lift, and the real-contact-dynamics certificate). 
+
+Figure 4: Figure A1. Full-spectrum Lyapunov 𝑅 2 vs. 𝑁 : the ℤ𝑁 -conv holds while dense MLP and GRU collapse at 𝑁=40 — a phase transition, not a single-𝑁 artifact ( step83 ). 
+
+Figure 5: Figure A2. The certified-horizon law across a class of learned chaotic models (E2). The identical learned-model staircase on a 2D map (Hénon), a small-exponent flow (Rössler), and a large-exponent flow (Lorenz) is linear in log (1/𝜖 0) and its slope (blue) recovers the textbook exponent (red dashed). The law is a property of chaotic dynamics, not of Lorenz; the residual bias is decomposed by Proposition 8. B. PROOFS We restate each formal claim and give a complete proof. Notation is as in §2: an encoder 𝐸 ∶ 𝒳 → 𝒵 ,a predictor 𝑓 ∶ 𝒵 × 𝒜 → 𝒵 , true dynamics Φ, a group 𝐺 acting on situations ( 𝑥 ↦ 𝑔 ⋅ 𝑥 ), latents (via 
+
+𝜌 ), and actions (via 𝜎 ). The 𝑇 -step rollout under an action sequence ̄ 𝑎 = (𝑎 0, … , 𝑎 𝑇−1 ) is ̂ 𝑧 𝑇 (𝑥;̄ 𝑎) = 𝑓 (⋅, 𝑎 𝑇−1 ) ∘ ⋯ ∘ 𝑓 (𝐸(𝑥), 𝑎 0), the target is 𝐸(Φ 𝑇 (𝑥;̄ 𝑎)) , and Err 𝑇 (𝑥;̄ 𝑎) = ‖̂𝑧 𝑇 (𝑥;̄ 𝑎) − 𝐸(Φ 𝑇 (𝑥;̄ 𝑎))‖ .For a word 𝑤 ∈ ⟨𝑆⟩ we write ̄ 𝑎 𝑤 = (𝜎(𝑤)𝑎 0, … , 𝜎(𝑤)𝑎 𝑇−1 ) for the action sequence transported by 
+
+𝑤 ; the configuration-axis statements compare the rollout at 𝑥 under ̄ 𝑎 with the rollout at 𝑤 ⋅ 𝑥 under ̄𝑎 𝑤 (the natural pairing, since 𝐺 acts on actions as well). LEMMA 1 (COMPOSITION CLOSURE) 
+
+Statement. If (A1)–(A3) hold on every generator 𝑔 𝑖 ∈ 𝑆 , they hold on every word 𝑤 ∈ ⟨𝑆⟩ .
+
+Proof. Induction on word length |𝑤| . For |𝑤| = 0 , 𝑤 = 𝑒 and 𝜌(𝑒) = 𝐼 , 𝜎(𝑒) = 𝐼 , 𝑒 ⋅ 𝑥 = 𝑥 , so all three are trivial. For |𝑤| = 1 , 𝑤 = 𝑔 𝑖 is a generator, true by hypothesis. Inductive step: write 𝑤 = 𝑔 𝑖 𝑤 ′
+
+with |𝑤 ′| = 𝑚 and assume the claim for 𝑤 ′. Using that 𝜌, 𝜎 are homomorphisms and the action is a left action: 
+
+𝐸((𝑔 𝑖 𝑤 ′) ⋅ 𝑥) = 𝐸(𝑔 𝑖 ⋅ (𝑤 ′ ⋅ 𝑥)) (A1) 
+
+= 𝜌(𝑔 𝑖 )𝐸(𝑤 ′ ⋅ 𝑥) IH 
+
+= 𝜌(𝑔 𝑖 )𝜌(𝑤 ′)𝐸(𝑥) = 𝜌(𝑔 𝑖 𝑤 ′)𝐸(𝑥), 
+
+11 Figure 6: Figure A3. Scale does not buy a calibrated horizon (E14). (a) 𝜆 1 of the walker-walk policy-prior loop across the official multitask ladder: sign-flipping, non-monotone (contracting at 1M and 
+
+48 M). (b) Calibration at 𝜖=0.2 : scatter across sizes; no multitask scale reaches the single-task 5Mband ( 0.94 –1.02 , green). which is (A1) for 𝑤 . For (A2), for all 𝑧, 𝑎 ,
+
+𝑓 (𝜌(𝑤)𝑧, 𝜎(𝑤)𝑎) = 𝑓 (𝜌(𝑔 𝑖 )𝜌(𝑤 ′)𝑧, 𝜎(𝑔 𝑖 )𝜎(𝑤 ′)𝑎) (A2) 
+
+= 𝜌(𝑔 𝑖 )𝑓 (𝜌(𝑤 ′)𝑧, 𝜎(𝑤 ′)𝑎) IH 
+
+= 𝜌(𝑔 𝑖 )𝜌(𝑤 ′)𝑓 (𝑧, 𝑎) = 𝜌(𝑤)𝑓 (𝑧, 𝑎). 
+
+For (A3), Φ(𝑤⋅𝑥, 𝜎(𝑤)𝑎) = Φ(𝑔 𝑖 ⋅(𝑤 ′ ⋅𝑥), 𝜎(𝑔 𝑖 )𝜎(𝑤 ′)𝑎) (A3) 
+
+= 𝑔 𝑖 ⋅Φ(𝑤 ′ ⋅𝑥, 𝜎(𝑤 ′)𝑎) IH 
+
+= 𝑔 𝑖 ⋅𝑤 ′ ⋅Φ(𝑥, 𝑎) = 𝑤 ⋅ Φ(𝑥, 𝑎) . □
+
+A consequence we use repeatedly: the rolled-out predictor is equivariant, ̂ 𝑧 𝑇 (𝜌(𝑤)𝑧;̄ 𝑎 𝑤 ) =𝜌(𝑤)̂𝑧 𝑇 (𝑧;̄ 𝑎) , by applying (A2)-for-𝑤 at each of the 𝑇 steps. THEOREM A (ORBIT-CONSTANT ERROR) 
+
+Statement. Under (A1)–(A4), for every 𝑤 ∈ ⟨𝑆⟩ , every 𝑥 , and every action sequence ̄ 𝑎 , Err 𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 ) = Err 𝑇 (𝑥;̄ 𝑎) .
+
+Proof. By (A1) and Lemma 1, ̂ 𝑧 𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 ) =̂ 𝑧 𝑇 (𝜌(𝑤)𝐸(𝑥) ;̄ 𝑎 𝑤 ) = 𝜌(𝑤)̂𝑧 𝑇 (𝐸(𝑥);̄ 𝑎) , i.e. the model rollout transforms by 𝜌(𝑤) . For the target, Lemma 1 applied to (A3) gives Φ𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 ) = 𝑤 ⋅ Φ 𝑇 (𝑥;̄ 𝑎) , hence by (A1) 𝐸(Φ 𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 )) = 𝜌(𝑤)𝐸(Φ 𝑇 (𝑥;̄ 𝑎)) . Subtracting, Err 𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 ) = ∥𝜌(𝑤)(̂𝑧 𝑇 (𝑥;̄ 𝑎) − 𝐸(Φ 𝑇 (𝑥;̄ 𝑎)))∥ (A4) 
+
+= ∥̂𝑧 𝑇 (𝑥;̄ 𝑎) − 𝐸(Φ 𝑇 (𝑥;̄ 𝑎))∥ = Err 𝑇 (𝑥;̄ 𝑎), 
+
+where (A4) ( 𝜌(𝑤) orthogonal, as 𝜌 is a homomorphism into 𝑂(𝒵) ) preserves the norm. □
+
+LEMMA 2 (THE CERTIFICATE CHARACTERIZES EQUIVARIANCE — THE CONVERSE) 
+
+Statement. Let 𝜌 ∶ 𝐺 → 𝑂(𝒵) act freely on an open set 𝑈 ⊆ 𝒵 . If a predictor 𝑓 has orbit-constant error ‖𝑓 −Φ‖ on 𝑈 for every equivariant target Φ, then 𝑓 is equivariant on 𝑈 (i.e. 𝑓 (𝜌(𝑔)𝑧) = 𝜌(𝑔)𝑓 (𝑧) 
+
+for all 𝑧 ∈ 𝑈 , 𝑔 ∈ 𝐺 with 𝜌(𝑔)𝑧 ∈ 𝑈 ). 
+
+Proof. Fix 𝑧 ∈ 𝑈 and 𝑔 ∈ 𝐺 . For an arbitrary 𝑐 ∈ 𝒵 define a target on the orbit 𝐺 ⋅ 𝑧 by 
+
+Φ𝑐 (𝜌(ℎ)𝑧) ∶= 𝜌(ℎ) 𝑐 . This is well defined: freeness means the map ℎ ↦ 𝜌(ℎ)𝑧 is injective, so each orbit point determines a unique ℎ; and Φ𝑐 is equivariant by construction, Φ𝑐 (𝜌(ℎ ′)𝜌(ℎ)𝑧) = 𝜌(ℎ ′ℎ)𝑐 = 𝜌(ℎ ′)Φ 𝑐 (𝜌(ℎ)𝑧) . Orbit-constancy of ‖𝑓 − Φ 𝑐 ‖ at the two orbit points 𝑧 and 𝜌(𝑔)𝑧 reads 
+
+‖𝑓 (𝑧) − Φ 𝑐 (𝑧)‖ = ‖𝑓 (𝜌(𝑔)𝑧) − Φ 𝑐 (𝜌(𝑔)𝑧)‖ ⟺ ‖𝑓 (𝑧) − 𝑐‖ = ‖𝑓 (𝜌(𝑔)𝑧) − 𝜌(𝑔)𝑐‖. 
+
+Since 𝜌(𝑔) is orthogonal, ‖𝑓 (𝜌(𝑔)𝑧) − 𝜌(𝑔)𝑐‖ = ‖𝜌(𝑔) −1 𝑓 (𝜌(𝑔)𝑧) − 𝑐‖ . Thus ‖𝑓 (𝑧) − 𝑐‖ =‖𝜌(𝑔) −1 𝑓 (𝜌(𝑔)𝑧) − 𝑐‖ for all 𝑐 ∈ 𝒵 . Two points 𝑝, 𝑞 with ‖𝑝 − 𝑐‖ = ‖𝑞 − 𝑐‖ for all 𝑐 are equal (set 𝑐 = 𝑝 to get ‖𝑞 − 𝑝‖ = 0 ). Therefore 𝑓 (𝑧) = 𝜌(𝑔) −1 𝑓 (𝜌(𝑔)𝑧) , i.e. 𝑓 (𝜌(𝑔)𝑧) = 𝜌(𝑔)𝑓 (𝑧) . □
+
+Remark (continuity). Φ𝑐 is in general only defined on the orbit and need not extend to a continuous global target. When 𝐺 is compact with closed orbits, a continuous 𝐺 -equivariant extension of Φ𝑐 
+
+to a neighbourhood exists (e.g. by an equivariant tubular-neighbourhood/averaging construction), so 12 the converse holds even when the class of admissible targets is restricted to continuous dynamics, not only the full algebraic class. Together with Theorem A this gives the characterization orbit-constant error ⟺ equivariance , and hence: no non-equivariant predictor has the certificate, at any parameter count. 
+
+Remark (the quantifier is necessary — and tight). The “every equivariant target” quantifier cannot be weakened to a single target: take 𝑓 = Φ + 𝑣 for a fixed vector 𝑣 with 𝜌(𝑔)𝑣 ≠ 𝑣 . Against that one Φ the error ‖𝑓 − Φ‖ ≡ ‖𝑣‖ is exactly orbit-constant, yet 𝑓 (𝜌(𝑔)𝑧) = 𝜌(𝑔)Φ(𝑧) + 𝑣 ≠ 𝜌(𝑔)𝑓 (𝑧) 
+
+— not equivariant. Lemma 2’s hypothesis is thus the minimal one under which the converse holds; operationally this is why the certificate checks the model-side conditions (A1)–(A4) on generators rather than error-flatness against a single environment. THEOREM B (SPECTRAL DEGRADATION — UPPER BOUND) 
+
+Statement. Let 𝜖 max = max 𝑖 sup 𝑥 ‖𝐸(𝑔 𝑖 ⋅𝑥)−𝜌(𝑔 𝑖 )𝐸(𝑥)‖ be the encoder residual, 𝛿 a uniform per-step predictor error sup 𝑧,𝑎 ‖𝑓 (𝑧, 𝑎)−𝐸(Φ(𝐸 −1 𝑧, 𝑎))‖ , and suppose the rollout’s latent Jacobian is, in a local frame, block-diagonal with channel-𝑗 multiplier 𝑒 𝜆 𝑗 and basis condition number 𝜅 𝑗 . Then for a word 
+
+𝑤 of length 𝑚 = |𝑤| ,
+
+∣Err 𝑇 (𝑤 ⋅ 𝑥;̄ 𝑎 𝑤 ) − Err 𝑇 (𝑥;̄ 𝑎)∣ ≤ ∑ 
+
+> 𝑗
+
+𝑐 𝑗 (𝑚 𝜖 max + 𝑇 𝛿) 𝑒 𝜆 𝑗 𝑇 , 𝑐 𝑗 = 𝑂(𝜅 𝑗 ). 
+
+Proof. Write the orbit-error variation as the norm of the difference between the two rollouts’ residual vectors. Relative to the exactly-equivariant idealization (Theorem A), two perturbation sources break orbit-constancy. (i) The encoder defect : along the word 𝑤 = 𝑔 𝑖 1 ⋯ 𝑔 𝑖 𝑚 , each generator contributes a latent perturbation of size ≤ 𝜖 max to 𝐸(𝑤⋅𝑥)−𝜌(𝑤)𝐸(𝑥) ; by the triangle inequality and orthogonality of each 𝜌(𝑔 𝑖 ℓ ) these accumulate to ‖𝐸(𝑤 ⋅ 𝑥) − 𝜌(𝑤)𝐸(𝑥)‖ ≤ 𝑚 𝜖 max , a perturbation injected at 𝑡 = 0 .(ii) The predictor defect : at each of the 𝑇 steps the rollout deviates from the equivariant push-forward by ≤ 𝛿 . Let 𝑢 𝑡 denote the injected perturbation at step 𝑡 (‖𝑢 0‖ ≤ 𝑚𝜖 max , ‖𝑢 𝑡 ‖ ≤ 𝛿 for 𝑡 ≥ 1 ). Linearizing the rollout about the unperturbed trajectory, the contribution of 𝑢 𝑡 to the terminal latent is 
+
+𝐷𝑓 (𝑇−𝑡) 𝑢 𝑡 , where 𝐷𝑓 (𝑇−𝑡) is the product of 𝑇 −𝑡 one-step Jacobians. In the local frame, the channel-𝑗 
+
+component is amplified by ∏ 𝑒 𝜆 𝑗 = 𝑒 𝜆 𝑗 (𝑇 −𝑡) ≤ 𝑒 𝜆 𝑗 𝑇 for 𝜆 𝑗 > 0 (and by ≤ 1 , hence ≤ 𝑒 𝜆 𝑗 𝑇 trivially, for 𝜆 𝑗 ≤ 0 ), up to the basis condition number 𝜅 𝑗 . Summing over the injection times and channels, 
+
+∥ ∑ 𝑡 𝐷𝑓 (𝑇 −𝑡) 𝑢 𝑡 ∥ ≤ ∑ 𝑗 𝜅 𝑗 (‖𝑢 0‖ + ∑ 𝑡≥1 ‖𝑢 𝑡 ‖)𝑒 𝜆 𝑗 𝑇 ≤ ∑ 𝑗 𝜅 𝑗 (𝑚 𝜖 max + 𝑇 𝛿) 𝑒 𝜆 𝑗 𝑇 ,
+
+and the orbit-error variation is bounded by this quantity (the residual difference is exactly the prop-agated perturbation, up to second order in 𝜖 max , 𝛿 , which the local-linear regime discards). Setting 
+
+𝑐 𝑗 = 𝑂(𝜅 𝑗 ) gives the bound. As 𝜖 max , 𝛿 → 0 the right-hand side vanishes and Theorem A is recov-ered. The certified horizon for channel 𝑗 — the largest 𝑇 with the bound ≤ 𝜖 res — is 𝑇 𝑗 (𝜖) ∼ 1𝜆 𝑗 log 1𝜖 
+
+for 𝜆 𝑗 > 0 , and 𝑇 𝑗 = ∞ for 𝜆 𝑗 ≤ 0 . □
+
+Scope. This is a first-order propagation bound: the constants 𝑐 𝑗 absorb the local non-normality (the change of basis that diagonalizes the Jacobian), and the linearization is valid while the propagated perturbation stays within the local-linear neighbourhood — exactly the regime in which a finite-resolution certificate is meaningful. Proposition 6 shows the form Θ( log (1/𝜖)/𝜆) is not improvable. THEOREM B￿ (CONE / ADAPTED-METRIC CERTIFIED HORIZON) 
+
+Theorem B￿ (cone / adapted-metric certified horizon). Let ̂ 𝜙 ∶ 𝒰 → 𝒰 be 𝐶 1 on a compact forward-invariant 𝒰 ⊂ ℝ 𝑑 . Suppose there exist a continuous field of symmetric positive-definite matrices 𝑧 ↦ 𝑃(𝑧) and a constant Λ ≥ 1 with 𝐷̂𝜙(𝑧) ⊤𝑃(̂𝜙(𝑧)) 𝐷̂𝜙(𝑧) ⪯ Λ 2𝑃(𝑧) for all 𝑧 ∈ 𝒰 . Let 
+
+𝜅 = ( sup 𝑧 𝜆 max 𝑃(𝑧))/( inf 𝑧 𝜆 min 𝑃(𝑧)) . Then 𝜆 1(̂𝜙) ≤ log Λ, and the linearized rollout error from an 𝜖 -perturbation stays ≤ 𝜖 res for all 𝑇 ≤ 𝑇 guar (𝜖) = ⌊( log (𝜖 res /𝜖) − 12 log 𝜅)/ log Λ⌋ — computed from ̂ 𝜙 alone. 
+
+Proof. Put 𝑉 (𝑧, 𝑣) = 𝑣 ⊤𝑃(𝑧)𝑣 . The hypothesis gives 𝑉 (̂𝜙(𝑧), 𝐷̂𝜙(𝑧)𝑣) ≤ Λ 2𝑉 (𝑧, 𝑣) ; iterating along an orbit 𝑧 𝑡+1 =̂ 𝜙(𝑧 𝑡 ), 𝑣 𝑡+1 = 𝐷̂𝜙(𝑧 𝑡 )𝑣 𝑡 , yields 𝑉 (𝑧 𝑇 , 𝑣 𝑇 ) ≤ Λ 2𝑇 𝑉 (𝑧 0, 𝑣 0) with 𝑣 𝑇 = 𝐷̂𝜙 𝑇 (𝑧 0)𝑣 0.Since 𝜆 min (𝑃(𝑧))‖𝑣‖ 2 ≤ 𝑉 (𝑧, 𝑣) ≤ 𝜆 max (𝑃(𝑧))‖𝑣‖ 2, ‖𝐷̂𝜙 𝑇 (𝑧 0)‖ ≤ √𝜅 Λ 𝑇 , so 𝜆 1 ≤ log Λ (√𝜅 is sub-exponential). The horizon bound follows from √𝜅 Λ 𝑇 𝜖 ≤ 𝜖 res . □
+
+Remarks. (i) First-order statement; Proposition 8’s 𝐶 1-vs-𝐿 2 caveat applies. (ii) Sound for any fea-sible (𝑃, Λ) , tight when 𝑃 is the adapted (Oseledets) metric ( Λ → 𝑒 𝜆 1 ). (iii) Continuum cer-tificate: verified on an ℎ-cover with 𝐷̂𝜙, 𝑃 Lipschitz ( 𝐿 𝐽 , 𝐿 𝑃 ), it holds on all of 𝒰 with Λcert =
+
+13 Λsamples + √𝜅 𝐿 𝐽 ℎ + 𝑂(𝐿 𝑃 ℎ) . (iv) Uniform hyperbolicity is precisely the regime where a (𝑃, Λ) 
+
+exists with Λ → 𝑒 𝜆 1 ; the cone-margin diagnostic detects it. PROPOSITION 6 (THE HORIZON IS TIGHT — MATCHING LOWER BOUND) 
+
+Statement. Fix an expansive channel on which the latent map is locally linear with multiplier 𝑎 = 𝑒 𝜆 ,
+
+𝜆 > 0 . There exist an exactly equivariant target Φ and an 𝜖 -approximately-equivariant model — a 
+
+perfect equivariant predictor 𝑓 = Φ (𝛿 = 0 ) and an encoder equal to the exact-equivariant one except for a single defect 𝐸(𝑔 ⋅ 𝑥) = 𝜌(𝑔)𝐸(𝑥) + 𝜖𝑢 at one orbit point ( ‖𝑢‖ = 1 , 𝑢 in the channel) — such that ∣Err 𝑇 (𝑔 ⋅ 𝑥) − Err 𝑇 (𝑥)∣ = 𝜖 𝑒 𝜆𝑇 .
+
+Proof. Along 𝑥 ’s trajectory the model is exact, so Err 𝑇 (𝑥) = 0 . At 𝑔 ⋅ 𝑥 , the encoder produces 
+
+𝐸(𝑔 ⋅ 𝑥) = 𝜌(𝑔)𝐸(𝑥) + 𝜖𝑢 . Because 𝑓 = Φ is equivariant and acts linearly with multiplier 𝑎 on the channel, the 𝑇 -step rollout is ̂𝑧 𝑇 (𝑔 ⋅ 𝑥) = 𝑓 𝑇 (𝜌(𝑔)𝐸(𝑥) + 𝜖𝑢) = 𝜌(𝑔) 𝑓 𝑇 (𝐸𝑥) + 𝑎 𝑇 𝜖𝑢, 
+
+using linearity to split the defect and equivariance of 𝑓 𝑇 (Lemma 1) on the first term. The target is, by (A3) and encoder-exactness off the single defect, 𝐸(Φ 𝑇 (𝑔 ⋅ 𝑥)) = 𝐸(𝑔 ⋅ Φ 𝑇 𝑥) = 𝜌(𝑔)𝐸(Φ 𝑇 𝑥) = 𝜌(𝑔)𝑓 𝑇 (𝐸𝑥) . Subtracting and using (A4), Err 𝑇 (𝑔 ⋅ 𝑥) = ‖𝑎 𝑇 𝜖𝑢‖ = 𝜖 𝑒 𝜆𝑇 , so ∣Err 𝑇 (𝑔 ⋅ 𝑥) − Err 𝑇 (𝑥)∣ = 𝜖 𝑒 𝜆𝑇 .□
+
+Thus the largest horizon with orbit-variation ≤ 𝜖 res is 𝑇 = 1𝜆 log 𝜖 res  
+
+> 𝜖
+
+= Θ( 1𝜆 log 1𝜖 ), matching the upper bound of Theorem B. Consequently a certificate derived from an 𝜖 > 0 equivariance resid-ual cannot promise predictability beyond 𝑇 ∼ 1𝜆 log 1𝜖 on any expansive channel (worst case over admissible targets); only 𝜖 = 0 (exact equivariance) or 𝜆 ≤ 0 (conservation/contraction) gives an unbounded horizon. PROPOSITION 6￿ (THE PREFACTOR IS THE SPLITTING CONDITIONING — AND WHEN IT IS EXACTLY 1)
+
+Statement. In Theorem B’s locally-diagonalized form, with channel decomposition 𝒵 = ⨁ 𝑗 𝑉 𝑗 
+
+invariant for the (linearized) predictor and simple leading multipliers, the channel-𝑗 constant can be taken 
+
+𝑐 𝑗 = ‖Π 𝑗 ‖ = 1
+
+sin 𝜃 𝑗 
+
+,
+
+where Π𝑗 is the spectral projector onto 𝑉 𝑗 along ⨁𝑖≠𝑗 𝑉 𝑖 and 𝜃 𝑗 is the minimal principal angle be-tween 𝑉 𝑗 and that complement. Consequently: (i) if the splitting is orthogonal (𝜃 𝑗 = 𝜋/2 — e.g. dis-tinct isotypic blocks of the orthogonal representation 𝜌 under a linear equivariant predictor, or any normal Jacobian), then 𝑐 𝑗 = 1 and Theorem B’s upper bound matches Proposition 6’s lower bound 
+
+including the constant ; (ii) obliqueness, hence any prefactor > 1 , can live only inside an isotypic block — across distinct blocks, Hom 𝐺 vanishes (Schur) and the isotypic components of an orthogo-nal representation are mutually orthogonal, so both invariance and orthogonality of the cross-block splitting are forced; (iii) the prefactor’s entire effect on the certified horizon is an additive haircut log 𝜅 𝑗 /𝜆 𝑗 map steps, where 𝜅 𝑗 ∶= 1/ sin 𝜃 𝑗 .
+
+Proof. A defect 𝜖𝑢 propagates under the linearized predictor as Φ𝑇 𝜖𝑢 = 𝜖 ∑ 𝑗 𝑒 𝜆 𝑗 𝑇 (1 + 𝑜(1)) Π 𝑗 𝑢 , so the channel-𝑗 coefficient is at most ‖Π 𝑗 𝑢‖ ≤ ‖Π 𝑗 ‖, with equality attained at the maximizing 𝑢 (the left-vector direction): the constant 𝑐 𝑗 = ‖Π 𝑗 ‖ is both valid and attained. The identity ‖Π 𝑗 ‖ = 1/ sin 𝜃 𝑗 for a projector onto 𝑉 𝑗 along a complement at minimal principal angle 𝜃 𝑗 is classical. If the splitting is orthogonal, Π𝑗 is an orthogonal projector, ‖Π 𝑗 ‖ = 1 , and Proposition 6’s construction (coefficient ex-actly 1) meets the upper bound. For (ii): distinct isotypic components of an orthogonal representation are mutually orthogonal, and a linear equivariant map preserves each (Schur: Hom 𝐺 (𝜌 𝜇 , 𝜌 𝜈 ) = 0 
+
+for 𝜇 ≇ 𝜈 ). For (iii): scaling the channel coefficient by 𝜅 𝑗 moves the crossing of 𝜖 𝜅 𝑗 𝑒 𝜆 𝑗 𝑇 = 𝜖 res by exactly log 𝜅 𝑗 /𝜆 𝑗 . □
+
+Honest caveat (nonlinear equivariant predictors). For nonlinear 𝑓 , equivariance gives 𝐷𝑓 (𝜌(𝑔)𝑧) = 𝜌(𝑔) 𝐷𝑓 (𝑧) 𝜌(𝑔) −1 — the Jacobian field is equivariant, but 𝐷𝑓 (𝑧) at a generic 𝑧 need not commute with 𝜌 , so clause (i)–(ii)’s forced orthogonality applies to the linear/commutant case (and pointwise wherever 𝐷𝑓 (𝑧) is normal); on learned nonlinear loops 𝜅 𝑗 is the measured object. It is measurable from the same Jacobian field the certificate already reads (covariant-vector angles), and on chaotic loops it is honestly a distribution along the orbit (near-tangency tail), not a single scalar. 14 Measured (step65b, step95). Placement and zero cross-block leakage: a group-averaged random ma-trix has relative off-isotypic-block mass < 1.5 × 10 −16 (100 draws), and a defect confined to one isotypic block grows at exactly its block’s 𝑒 𝜆 𝐵 𝑇 (rel. err < 10 −14 ) with cross-block leakage numer-ically 0. The prefactor law is attained : under controlled shears the measured worst-case coefficient equals the analytic ‖Π‖ to four digits across 𝜅 ∈ {1, 1.1, 2.2, 5.1, 10} , the orthogonal case giving exactly 1 — so the two-sided horizon law holds with matching constant there — and the measured horizon shift equals log 𝜅/𝜆 . On real loops (true Lorenz-96; pretrained TD-MPC2 walker/cheetah) the per-orbit-point 𝜅 1 distribution is reported (median + IQR + tail) alongside the E13 calibration, which shows typical bias directions do not align with the worst case. PROPOSITION 7 (SCOPE — WHEN THE LOCAL SPECTRUM CERTIFIES A LEARNED MODEL’S HORIZON) 
+
+Statement. Let 𝜙 have an ergodic invariant measure 𝜇 with log +‖𝐷𝜙‖ ∈ 𝐿 1(𝜇) . (a) Non-degenerate (𝜆 1 > 0 ): the certified horizon obeys 𝑇 (𝜖) = 1𝜆 1 log (𝜖 res /𝜖) + 𝑜(𝑡) , with 𝜆 1 the measurable asymp-totic rate. (b) Degenerate ( 𝜆 1 ≈ 0 ): the leading-order log-law degenerates and the one-step spectrum carries no finite-slope horizon rate. 
+
+Proof. By the Oseledets multiplicative ergodic theorem, for 𝜇 -a.e. 𝑥 and Lebesgue-a.e. perturbation direction 𝑣 (those not lying in the measure-zero slower Oseledets subspaces), 1𝑡 log ‖𝐷𝜙 𝑡 𝑥 𝑣‖ → 𝜆 1.Hence the perturbation magnitude satisfies ‖𝛿 𝑡 ‖ = ‖𝐷𝜙 𝑡 𝑥 𝑣‖ = 𝑒 (𝜆 1+𝑜(1))𝑡 ‖𝛿 0‖. (a) The certified horizon is the largest 𝑇 with ‖𝛿 𝑇 ‖ ≤ 𝜖 res starting from resolution 𝜖 ; solving 𝑒 (𝜆 1+𝑜(1))𝑇 𝜖 = 𝜖 res gives 
+
+𝑇 (𝜖) = 1𝜆 1 log (𝜖 res /𝜖) + 𝑜(𝑇 ) , which is Theorem B’s law with 𝜆 1 the Oseledets rate. (b) If 𝜆 1 = 0 
+
+(or → 0 ), the exponent in ‖𝛿 𝑡 ‖ = 𝑒 (𝜆 1+𝑜(1))𝑡 vanishes to leading order, so log ‖𝛿 𝑡 ‖ is 𝑜(𝑡) : there is no finite, 𝜖 -independent slope d 𝑇 / d log (1/𝜖) , the leading-order law is empty, and the one-step Jacobian spectrum does not determine a multi-step horizon. □
+
+The dichotomy is the scope of the horizon certificate: informative exactly on spectrally non-degenerate dynamics. It predicts, rather than patches, the failure on near-neutral dynamics (the learned-PushT-interior probe, where 𝜆 1 ≈ 0 and the local spectrum does not predict the rollout, 
+
+𝑅 2 ≈ 0.02 ). The lift to a learned ̂ 𝜙 — that ̂ 𝜙 reproduces 𝜆 1 — is not a corollary of shadow-ing (which controls trajectory closeness, not the asymptotic exponent, the latter being only upper-semicontinuous under 𝐶 1 perturbation); it is the finite-horizon continuity statement of Proposition 8. PROPOSITION 8 (FINITE-HORIZON EXPONENT TRANSFER) 
+
+Statement. The finite-time exponent 𝜆 (𝑇) 1 (𝜙) = 1𝑇 𝔼 𝑥 log ‖𝐷𝜙 𝑇 𝑥 ‖ is locally Lipschitz in 𝜙 in the 𝐶 1
+
+topology. Consequently a learned ̂ 𝜙 with ‖̂𝜙 − 𝜙‖ 𝐶 1 ≤ 𝛿 recovers the certified-horizon staircase slope up to an 𝑂(𝛿) model-fidelity bias plus the finite-𝑇 truncation |𝜆 (𝑇) 1 − 𝜆 1|; under a dominated splitting the bias is 𝑇 -uniform. 
+
+Proof. Fix 𝑇 and a base point 𝑥 and let 𝐷𝜙 𝑇 𝑥 = ∏ 𝑇−1 𝑡=0 𝐷𝜙 𝜙 𝑡 𝑥 be the 𝑇 -step cocycle. For two dynamics 
+
+𝜙,̂ 𝜙 with ‖̂𝜙 − 𝜙‖ 𝐶 1 ≤ 𝛿 , each one-step Jacobian satisfies ‖𝐷̂𝜙 − 𝐷𝜙‖ ≤ 𝛿 (definition of the 𝐶 1
+
+norm), and the orbits stay 𝑂(𝛿) -close over the finite horizon 𝑇 (Grönwall over 𝑇 bounded steps). A finite product of matrices is a Lipschitz function of its factors on any bounded set: if ‖𝐴 𝑡 ‖, ‖̂𝐴 𝑡 ‖ ≤ 𝑀 
+
+and ‖̂𝐴 𝑡 − 𝐴 𝑡 ‖ ≤ 𝛿 ′, then ‖∏̂ 𝐴 𝑡 − ∏ 𝐴 𝑡 ‖ ≤ 𝑇 𝑀 𝑇−1 𝛿 ′, and log ‖⋅‖ is Lipschitz away from 0 (the norm is bounded below by hyperbolicity along the expanding direction). Averaging over 𝑥 and dividing by 
+
+𝑇 ,
+
+∣𝜆 (𝑇) 1 (̂𝜙) − 𝜆 (𝑇) 1 (𝜙)∣ ≤ 𝐿 𝑇 𝛿, 
+
+a (horizon-dependent) Lipschitz bound — the 𝑂(𝛿) fidelity bias. The staircase slope estimates 
+
+𝜆 (𝑇) 1 (̂𝜙) ; the remaining gap to the asymptotic 𝜆 1 is the finite-𝑇 truncation |𝜆 (𝑇) 1 (𝜙) − 𝜆 1| → 0 .Under a dominated splitting the asymptotic exponent is continuous in the dynamics (Bochi–Viana), so the constant 𝐿 𝑇 can be taken uniform in 𝑇 and the truncation decays uniformly, making the recov-ered exponent 𝑇 -uniformly close to 𝜆 1 up to 𝑂(𝛿) . The bound is falsifiable : the recovered exponent must tighten as 𝛿 (one-step error) drops — confirmed empirically (Rössler: relative error 44% → 8% 
+
+as training fidelity improves). □
+
+Honest caveat. We verify 𝐶 1-closeness only through the one-step error (an 𝐿 2 proxy for the Jacobian distance), and the high-dimensional experiment shows this proxy degrades with dimension: a one-step-accurate dense model can have an inaccurate Jacobian and hence a wrong spectrum; structure (a 15 ℤ𝑁 -equivariant, banded-Jacobian model) restores it. The dominated-splitting hypothesis is assumed, not certified, for the learned models. PROPOSITION 9 (BUDGETED RE-OBSERVATION — A MIS-ESTIMATED HORIZON COSTS A PROPORTIONAL BUDGET) 
+
+Statement. Consider an agent that forecasts the map open-loop from a re-observation, the leading-mode error growing as 𝛿 𝑡 ≈ 𝛿 0𝑒 𝜆 1Δ𝑡 𝑡 over map steps 𝑡 (step Δ𝑡 , 𝜆 1 > 0 ), so the trustworthy horizon at resolution 𝜖 is 𝐻(𝜖) = ⌊ log (𝜖/𝛿 0)/(𝜆 1Δ𝑡)⌋ (the certified horizon of §3.2, in map steps). The agent re-observes (resets the error to 𝛿 0) at a fixed cadence and may re-observe at most 𝐵 times over an episode of 𝐿 map steps (a sensing budget ); a step is a violation if its forecast error exceeds 𝜖 .A certificate reporting ̂ 𝜆 1 = 𝑐 𝜆 1 (𝑐 > 0 ) prescribes cadence ̂ 𝐻 = 𝐻/𝑐 . Then (i) for 𝑐 ≥ 1 in the budget-binding regime 𝐵𝐻/𝑐 < 𝐿 , the aggregate violation rate is 
+
+𝑉 (𝑐) = max (0, 𝐿 − 𝐵𝐻/𝑐 − 𝐻)/𝐿, 
+
+which is non-decreasing in 𝑐 (strictly increasing while 𝐵𝐻/𝑐 + 𝐻 < 𝐿 ); and (ii) the budget needed to drive 𝑉 to zero is 𝐵 ⋆(𝑐) = ⌈𝑐 (𝐿 − 𝐻)/𝐻⌉ — linear in 𝑐 : a certificate inflated 𝑐× demands 𝑐× the observations to certify the same episode. 
+
+Proof. With cadence ̂ 𝐻 = 𝐻/𝑐 ≤ 𝐻 , every window before the last re-observation (at step 𝐵̂𝐻 = 𝐵𝐻/𝑐 ) stays under 𝜖 — the error reaches 𝜖 only after 𝐻 ≥̂ 𝐻 steps — so the covered 𝐵𝐻/𝑐 steps are violation-free; after the last re-observation the open-loop forecast exceeds 𝜖 only after a further 
+
+𝐻 steps, leaving max (0, 𝐿 − 𝐵𝐻/𝑐 − 𝐻) violating steps, which is 𝑉 (𝑐) . As 𝐵𝐻/𝑐 is non-increasing in 𝑐 , 𝑉 is non-decreasing, strictly so while the numerator is positive; 𝑉 = 0 requires 𝐵𝐻/𝑐 ≥ 𝐿 − 𝐻 ,i.e. 𝐵 ≥ 𝑐(𝐿 − 𝐻)/𝐻 . □
+
+Remark. 𝑉 (𝑐) is computable a priori from the inflation 𝑐 and the budget 𝐵 , so it predicts the violation gap; the calibrated certificate ( 𝑐=1 ) is the budget-minimal violation-free cadence, and only structure delivers 𝑐=1 a priori (E2 / Proposition 8). E12 instantiates the law: a non-equivariant certificate with 𝑐 ≈ 3.4 on Lorenz-96 (resp. 𝑐 ≈ 2 on the pendulum ring) needs ≈ 3× (resp. ≈ 2× ) the budget to match the equivariant certificate, and the gap closes exactly when recalibration restores 𝑐 → 1 .(Integer-rounding of the cadence ̂ 𝐻 = 𝐻/𝑐 costs 𝑂(1) per window and is absorbed in the measured catch-up factor, 2.7 –3.5× against the predicted 𝑐 ≈ 3.4 .) PROPOSITION 10 (FINITE-SAMPLE CERTIFIED-HORIZON INTERVAL) 
+
+Statement. Let 𝑔 be 𝐶 1 on a compact forward-invariant 𝒰 (e.g. the SimNorm simplex product of E13), and let ℓ𝑡 be the per-step leading log-stretches produced by the Benettin recursion along an orbit of 𝑔 , so ̂ 𝜆 (𝑛) 1 = 1𝑛 ∑𝑛 𝑡=1 ℓ𝑡 and |ℓ 𝑡 | ≤ 𝐵 ∶= sup 𝑧∈𝒰 log ‖𝐷𝑔(𝑧)‖ < ∞ (compactness). Assume (ℓ 𝑡 )
+
+is stationary and strongly mixing with summable autocovariances, and let 𝜎 2∞ = ∑ ℎ∈ℤ cov (ℓ 0, ℓ ℎ) < ∞ be the long-run variance. Then for every 𝛿 ∈ (0, 1) there is 𝜀 𝑛 (𝛿) = 𝜎 ∞√2 log (2/𝛿)/𝑛 (1+𝑜(1)) 
+
+such that with probability ≥ 1 − 𝛿 , 𝜆 1 ∈ [̂𝜆 (𝑛) 1 − 𝜀 𝑛 ,̂ 𝜆 (𝑛) 1 + 𝜀 𝑛 ], and whenever ̂ 𝜆 (𝑛) 1 − 𝜀 𝑛 > 0 the certified horizon is bracketed, 
+
+𝑇 1(𝜖) ∈ [ log (1/𝜖)̂ 𝜆 (𝑛) 1 +𝜀 𝑛 
+
+, log (1/𝜖)̂ 𝜆 (𝑛) 1 −𝜀 𝑛 
+
+]; 
+
+otherwise the certificate abstains . In particular the certificate’s sample complexity is 𝑛 ≍𝜎 2∞ log (1/𝛿)/𝜀 2 — logarithmic in confidence, quadratic in precision. 
+
+Proof sketch. Boundedness gives ℓ𝑡 ∈ [−𝐵, 𝐵] ; stationarity + strong mixing with summable co-variances give a Bernstein/CLT-type concentration for the empirical mean of a bounded mixing se-quence with variance proxy 𝜎 2∞ (e.g. Merlevède–Peligrad–Rio); the horizon bracket follows since 
+
+𝜆 ↦ log (1/𝜖)/𝜆 is monotone on (0, ∞) . □
+
+Remarks. (i) The moving-block bootstrap used throughout the experiments is precisely a consis-tent estimator of 𝜎 2∞ under the same mixing assumptions — Proposition 10 is the rate statement behind those CIs, not a new procedure. (ii) The dynamical assumptions (stationarity/mixing along the audited orbit) are inherited from Proposition 7’s scope and are assumed, not certified , for learned models — stated honestly, as everywhere else. (iii) 𝐵 is finite and computable on compact latents (E13’s SimNorm product), so the bound is fully effective there. 16 PROPOSITION 11 (DECISION SCOPE — WHERE A HORIZON CERTIFICATE CARRIES DECISION VALUE) 
+
+Statement. Adopt Proposition 9’s forecast-error model: between re-observations the leading-mode error grows as 𝛿 𝑡 ≈ 𝛿 0𝑒 𝜆 1Δ𝑡 𝑡 , the certified horizon at resolution 𝜖 is 𝐻(𝜖) = ⌊ log (𝜖/𝛿 0)/(𝜆 1Δ𝑡)⌋ ,the agent re-observes at most 𝐵 times over 𝐿 map steps, and the certificate reports ̂ 𝜆 1 = 𝑐 𝜆 1 (𝑐 ≥ 1 ). 
+
+(i) (scope-aligned decision: decided quantity = certified quantity.) If the decision rule is a func-tion of the certified predicate alone — re-observe/flag so that forecast error stays ≤ 𝜖 — then the certificate-prescribed cadence ̂ 𝐻 = 𝐻(𝜖)/𝑐 incurs violation-rate regret against the omnisciently cal-ibrated policy of 
+
+𝑅 align (𝑐) = 𝑉 (𝑐) − 𝑉 (1) ≤ 𝐵 𝐻(𝜖) 𝐿 (1 − 1𝑐 ), 
+
+which vanishes at 𝑐 = 1 : for an aligned decision, a calibrated certificate is decision-optimal a priori, and the entire regret is the calibration factor. 
+
+(ii) (task-mapped decision: decided quantity = ℎ( certified quantity ).) If instead decision quality is the episode average of a task loss ℓ(𝛿 𝑡 ) with an implicit task tolerance 𝜃 ∗ — ℓ ≡ 0 on [0, 𝜃 ∗] and 
+
+ℓ ≤ ℓ max beyond — then the 𝜖 -certificate’s prescription, even perfectly calibrated ( 𝑐 = 1 ), incurs 
+
+𝑅 task (𝜖) ≤ ℓ max 
+
+max (0, 𝐻(𝜖) − 𝐻(𝜃 ∗)) 𝐻(𝜖) (task violations when 𝜖 > 𝜃 ∗),
+
+and wastes Δ𝐵 = 𝐵(𝐻(𝜃 ∗)/𝐻(𝜖) − 1) + re-observations when 𝜖 < 𝜃 ∗. Both terms vanish iff 𝐻(𝜖) = 𝐻(𝜃 ∗) — iff the certificate is issued at the task’s own resolution — and the mis-resolution penalty in horizon units is |𝐻(𝜖) − 𝐻(𝜃 ∗)| = ∣ log (𝜖/𝜃 ∗)∣/(𝜆 1Δ𝑡) . Since 𝜃 ∗ is a property of the task map ℎ,not of the dynamics, no dynamics-only certificate can supply it. 
+
+Proof. (i) From Proposition 9, 𝑉 (𝑐) = max (0, 𝐿 − 𝐵𝐻/𝑐 − 𝐻)/𝐿 with 𝐻 = 𝐻(𝜖) . For 𝑐 ≥ 1 ,
+
+𝐿 − 𝐵𝐻/𝑐 − 𝐻 ≥ 𝐿 − 𝐵𝐻 − 𝐻 , and max (0, 𝑥) − max (0, 𝑦) ≤ 𝑥 − 𝑦 for 𝑥 ≥ 𝑦 , so 𝑉 (𝑐) − 𝑉 (1) ≤ [(𝐿−𝐵𝐻/𝑐−𝐻)−(𝐿−𝐵𝐻 −𝐻)]/𝐿 = (𝐵𝐻/𝐿)(1−1/𝑐) , zero at 𝑐 = 1 . (ii) Within one re-observation window of length 𝐻(𝜖) the error is monotone in staleness, so the task-violating steps ( 𝛿 𝑡 > 𝜃 ∗) are exactly the last 𝐻(𝜖) − 𝐻(𝜃 ∗) when 𝜖 > 𝜃 ∗ (none are certificate-violating: 𝛿 𝑡 ≤ 𝜖 throughout — the dilution is invisible to the certificate ); each contributes at most ℓmax , giving the per-window (hence episode-average) bound. When 𝜖 < 𝜃 ∗ every step is task-valid already at cadence 𝐻(𝜃 ∗), so running at 𝐻(𝜖) spends 𝐵 (𝐻(𝜃 ∗)/𝐻(𝜖) − 1) avoidable reads. Both quantities are zero iff 𝐻(𝜖) = 𝐻(𝜃 ∗); the horizon-unit gap is the difference of the two logarithms. □
+
+Remark (the scope law, now a theorem — and its experimental instances). Clause (i) is E12 and the deployment monitor E15/step94: the decided quantity is latent 𝜃 -validity, and the published certificate priced the in-situ staleness clock with no new estimation (in-situ ratio 0.75 vs bench 0.83 
+
+on the calibrated cell). Clause (ii) is E11 and step93: a planner (MPPI) absorbs latent staleness up to an implicit tolerance — empirically 𝐻(𝜃 ∗) ≈ 2 agent-steps against 𝐻(0.2) ≈ 6 — so a 0.2 -resolution certificate over-prescribes the replan cadence by the predicted mis-resolution factor ≈ 3 ,and the return gap dilutes exactly as the bound allows. The honest limit is built in: re-issuing the certificate at 𝜃 ∗ would close the gap, but 𝜃 ∗ must be elicited from the task (e.g. a one-knob cadence sweep) — the theorem makes the boundary of a-priori decision value precise instead of promising past it. PROPOSITION 4 (ISOTYPIC PLACEMENT) 
+
+Statement. A conserved charge 𝑄 ∶ 𝒵 → 𝑊 that is 𝐺 -equivariant (intertwines 𝜌 with a representation 
+
+𝜏 on 𝑊 , 𝑄 ∘ 𝜌(𝑔) = 𝜏(𝑔) ∘ 𝑄 ) has its non-trivial action confined to the 𝜏 -isotypic component of 𝜌 :a scalar invariant (trivial 𝜏 , ℓ=0 ) reads off the invariant block; a vector charge ( 𝜏 the standard ℓ=1 
+
+representation, e.g. angular momentum) reads off the ℓ=1 block and, when built bilinearly from ℓ=1 
+
+latent features, is realized by the unique equivariant degree-2 map — the cross product. 
+
+Proof. Decompose 𝜌 ≅ ⨁ 𝜇 𝜌 ⊕𝑛 𝜇  
+
+> 𝜇
+
+into isotypic components ( 𝜌 𝜇 the distinct irreducibles). Re-stricted to the source, the equivariant linear part of 𝑄 is an intertwiner 𝜌 → 𝜏 . By Schur’s lemma, Hom 𝐺 (𝜌 𝜇 , 𝜏) = 0 unless 𝜌 𝜇 ≅ 𝜏 , so any equivariant (linear) read-out of a 𝜏 -type charge must van-ish on every isotypic block 𝜇 ≇ 𝜏 and is supported on the 𝜏 -isotypic block — “placement is forced, not chosen.” For a bilinear charge built from two ℓ=1 (vector) latent features in SO (3) , the Clebsch– Gordan decomposition 1 ⊗ 1 = 0 ⊕ 1 ⊕ 2 contains the target ℓ=1 (1) exactly once; the corresponding equivariant projection is the antisymmetric part, i.e. the cross product (the scalar 0 is the dot product, the 2 the symmetric-traceless part). Uniqueness up to scale is again Schur (dim Hom 𝐺 (1 ⊗ 1, 1) = 1 ). 
+
+□
+
+17 PROPOSITION 5 (CONSERVATION ⇒ UNBOUNDED HORIZON) 
+
+Statement. Let 𝑄 ∶ 𝒵 → 𝑊 be a charge the model conserves to one-step defect 𝜂 , i.e. ‖𝑄(𝑓 (𝑧, 𝑎)) − 𝑄(𝑧)‖ ≤ 𝜂 for all (𝑧, 𝑎) along the rollout, and let the true dynamics conserve 𝑄 exactly ( 𝑄(𝑧 𝑡+1 ) = 𝑄(𝑧 𝑡 )), with matched initial charge 𝑄(̂𝑧 0) = 𝑄(𝑧 0). Then the 𝑇 -step charge-value error obeys 
+
+‖𝑄(̂𝑧 𝑇 ) − 𝑄(𝑧 𝑇 )‖ ≤ 𝑇 𝜂 — linear in 𝑇 , never 𝑒 𝜆𝑇 — and at 𝜂 = 0 the charge is certified to all horizons. 
+
+Proof. Telescoping the model rollout and using the one-step defect at each step, 
+
+‖𝑄(̂𝑧 𝑇 ) − 𝑄(̂𝑧 0)‖ = ∥ 
+
+> 𝑇−1
+
+∑
+
+> 𝑡=0
+
+(𝑄(̂𝑧 𝑡+1 ) − 𝑄(̂𝑧 𝑡 ))∥ ≤ 
+
+> 𝑇−1
+
+∑
+
+> 𝑡=0
+
+‖𝑄(̂𝑧 𝑡+1 ) − 𝑄(̂𝑧 𝑡 )‖ ≤ 𝑇 𝜂. 
+
+The true charge is conserved, 𝑄(𝑧 𝑇 ) = 𝑄(𝑧 0), and 𝑄(̂𝑧 0) = 𝑄(𝑧 0) by hypothesis, so ‖𝑄(̂𝑧 𝑇 ) − 𝑄(𝑧 𝑇 )‖ = ‖𝑄(̂𝑧 𝑇 ) − 𝑄(𝑧 0)‖ = ‖𝑄(̂𝑧 𝑇 ) − 𝑄(̂𝑧 0)‖ ≤ 𝑇 𝜂 . The growth is linear; at 𝜂 = 0 it is 0 for all 𝑇 ,an unbounded certified horizon for the charge value. □
+
+Scope. The statement is about the charge value 𝑄(̂𝑧 𝑇 ), not the full latent state, and the defect 𝜂 is ex-act only under an equivariant symplectic discretization of a 𝐺 -invariant Hamiltonian flow (momenta exactly conserved, energy to 𝑂(Δ𝑡 𝑝 )); for a general learned 𝑓 , 𝜂 is measured. The converse fails: a slow ( 𝜆 ≤ 0 ) channel need not carry a conserved charge. C. REPRODUCIBILITY All experiments are CPU/single-GPU, run with explicit random seeds, and honestly gated : a run prints INCONCLUSIVE rather than loosen a threshold. Code: https://github.com/TimothyWang 418/se3-ejepa. The anonymized artifact accompanies the conference submission; every figure and the per-seed JSONs are regenerated by the scripts below, and load-bearing claims carry equivari-ance/protocol unit tests. Experiment-to-code map (claim — code — test — seeds): • E1 configuration certificate (ℤ62: 6 → 64 ) — experiments/step49_iching_ certificate.py — (1 seed). • E2 horizon staircase (controlled spectrum; analytic tightness) — experiments/step52_ horizon_resolution.py , step65 — tests/test_step52_horizon_ resolution.py — (3). • E2 horizon on a learned model of real chaos (Lorenz) — experiments/step70_lorenz_ horizon.py — tests/test_step70.py — (3). • E2 horizon across a class (Hénon, Rössler, Lorenz) — experiments/step71_ multichaos_horizon.py — tests/test_step71.py — (3). • E2 high-dimensional spectral horizon (40-D Lorenz-96; structure vs. dense) —
+
+experiments/step74_lorenz96_spectrum.py — tests/test_step74.py (Liou-ville ∑𝑗 𝜆 𝑗 = −𝑁 ) — (3). • Proposition 6 tightness (numerical confirmation of the lower bound) —
+
+experiments/step65_horizon_tightness.py — (3). • Certificate on real contact dynamics (PushT) — experiments/step59_pusht_ certificate.py — (3). • E3 approximate-symmetry degradation — experiments/step53_approximate_ symmetry.py — (3). Multi-seed steps commit per-seed JSONs to papers/figures/ ; every range in the text is the seed min–max from those files. The estimator behind the horizon experiments is anchored by an exact physical invariant: for Lorenz-96 the vector-field divergence is −𝑁 , so ∑𝑗 𝜆 𝑗 = −𝑁 exactly, which the Benettin-QR estimator reproduces to 0.0% (tests/test_step74.py ) before any learned-model spectrum is trusted. The full test suite passes together; everything is CPU/MPS (no CUDA required). A single command rebuilds the paper end-to-end from the committed JSONs. APPENDIX D — SUPPORTING EXPERIMENTS (FULL WRITE-UPS) 
+
+(E1) The configuration axis is exponential. On a ℤ62 compositional task (six independent 180 ∘
+
+flips), training the equivariance checks on the 6 generators certifies the model over all 26 = 64 
+
+compositions to ∼ 10 −33 error, while a non-equivariant baseline degrades from 1.6 × 10 −5 on the generators to 0.59 on held-out compositions. Six checks, sixty-four guarantees (Lemma 1). 18 (E3) Approximate symmetry validates Proposition 6. Breaking the world’s symmetry by 𝜖 world ,the certificate degrades gracefully and linearly in 𝜖 world (correlation 0.88 –0.98 across seeds) up to a measured threshold 𝜖 world ≈ 0.01 –0.06 — exactly the crossing Proposition 6 predicts (where 𝜖 𝑒 𝜆𝑇 
+
+reaches the resolution floor). A fair augmentation baseline matches the equivariant model on a single orbit at one step but, being only 𝜖 ≈ 10 −4 -equivariant, is horizon-limited as predicted. 
+
+Figure 7: Approximate symmetry (E3). Left: on a compositional task, exact equivariance certifies machine-exactly while augmentation drives a non-equivariant model only to an ∼ 10 −4 approximation floor. Right: breaking the world’s symmetry by 𝜖 world degrades the certificate gracefully and linearly 
+
+(the slope Proposition 6 predicts) up to a measured threshold. 
+
+(E4) Structure vs. scale. The equivariant model is orbit-flat (ratio 1.1 –1.2 ); an 88× -scaled non-equivariant model buys in-distribution interpolation ( 31 –166× better in-wedge, beating the equivari-ant model there) but its out-of-wedge error stays 10 –155× above the equivariant floor. Scale buys interpolation; it never buys the certificate (Lemma 2). 
+
+Figure 8: Structure versus scale (E4). The equivariant model is orbit-flat (a certificate); an 88× -scaled non-equivariant model buys in-distribution interpolation (it beats the equivariant model inside the training wedge) but its error climbs 10 –155× above the equivariant floor out of the wedge — scale buys interpolation, not the certificate. 
+
+(E5) The certificate on real contact dynamics. On PushT — a pymunk physics engine whose square arena makes SO (2) scene rotation an exact dynamical symmetry — a learned SO (2) -equivariant world model has 10 -step rollout error exactly flat over the orbit (ratio 1.00 , equivariance residual 
+
+∼ 10 −7 ) and is competitive in-distribution ( 0.13 –0.15 vs. the best baseline 0.14 –0.19 ); no non-equivariant baseline across a 160× parameter sweep ( 1.7 k → 272 k) reaches the equivariant floor out of distribution. We are careful about the size of that gap: per baseline it is ∼ 3.9× at the 
+
+smallest model and 2.1 –2.6× at the largest , i.e. it does not grow with scale — the honest control is the strong-baseline ∼ 2× . The force of E5 is the exactness of the flatness (ratio 1.000 vs. the baselines’ 19 2–3× drift) and the a-priori certificate, not the OOD-error magnitude (which on one SO (2) task is modest); the “scale cannot buy it” claim is carried by Lemma 2 / §3.3, not by E5’s gap. The dynamics were not authored by us. (Honest gate note: the run’s load-bearing flat and floor sub-gates pass on all 3 seeds; the auxiliary “MLP error climbs with horizon faster than equivariant” sub-gate is met on 1/3 seeds and reported INCONCLUSIVE on the others.) 
+
+Figure 9: The certificate on real contact dynamics (E5). On PushT (a physics engine we did not author), a learned SO (2) -equivariant world model’s multi-step rollout error is flat over the orbit of scene orientations to the floating-point floor, while a 160× parameter sweep of non-equivariant baselines never reaches the equivariant floor out of distribution. 
+
+(E6) The certificate is not SO (2) -specific, and transfers to pixels at no accuracy cost. It lifts to non-abelian SO (3) on 3D point clouds (learned equivariant rollout exactly flat, ratio 1.000 , with a 7.4× -smaller model than the baseline). On raw rendered pixels (PushT, exact 𝐶 4), frame aver-aging [@puny2022frame] — a plain CNN/MLP made exactly 𝐶 4-equivariant by a Reynolds aver-age over grid rotations — keeps the exact orbit-flat certificate (ratio 1.000 ) while being accuracy-neutral : it matches or beats an unconstrained CNN on a collapse-robust metric (fraction-of-variance-unexplained ratio 0.68 –1.07 , mean 0.84 , 3 seeds), with a healthier latent and a horizon-stable rollout where the steerable baseline diverges. The prior costs nothing relative to the unconstrained CNN — though both remain limited in absolute terms (neither beats predict-the-mean at this scale; §6). 
+
+Figure 10: The certificate on raw pixels at no accuracy cost (E6). On rendered PushT frames (ex-act 𝐶 4), frame averaging makes a plain CNN/MLP exactly 𝐶 4-equivariant: the latent rollout is flat over the orbit (left, the certificate), it matches or beats an unconstrained CNN on a collapse-robust accuracy metric (centre), and its rollout error stays bounded over horizon while the steerable baseline diverges (right, log scale). 
+
+(E7) The certificate becomes task competence. Run through a 𝐺 -equivariant planner (A5), the prediction certificate becomes an orbit-invariant control certificate: closed-loop pose error is flat over the orbit to the floating-point floor (ratio 1.000 , 3 seeds) while a 4.3× -larger non-equivariant controller degrades out of the training wedge. The flatness is exact because (A5) makes the planner 
+
+𝐺 -equivariant and the planning cost 𝐺 -invariant, so the closed-loop trajectory inherits the encoder’s orbit-equivariance — Theorem A under the closed-loop clause. 20 (E8) The certificate is an epistemic drive: certificate-driven active inference. Because the certi-fied region is computable (Algorithm 1), an agent can act to expand it — a provable alternative to curiosity’s “reduce prediction error”. On a ℤ72 compositional world whose action space mixes 7 true generators with noisy high-error distractors, an explorer that maximizes certified-region growth certi-fies all 27=128 compositions in exactly 7 observations (the generator basis — each generator unlocks an exponential swath, Lemma 1), whereas an error-curiosity explorer is lured by the irreducible-noise distractors and certifies only 1% at the same budget (3 seeds; random ∼ 2% ). So “expand your cer-tified region” is a noise-immune epistemic drive that beats prediction-error curiosity — the classic 
+
+noisy-TV failure mode. Honest scope: against raw-error curiosity (a sophisticated information-gain agent would also avoid aleatoric noise); the certificate supplies that immunity for free and provably ,no noise model — a toy demonstration of the principle, not a benchmark. 
+
+Figure 11: Certificate-driven active inference (E8). On a ℤ72 compositional world with noisy distrac-tor actions, an explorer that maximizes the certified region certifies all 128 compositions in exactly 
+
+7 observations (the generator basis), while a prediction-error-curiosity explorer is lured by the high-error distractors and certifies almost nothing at the same budget. 
+
+(E2 supplementary figures.) (E16, full protocol) V-JEPA 2-AC audit + real-robot-data monitoring. Loading: official 
+
+vjepa2_ac_vit_giant (ViT-g/16 encoder, 1012 M; AC predictor post-trained on DROID) via torch.hub into the authors’ code (an upstream goof — VJEPA_BASE_URL pinned to localhost 
+
+on main — is monkeypatched and disclosed). Audited loop: the authors’ own energy-landscape rollout, 𝑔(𝑧) = LN (Pred (𝑧, 𝑎 ∗, 𝑠))[∶, −256 ∶] on per-frame token blocks ( 256 × 1408 ), fixed zero-delta action (the LeWM pre-registered scope); their planning energy is the L1 distance between predicted and encoded tokens — the same quantity the monitor thresholds. Certificate: leading-
+
+6 Benettin via forward-mode JVP, fp32 CUDA (precision disclosed; the authors’ explicit-attention branch is used, as flash/efficient SDPA lack forward-AD), two independent 𝑄 -seeds agreeing to 1.8% :
+
+𝜆 1 = 0.180/0.177 , envelope CI [0.136, 0.250] — expansive , nominal 𝑇 1(0.2) = 9.0 . Measured side (20 real DROID episodes, lerobot/droid_100 , exterior camera, 4-frame model step per the offi-cial config, telemetry actions from logged poses via the authors’ poses_to_diff ): one-step relative error 0.632 (median) vs consecutive-latent distance 0.681 and copy-of-last-read baseline 0.748 ; stal-eness error grows 0.625 → 0.787 over 8 steps — log-slope 0.033 (per-window median 0.028 ), 5–6× 
+
+21 Figure 12: The horizon staircase on a learned model of real chaotic dynamics (E2, Lorenz). Left: 
+
+the learned one-step model’s perturbation growth tracks the true Lorenz integrator over 550 steps. 
+
+Right: the certified horizon 𝑇 (𝜖 0) on the learned model is linear in log (1/𝜖 0) (𝑅 2=0.995 ), and the measured slope sits on the prediction 1/(𝜆 1𝑑𝑡) from the textbook Lorenz exponent — Theorem B’s law lifted to a learned model of a genuinely chaotic system (Proposition 7(a)). 
+
+Figure 13: High-dimensional spectral horizon (E2, 40 -D Lorenz-96). Left: recovered vs. true Lyapunov exponent for all 40 channels — the ℤ𝑁 -equivariant cyclic-conv (blue) lies on 𝑦 = 𝑥 
+
+(𝑅 2=0.98 ); the dense MLP (red ×) is scattered far off ( 𝑅 2= − 1.1 ). Right: per-channel certified horizon log (1/𝜖)/𝜆 𝑗 : the equivariant model tracks the truth across the spectrum. Structure recovers the high-dimensional spectral horizon a dense model of equal data cannot. 
+
+Figure 14: The horizon × resolution staircase on a controlled spectrum (E2). The measured certified horizon per channel as the demanded resolution 𝜖 sharpens, recovering 𝑇 𝑗 (𝜖) ∼ log (1/𝜖)/𝜆 𝑗 (slope 
+
+1.3 –1.6 ): chaotic channels are certified to a few steps, slow/invariant channels to dozens. 22 below the certified 𝜆 1; belief-invalid fraction 1.00 at every cadence including 𝑘=1 ; crossing median 
+
+1 (0% censored). Pre-registered branch G8-E (pricing band [𝑇 1/1.5, 1.5𝑇 1]) fails as registered ; the pre-registered sub-classification rule reads bias . Mechanism: the deployment error starts at the rep-resentation’s native step-motion scale and never enters the linearization neighborhood — Proposition 7’s bias degeneracy — so the tangent spectrum’s jurisdiction and the monitor’s operating point do not overlap, and the E13 protocol’s measured column correctly overrides the tangent number. The monitor verdict for this cell is the bias-cell verdict (no Lyapunov pricing); the wording claim is real-robot data, offline monitoring — the monitor is sensor-only/passive, so replaying logged episodes is a faithful instantiation, not a simulation of one. ( step98 , step99 ; conditional-gate spec frozen before the certificate was read.) APPENDIX E — CONCURRENT AND RECENT WORK (FULL SWEEP THROUGH 2026-06) Mo (arXiv:2605.03338) proves symmetry-protected neutral Lyapunov modes for continuously-equivariant fields ( ≥ dim (𝐺/𝐻) zero exponents along the group orbit) — complementary to ours: it constrains the spectrum’s kernel , while we certify the horizon stratified by the whole spectrum (for our discrete ℤ𝑁 systems dim (𝐺/𝐻)=0 , so their lower bound is zero there — the two results constrain dis-joint parts of the spectrum: they the kernel, we the horizon). Geng et al. (arXiv:2512.08991) bound world-model rollout deviation conformally for closed-loop verification — statistical and rollout-hungry where ours is a-priori and training-free; the same trade-off separates us from reachability-based MBRL safety (UPSi, arXiv:2604.26836) and where-to-trust heuristics (arXiv:2606.01363). Pretrained world models have been probed semantically (arXiv:2603.21546) and benchmarked by sample rollouts (WorldBench, arXiv:2601.21282; WorldArena, arXiv:2602.08971); a Jacobian cer-tificate of a public model’s latent map, cross-validated against true-environment divergence, is to our knowledge new — the nearest priors being latent-space stability analyses of self-trained au-toencoders (Özalp & Magri, arXiv:2410.00480) and Lyapunov-regularized DreamerV3 policies 
+
+(arXiv:2410.10674). Flow-equivariant world models ([@lillemark2026flowm], now ICML 2026; antecedent FERNN, arXiv:2507.14793) preserve equivariance over arbitrarily long rollouts — an ex-actness/closure property, not a quantitative horizon. Inductive-bias studies (arXiv:2602.06923) and position papers calling for verified world models (arXiv:2602.23997) support the framing; PDEder (arXiv:2603.22655) suppresses latent Lyapunov exponents where we certify them; two-sided calibra-tion bounds under equivariance (arXiv:2510.21691) concern calibration error, not horizon; and the data-assimilation literature’s observation-frequency-vs-Lyapunov-time rule (e.g. Bocquet et al. 2026) is the classical neighbor of our sensing-budget law (Proposition 9). 23
