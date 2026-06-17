@@ -6,51 +6,43 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-16
-- 运行时间：2026-06-16 23:09:57 UTC
+- 最新运行日期：2026-06-17
+- 运行时间：2026-06-17 21:17:48 UTC
 - 运行状态：成功
-- 本次总论文数：9
-- 精读区：6
-- 速读区：3
+- 本次总论文数：7
+- 精读区：5
+- 速读区：2
 
 ### 今日简报（AI）
-今天精读了两篇高分论文，聚焦物理信息世界模型（Phys-JEPA，10分）与多样潜在世界模型（DLWM，9分），前者突破时序预测，后者提升多模态推理效率。
-
-最值得关注的方向：物理约束的世界模型如何提升长时预测鲁棒性，以及多样潜在世界模型在跨模态推理中的成本优势。
-
-建议你优先精读Phys-JEPA，再结合速读中关于世界模型评估的视角（7分），形成对方法论到验证的完整理解。
-- 详情：[/202606/16/README](/202606/16/README)
+1) 今日优选7篇论文，聚焦世界模型与强化学习的融合突破。  
+2) 最值得关注：《WAM-RL》用重建奖励+在线视频SFT优化世界动作模型，《EgoCS-400K》提供大规模自我中心游戏数据集加速世界模型研究。  
+3) 建议优先精读这两篇，其方法可用于推动具身智能中环境预测与行为决策的联合训练。
+- 详情：[/202606/17/README](/202606/17/README)
 
 ### 精读区论文标签
-1. [Phys-JEPA: Physics-Informed Latent World Models for Multivariate Time-Series Forecasting](/202606/16/2606.16076v1-phys-jepa-physics-informed-latent-world-models-for-multivariate-time-series-forecasting)  
-   标签：评分：10.0/10、query:world-models
-   evidence：用于多变量预测的潜在世界模型
-2. [DLWM: Diverse Latent World Models for Efficient Multimodal Reasoning](/202606/16/2606.15160v1-dlwm-diverse-latent-world-models-for-efficient-multimodal-reasoning)  
+1. [WAM-RL: World-Action Model Reinforcement Learning with Reconstruction Rewards and Online Video SFT](/202606/17/2606.17906v1-wam-rl-world-action-model-reinforcement-learning-with-reconstruction-rewards-and-online-video-sft)  
    标签：评分：9.0/10、query:world-models
-   evidence：多样性潜在世界模型用于多模态推理
-3. [CausalDrive: Real-time Causal World Models for Autonomous Driving](/202606/16/2606.15341v1-causaldrive-real-time-causal-world-models-for-autonomous-driving)  
+   evidence：提出WAM-RL框架，通过强化学习联合优化世界模型和动作模型
+2. [EgoCS-400K: An Egocentric Gameplay Dataset for World Models](/202606/17/2606.18180v1-egocs-400k-an-egocentric-gameplay-dataset-for-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：用于自动驾驶的实时因果世界模型，预测未来帧
-4. [Pixels to Proofs: Probabilistically-Safe Latent World Model Control via Parallel Conformal Robust MPC](/202606/16/2606.15594v1-pixels-to-proofs-probabilistically-safe-latent-world-model-control-via-parallel-conformal-robust-mpc)  
+   evidence：专为世界模型设计的大规模第一人称游戏数据集
+3. [Looped World Models](/202606/17/2606.18208v1-looped-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：使用共形预测实现安全控制的潜在世界模型
-5. [LaWAM: Latent World Action Models for Efficient Dynamics-Aware Robot Policies](/202606/16/2606.15768v1-lawam-latent-world-action-models-for-efficient-dynamics-aware-robot-policies)  
-   标签：评分：9.0/10、query:world-models
-   evidence：使用紧凑潜在视觉子目标的潜在世界行动模型用于高效机器人策略
-6. [BRICKS-WM: Building Reusability via Interface Composition Kinetics for Structured World Models](/202606/16/2606.16489v1-bricks-wm-building-reusability-via-interface-composition-kinetics-for-structured-world-models)  
-   标签：评分：9.0/10、query:world-models
-   evidence：基于模型的强化学习与潜在世界模型，模块化组装
+   evidence：首个循环架构的世界模型，迭代精化潜在状态
+4. [EnvRL: Learn from Environment Dynamics in Agentic Reinforcement Learning](/202606/17/2606.17680v1-envrl-learn-from-environment-dynamics-in-agentic-reinforcement-learning)  
+   标签：评分：8.0/10、query:world-models
+   evidence：学习环境动态以改进RL代理的内部模型
+5. [PearlVLA: Progressive Embodied Action-Plan Refinement in Latent Space](/202606/17/2606.17924v1-pearlvla-progressive-embodied-action-plan-refinement-in-latent-space)  
+   标签：评分：8.0/10、query:world-models
+   evidence：在VLA框架中使用冻结的潜在世界模型进行无动作未来预测
 
 ### 速读区论文标签
-1. [How Should World Models Be Evaluated? A Decision-Making-Centric Position](/202606/16/2606.15032v1-how-should-world-models-be-evaluated-a-decision-making-centric-position)  
+1. [Think Less, Act Early: Reinforced Latent Reasoning with Early Exit in Vision-Language-Action Models](/202606/17/2606.15099v1-think-less-act-early-reinforced-latent-reasoning-with-early-exit-in-vision-language-action-models)  
    标签：评分：7.0/10、query:world-models
-   evidence：关于世界模型评估的立场论文
-2. [Learning Context-Aware Neural ODE Dynamics for Adaptive Robotic Control](/202606/16/2606.15469v1-learning-context-aware-neural-ode-dynamics-for-adaptive-robotic-control)  
+   evidence：使用强化学习去噪VLA模型中的潜在推理轨迹
+2. [A Koopman-PINN Framework for Epidemic Models: Parameter Inference and Forecasting](/202606/17/2606.15201v1-a-koopman-pinn-framework-for-epidemic-models-parameter-inference-and-forecasting)  
    标签：评分：6.0/10、query:world-models
-   evidence：学习上下文感知动力学模型以预测未来状态，用于自适应控制
-3. [PO-PDDL: Learning Symbolic POMDPs from Visual Demonstrations for Robot Planning Under Uncertainty](/202606/16/2606.15654v1-po-pddl-learning-symbolic-pomdps-from-visual-demonstrations-for-robot-planning-under-uncertainty)  
-   标签：评分：6.0/10、query:world-models
-   evidence：从演示中学习POMDP模型用于不确定性下规划
+   evidence：将疾病状态映射到潜在可观测空间，使用线性动力学进行预测
 
 
 <div class="dpr-home-promo-card">
