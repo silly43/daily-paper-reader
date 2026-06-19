@@ -1,0 +1,1634 @@
+Title: The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning
+
+URL Source: https://arxiv.org/pdf/2606.04280v1
+
+Published Time: Thu, 04 Jun 2026 00:20:10 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning 
+
+Justinas Zaliaduonis 1 2 Patrick Putzky 3 Till Richter 1 4 Sergios Gatidis 5
+
+## Abstract 
+
+Contrastive learning has become a leading paradigm for self-supervised representation learn-ing, yet the conditions under which it recovers meaningful latent geometry remain incompletely understood. We develop a measure-theoretic framework formalizing the diversity condition, a support requirement on positive-pair sampling that is necessary for isometric latent recovery. We show that the standard full-support von Mises-Fisher setting implies the satisfaction of the di-versity condition and as a consequence global contrastive loss minimizers recover latent geom-etry up to orthogonal transformation, while re-stricted conditionals can make non-orthogonal maps attain strictly lower asymptotic contrastive loss. We introduce a support-corrected Informa-tion Noise Contrastive Estimation (InfoNCE) vari-ant as a theoretical fix: this correction makes orthogonal latent space recovery achievable but does not uniquely select it. Experiments on syn-thetic benchmarks validate the identifiability pre-dictions, and CIFAR-10 experiments are consis-tent with the qualitative prediction that archi-tectural inductive bias becomes more important when sampling diversity is limited. Together, our results clarify how sampling mechanisms and en-coder inductive bias interact in contrastive repre-sentation learning. 
+
+> *
+
+Equal contribution 1Technical University of Munich, Mu-nich, Germany 2Stanford University, Stanford, USA 3Merantix Momentum GmbH, Berlin, Germany 4Helmholtz Munich, Mu-nich, Germany 5Department of Radiology, Stanford Univer-sity School of Medicine, Stanford, USA. Correspondence to: Justinas Zaliaduonis <justinas.zaliaduonis@gmail.com >,Patrick Putzky <patrick.putzky@merantix-momentum.com >, Till Richter <till.richter@helmholtz-munich.de >, Sergios Gatidis 
+
+<sgatidis@stanford.edu >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+## 1. Introduction 
+
+The machine learning community has long envisioned meth-ods that turn vast amounts of unlabeled data into dense, robust, and reusable representations useful for many dif-ferent downstream tasks such as classification, regression, and search. Contrastive learning (CL) has emerged as a successful technique for achieving this goal, which in recent years has led to advances in language (Jaiswal et al., 2021), vision (Chen et al., 2020), video (Zhao et al., 2024), and multimodal (Radford et al., 2021) domains. The vast range of applications in scientific fields like Biol-ogy (Richter et al., 2025; Bahrami et al., 2025), Physics (Cy et al., 2023; Wilkinson et al., 2025), and Climate Sci-ence (Ballard, 2022; Liu et al., 2026) has made CL one of the most widely adopted unsupervised learning meth-ods (Uelwer et al., 2023). However, despite its empirical success, the precise mechanisms driving contrastive learn-ing remain only partially understood. This gap in theoretical understanding results in heuristic-driven development, inef-ficient use of computational resources, and design choices that may not fully exploit the method’s potential. In this work, we seek to move beyond intuitive understanding of CL and provide a rigorous framework to reason about its regimes of success and failure. One approach to explain the learning mechanisms posits that CL induces data representations invariant to nuisance factors (Dangovski et al., 2022; Liu et al., 2025; Poudel et al., 2022). However, this framework does not address which factors in the data are nuisance, nor how the choice of data augmentations implicitly determine this partition. Moreover, the choice of nuisance factors, often referred to as the style-content decomposition (von K ¨ugelgen et al., 2021), can be detrimental to downstream tasks: depending on the intended use of the learned representations, factors deemed “nuisance” by the contrastive objective may carry discriminative information necessary for a specific down-stream task. We refer to this approach as the Invariance Explanation .An alternative direction reasons that CL recovers the “true” generating factors of the data (Ji et al., 2023; Kirchhof et al., 2023; Sandilya et al., 2025). This approach assumes that 1               
+
+> arXiv:2606.04280v1 [cs.LG] 2 Jun 2026 The Loss Is Not Enough
+> Figure 1. Overview of contrastive learning and the role of sampling diversity and inductive bias. The generative process gmaps latent variables to observations, and the encoder flearns to recover the latent structure. Here f1denotes a low inductive bias encoder (e.g., MLP) and f2a high inductive bias encoder (e.g., a model of the inverse process). Orange dot indicates the anchor point; green dots are co-occurring (positive) samples. Border colors on images match their latent positions. (a) Diversity holds: f1recovers geometry. (b) Diversity violated (blue band): f1fails. (c) Diversity violated: f2recovers the latent structure despite restricted sampling diversity.
+
+data lies on a high-dimensional manifold but possesses a low-dimensional latent structure, and that a generative pro-cess maps this low-dimensional representation to the ob-served high-dimensional data. In this direction, CL recovers the latent structure. Figure 1 illustrates this setup. We refer to this approach as the Recovery Explanation .In this work, we argue that the Recovery Explanation pro-vides a more epistemologically complete account of the mechanisms underlying contrastive learning. We introduce a constraint on the conditional law of the latent space, P ˜Z|z ,which we term the diversity condition , and show that it is necessary for recovering the latent space up to an iso-metric (distance-preserving) transformation. Building on the notion of latent space recovery introduced by (Zimmer-mann et al., 2021), we separate the classical full-support vMF setting from the practically relevant setting where sam-pling is restricted. Our proof of the full-support case uses a probabilistic Mazur-Ulam argument (Zaliaduonis & Gatidis, 2026) and does not require differentiability of the recovery map. Our main result shows that violated diversity can make geometry-distorting solutions preferable, and that correcting the support mismatch restores, but does not uniquely select, geometry-preserving minimizers. The real-world sampling mechanisms often violate the di-versity condition and the latent structure is typically un-known a priori. We propose a generalized InfoNCE objec-tive to address this gap and prove that this adjustment allows geometry-preserving latent spaces to be among the optimal solutions of the objective. We empirically study the qualitative implications of the the-ory on CIFAR-10 (Krizhevsky, 2009). Here, we examine how architectural inductive bias affects representation qual-ity under different augmentation regimes. In summary, our contributions are: • Formalize a measure-theoretic diversity condition on latent space sampling, distinguish it from the full-support vMF assumption used in prior identifiability results, and analyze what fails when this condition is violated. • Prove that violated diversity can make non-orthogonal recovery maps attain strictly lower asymptotic con-trastive loss than any orthogonal map, and show that a support-corrected InfoNCE objective makes isometric embeddings achievable. • Empirically validate theoretical predictions on syn-thetic datasets and examine their qualitative impli-cations on CIFAR-10, demonstrating how sampling strategies and encoder inductive bias jointly determine representation quality. • Distill design guidance for choosing augmentation 2The Loss Is Not Enough 
+
+pipelines and encoder architectures from the theory-experiment alignment. 
+
+## 2. Related Work 
+
+Identifiability in Contrastive Learning. The question of identifiability in unsupervised learning has a long history, beginning with classical results in Independent Component Analysis (ICA). Early work established that linear mixtures of non-Gaussian independent sources can be identified up to permutation and scaling, laying the theoretical foundation for blind source separation (Comon, 1994). Subsequent developments provided practical algorithms and character-ized the fundamental limits of linear ICA (Hyv ¨arinen & Oja, 2000). The broader goal of learning disentangled rep-resentations that capture meaningful factors of variation was later articulated (Bengio et al., 2013), though it was subsequently proved that unsupervised disentanglement is impossible without inductive biases on both the model and data (Locatello et al., 2019). In the context of contrastive learning, a formal definition of latent space identifiability was introduced, with proofs that InfoNCE recovers ground-truth factors up to orthogonal transformation (Zimmermann et al., 2021). This analysis employs von Mises-Fisher conditionals and cross-entropy asymptotics on spherical manifolds. Connections between contrastive objectives and nonlinear ICA have also been established, demonstrating identifiability through temporal structure (Hyv¨ arinen & Morioka, 2016). 
+
+Augmentations and Invariance. A complementary line of work examines how data augmentations shape learned representations by defining which factors should be pre-served versus discarded. A content-style framework for-malizes this intuition, proving that augmentation-based con-trastive learning achieves block-identifiability of the invari-ant content partition under a latent variable model with non-trivial statistical and causal dependencies (von K ¨ugelgen et al., 2021). The InfoMin principle proposes that optimal views for contrastive learning should share minimal mu-tual information while retaining task-relevant information, thereby discarding nuisance factors (Tian et al., 2020). A causal interpretation shows that data augmentations can be viewed as interventions on style variables, motivating an explicit invariance regularizer that enforces invariant predic-tion of proxy targets across augmentations (Mitrovic et al., 2021). Wen & Li (2021) study a complementary feature-learning regime: they analyze gradient-based learning in finite ReLU networks and show how suitable augmentations can decouple desired sparse features from nuisance dense features. Our analysis asks a different question, namely whether the asymptotic contrastive objective recovers latent geometry up to isometry, and how architectural inductive bias compensates when sampling diversity is insufficient. 
+
+Architectural Bias and Extensions. The role of encoder architecture in contrastive learning has received increas-ing attention. Recent work analyzes how architectural constraints influence the geometry of learned representa-tions (HaoChen & Ma, 2023), while theoretical frameworks have been extended to multimodal settings (Tschannen et al., 2023). Other contributions address gaps between theoretical assumptions and practical implementations (Rusak et al., 2025). 
+
+Empirical Methods. Our theoretical analysis builds upon empirically successful methods including SimCLR (Chen et al., 2020), Contrastive Predictive Coding (CPC) (van den Oord et al., 2019), and VICReg (Bardes et al., 2022). These frameworks demonstrate the practical efficacy of contrastive objectives across vision, language, and multimodal domains. 
+
+## 3. Preliminaries 
+
+3.1. Contrastive Learning Framework 
+
+Following (Zimmermann et al., 2021), we analyze con-trastive learning using tools from Nonlinear Independent Component Analysis (ICA) (Hyv ¨arinen et al., 2019). We consider an encoder f : X → Z mapping observations from the data space X ⊂ Rn to a latent representation space 
+
+Z ⊂ Rk, where k < n . We model the data as generated by an injective mapping g : Z → X from a lower-dimensional latent manifold whose coordinates represent statistically independent factors (Figure 1). Contrastive learning aims to learn encoder parameters θ
+
+by discriminating between co-occurring signals x, ˜x ∈X (Chen et al., 2020). These signals may arise from natural mechanisms (e.g., different modalities of the same scene) or synthetic transformations (e.g., image augmentations). We define a view-generating function τ : X → X that produces related views ˜x = τ (x), and aim to learn an encoder such that the underlying latent factors are identified. 
+
+3.2. Sampling Mechanism 
+
+Since the data is generated via the injective mapping g,observations satisfy x = g(z) and ˜x = τ (g(z)) = g(˜ z).As view generation is typically non-deterministic, we treat it stochastically through the conditional law P ˜X|x. This formulation connects to the latent dynamics P ˜Z|z via the pushforward measure: 
+
+P ˜X|x = g∗P ˜Z|z (1) where g∗ is the pushforward operator. Our analysis focuses on how P ˜Z|z affects the recovery map h := f ◦ g : Z → Z .The sampling mechanism need not be an image augmen-tation; it may also arise from temporal proximity, spatial crops, multimodal co-occurrence, or any other rule for draw-3The Loss Is Not Enough 
+
+ing related observations. Independent views mean condi-tionally independent draws from P ˜Z|z for a fixed anchor 
+
+z, not semantic independence of the resulting observations. Notation: uppercase P, Q denotes probability laws, while lowercase p, q denotes probability measure densities with respect to the stated reference measure. 
+
+3.3. Diversity Condition 
+
+We formalize the diversity condition and argue for its neces-sity in distance-preserving latent space reconstruction. The condition is motivated by comparing the theoretical ideal of full-support positive-pair sampling with practical sampling mechanisms. In the ideal vMF setting used by (Zimmer-mann et al., 2021), positive pairs can in principle cover the entire latent space around an anchor, which provides enough information to recover pairwise geometry. Practi-cal mechanisms often restrict this support by keeping some latent coordinates fixed while changing others. The diver-sity condition identifies the weakest support requirement needed for recovery: every latent region that has nonzero marginal probability must also be reachable by the condi-tional positive-pair distribution. 
+
+Definition 3.1 (Diversity Condition) . For a latent measur-able space Z with marginal probability measure PZ and conditional probability measure P ˜Z|z , the diversity condi-tion holds if, for PZ -almost every z ∈ Z ,
+
+PZ ≪ P ˜Z|z . (2) Equivalently, for every measurable set A ⊆ Z , P ˜Z|z (A) = 0 implies PZ (A) = 0 for PZ -almost every anchor z.Intuitively, the diversity condition requires that P ˜Z|z has sufficiently large support to cover any region where PZ
+
+assigns nonzero probability. This implies that the view-generating process must perturb all latent features. If some generative features remain constant, the encoder cannot distinguish them along fixed dimensions, failing to invert g
+
+for those components. Finally, we relate the condition to practical sampling mech-anisms. The diversity condition is stated at the level of the induced latent sampling mechanism P ˜Z|z , rather than in terms of application-specific categories of transformations. Descriptions such as appearance, structure, or semantic con-tent are therefore only informal indicators of which latent directions a sampling mechanism may vary. In practice, an augmentation or view-generation rule is useful for recovery only to the extent that it gives the conditional distribution support along the latent factors present under PZ . Mecha-nisms that vary only a restricted subset of these factors may violate the condition, even if they produce visually distinct observations. 
+
+3.4. InfoNCE as Cross-Entropy Minimization 
+
+Information Noise Contrastive Estimation (In-foNCE) (van den Oord et al., 2019) is the standard contrastive objective used to train representations from one positive view and a set of negative samples. For each anchor, it increases similarity to the positive sample while decreasing similarity to negatives, making it a probabilistic discrimination loss over co-occurring and non-co-occurring samples. The InfoNCE objective quantifies encoder performance on this discrimination task. 
+
+Definition 3.2 (InfoNCE Loss (van den Oord et al., 2019)) .
+
+Given a recovery map h : Z → Z , positive pairs (z, ˜z) ∼
+
+Ppos , and negative samples {z− 
+
+> i
+
+}Mi=1 i.i.d.
+
+∼ P −:
+
+LCL (h; τ, M ) = E   
+
+> (z, ˜z)∼Ppos
+> {z−
+> i}Mi=1 i.i.d.
+> ∼P−
+
+"
+
+− log eh(z)⊤h(˜ z)/τ 
+
+D(z, ˜z)
+
+#
+
+D(z, ˜z) = eh(z)⊤h(˜ z)/τ +
+
+> M
+
+X
+
+> i=1
+
+eh(z)⊤h(z− 
+
+> i)/τ
+
+where τ > 0 is a temperature parameter and M is the number of negative samples. Following (Zimmermann et al., 2021), we take the latent space to be a hypersphere Sk−1, motivated by the practi-cal convention of L2-normalizing contrastive representa-tions (Chen et al., 2020; Haas et al., 2024). We assume the conditional follows a von Mises-Fisher (vMF) distribution with concentration κ > 0, where sampling frequency is inversely proportional to latent distance. 
+
+Theorem 3.3 (Asymptotics of LCL (Zimmermann et al., 2021)) . Given a spherical latent space Z = Sk−1, a uni-form marginal law PZ = U (Z), a von Mises-Fisher condi-tional measure P ˜Z|z with density 
+
+p(˜ z|z) = eκ˜z⊤z
+
+R 
+
+> Z
+
+eκz ′⊤ z dσ (z′) (3) 
+
+where σ denotes spherical surface measure on Z and κ > 0
+
+is the concentration parameter, and a model conditional measure Qh,z with density 
+
+qh(˜ z|z) = eh(˜ z)⊤h(z)/τ 
+
+R 
+
+> Z
+
+eh(z′)⊤h(z)/τ dσ (z′) (4) 
+
+For fixed τ > 0, as the number of negative samples M → ∞ ,the (normalized) contrastive loss converges to 
+
+lim   
+
+> M→∞
+
+LCL (h; τ, M ) − log M + log |Z| =
+
+Ez∼PZ [H(P ˜Z|z , Q h,z )] (5) 4The Loss Is Not Enough 
+
+where H(P ˜Z|z , Q h,z ) denotes cross-entropy, using densities with respect to σ in the vMF setting. 
+
+This interpretation allows us to analyze contrastive learn-ing through the lens of distribution matching between the sampling mechanism P ˜Z|z and the model measure Qh,z .
+
+3.5. Inductive Bias 
+
+Inductive bias refers to the structural assumptions that con-strain a learning algorithm’s hypothesis space, enabling generalization (Vapnik, 1999). In contrastive learning, these assumptions arise through model architecture (e.g., transla-tion equivariance in CNNs (LeCun et al., 1998), attention in Transformers (Dosovitskiy et al., 2021)) and geometric constraints on the embedding space. In our framework, an encoder is geometry-preserving when the recovery map 
+
+h = f ◦ g recovers the latent structure up to an orthogo-nal transformation, i.e., h(z) ≈ Az for some A ∈ O(k).Equivalently, the encoder approximates f ≈ A ◦ g−1 on the data manifold. An effective inductive bias therefore makes approximate inverses of the data-generating process easier to represent and optimize, while restricting arbitrary non-geometry-preserving maps that can also satisfy the con-trastive loss. When the diversity condition is violated, the contrastive ob-jective alone cannot uniquely determine the latent geometry. Inductive bias then acts as a compensatory mechanism, re-stricting admissible solutions to those consistent with archi-tectural priors. In Section 4.3, we show that such biases are necessary for linearly identifiable reconstruction when diver-sity is violated. Crucially, we demonstrate experimentally (Section 5) that this necessity persists even asymptotically: the contrastive objective fails to recover latent geometry regardless of data quantity unless structural constraints are imposed. 
+
+## 4. Theoretical Results 
+
+We present the core theoretical results under the common assumption of L2-normalized representations (Grill et al., 2020; Haas et al., 2023). Unless stated otherwise, the results use the following standing assumptions: (A1) Z = Sk−1 is a unit hypersphere; (A2) the marginal PZ is uniform on Z;(A3) the conditional P ˜Z|z is vMF with concentration κ > 0
+
+before diversity violation is introduced; (A4) the encoder has sufficient capacity to realize any mea-surable recovery map considered below; (A5) representations are L2-normalized, so h : Z → Z .The full-support result below is closest to prior hypersphere identifiability results, but the proof uses a probabilistic Mazur-Ulam theorem and requires no differentiability of 
+
+h. The subsequent results are the main extension: they characterize the asymptotic global optima when sampling diversity is violated. We introduce the following definitions to formalize our analysis. 
+
+Definition 4.1 (Isometry Almost Everywhere) . Let (Z, δ )
+
+be a metric space with measure μ. A measurable mapping 
+
+h : Z → Z is an isometry almost everywhere if there exists an isometry e : Z → Z such that h(z) = e(z) for μ-almost all z ∈ Z .
+
+Definition 4.2 (Equivalent Recovery Maps) . Two mappings 
+
+h1, h 2 : Z → Z are equivalent with respect to the con-trastive loss if LCL (h1; τ, M ) = LCL (h2; τ, M ) for fixed τ
+
+and M .
+
+4.1. Reconstruction Under Full-Support Sampling Lemma 4.3 (Full-Support vMF Implies Diversity) . Let PZ
+
+be uniform on Z = Sk−1, and let P ˜Z|z have vMF density proportional to exp( κz ⊤ ˜z) with κ > 0 with respect to spherical surface measure. Then the diversity condition holds. Proof. The vMF density is strictly positive on the whole sphere. Therefore, any measurable set with zero P ˜Z|z mea-sure also has zero spherical surface measure, and hence zero uniform marginal measure. Thus in the vMF setting the diversity condition is a conse-quence of full support, not an additional independent hy-pothesis. Contrastive learning then recovers the latent space up to orthogonal transformation. 
+
+Theorem 4.4 (Linear Identifiability Under Full Diversity) .
+
+Under a uniform marginal on Z = Sk−1 and full-support vMF conditional, any recovery map h : Z → Z that glob-ally minimizes the asymptotic contrastive objective is an isometry almost everywhere: 
+
+h(z) = Az for μ-almost all z ∈ Z ,
+
+where A ∈ O(k) is an orthogonal matrix. Proof. See Appendix A.1. 
+
+Proof sketch. The asymptotic InfoNCE objective reduces to conditional cross-entropy. Under the full-support vMF conditional, any minimizer must match conditionals and therefore preserve inner products almost surely. On the sphere, this gives distance preservation, and the probabilistic Mazur-Ulam theorem extends this almost-sure isometry to a global orthogonal map. This represents an ideal scenario: when the sampling mech-anism perturbs all latent factors, the learned representa-tions preserve pairwise distances, yielding a separable latent 5The Loss Is Not Enough 
+
+space suitable for downstream tasks. However, real-world augmentation pipelines rarely have full support, motivating the analysis in the following section. 
+
+4.2. Reconstruction Under Violated Diversity 
+
+In practice, the diversity condition is rarely satisfied. Most augmentation pipelines preserve certain semantic features while perturbing others. We model this by decomposing the latent vector z = ( u, v ) into an invariant component 
+
+u ∈ Rm and a varying component v ∈ Rℓ, with m + ℓ = k
+
+and m, ℓ > 0. Let 
+
+K(z) := {˜z = (˜ u, ˜v) ∈ Sk−1 : ˜ u = u},K(z) ∼= Sℓ−1
+
+> r(z)
+
+, r(z) := p1 − ∥ u∥2.
+
+For r(z) > 0, let σK(z) denote the intrinsic surface measure on K(z). The constrained positive-pair conditional is the probability measure P K 
+
+> ˜Z|z
+
+supported on K(z) with Radon-Nikodym density 
+
+dP K
+
+> ˜Z|z
+
+dσ K(z)
+
+(˜ z) = eκz ⊤ ˜z
+
+R 
+
+> K(z)
+
+eκz ⊤z′ dσ K(z)(z′) . (6) This measure is singular with respect to ambient spherical measure on Sk−1, but it is a well-defined probability law on the lower-dimensional submanifold K(z).This collapses the sampling support from Sk−1 onto a lower-dimensional submanifold K(z), mirroring the content-style framework of (von K¨ ugelgen et al., 2021). 
+
+Theorem 4.5 (Loss of Identifiability Under Violated Diver-sity) . For the asymptotic contrastive objective obtained as M → ∞ under the constrained conditional (Equa-tion 6) and standard full-sphere negatives, orthogonal re-covery is not globally optimal. There exists a recovery map 
+
+h : Z → Z that is not induced by any orthogonal transfor-mation such that 
+
+LCL (h) < LCL (˜h), ∀ ˜h ∈ O(k).
+
+This is a statement about global values of the limiting objec-tive, not about finite-sample optimization dynamics. 
+
+Proof. See Appendix A.2. 
+
+Proof sketch. The constrained conditional fixes u and only varies v, while the standard model conditional still normal-izes over the full sphere. We construct an explicit non-orthogonal map hλ(u, v ) = ( u, λv )/∥(u, λv )∥ with λ < 1
+
+close to one. Because positive pairs share u, this map im-proves the alignment term to first order, while the uniformity term is stationary at the identity, yielding lower asymptotic loss than any orthogonal map. The consequence is concrete: arbitrarily expressive encoders are actively disincentivized from learning orthogonal recov-ery maps when the diversity condition is violated. The contrastive objective rewards geometry-distorting solutions, leading to poorly structured latent spaces where semantic relationships are not preserved. Consequently, downstream tasks that rely on meaningful distance relationships in the representation space face a fundamental bottleneck that can-not be overcome by increasing encoder capacity alone. 
+
+4.3. Correcting the Model 
+
+The support mismatch between P K 
+
+> ˜Z|z
+
+and the standard full-sphere model conditional prevents the InfoNCE objective from favoring isometric solutions. We address this by con-straining the model conditional to the same submanifold 
+
+K(z):
+
+qKh,z (˜ z) = eh(z)⊤h(˜ z)/τ 
+
+R 
+
+> K(z)
+
+eh(z)⊤h(z′)/τ dσ K(z)(z′) , ˜z ∈ K(z).
+
+(7) Equivalently, for a positive pair (z, ˜z) and negatives 
+
+z− 
+
+> 1
+
+, . . . , z −
+
+> M
+> i.i.d.
+
+∼ U (K(z)) , the per-anchor adapted loss is 
+
+ℓadapt = − log exp( h(z)⊤h(˜ z)/τ )
+
+Da(z, ˜z) ,Da(z, ˜z) = exp( h(z)⊤h(˜ z)/τ )+
+
+> M
+
+X
+
+> j=1
+
+exp( h(z)⊤h(z− 
+
+> j
+
+)/τ ).
+
+(8) This corresponds to drawing negative samples from K(z)
+
+rather than the full latent space. Exact sampling requires access to the invariant component u, which is generally unavailable in real data. In practice, same-anchor augmenta-tions provide a proxy: independent transformations of the same anchor preserve the components fixed by the augmen-tation mechanism while varying the remaining components. Appendix C gives the resulting training step, but the adapted loss should be read primarily as a theoretical diagnostic rather than a fully practical replacement for standard In-foNCE. 
+
+Theorem 4.6 (Orthogonal Mappings as Minimizers) . Under the corrected model (Equation 7), any orthogonal transfor-mation h ∈ O(k) minimizes the asymptotic contrastive loss. Proof. See Appendix A.3. 
+
+Proof sketch. Once the model conditional is restricted to the same support K(z) as the true conditional, any orthogonal map preserves the inner products that define the vMF density on that support. Thus the model conditional matches the 6The Loss Is Not Enough 
+
+true conditional when κ = 1 /τ , minimizing cross-entropy. This proves achievability of orthogonal solutions, but not uniqueness. Although the corrected objective admits orthogonal solu-tions, it does not guarantee that all minimizers are orthogo-nal. Thus, the adapted objective should not be interpreted as a fully general solution: it removes the support mismatch and makes geometry-preserving recovery achievable, but it does not make such recovery unique. The sampling mech-anism determines which solutions are achievable, while inductive bias influences which solution is selected during optimization. This non-uniqueness highlights the necessity of inductive bias for selecting geometry-preserving solu-tions. 
+
+## 5. Experimental Results 
+
+5.1. Synthetic Dataset Experiments 
+
+We validate the theoretical predictions from Section 4 us-ing a controlled synthetic setup with a spherical latent space Z = S2.1 Following the assumptions of our theo-retical framework, the marginal law is uniform over the sphere, and positive pairs are sampled according to a von Mises-Fisher (vMF) conditional law P ˜Z|z with density 
+
+p(˜ z|z) = vMF (z, κ ) and concentration parameter κ = 1 /τ 
+
+(see Equation 17), where τ is the temperature in the In-foNCE loss. The generative processes used in our experi-ments are illustrated in Figure 2. Details of the sampling procedures are provided in Appendix C. 
+
+Experimental Setup. We evaluate five generative pro-cesses g : Z → X of varying complexity: Identity, injec-tive Linear map ( S2 → R7), Spiral rotation, Patches, and invertible MLP (Hyv ¨arinen & Morioka, 2016). Detailed def-initions are provided in Appendix B.1. For each generative process, we compare two encoder architectures: an MLP encoder with hidden dimensions [128 , 256 , 256 , 256 , 128] 
+
+representing low inductive bias, and an inverse encoder designed to invert the corresponding generative process, rep-resenting high inductive bias. The invertible MLP is an exception, as it lacks a strict analytic inverse; we therefore evaluate only the MLP encoder for this generative process. All experiments use InfoNCE loss with temperature τ = 0 .3,Adam optimizer (Kingma & Ba, 2015) (lr = 10 −3), batch size 2000, and 5000 iterations. The generative process g
+
+remains frozen throughout training, and each configuration is evaluated over 5 independent runs. 
+
+Evaluation Metrics. We assess reconstruction quality us-ing linear identifiability ( R2), which measures recovery up     
+
+> 1Code is available at https://github.com/ BosonicJustin/CLTheory .
+
+to affine transformation as in (Hyv ¨arinen & Morioka, 2016). Additional metrics (Mean Correlation Coefficient and An-gular Preservation Error) are provided in Appendix D. 
+
+Results. We summarize the experimental results in Table 1 and Figure 5. 
+
+Diversity Condition Holds. When the diversity condi-tion is satisfied, the MLP encoder achieves near-perfect linear identifiability ( R2 ≥ 0.99 ) across all five generative processes, confirming the theoretical prediction of Theo-rem 4.4. This demonstrates that a sufficiently expressive encoder can recover a representation linearly identifiable with the ground-truth latent space when the diversity con-dition holds, across varying degrees of injective generative processes. 
+
+Diversity Condition Violated. When the diversity condi-tion is violated by fixing the first latent dimension during positive pair sampling, MLP performance collapses dra-matically. Linear identifiability drops to R2 ∈ [0 .05 , 0.13] 
+
+for Identity, MLP, and Linear generative processes, and 
+
+R2 = 0 .25 for Patches. The Spiral process is an excep-tion ( R2 = 0 .72 ), maintaining poor but not catastrophic performance with high variance across runs. This validates Theorem 4.5: the contrastive objective alone no longer in-centivizes geometry-preserving solutions when the condi-tional sampling support is restricted. 
+
+Inductive Bias Compensation. Under violated diversity, incorporating inductive bias through inverse encoders re-stores near-perfect recovery ( R2 ≥ 0.88 ), with Identity, Linear, and Spiral processes achieving R2 ≥ 0.99 . The inverse encoders, designed to mirror the structure of each generative process, successfully recover the latent geometry even when the sampling mechanism provides insufficient in-formation. This demonstrates that architectural constraints can compensate for deficiencies in the sampling regime, highlighting the complementary roles of data augmentation and model design in contrastive learning. 
+
+Adapted InfoNCE Loss. The adapted InfoNCE loss par-tially recovers MLP performance under violated diversity (R2 ≈ 0.60 –0.65 ), representing a substantial improve-ment over standard InfoNCE ( R2 ≈ 0.05 –0.25 for most processes). However, this falls short of the performance achieved with appropriate inductive bias ( R2 ≥ 0.88 ). This confirms Theorem 4.6: correcting the model conditional makes isometric solutions achievable but does not guarantee them. From a practical standpoint, these results suggest that while loss modifications can mitigate the effects of vi-olated diversity, incorporating architectural priors remains the more effective strategy, aligning with the empirical suc-cess of high inductive bias architectures such as CNNs and 7The Loss Is Not Enough  
+
+> Figure 2. Generative processes mapping the unit sphere to observation space. Colors encode input coordinates (RGB = xyz), illustrating how each transformation warps the latent space: (a) identity preserves the sphere, (b) linear maps to an ellipsoid, (c) spiral twists points around the vertical axis, (d) patches applies piecewise rotations creating discontinuities, and (e) invertible MLP produces smooth nonlinear deformations.
+
+Vision Transformers in contrastive learning pipelines. 
+
+5.2. CIFAR-10 Experiments 
+
+We test the qualitative implications of our theory on CIFAR-10 using SimCLR (Chen et al., 2020) with three encoder architectures of comparable size ( ∼11M parameters each). We rate inductive bias by how closely each architecture’s structural priors align with the spatial generative structure of natural images. Equivalently, this measures how strongly the architecture favors approximate inverses of image formation. ResNet-18 (He et al., 2016) has high inductive bias because convolutional layers encode spatial locality and translation equivariance. Vision Transformer (ViT) (Dosovitskiy et al., 2021) with 4×4 patches has medium inductive bias because self-attention can learn global spatial structure, but does not hardcode locality to the same extent. The MLP has low inductive bias because it treats each image as a flat vector and imposes little domain-specific restriction on the hypothesis space. All encoders project to 512-dimensional 
+
+L2-normalized embeddings and are initialized with random weights. Because CIFAR-10 does not provide ground-truth latent coordinates, linear probe accuracy is not a direct test of identifiability. We use it as a real-data sanity check for the qualitative predictions of the theory: richer sampling mechanisms and better aligned architectural inductive bias should improve downstream representation quality. 
+
+Augmentation Regimes. We design three augmentation regimes to vary the degree to which the diversity condition is approximated (Figure 4): (1) All : color jitter, random crop, horizontal flip, grayscale, blur, and cutout (DeVries & Taylor, 2017), perturbing as many features as possible; (2) Crop Only : Perturbing all features slightly, but with a lesser degree than All augmentations; (3) All w/o crop : all augmentations except crop, varying the features in a more fixed manner. Training uses InfoNCE with τ = 0 .5, Adam optimizer (Kingma & Ba, 2015) (lr = 3 × 10 −4), batch size 2000, for 200 epochs. We evaluate via linear probing over 5 runs per configuration. 
+
+Results. The results (Figure 3) are consistent with the qualitative predictions of the theory. First, the “All” augmen-tation regime yields the highest accuracy across all architec-tures, consistent with the expectation that broader sampling support improves representation quality. Second, higher inductive bias consistently improves performance: ResNet-18 outperforms ViT, which outperforms MLP, across all augmentation regimes. Third, and most importantly, the per-formance gap between architectures widens as the diversity condition is increasingly violated. Under the “All” regime, the gap between ResNet-18 and MLP is moderate; under “All w/o crop”, this gap increases substantially. This inter-action effect supports the compensatory role of inductive bias: when sampling diversity is insufficient, architectural priors become critical for recovering useful representations. Notably, for MLP the “All” and “Crop” regimes yield nearly identical performance, suggesting that without appropriate inductive bias, the encoder cannot exploit the additional augmentations, since cropping provides the majority of the meaningful signal.    
+
+> Figure 3. Linear probe accuracy on CIFAR-10 by architecture and augmentation regime. Individual runs shown as points; bars indicate mean ±1std. The “All” regime best approximates the diversity condition and yields highest accuracy across all architec-tures.
+
+## 6. Conclusion 
+
+We have presented a theoretical framework for understand-ing when contrastive learning recovers meaningful latent 8The Loss Is Not Enough                                                                   
+
+> Table 1. Linear identifiability ( R2) across generative processes under different experimental conditions. Results reported as mean ±std across 5 random seeds. The Invertible MLP process lacks a closed-form inverse, so no inverse encoder is available (indicated by N/A).
+> Diversity Holds Diversity Violated Generative Process InfoNCE InfoNCE InfoNCE Adapted InfoNCE + Ind. Bias
+> Identity 1.00 ±0.00 0.06 ±0.03 0.63 ±0.00 0.99 ±0.00
+> Invertible MLP 1.00 ±0.00 0.13 ±0.12 0.60 ±0.01 N/A Linear 1.00 ±0.00 0.05 ±0.06 0.65 ±0.03 0.99 ±0.00
+> Patches 0.99 ±0.00 0.25 ±0.03 0.63 ±0.02 0.88 ±0.01
+> Spiral 1.00 ±0.00 0.72 ±0.33 0.62 ±0.01 1.00 ±0.00
+
+(a) Original (b) Crop 
+
+(c) All w/o crop (d) All  
+
+> Figure 4. CIFAR-10 augmentation regimes. (a) Original image. (b) Crop Only: random resized crop altering spatial extent. (c) All without crop: color jitter, horizontal flip, rotation, and blur. (d) All augmentations combined. Cropping changes visible spatial extent and local statistics, while color and blur transformations mainly alter appearance in this example.
+
+representations. Our central contribution is the diversity con-dition (Definition 3.1), a requirement on P ˜Z|z that is neces-sary for isometric latent recovery. When it holds, sufficiently expressive encoders recover the latent space up to an orthog-onal transformation; when it is violated, the contrastive objective can actively disincentivize geometry-preserving solutions. The adapted InfoNCE objective makes isomet-ric solutions achievable under violated diversity, but does not guarantee their selection. Our synthetic and CIFAR-10 experiments show that sampling diversity and architectural inductive bias jointly determine representation quality. 
+
+Limitations and future work. Motivated by practical L2
+
+normalization, our analysis uses a spherical latent space and vMF conditionals; future work should relax these assump-tions and estimate diversity violation from data. Adapted InfoNCE is a theoretical diagnostic rather than a scalable objective: anchor-specific negatives require O(N (M + 1)) 
+
+memory, and support correction restores achievability but not selection. 
+
+## Impact Statement 
+
+This work advances theoretical understanding of contrastive learning, a foundational technique for self-supervised repre-sentation learning. Our contributions are primarily theoret-ical, providing formal conditions (the diversity condition) under which contrastive methods succeed or fail at recover-ing meaningful latent structure. The practical implications are indirect but potentially signif-icant. By clarifying the interplay between sampling mecha-nisms and architectural inductive bias, our framework may guide more principled design of augmentation pipelines and encoder architectures, potentially reducing computa-tional waste from trial-and-error experimentation. This could lower the environmental cost of training large-scale representation learning systems. Contrastive learning underlies many deployed systems in vision, language, and multimodal domains. Improved theo-retical understanding may help practitioners anticipate fail-ure modes before deployment, particularly in high-stakes applications such as medical imaging or scientific discovery where representation quality directly affects downstream reliability. We do not foresee direct negative societal consequences from this theoretical work. However, as with any advance in representation learning, improved methods could enhance both beneficial applications (e.g., drug discovery, climate modeling) and potentially harmful ones (e.g., surveillance). We encourage practitioners to consider the ethical implica-9The Loss Is Not Enough 
+
+tions of specific downstream applications enabled by better representation learning. 
+
+## References 
+
+Bahrami, M., Tejada-Lapuerta, A., Becker, S., Hashemi G., F. S., and Theis, F. J. scConcept: Contrastive pretraining for technology-agnostic single-cell representations beyond reconstruction. 
+
+bioRxiv , 2025. doi: 10.1101/2025.10.14.682419. URL https://www.biorxiv.org/content/ early/2025/10/15/2025.10.14.682419 .Ballard, T. Contrastive learning for climate model bias correction and super-resolution. In AAAI 2022 Fall Symposium: The Role of AI in Re-sponding to Climate Challenges , 2022. URL 
+
+https://www.climatechange.ai/papers/ aaaifss2022/10 .Bardes, A., Ponce, J., and LeCun, Y. VICReg: Variance-invariance-covariance regularization for self-supervised learning. In International Conference on Learning Rep-resentations , 2022. Bengio, Y., Courville, A., and Vincent, P. Representation learning: A review and new perspectives. IEEE Transac-tions on Pattern Analysis and Machine Intelligence , 35 (8):1798–1828, 2013. Chen, T., Kornblith, S., Norouzi, M., and Hinton, G. Asimple framework for contrastive learning of visual rep-resentations. In Proceedings of the 37th International Conference on Machine Learning , volume 119 of Pro-ceedings of Machine Learning Research , pp. 1597–1607. PMLR, 2020. Comon, P. Independent component analysis, a new concept? 
+
+Signal Processing , 36(3):287–314, 1994. Cy, A., Chemparathy, A., Han, M., Dangovski, R., Lu, P. Y., and Soljacic, M. Studying phase tran-sitions in contrastive learning With physics-inspired datasets. In ICLR 2023 Workshop Physics4ML ,2023. URL https://openreview.net/forum? id=djssHWljSA . Physics4ML poster. Dangovski, R., Jing, L., Loh, C., Han, S., Srivastava, A., Cheung, B., Agrawal, P., and Solja ˇci ´c, M. Equivari-ant contrastive learning. In International Conference on Learning Representations , 2022. DeVries, T. and Taylor, G. W. Improved regularization of convolutional neural networks with cutout. arXiv preprint arXiv:1708.04552 , 2017. URL https:// arxiv.org/abs/1708.04552 .Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations , 2021. Grill, J.-B., Strub, F., Altch ´e, F., Tallec, C., Richemond, P. H., Buchatskaya, E., Doersch, C., Avila Pires, B., Guo, Z. D., Gheshlaghi Azar, M., Piot, B., Kavukcuoglu, K., Munos, R., and Valko, M. Bootstrap your own latent: A new approach to self-supervised learning. In Advances in Neural Information Processing Systems , volume 33, pp. 21271–21284, 2020. Haas, J., Yolland, W., and Rabus, B. Linking neural collapse and L2 normalization with improved out-of-distribution detection in deep neural networks. Transac-tions on Machine Learning Research , 2023. ISSN 2835-8856. URL https://openreview.net/forum? id=fjkN5Ur2d6 .Haas, J., Yolland, W., and Rabus, B. Exploring sim-ple, high quality out-of-distribution detection with L2 normalization. Transactions on Machine Learning Re-search , 2024. ISSN 2835-8856. URL https:// openreview.net/forum?id=daX2UkLMS0 .HaoChen, J. Z. and Ma, T. A theoretical study of inductive biases in contrastive learning. In International Confer-ence on Learning Representations , 2023. URL https: //openreview.net/forum?id=AuEgNlEAmed .He, K., Zhang, X., Ren, S., and Sun, J. Deep residual learn-ing for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition ,pp. 770–778, 2016. Hyv ¨arinen, A. and Morioka, H. Unsupervised feature ex-traction by time-contrastive learning and nonlinear ICA. In Advances in Neural Information Processing Systems ,2016. Hyv ¨arinen, A. and Oja, E. Independent component analysis: algorithms and applications. Neural Networks , 13(4-5): 411–430, 2000. Hyv ¨arinen, A., Sasaki, H., and Turner, R. E. Nonlinear ICA using auxiliary variables and generalized contrastive learning. In Proceedings of the 22nd International Confer-ence on Artificial Intelligence and Statistics , volume 89 of 
+
+Proceedings of Machine Learning Research , pp. 859–868. PMLR, 2019. Jaiswal, A., Babu, A. R., Zadeh, M. Z., Banerjee, D., and Makedon, F. A survey on contrastive self-supervised learning. Technologies , 9(1):2, 2021. doi: 10.3390/ technologies9010002. 10 The Loss Is Not Enough 
+
+Ji, W., Deng, Z., Nakada, R., Zou, J., and Zhang, L. The power of contrast for feature learning: A theoretical anal-ysis. Journal of Machine Learning Research , 24(330): 1–78, 2023. URL https://jmlr.org/papers/ v24/21-1501.html .Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In International Conference on Learning Representations , 2015. URL https://arxiv.org/ abs/1412.6980 .Kirchhof, M., Kasneci, E., and Oh, S. J. Probabilistic con-trastive learning recovers the correct aleatoric uncertainty of ambiguous inputs. In Proceedings of the 40th Interna-tional Conference on Machine Learning , volume 202 of 
+
+Proceedings of Machine Learning Research , pp. 17085– 17104. PMLR, 2023. Krizhevsky, A. Learning multiple layers of features from tiny images. Technical Report TR-2009, University of Toronto, 2009. LeCun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradient-based learning applied to document recognition. Pro-ceedings of the IEEE , 86(11):2278–2324, 1998. doi: 10.1109/5.726791. Liu, S., Zhao, L., and Chen, D. Clicv2: Image complexity representation via content invariance contrastive learn-ing, 2025. URL https://arxiv.org/abs/2503. 06641 .Liu, Z., Hu, K., Zhang, J., Ren, X., and Wang, X. Long-term air quality data filling based on contrastive learn-ing. Information , 17(2), 2026. ISSN 2078-2489. doi: 10.3390/info17020121. URL https://www.mdpi. com/2078-2489/17/2/121 .Locatello, F., Bauer, S., Lucic, M., Raetsch, G., Gelly, S., Sch ¨olkopf, B., and Bachem, O. Challenging common assumptions in the unsupervised learning of disentangled representations. In International Conference on Machine Learning , pp. 4114–4124, 2019. Mitrovic, J., McWilliams, B., Walker, J., Buesing, L., and Blundell, C. Representation learning via invariant causal mechanisms. In International Conference on Learning Representations , 2021. Poudel, R. P. K., Pandya, H., and Cipolla, R. Contrastive un-supervised learning of world model with invariant causal features, 2022. URL https://arxiv.org/abs/ 2209.14932 .Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., and Sutskever, I. Learning transferable visual models from natural language supervision. In 
+
+Proceedings of the 38th International Conference on Ma-chine Learning , volume 139 of Proceedings of Machine Learning Research , pp. 8748–8763. PMLR, 2021. Richter, T., Bahrami, M., Xia, Y., Fischer, D. S., and Theis, F. J. Delineating the effective use of self-supervised learn-ing in single-cell genomics. Nature Machine Intelligence ,7(1):68–78, 2025. Rusak, E., Reizinger, P., Juhos, A., Bringmann, O., Zimmer-mann, R. S., and Brendel, W. InfoNCE: Identifying the gap between theory and practice. In Proceedings of The 28th International Conference on Artificial Intelligence and Statistics , volume 258 of Proceedings of Machine Learning Research , pp. 4159–4167. PMLR, 2025. Sandilya, R., Perez, S., Lynch, C., Victoria, L., Zebley, B., Buchanan, D. M., Bhati, M. T., Williams, N., Spell-man, T. J., Gunning, F. M., Liston, C., and Grosenick, L. Contrastive diffusion alignment: Learning struc-tured latents for controllable generation, 2025. URL 
+
+https://arxiv.org/abs/2510.14190 .Tian, Y., Sun, C., Poole, B., Krishnan, D., Schmid, C., and Isola, P. What makes for good views for contrastive learning? In Advances in Neural Information Processing Systems , 2020. Tschannen, M., Mustafa, B., and Houlsby, N. CLIPPO: Image-and-language understanding from pixels only. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 11006–11017, 2023. Uelwer, T., Robine, J., Wagner, S. S., H ¨oftmann, M., Up-schulte, E., Konietzny, S., Behrendt, M., and Harmel-ing, S. A survey on self-supervised representation learn-ing, 2023. URL https://arxiv.org/abs/2308. 11455 .van den Oord, A., Li, Y., and Vinyals, O. Representation learning with contrastive predictive coding, 2019. URL 
+
+https://arxiv.org/abs/1807.03748 .Vapnik, V. The Nature of Statistical Learning Theory .Springer: New York, 1999. von K ¨ugelgen, J., Sharma, Y., Gresele, L., Brendel, W., Sch ¨olkopf, B., Besserve, M., and Locatello, F. Self-supervised learning with data augmentations provably isolates content from style. In Advances in Neural Infor-mation Processing Systems , volume 34, pp. 16451–16467, 2021. Wang, T. and Isola, P. Understanding contrastive represen-tation learning through alignment and uniformity on the hypersphere. In Proceedings of the 37th International Conference on Machine Learning , volume 119 of Pro-ceedings of Machine Learning Research , pp. 9929–9939. PMLR, 2020. 11 The Loss Is Not Enough 
+
+Wen, Z. and Li, Y. Toward understanding the feature learning process of self-supervised contrastive learning. In Proceedings of the 38th International Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research , pp. 11112–11122. PMLR, 2021. URL https://proceedings.mlr.press/ v139/wen21c.html .Wilkinson, A., Radev, R., and Alonso-Monsalve, S. Contrastive learning for robust representations of neutrino data. Physical Review D, 111(9), May 2025. ISSN 2470-0029. doi: 10.1103/physrevd.111. 092011. URL http://dx.doi.org/10.1103/ PhysRevD.111.092011 .Wood, A. T. A. Simulation of the von Mises–Fisher distribution. Communications in Statistics-Simulation and Computation , 23(1):157–164, 1994. doi: 10.1080/ 03610919408813161. Zaliaduonis, J. and Gatidis, S. A probabilistic generalization of the Mazur-Ulam theorem, 2026. URL https:// arxiv.org/abs/2601.03900 .Zhao, L., Gundavarapu, N. B., Yuan, L., Zhou, H., Yan, S., Sun, J. J., Friedman, L., Qian, R., Weyand, T., Zhao, Y., Hornung, R., Schroff, F., Yang, M.-H., Ross, D. A., Wang, H., Adam, H., Sirotenko, M., Liu, T., and Gong, B. VideoPrism: A foundational visual encoder for video un-derstanding. In Proceedings of the 41st International Con-ference on Machine Learning , volume 235 of Proceed-ings of Machine Learning Research , pp. 60785–60811. PMLR, 2024. Zimmermann, R. S., Sharma, Y., Schneider, S., Bethge, M., and Brendel, W. Contrastive learning inverts the data generating process. In Proceedings of the 38th In-ternational Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research , pp. 12979–12990. PMLR, 2021. 12 The Loss Is Not Enough 
+
+## A. Theoretical Results: Proofs 
+
+This appendix provides complete proofs for the theoretical results presented in Section 4. We organize the material into three subsections corresponding to the three scenarios analyzed: full diversity (Section A.1), violated diversity (Section A.2), and the corrected model (Section A.3). 
+
+A.1. Proofs for Reconstruction Under Full Diversity 
+
+We first establish that cross-entropy minimizers preserve inner products almost surely, which forms the foundation for proving linear identifiability. 
+
+Theorem A.1 (Cross-Entropy Minimizers Preserve Inner Products) . Let Z = Sk−1, κ > 0, and let P ˜Z|z have density 
+
+p(˜ z|z) = C−1 
+
+> p
+
+exp( κ˜z⊤z),
+
+where Cp is the normalizing constant with respect to σ. Let Qh,z have density qh(·| z) with respect to σ. Let h : Z → Z be a recovery map. If h minimizes the cross-entropy 
+
+Lh := Ez∼PZ [H(P ˜Z|z , Q h,z )] ,
+
+then p(˜ z|z) = qh(˜ z|z) P ˜Z|z -a.s., and z⊤ ˜z = h(z)⊤h(˜ z) PZ, ˜Z -a.s. Proof. Since h minimizes Lh, it minimizes H(P ˜Z|z , Q h,z ) almost surely with respect to PZ . The cross-entropy H is minimized when 
+
+p(·| z) = qh(·| z) P ˜Z|z -a.s. For a fixed z, this implies: 
+
+eκ˜z⊤z
+
+Cp
+
+= eh(˜ z)⊤h(z)/τ 
+
+D(z) P ˜Z|z -a.s. (9) where D(z) and Cp are the normalizing constants for the respective von Mises-Fisher distributions. Taking the logarithm yields: 
+
+log 
+
+ D(z)
+
+Cp
+
+
+
+τ + τ κ ˜z⊤z = h(˜ z)⊤h(z) P ˜Z|z -a.s. (10) Since h maps onto the unit sphere, 
+
+−1 ≤ h(˜ z)⊤h(z) ≤ 1 P ˜Z|z -a.s. (11) Rearranging gives: 
+
+−1 ≤ log 
+
+ D(z)
+
+Cp
+
+
+
+τ + τ κ ˜z⊤z ≤ 1 P ˜Z|z -a.s. (12) This simplifies to: 
+
+−1 − log 
+
+ D(z)
+
+> Cp
+
+
+
+ττ κ ≤ ˜z⊤z ≤
+
+1 − log 
+
+ D(z)
+
+> Cp
+
+
+
+ττ κ (13) Since P ˜Z|z is a von Mises-Fisher distribution, the support of ˜z⊤z under this measure includes regions arbitrarily close to both 1 and −1. Specifically, for any c ∈ (−1, 1) :
+
+μ  {˜z ∈ Z : ˜ z⊤z ≥ c} = β
+
+Z cos −1(c)0
+
+eκ cos θ sin k−2 θ dθ > 0 (14) where β > 0 is the spherical-measure normalization constant. 13 The Loss Is Not Enough 
+
+To satisfy the inequality almost surely with respect to P ˜Z|z , the bounds must equal the extremes: 
+
+1 − log 
+
+ D(z)
+
+> Cp
+
+
+
+ττ κ = 1 and 
+
+−1 − log 
+
+ D(z)
+
+> Cp
+
+
+
+ττ κ = −1 (15) Both equations yield: 
+
+log 
+
+ D(z)
+
+Cp
+
+
+
+= 0 = ⇒ D(z) = Cp (16) and 
+
+κτ = 1 (17) Substituting back: 
+
+˜z⊤z = h(˜ z)⊤h(z) P ˜Z|z -a.s. (18) Since h minimizes Lh, this holds for almost all z with respect to PZ , implying: 
+
+˜z⊤z = h(˜ z)⊤h(z) PZ, ˜Z -a.s. (19) The following corollary translates inner product preservation to distance preservation, which is the key geometric property needed for identifiability. 
+
+Corollary A.2 (Cross-Entropy Minimizers Preserve Distances Almost Everywhere) . If h minimizes the expected cross-entropy loss Ez∼PZ [H(P ˜Z|z , Q h,z )] , then 
+
+∥h(z) − h(˜ z)∥2 = ∥z − ˜z∥2 PZ, ˜Z -a.s. Proof. Since both z, ˜z ∈ Z = Sk−1 and h(z), h (˜ z) ∈ Z ′ = Sk−1, we have ∥z∥2 = ∥˜z∥2 = ∥h(z)∥2 = ∥h(˜ z)∥2 = 1 .Expanding the squared Euclidean distance: 
+
+∥z − ˜z∥2 = ∥z∥2 − 2z⊤ ˜z + ∥˜z∥2 = 2 − 2z⊤ ˜z (20) Similarly, for the mapped points: 
+
+∥h(z) − h(˜ z)∥2 = ∥h(z)∥2 − 2h(z)⊤h(˜ z) + ∥h(˜ z)∥2 = 2 − 2h(z)⊤h(˜ z) (21) By Theorem A.1, we have z⊤ ˜z = h(z)⊤h(˜ z) PZ, ˜Z -a.s. Therefore: 
+
+∥h(z) − h(˜ z)∥2 = 2 − 2h(z)⊤h(˜ z) = 2 − 2z⊤ ˜z = ∥z − ˜z∥2 (22) holds PZ, ˜Z -almost surely. The distance preservation property established above holds only almost everywhere with respect to the joint distribution. To conclude that the optimal recovery map is a global orthogonal transformation, we apply the probabilistic generalization of the Mazur-Ulam theorem (Zaliaduonis & Gatidis, 2026), which shows that isometries holding almost everywhere on probability spaces can be extended to global isometries on the entire space. 
+
+Proof of Theorem 4.4. By Corollary A.2, the optimal recovery map h : Z → Z preserves distances almost everywhere with respect to the joint distribution PZ, ˜Z . Specifically, there exists a set N ⊂ Z × Z with PZ, ˜Z (N ) = 0 such that 
+
+∥h(z) − h(˜ z)∥ = ∥z − ˜z∥ for all (z, ˜z) ∈ (Z × Z ) \ N. 
+
+14 The Loss Is Not Enough 
+
+Since the marginal law PZ is uniform on the sphere and has full support, h preserves pairwise distances on a set of full 
+
+PZ -measure. Applying the probabilistic Mazur-Ulam theorem (Zaliaduonis & Gatidis, 2026), which extends almost-everywhere isometries on probability spaces to global isometries, there exists H : Rk → Rk of the form H(x) = Ax + b with A ∈ O(k) and 
+
+b ∈ Rk, such that h(z) = H(z) for PZ -almost all z ∈ Z .Since both Z and Z′ are unit spheres centered at the origin, and H agrees almost everywhere with h : Z → Z ′, the translation component must vanish ( b = 0 ) and the linear part must preserve the unit sphere. This implies that A is an orthogonal matrix, i.e., A⊤A = I.Therefore, the optimal recovery map h coincides with an orthogonal transformation almost everywhere: 
+
+h(z) = Az for μ-almost all z ∈ Z ,
+
+where A ∈ O(k) is an orthogonal matrix. 
+
+A.2. Proofs for Reconstruction Under Violated Diversity 
+
+When the diversity condition is violated, the conditional law is constrained to a lower-dimensional submanifold. We decompose each latent vector z ∈ Z = Sk−1 into two components: 
+
+z = ( u, v )⊤ ∈ Rm × Rℓ, where m + ℓ = k and m, ℓ > 0.
+
+Here, u ∈ Rm represents latent dimensions that remain fixed under conditional sampling, while v ∈ Rℓ represents dimensions that can vary. Let K(z) = {˜z ∈ Sk−1 : ˜ u = u} ∼= Sℓ−1
+
+> r(z)
+
+, where r(z) = p1 − ∥ u∥2. Let σK(z) denote intrinsic surface measure on K(z). The constrained conditional is the probability measure P K 
+
+> ˜Z|z
+
+with density 
+
+dP K
+
+> ˜Z|z
+
+dσ K(z)
+
+(˜ z) = eκ˜z⊤z
+
+R 
+
+> K(z)
+
+eκz ⊤z′ dσ K(z)(z′) . (23) It is singular with respect to ambient spherical measure on Sk−1, but absolutely continuous with respect to the intrinsic measure on K(z).Despite this modification, the asymptotic relationship between the contrastive loss and cross-entropy minimization remains valid. 
+
+Theorem A.3 (Asymptotic Equivalence Under Violated Diversity) . Given the constrained conditional probability measure defined above, the marginal law PZ uniform on Z = Sk−1, temperature τ > 0, and number of negative samples M > 0, as 
+
+M → ∞ :
+
+lim   
+
+> M→∞
+
+LCL (h; τ, M ) − log M + log |Z| = Ez∼PZ [H(P K 
+
+> ˜Z|z
+
+, Q h,z )] 
+
+Proof. The proof follows identically to Theorem 3.3, as the asymptotic analysis relies only on the law of large numbers and properties of the logarithm, not on the specific structure of the ground-truth conditional law. See (Wang & Isola, 2020) for the full argument. The critical distinction arises when comparing global values of the limiting objective. Under violated diversity, orthogonal recovery maps are not global minimizers. 
+
+Proof of Theorem 4.5. Let σ denote the normalized spherical measure on Z = Sk−1. By Theorem A.3, it suffices to compare the asymptotic contrastive loss up to constants independent of h:
+
+L(h) = − 1
+
+τ E(z, ˜z)∼Ppos 
+
+h(z)⊤h(˜ z) + Ez∼σ log 
+
+Z
+
+> Sk−1
+
+exp 
+
+ h(z)⊤h(z′)
+
+τ
+
+
+
+dσ (z′).
+
+For λ > 0, define 
+
+hλ(u, v ) := (u, λv )
+
+p∥u∥2 + λ2∥v∥2 .
+
+15 The Loss Is Not Enough 
+
+At λ = 1 , hλ is the identity. For λ̸ = 1 , hλ is not orthogonal because it changes inner products between points with different relative invariant and variant components. Write the alignment and uniformity terms as 
+
+A(λ) := E(z, ˜z)∼Ppos 
+
+hλ(z)⊤hλ(˜ z) ,U (λ) := Ez∼σ log 
+
+Z
+
+> Sk−1
+
+exp 
+
+ hλ(z)⊤hλ(z′)
+
+τ
+
+
+
+dσ (z′).
+
+Then L(hλ) = −τ −1A(λ) + U (λ).We first show that shrinking the variant component improves alignment to first order. Under the constrained positive-pair distribution, ˜u = u. Since z, ˜z ∈ Sk−1, this implies ∥v∥ = ∥˜v∥. Therefore 
+
+hλ(z)⊤hλ(˜ z) = ∥u∥2 + λ2v⊤ ˜v
+
+∥u∥2 + λ2∥v∥2 .
+
+With t = λ2 and 
+
+f (t) = ∥u∥2 + t v ⊤ ˜v
+
+∥u∥2 + t∥v∥2 ,
+
+we have 
+
+f ′(t) = ∥u∥2(v⊤ ˜v − ∥ v∥2)(∥u∥2 + t∥v∥2)2 .
+
+By Cauchy-Schwarz, v⊤ ˜v ≤ ∥ v∥2, with strict inequality whenever v̸ = ˜ v. The constrained vMF conditional is non-degenerate for κ > 0, so v̸ = ˜ v on a set of positive Ppos -measure, and ∥u∥ > 0 for σ-almost every z when m > 0. Hence 
+
+A′(1) < 0, and for some c > 0,
+
+A(λ) − A(1) = c(1 − λ) + o(1 − λ) as λ ↑ 1.
+
+We next show that the uniformity term has zero first derivative at the identity. Let 
+
+g(z) := ddλ hλ(z)
+
+> λ=1
+
+= ( −∥ v∥2u, ∥u∥2v),
+
+so z⊤g(z) = 0 . At λ = 1 , the inner integral 
+
+C := 
+
+Z
+
+> Sk−1
+
+exp( z⊤z′/τ )dσ (z′)
+
+is independent of z by rotational symmetry. Differentiating under the integral, which is justified by smoothness and compactness of the sphere, 
+
+U ′(1) = 1
+
+τ C 
+
+Z Z 
+
+exp( z⊤z′/τ )  g(z)⊤z′ + z⊤g(z′) dσ (z′)dσ (z).
+
+For any fixed a ∈ Sk−1, rotational symmetry gives 
+
+Z
+
+> Sk−1
+
+z exp( a⊤z/τ )dσ (z) = αa 
+
+for some scalar α. Applying this identity to each of the two terms above and using z⊤g(z) = 0 yields U ′(1) = 0 . Thus 
+
+U (λ) − U (1) = o(1 − λ) as λ ↑ 1.
+
+Combining the two expansions, 
+
+L(hλ) − L (I) = − 1
+
+τ
+
+ A(λ) − A(1)  +  U (λ) − U (1)  = − cτ (1 − λ) + o(1 − λ) < 0
+
+16 The Loss Is Not Enough 
+
+for all λ < 1 sufficiently close to 1.Finally, every orthogonal map ˜h ∈ O(k) preserves inner products and the uniform spherical measure, so L(˜h) = L(I).Taking h = hλ for any λ < 1 sufficiently close to 1 gives 
+
+LCL (h) < LCL (˜h), ∀ ˜h ∈ O(k),
+
+in the asymptotic regime M → ∞ .
+
+A.3. Proofs for the Corrected Model 
+
+To address the support mismatch, we modify the model conditional to incorporate the same constraint structure: 
+
+qKh,z (˜ z) = eh(z)⊤h(˜ z)/τ 
+
+R 
+
+> K(z)
+
+eh(z)⊤h(z′)/τ dσ K(z)(z′) , ˜z ∈ K(z). (24) This modification ensures that supp (QKh,z ) = supp (P K 
+
+> ˜Z|z
+
+), eliminating the support mismatch. 
+
+Theorem A.4 (Asymptotic Form of Modified Contrastive Loss) . Under the corrected model conditional, where negative samples are drawn uniformly from the constrained manifold K(z) rather than from the full sphere Z, the asymptotic contrastive loss takes the form: 
+
+lim   
+
+> M→∞
+
+L(h, τ, M ) − log( M ) = Ez∼PZ [H(P K 
+
+> ˜Z|z
+
+, Q Kh,z )] − Ez∼PZ [log( |K(z)|)] 
+
+The proof follows the same steps as in (Zimmermann et al., 2021), but with conditionals defined on K(z).
+
+Proof. Step 1: Cross-entropy decomposition. The cross-entropy between the true and model conditionals, both defined on 
+
+K(z), is: 
+
+H(P K 
+
+> ˜Z|z
+
+, Q Kh,z ) = −E˜z∼P K
+
+> ˜Z|z
+
+[log qKh,z (˜ z)] (25) 
+
+= −E˜z∼P K
+
+> ˜Z|z
+
+"
+
+log eh(z)⊤h(˜ z)/τ 
+
+R 
+
+> K(z)
+
+eh(z)⊤h(z′)/τ dσ K(z)(z′)
+
+!# 
+
+. (26) 
+
+H(P K 
+
+> ˜Z|z
+
+, Q Kh,z ) = −E˜z∼P K
+
+> ˜Z|z
+
+ 1
+
+τ h(z)⊤h(˜ z) − log Ch(z)
+
+
+
+(27) 
+
+= − 1
+
+τ E˜z∼P K
+
+> ˜Z|z
+
+[h(z)⊤h(˜ z)] + log Ch(z) (28) where Ch(z) = R 
+
+> K(z)
+
+eh(z)⊤h(z′)/τ dσ K(z)(z′) is the normalizing constant over the constrained manifold. 
+
+Step 2: Normalizing constant estimation. Using the fact that the uniform distribution on K(z) has density 1/|K(z)|:
+
+Ch(z) = 
+
+Z
+
+> K(z)
+
+eh(z)⊤h(z′)/τ dσ K(z)(z′) = |K(z)| · Ez′∼U(K(z)) 
+
+h
+
+eh(z)⊤h(z′)/τ i
+
+(29) 
+
+Step 3: Final form. Substituting the estimate of Ch(z) back into the cross-entropy expression and splitting the logarithm: 
+
+H(P K 
+
+> ˜Z|z
+
+, Q Kh,z ) = − 1
+
+τ E˜z∼P K
+
+> ˜Z|z
+
+[h(z)⊤h(˜ z)] (30) 
+
++ log Ez′∼U(K(z)) 
+
+h
+
+eh(z)⊤h(z′)/τ i
+
++ log |K(z)| (31) Taking expectations over z ∼ PZ yields the stated result. 17 The Loss Is Not Enough 
+
+Proof of Theorem 4.6. With the corrected model conditional, the supports of P K 
+
+> ˜Z|z
+
+and QKh,z now match: both are restricted to the submanifold K(z). Within this constrained setting, the analysis proceeds analogously to Theorem A.1. For any h ∈ O(k), we have h(z)⊤h(˜ z) = z⊤ ˜z for all z, ˜z ∈ Z . This means the model conditional QKh,z exactly matches the true conditional P K 
+
+> ˜Z|z
+
+on the constrained manifold K(z):
+
+qKh,z (˜ z) = ez⊤ ˜z/τ 
+
+R 
+
+> K(z)
+
+ez⊤z′/τ dσ K(z)(z′) =
+
+dP K
+
+> ˜Z|z
+
+dσ K(z)
+
+(˜ z)
+
+when κ = 1 /τ .Since matching distributions achieves zero KL divergence and hence minimal cross-entropy, any orthogonal transformation minimizes the asymptotic contrastive loss. Although the corrected objective admits orthogonal solutions, it does not guarantee uniqueness. The following theorem shows that multiple equivalent solutions exist. 
+
+Theorem A.5 (Equivalence of Feature Extractors Under Constrained Sampling) . Given a data-generating process g : Z → X , uniform marginal law PZ , ground-truth conditional law P ˜Z|z with density p(˜ z|z), and model conditional law Qh,z with density qh(˜ z|z) that define the expected cross-entropy loss 
+
+Lh = Ez∼PZ [H(P ˜Z|z , Q h,z )] ,
+
+let m : Z → Z be an invertible mapping that preserves the marginal law and the ground-truth conditional density: 
+
+m#PZ = PZ , p(m(˜ z)|m(z)) = p(˜ z|z) ∀z, ˜z ∈ Z .
+
+Then any two mappings h1 := f1 ◦ g and h2 := f2 ◦ g with h2(z) := h1(m(z)) are equivalent, i.e., Lh1 = Lh2 .Proof. Starting with the cross-entropy loss for h2:
+
+Lh2 = Ez∼PZ
+
+h
+
+E˜z∼P ˜Z|z [− log qh2 (˜ z|z)] 
+
+i
+
+(32) Using the definition of h2:
+
+= Ez∼PZ
+
+h
+
+E˜z∼P ˜Z|z [− log qh1 (m(˜ z)|m(z))] 
+
+i
+
+(33) Since m preserves the conditional density: 
+
+= Ez∼PZ
+
+h
+
+Em(˜ z)∼P ˜Z|m(z) [− log qh1 (m(˜ z)|m(z))] 
+
+i
+
+(34) Since m#PZ = PZ , we can change variables in the outer expectation: 
+
+= Em(z)∼PZ
+
+h
+
+Em(˜ z)∼P ˜Z|m(z) [− log qh1 (m(˜ z)|m(z))] 
+
+i
+
+(35) Finally, because m is invertible: 
+
+= Ez∼PZ
+
+h
+
+E˜z∼P ˜Z|z [− log qh1 (˜ z|z)] 
+
+i
+
+= Lh1 (36) This theorem reveals a fundamental non-uniqueness in the solution space of the modified contrastive learning objective. Any conditional-preserving transformation of the latent space yields identical loss values, meaning that without additional constraints through inductive bias, the objective cannot distinguish between semantically meaningful representations and arbitrary rearrangements that preserve only local structure within constrained manifolds. 18 The Loss Is Not Enough 
+
+## B. Generative Processes and Encoder Architectures 
+
+This section describes the generative processes and encoder architectures used in our synthetic experiments. 
+
+B.1. Generative Processes 
+
+We employ five generative processes g : Sd−1 → RD of varying complexity to test our theoretical predictions across different data-generating mechanisms. 
+
+Algorithm 1 Identity Process 
+
+Require: z ∈ Sd−1 
+
+> 1:
+
+x ← z 
+
+> 2:
+
+return x ∈ Rd
+
+Algorithm 2 Linear Process 
+
+Require: z ∈ Sd−1, weight matrix W ∈ RD×d with rank (W ) = d 
+
+> 1:
+
+x ← W z  
+
+> 2:
+
+return x ∈ RD
+
+Algorithm 3 Spiral Rotation Process 
+
+Require: z = ( z1, z 2, z 3) ∈ S2, period n 
+
+> 1:
+
+Compute rotation angle: θ ← nπz 3 
+
+> 2:
+
+Apply 2D rotation to first two coordinates:  
+
+> 3:
+
+x1 ← cos( θ)z1 − sin( θ)z2 
+
+> 4:
+
+x2 ← sin( θ)z1 + cos( θ)z2 
+
+> 5:
+
+x3 ← z3 
+
+> 6:
+
+return x = ( x1, x 2, x 3) ∈ R3
+
+Algorithm 4 Patches Process 
+
+Require: z = ( z1, z 2, z 3) ∈ S2, number of slices K 
+
+> 1:
+
+Step 1: Apply piecewise rotation based on z3 
+
+> 2:
+
+Determine bucket k ← ⌊ (z3 + 1) · K/ 2⌋ 
+
+> 3:
+
+Compute angle θk ← − π/ max(1 , K − k) 
+
+> 4:
+
+z′ ← Rxy (θk) · z {Rotate in (x, y ) plane } 
+
+> 5:
+
+Step 2: Apply 3D rotation (pitch = π/ 2) 
+
+> 6:
+
+z′′ ← Ry (π/ 2) · z′ 
+
+> 7:
+
+Step 3: Apply second piecewise rotation  
+
+> 8:
+
+Determine new bucket, apply rotation as in Step 1  
+
+> 9:
+
+return x ∈ R3
+
+Algorithm 5 Invertible MLP Process (Hyv¨ arinen & Morioka, 2016) 
+
+Require: z ∈ Sd−1, MLP layers {Wi, b i}Li=1 with conditioning  
+
+> 1:
+
+h0 ← z 
+
+> 2:
+
+for i = 1 to L do  
+
+> 3:
+
+hi ← σ(Wihi−1 + bi) {σ = LeakyReLU } 
+
+> 4:
+
+end for  
+
+> 5:
+
+return x = hL ∈ RD
+
+19 The Loss Is Not Enough 
+
+B.2. Encoder Architectures 
+
+We compare two classes of encoders: a generic MLP encoder representing low inductive bias, and inverse encoders designed to mirror the structure of each generative process, representing high inductive bias. 
+
+Algorithm 6 MLP Encoder (Low Inductive Bias) 
+
+Require: x ∈ RD , hidden dims [128 , 256 , 256 , 256 , 128] 
+
+1: h0 ← x
+
+2: for i = 1 to L − 1 do 
+
+3: hi ← ReLU (BatchNorm (Wihi−1 + bi)) 
+
+4: end for 
+
+5: z′ ← WLhL−1 + bL
+
+6: z ← z′/∥z′∥2 {Project to sphere }
+
+7: return z ∈ Sd−1
+
+Algorithm 7 Inverse Linear Encoder (High Inductive Bias) 
+
+Require: x ∈ RD , learnable W ∈ Rd×D , b ∈ Rd
+
+1: z′ ← W x + b
+
+2: z ← z′/∥z′∥2
+
+3: return z ∈ Sd−1
+
+Algorithm 8 Inverse Spiral Encoder (High Inductive Bias) 
+
+Require: x ∈ R3, period n
+
+1: Predict rotation control: c ← MLP rot (x) {3-layer MLP }
+
+2: Extract spatial components: (x1, x 2) ← x1:2 
+
+3: Compute inverse rotation: θ ← − nπc 
+
+4: Apply inverse rotation: 
+
+5: z1 ← cos( θ)x1 − sin( θ)x2
+
+6: z2 ← sin( θ)x1 + cos( θ)x2
+
+7: z′ ← (z1, z 2, c )
+
+8: z ← z′/∥z′∥2
+
+9: return z ∈ S2
+
+Algorithm 9 Inverse Patches Encoder (High Inductive Bias) 
+
+Require: x ∈ R3, number of slices K
+
+1: Predict original z-coordinate: zpred ← tanh( MLP z (x)) 
+
+2: Predict bucket probabilities: w ← softmax (MLP bucket (x)) 
+
+3: Step 1: Inverse second piecewise rotation 
+
+4: x1 ← PK−1 
+
+> k=0
+
+wk · Rxy (−θk) · x {Soft inverse }
+
+5: Step 2: Inverse 3D rotation 
+
+6: x2 ← Ry (−π/ 2) · x1
+
+7: Step 3: Inverse first piecewise rotation 
+
+8: x3 ← PK−1 
+
+> k=0
+
+wk · Rxy (−θk) · x2
+
+9: Replace z-coordinate: xrec ← (x3,1, x 3,2, z pred )
+
+10: z ← xrec /∥xrec ∥2
+
+11: return z ∈ S2
+
+20 The Loss Is Not Enough 
+
+## C. Sampling Procedures 
+
+We use standard techniques for sampling from the uniform distribution on the sphere and the von Mises-Fisher distribution. 
+
+Algorithm 10 Uniform Sampling from Sd−1
+
+Require: Dimension d ∈ N
+
+1: Draw zi ∼ N (0 , 1) independently for i = 1 , . . . , d 
+
+2: z ← (z1, . . . , z d)⊤
+
+3: v ← z/ ∥z∥2
+
+4: return v ∈ Sd−1
+
+Algorithm 11 von Mises-Fisher Sampling (Wood, 1994) 
+
+Require: Mean direction μ ∈ Sd−1, concentration κ > 0
+
+1: p ← d − 1
+
+2: b ← p/ (p4κ2 + p2 + 2 κ)
+
+3: x ← (1 − b)/(1 + b)
+
+4: c ← κx + p log(1 − x2)
+
+5: repeat 
+
+6: Sample t ∼ Beta (p/ 2, p/ 2) 
+
+7: w ← (1 − (1 + b)t)/(1 − (1 − b)t)
+
+8: Sample u ∼ Uniform (0 , 1) 
+
+9: until log( u) ≤ κw + p log(1 − xw ) − c
+
+10: Sample g ∼ N (0 , I d)
+
+11: v ← g − (g⊤μ)μ {Project out μ component }
+
+12: v ← v/ ∥v∥2
+
+13: s ← √1 − w2 · v + w · μ
+
+14: return s ∼ vMF (μ, κ )
+
+Algorithm 12 Conditional Sampling: Diversity Holds 
+
+Require: Anchor z ∈ Sd−1, concentration κ
+
+1: ˜z ← vMF (z, κ ) {Sample positive using Algorithm 11 }
+
+2: return ˜z ∈ Sd−1
+
+Algorithm 13 Conditional Sampling: Diversity Violated 
+
+Require: Anchor z = ( u, v ) ∈ Sd−1, fixed dimensions dfixed , concentration κ
+
+1: u ← z1: dfixed {Fixed component }
+
+2: v ← zdfixed +1: d {Varying component }
+
+3: r ← ∥ v∥2 {Radius of sub-sphere }
+
+4: if r > 0 then 
+
+5: ˆv ← v/r {Normalize to sub-sphere }
+
+6: ˜v ← vMF (ˆ v, κ ) {Sample on sub-sphere }
+
+7: ˜v ← r · ˜v {Scale back }
+
+8: else 
+
+9: ˜v ← v
+
+10: end if 
+
+11: ˜z ← (u, ˜v) {Concatenate fixed and sampled }
+
+12: return ˜z ∈ Sd−1
+
+21 The Loss Is Not Enough 
+
+Algorithm 14 Adapted InfoNCE with Same-anchor Negatives 
+
+Require: Encoder h, batch {x1, . . . , x N }, stochastic augmentation T , temperature τ , negatives per anchor M 
+
+> 1:
+
+for each anchor xi do  
+
+> 2:
+
+Draw positive view ˜xi ← T (xi) 
+
+> 3:
+
+for j = 1 to M do  
+
+> 4:
+
+Draw same-anchor negative x− 
+
+> i,j
+
+← T (xi) independently  
+
+> 5:
+
+end for  
+
+> 6:
+
+Compute 
+
+Li = − log exp( h(xi)⊤h(˜ xi)/τ )exp( h(xi)⊤h(˜ xi)/τ ) + PMj=1 exp( h(xi)⊤h(x− 
+
+> i,j
+
+)/τ ) . 
+
+> 7:
+
+end for  
+
+> 8:
+
+return L = 1
+
+> N
+
+PNi=1 Li
+
+Algorithm 14 approximates sampling negatives from K(z) in observation space. Each call to T uses independent randomness conditional on the same anchor xi, which is the observation-space analogue of drawing conditionally independent samples from P ˜Z|zi . The same sampling family is applied repeatedly to the same anchor, so all views preserve the invariant component encoded by the mechanism while varying the remaining components. This changes the negative-sampling task relative to standard InfoNCE, which samples negatives from other instances. In our framework this is consistent with the goal of recovering latent distance structure rather than discriminating instance identity, but it can trade cross-instance discrimination signal for better support matching. The approximation also samples from the augmentation-induced distribution on K(z) rather than uniformly from K(z).
+
+## D. Evaluation Metrics 
+
+We evaluate latent space reconstruction quality using three complementary metrics, following standard practice in the identifiability literature (Hyv¨ arinen & Morioka, 2016; Zimmermann et al., 2021). 
+
+Algorithm 15 Linear Identifiability ( R2)
+
+Require: Ground-truth latents Z = {zi}ni=1 , recovered latents ˆZ = {ˆzi}ni=1  
+
+> 1:
+
+Fit linear regression: ˆz = Az + b minimizing P 
+
+> i
+
+∥zi − (Aˆzi + b)∥2 
+
+> 2:
+
+Compute predictions: ˜zi ← Aˆzi + b 
+
+> 3:
+
+Compute total variance: SS tot ← Pni=1 ∥zi − ¯z∥2 
+
+> 4:
+
+Compute residual variance: SS res ← Pni=1 ∥zi − ˜zi∥2 
+
+> 5:
+
+R2 ← 1 − SS res /SS tot  
+
+> 6:
+
+return R2 ∈ (−∞ , 1] {1.0 = perfect linear recovery }
+
+Algorithm 16 Mean Correlation Coefficient (MCC) 
+
+Require: Ground-truth latents Z ∈ Rn×d, recovered latents ˆZ ∈ Rn×d 
+
+> 1:
+
+Compute correlation matrix C ∈ Rd×d: 
+
+> 2:
+
+Cij ← | corr (Z:,i , ˆZ:,j )| 
+
+> 3:
+
+Find optimal assignment via Munkres algorithm:  
+
+> 4:
+
+π∗ ← arg max π
+
+Pdi=1 Ci,π (i) 
+
+> 5:
+
+MCC ← 1
+
+> d
+
+Pdi=1 Ci,π ∗(i) 
+
+> 6:
+
+return MCC ∈ [0 , 1] {1.0 = perfect factor alignment }
+
+22 The Loss Is Not Enough 
+
+Algorithm 17 Angular Preservation Error (APE) 
+
+Require: Ground-truth latents Z = {zi}ni=1 , recovered latents ˆZ = {ˆzi}ni=1  
+
+> 1:
+
+Initialize APE ← 0 
+
+> 2:
+
+for i = 1 to n do  
+
+> 3:
+
+for j = 1 to n, j̸ = i do  
+
+> 4:
+
+APE ← APE + |z⊤ 
+
+> i
+
+zj − ˆz⊤ 
+
+> i
+
+ˆzj | 
+
+> 5:
+
+end for  
+
+> 6:
+
+end for  
+
+> 7:
+
+APE ← APE /(n(n − 1))  
+
+> 8:
+
+return APE ∈ [0 , 2] {0.0 = perfect isometry }                
+
+> Metric Range Measures Optimal
+> R2(−∞ ,1] Linear predictability 1.0
+> MCC [0 ,1] Factor alignment (up to permutation) 1.0
+> APE [0 ,2] Angular/geometric preservation 0.0
+> Table 2. Summary of evaluation metrics for latent space reconstruction.
+
+## E. Additional Experimental Results 
+
+E.1. Diversity Condition Holds 
+
+Table 3 reports MCC, APE, and final loss when the diversity condition is satisfied.    
+
+> Table 3. Evaluation metrics when diversity condition holds. Results reported as mean ±std across 5 random seeds using MLP encoder. Lower APE is better.
+
+Generative Process MCC APE Final Loss 
+
+Identity 0.775 ± 0.060 0.007 ± 0.001 7.388 ± 0.007 
+
+Linear 0.854 ± 0.083 0.007 ± 0.001 7.386 ± 0.006 
+
+Invertible MLP 0.822 ± 0.038 0.010 ± 0.002 7.383 ± 0.012 
+
+Patches 0.836 ± 0.060 0.031 ± 0.001 7.429 ± 0.019 
+
+Spiral 0.858 ± 0.041 0.012 ± 0.001 7.390 ± 0.011 
+
+E.2. Diversity Condition Violated 
+
+Tables 4-6 compare three approaches when diversity is violated: standard InfoNCE, adapted InfoNCE (Section 4.3), and InfoNCE with inductive bias.    
+
+> Table 4. Mean Correlation Coefficient (MCC) when diversity condition is violated. Results reported as mean ±std across 5 random seeds.
+
+Diversity Condition Violated Generative Process InfoNCE InfoNCE Adapted InfoNCE + Ind. Bias 
+
+Identity 0.143 ± 0.016 0.607 ± 0.039 0.801 ± 0.102 
+
+Linear 0.111 ± 0.075 0.592 ± 0.085 0.841 ± 0.094 
+
+Invertible MLP 0.178 ± 0.116 0.569 ± 0.048 N/A Patches 0.265 ± 0.018 0.624 ± 0.035 0.687 ± 0.014 
+
+Spiral 0.629 ± 0.294 0.602 ± 0.044 0.999 ± 0.001 
+
+23 The Loss Is Not Enough    
+
+> Table 5. Angular Preservation Error (APE) when diversity condition is violated. Results reported as mean ±std across 5 random seeds. Lower is better.
+
+Diversity Condition Violated Generative Process InfoNCE InfoNCE Adapted InfoNCE + Ind. Bias 
+
+Identity 0.322 ± 0.007 0.152 ± 0.002 0.047 ± 0.000 
+
+Linear 0.325 ± 0.012 0.155 ± 0.002 0.046 ± 0.000 
+
+Invertible MLP 0.305 ± 0.034 0.168 ± 0.003 N/A Patches 0.283 ± 0.008 0.154 ± 0.002 0.109 ± 0.003 
+
+Spiral 0.136 ± 0.115 0.156 ± 0.002 0.016 ± 0.003    
+
+> Table 6. Final InfoNCE loss when diversity condition is violated. Results reported as mean ±std across 5 random seeds.
+
+Diversity Condition Violated Generative Process InfoNCE InfoNCE Adapted InfoNCE + Ind. Bias 
+
+Identity 5.709 ± 0.000 6.689 ± 0.007 6.058 ± 0.009 
+
+Linear 5.708 ± 0.001 6.697 ± 0.005 6.043 ± 0.009 
+
+Invertible MLP 5.715 ± 0.002 6.009 ± 0.006 N/A Patches 5.850 ± 0.021 6.028 ± 0.009 6.222 ± 0.007 
+
+Spiral 5.949 ± 0.140 6.011 ± 0.012 6.075 ± 0.014 
+
+E.3. Progressive Diversity Violation 
+
+Table 7 and Figure 5c examine how performance degrades as the diversity condition is progressively violated in a 10-dimensional latent space. The parameter dfixed denotes the number of dimensions held constant during positive pair sampling.    
+
+> Table 7. Linear identifiability ( R2) as a function of diversity violation severity for 10D latent space. dfixed denotes the number of dimensions held constant during positive pair sampling.
+
+dfixed Violation Ratio Linear Monomial 
+
+0 0.0 0.969 ± 0.047 0.990 ± 0.000 
+
+1 0.1 0.023 ± 0.011 0.015 ± 0.005 
+
+2 0.2 0.014 ± 0.003 0.015 ± 0.003 
+
+3 0.3 0.027 ± 0.009 0.034 ± 0.008 
+
+4 0.4 0.061 ± 0.021 0.042 ± 0.004 
+
+5 0.5 0.099 ± 0.019 0.097 ± 0.015 
+
+6 0.6 0.168 ± 0.017 0.185 ± 0.021 
+
+7 0.7 0.213 ± 0.035 0.284 ± 0.022 
+
+8 0.8 0.238 ± 0.049 0.348 ± 0.022 
+
+9 0.9 0.299 ± 0.047 0.425 ± 0.056 
+
+10 1.0 0.032 ± 0.004 0.086 ± 0.032 
+
+E.4. Constraint Ratio Experiments 
+
+Tables 8-11 show identifiability metrics as a function of the constraint ratio ρ, which interpolates between standard InfoNCE (ρ = 0 ) and the fully corrected objective ( ρ = 1 ). The parameter ρ controls the fraction of negative samples drawn from the constrained manifold K(z) versus the full sphere Z.24 The Loss Is Not Enough 
+
+Table 8. Linear identifiability ( R2) across all generative processes and encoder types as a function of constraint ratio ρ. Results reported as mean across 5 seeds. 
+
+Identity Linear InvMLP Patches Spiral 
+
+ρ MLP Inv MLP Inv MLP MLP Inv MLP Inv 0.0 .053 .994 .112 .995 .286 .265 .871 .331 .996 
+
+0.1 .228 .997 .293 .997 .317 .651 .892 .731 .781 
+
+0.2 .306 .999 .299 .999 .350 .763 .878 .622 .963 
+
+0.3 .226 1.00 .201 1.00 .554 .820 .870 .797 .999 
+
+0.4 .502 .999 .452 .999 .666 .745 .859 .813 .842 
+
+0.5 .575 .997 .487 .997 .544 .737 .819 .822 .991 
+
+0.6 .525 .991 .461 .991 .564 .719 .645 .803 .831 
+
+0.7 .469 .979 .333 .979 .524 .731 .674 .661 .846 
+
+0.8 .402 .958 .350 .958 .485 .681 .680 .620 .826 
+
+0.9 .440 .905 .457 .904 .487 .675 .623 .637 .811 
+
+1.0 .626 .709 .650 .680 .597 .633 .656 .624 .572 
+
+Table 9. Mean Correlation Coefficient (MCC) across all generative processes and encoder types as a function of constraint ratio ρ. Results reported as mean across 5 seeds. 
+
+Identity Linear InvMLP Patches Spiral 
+
+ρ MLP Inv MLP Inv MLP MLP Inv MLP Inv 0.0 .102 .769 .125 .859 .247 .275 .660 .315 .997 
+
+0.1 .342 .819 .364 .836 .350 .636 .648 .648 .777 
+
+0.2 .381 .815 .362 .838 .453 .670 .648 .632 .978 
+
+0.3 .321 .841 .336 .827 .590 .711 .631 .685 .999 
+
+0.4 .538 .807 .542 .811 .617 .664 .654 .801 .876 
+
+0.5 .594 .776 .537 .834 .533 .699 .628 .808 .995 
+
+0.6 .522 .863 .496 .818 .600 .660 .540 .796 .876 
+
+0.7 .499 .778 .394 .758 .561 .657 .584 .628 .868 
+
+0.8 .448 .704 .408 .775 .516 .649 .612 .542 .861 
+
+0.9 .463 .698 .483 .703 .467 .663 .560 .650 .841 
+
+1.0 .607 .593 .592 .590 .569 .624 .628 .602 .611 
+
+Table 10. Angular Preservation Error (APE) across all generative processes and encoder types as a function of constraint ratio ρ. Results reported as mean across 5 seeds. Lower is better. 
+
+Identity Linear InvMLP Patches Spiral 
+
+ρ MLP Inv MLP Inv MLP MLP Inv MLP Inv 0.0 .325 .047 .310 .046 .265 .280 .112 .257 .027 
+
+0.1 .288 .035 .269 .036 .265 .187 .101 .134 .114 
+
+0.2 .267 .020 .268 .020 .257 .146 .105 .195 .038 
+
+0.3 .286 .004 .293 .005 .210 .126 .107 .136 .011 
+
+0.4 .223 .014 .235 .014 .176 .148 .111 .126 .067 
+
+0.5 .202 .034 .223 .034 .204 .149 .122 .120 .027 
+
+0.6 .212 .054 .228 .055 .197 .151 .164 .123 .089 
+
+0.7 .225 .079 .255 .079 .206 .145 .158 .161 .088 
+
+0.8 .238 .105 .249 .106 .216 .157 .152 .171 .101 
+
+0.9 .225 .138 .221 .138 .212 .152 .169 .165 .114 
+
+1.0 .152 .155 .155 .158 .168 .154 .160 .156 .190 
+
+Table 11. Final InfoNCE loss across all generative processes and encoder types as a function of constraint ratio ρ. Results reported as mean across 5 seeds. 
+
+Identity Linear InvMLP Patches Spiral 
+
+ρ MLP Inv MLP Inv MLP MLP Inv MLP Inv 0.0 5.71 6.05 5.71 6.05 5.03 5.17 6.19 5.07 6.07 
+
+0.1 6.07 6.18 6.06 6.18 5.38 5.50 6.31 5.45 6.44 
+
+0.2 6.21 6.30 6.22 6.30 5.53 5.62 6.40 5.55 6.37 
+
+0.3 6.32 6.38 6.32 6.38 5.63 5.69 6.47 5.65 6.38 
+
+0.4 6.40 6.46 6.40 6.46 5.71 5.76 6.53 5.72 6.53 
+
+0.5 6.46 6.53 6.47 6.53 5.78 5.83 6.60 5.79 6.52 
+
+0.6 6.52 6.59 6.53 6.59 5.84 5.88 6.68 5.85 6.62 
+
+0.7 6.57 6.62 6.57 6.63 5.89 5.93 6.71 5.89 6.72 
+
+0.8 6.62 6.67 6.62 6.67 5.94 5.97 6.74 5.94 6.75 
+
+0.9 6.65 6.68 6.66 6.68 5.98 6.01 6.78 5.97 6.81 
+
+1.0 6.69 6.69 6.70 6.69 6.01 6.03 6.79 6.01 6.94 
+
+25 The Loss Is Not Enough 
+
+E.5. Synthetic Validation Figures 
+
+Figure 5 provides visual summaries comparing MLP and inverse encoder performance across conditions. 
+
+(a) (b) (c) Figure 5. Synthetic validation of theoretical predictions. (a) Linear identifiability for MLP and inverse encoders. When the diversity condition holds, MLP achieves R2 = 1 .00 ; when violated, it collapses to R2 = 0 .25 while inverse encoders remain robust ( R2 = 0 .83 ). (b) Angular preservation error vs. constraint ratio ρ. At ρ = 1 (corrected InfoNCE), MLP converges to inverse encoder performance. (c) Linear identifiability on S9 vs. incremental violation of diversity condition; even dfixed = 1 causes catastrophic failure. Results averaged across 5 generative processes; shaded regions indicate ±1 std. 
+
+26

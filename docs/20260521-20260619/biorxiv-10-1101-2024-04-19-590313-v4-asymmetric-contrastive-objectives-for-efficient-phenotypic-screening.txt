@@ -1,0 +1,757 @@
+Title: Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+URL Source: https://www.biorxiv.org/content/10.1101/2024.04.19.590313v4.full.pdf
+
+Number of Pages: 21
+
+Markdown Content:
+# Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Luke Nightingale 1 Joseph Tuersley 1 Scott Warchal 1 Andrea Cairoli 1 Jacob Howes 1 Cameron Shand 1
+
+Andrew J. Powell 1 2 Darren V.S. Green 2 Amy Strange 1 Michael Howell 1
+
+# Abstract 
+
+Phenotypic screening experiments produce many microscope images of cells under diverse pertur-bations, with biologically significant responses often subtle or difficult to identify visually. Acentral challenge is to extract image representa-tions that distinguish activity from controls and group phenotypically similar perturbations. In this work we propose new adaptations of con-trastive loss functions that incorporate experimen-tal metadata as learned class vectors, and a ge-ometrically inspired variant, called SPC, where class vectors are confined to the unit sphere and updated only by attractive terms (allowing more overlap of phenotypically similar classes). The approach is tested on two popular benchmark-ing datasets, BBBC021 and RxRx3-core; and we also evaluate performance on uncurated screens of HaCaT cells to gauge effectiveness in a real-istic use-case scenario. We find we outperform prior methods across the three datasets and on a wide array of metrics measuring phenotype group-ing, biological recall, drug-target interaction and mechanism-of-action inference. We also show we maintain this improved performance compared to models over 10x larger in parameter count, and that SPC can be used as an effective fine-tuning technique. The method is easy to implement and is well suited to settings with limited data or com-pute resources. 
+
+# 1. Introduction 
+
+High-content screening (HCS) is a high-throughput ap-proach to drug discovery (Bickle, 2010; Bray et al., 2016). To facilitate testing many biological samples in parallel, experiments are performed with arrayed multi-well plates, 
+
+> 1
+
+The Francis Crick Institute, United Kingdom 
+
+> 2
+
+GlaxoSmithKline, United Kingdom. Correspondence to: Luke Nightingale <luke.nightingale@crick.ac.uk>. 
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+(a) Untreated (b) Treated with AZ191 
+
+(c) Treated with APY0201 (d) Treated with AMG900 
+
+Figure 1. HaCaT cells can exhibit visible cellular changes on treat-ment. Green channel: plasma membrane & F-actin; red channel: mitochondria; blue channel: DNA. 
+
+each well holding a population of cells. The cells are given perturbants and then subsequently imaged with a micro-scope. In this study a perturbation means either a chemical treatment consisting of a small molecule at a specified con-centration, or a CRISPR gene knockout. Cells can be fluo-rescently tagged for proteins or structures such as nucleus and mitochondria, and these form a sequence of image chan-nels. The data output of an experiment is a large number of multi-channel images accompanied by metadata indicating the perturbation, plate and well of origin. Some molecules also have a known mechanism-of-action (MoA). MoA de-scribes the pharmacological interaction which is believed to underlie the effect of a compound. MoA induced pheno-types are often subtle and require an algorithm to distinguish, but in some cases are visible by eye (Figure 1). Alongside perturbed samples, each plate includes controls expected to elicit no response, typically DMSO in compound screens and non-targeting CRISPR reagents for genetic screens. A common way to quantitatively analyse cellular images is by extracting handcrafted morphological features using 1
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+tools such as CellProfiler (Carpenter et al., 2006), followed by aggregation and dimensionality reduction for down-stream analysis. With the advent of highly accurate deep learning algorithms, there has been growing interest in re-placing handcrafted features with learned image representa-tions derived from data (Ando et al., 2017; Caicedo et al., 2018; Lafarge et al., 2019; Krentzel et al., 2023). These approaches aim to produce embeddings that uncover phe-notypic variation that is difficult to capture with predefined measurements and support tasks such as treatment cluster-ing, outlier detection, and MoA inference. Recent work has focused on training large models, vision transformers, on increasing dataset sizes. These come in several flavours, typically adaptations of either masked au-toencoders (Kraus et al., 2024; Kenyon-Dean et al., 2024) or DINO (Yao et al., 2024; Haslum et al., 2024; Doron et al., 2023; Kim et al., 2025). Also popular has been con-trastive learning based around augmentations (Perakis et al., 2021; Bushiri Pwesombo et al., 2025; Huang et al., 2025) or multimodality (Sanchez-Fernandez et al., 2023; Fradkin et al., 2024; Lu et al., 2025; Yu et al., 2025). Contrastive learning naturally frames the learning problem in terms of proximity for semantically similar samples, which fits well the underlying phenotype alignment goal of HCS. A classic approach is weakly supervised learning (WSL) (Caicedo et al., 2018; Moshkov et al., 2024), often consid-ered the most performant method for small datasets (Kraus et al., 2024). WSL works by training a treatment classifier and then extracting embeddings from the encoder. Identi-cally treated cells exhibit variation in shape and texture lead-ing to substantial heterogeneity within a population (Figure 1). One goal of leveraging treatment labels is to limit how much the model responds to this variation and instead learn features more representative of inter-treatment differences. However since the objective of a classifier is to distinguish classes it can also separate treatments of the same pheno-type, or learn other unwanted correlations (Sypetkowski et al., 2023), raising the question of whether there is a more effective way to introduce metadata. This study considers simple injections of metadata labels into the conceptually appealing contrastive losses, and pro-poses a variant called Spherical Phenotype Clustering (SPC) with a modified update mechanism allowing more class over-lap. We show in contrast to prevailing large scale trends, that the described metadata injections allow contrastive losses trained on limited data to achieve state-of-the-art perfor-mance in several highly regarded microscopy benchmarks, and that this extends to the case of uncurated screens. We further show that the method can compete with models having much higher parameter counts despite employing a vastly smaller number of training images. 
+
+# 2. Spherical Phenotype Clustering 
+
+As discussed in the introduction, a conventional way to incorporate metadata during training is with WSL, which is a treatment classifier where the encoder is then used to extract embeddings. We summarize the main components as follows: • A dataset {x1, x2, ..., xN } where each xi is an image and N is the total number of images in the dataset. For each image there is an associated label yi, an integer value between 1 and the total number of classes C.• A parameterized encoder function f (the model) that takes an image and outputs a D dimensional embed-ding vector, zi = f (xi). In this work we use either a ResNet18 (He et al., 2016) or, for fine-tuning, a vision transformer (Dosovitskiy et al., 2020). • A final linear layer that maps embedding vectors to class predictions comprising a weight matrix W ∈
+
+RD×C and bias term b ∈ RC , so that the predicted class is given by the maximum element of the vector 
+
+W T zi + b.From now on, we let dataset indexed quantities such as 
+
+xi instead be indexed by minibatch. During training the function f is optimized by repeatedly sampling a minibatch of M images from the dataset and updating parameters based on the gradient of the cross-entropy loss function 
+
+li = − log exp( W Tyi zi + byi )
+
+PCj=1 exp( W Tj zi + bj ) , (1) where Wj indicates the jth column of W and can be viewed as a prototype embedding for class j. In this and the following expressions we have omitted that the loss is averaged over batch samples, so that the actual loss is 
+
+L = (1 /M ) PMi=1 li.Since treatments are always known when conducting a bi-ological experiment, the usefulness of f in HCS is not in the direct ability to perform treatment classification, but rather being able to cluster similar treatments to deduce relationships between them. Following training, images are converted to vectors using f and then aggregated (by com-puting the mean) to create a well or treatment-level profile, which is a vector of the same dimension as zi. The profiles are then compared with distance based metrics to assess how effectively they cluster according to a biologically mean-ingful label such as MoA. This is the sense in which the approach is described as weakly supervised - the metadata provides a weak label which helps to learn the biological grouping a perturbation belongs to. To give a concrete ex-ample, if we had a dataset with multiple mTOR inhibitor 2
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+compounds, then each is a class with many associated im-ages, but they belong to the same biological mechanism, mTOR inhibitor; so a prominent mTOR cluster raises confi-dence new molecules with unknown mechanism would be correctly grouped. 
+
+2.1. Contrastive options for incorporating experimental metadata 
+
+The contrastive loss in popular algorithm SimCLR is called NTXent (Chen et al., 2020a). We define first the following similarity function: sim (u, v) = exp 
+
+ 1
+
+τ
+
+u · v
+
+|u|| v|
+
+
+
+,
+
+which is the exponential of the cosine similarity multiplied by the reciprocal of temperature τ . And we further define an augmented version of an image in the dataset as xai and the corresponding embedding zai = f (xai ). The expression for NTXent can then be written as 
+
+li = − log sim (zi, zai )
+
+> M
+
+P
+
+> j=1
+
+[sim (zi, zaj ) + sim (zi, zj̸ =i)] 
+
+,
+
+where the notation zj̸ =i indicates the ith term is not included in the summation. This loss function encourages the embed-ding for an image to be closer to its augmentation than to embeddings for other images sampled from the dataset. There is substantial heterogeneity in the cells of HCS im-ages that isn’t relevant to discovering relationships between perturbations. For example changes in orientation of cells, technical noise across wells, shape and texture differences that are typical of variation in control samples. A fully un-supervised model would learn a lot of that variation. An autoencoder must remember it to reconstruct the entire im-age in detail and contrastive models will pick up on it as an effective way to make sure an image and its augmenta-tion is similar. We here adapt contrastive learning so that in addition to the instance-instance comparisons, we have centroid-like class prototypes that constrain samples to be clustered nearby. The idea is to “forget” information related to variation inside of the class represented by those proto-types and produce an embedding space more representative of inter-treatment variation. In conventional contrastive learning, images are typically compared to their augmentations because without prior knowledge there isn’t a better way to define a positive sam-ple pair (Wang & Isola, 2020). Considering the class vectors used in WSL as a kind of sample representing a treatment prototype, we use them to replace augmentations in the following altered NTXent: 
+
+li = − log sim (zi, W yi )
+
+> M
+
+P
+
+> j=1
+
+[sim (zi, W yj ) + sim (zi, zj̸ =i)] 
+
+. (2) Compared with Eq. (1) this formulation differs in the use of the cosine similarity, the presence of instance-instance terms and a summation that now runs over the elements in a minibatch rather than over the classes. A summation running over M rather than C elements is of interest in HCS where the number of classes in a dataset can be very large. For example, if they had decided to use weakly supervised learning with wells as targets, a recent work (Kraus et al., 2024) would be training on the equivalent of C = 93 · 10 6 classes. More generally the number of classes grows linearly with the size of the dataset. If we assume a (fixed) k images per well, the number of wells is 
+
+N/k . Treatments similarly grow with the size of the dataset, but are usually performed with multiple replicates r, so that we would have N/kr treatment classes. Example values of 
+
+k and r would be 160 and 12 for the HaCaT JUMP dataset described below. The other contrastive loss function we consider is SupCon-trast (Khosla et al., 2020) 
+
+li = −1
+
+α log X 
+
+> p∈P(i)
+
+sim (zi, W yp ) + sim (zi, zp̸=i)
+
+> M
+
+P
+
+> j=1
+
+[sim (zi, W yj ) + sim (zi, zj̸ =i)] 
+
+,
+
+where α = 2 |P (i)| − 1, P (i) is the set of batch indices labelled with class yi and we have again adapted the original expression by inserting W .The normalized embeddings of the cosine similarity lie on a unit ( D − 1)-sphere. Optimizing over this space implicitly means learning angular relationships between embeddings. One argument given over the softmax in Eq. (1) is that it is undesirable to use a radially sensitive optimization objective during training when downstream test metrics based on co-sine distance ignore the radial component of an embedding (Wang et al., 2017). This is the case in HCS, where cosine distance is used extensively in nearest-neighbour derived metrics and low dimensional plots generated with t-SNE or UMAP. In other work it is observed that when a class is tightly clustered on a hypersphere, the embeddings lie on a polar cap, which is linearly separable from the rest of the embeddings (Wang & Isola, 2020). The reciprocal of the temperature, 1/τ , has sometimes been viewed as a radial hyperparameter, controlling the amount of surface area available for clustering (Ranjan et al., 2017). To distinguish the effect of spherical embeddings and tem-perature from other aspects of the contrastive losses, we 3
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+Wyi
+
+zi 
+
+> Figure 2. Geometric origin of class updates
+
+also consider using an exact softmax with temperature and normalized vectors 
+
+li = − log sim (zi, W yi )
+
+PCj=1 sim (zi, W j ) , (3) which is known as the L2-constrained Softmax Loss (Ranjan et al., 2017; Wang et al., 2017) 
+
+2.2. Spherical update paths 
+
+It has been observed in previous work (Draganov et al., 2024; Wang et al., 2017; Zhang et al., 2020) that loss func-tions on spheres of the type considered above can exhibit convergence issues related to the unnormalized embeddings failing to lie on the unit sphere. In (Draganov et al., 2024) for example, it is shown that the gradient is orthogonal to a sphere, and then proven that the intuitive expectation finite step sizes along this gradient would lead to continually in-creasing embedding size holds and can slow convergence. It is also not clear that model parameters, which in the case of a ResNet are primarily filter kernel weights, and class vectors which play a role as embedding centroids, should be optimized under the same mechanism. Motivated by this we introduce Spherical Phenotype Clus-tering (SPC) in which we will optimize class vectors by moving them along shortest spherical paths (geodesics) of the hypersphere. In order to define this trajectory we need a point for the class vector Wyi to move towards, and the obvious choice is zi, a model generated embedding for class 
+
+yi. Even with random initialization of W , optimization of the model quickly makes the {zi} non-random. We now observe that a closer study of this mechanism yields the following result: 
+
+The tangent to the shortest spherical path between Wyi
+
+and zi is a negative multiple of the gradient of the cosine similarity loss function. 
+
+A derivation of this relationship is given in Appendix A. Expanding the logarithm in NTXent Eq. (2) we have 
+
+li = − log sim (zi, W yi )
+
+PMj=1 [sim (zi, W yj ) + sim (zi, zj̸ =i)] = − 1
+
+τW Tyi zi
+
+|W Tyi || zi| + log 
+
+> M
+
+X
+
+> j=1
+
+[sim (zi, W yj ) + sim (zi, zj̸ =i)] 
+
+The first term is the cosine similarity loss multiplied by a constant factor, referred to as the attractive component of the loss because it decreases as Wyi and zi draw close. Similarly, the second term has a repulsive effect. The ob-servation that the gradient of the attractive component of the loss is proportional to the tangent of the geodesic allows us to unpack several differences between SPC and training with the NTXent of Section 2.1: 1. The arc path is confined to a specified radius, whereas gradient based NTXent updates move off the sphere. 2. A different learning rate and optimizer for class vectors. For example momentum may be desirable for model parameters but distort the spherical update path. 3. Repulsive terms are included in the model optimization objective, but not class vector updates. Item 3 has a naive appeal in the clustering context. Many classes (treatments) would be expected to be very similar, and leaving out repulsive terms would allow them to pack together so that similar classes exhibit a greater degree of overlap. Conversely including the repulsive terms may lead to a model that separates treatments of the same MoA. This correspondence motivates us sometimes referring to SPC as NTXent w/o repulse when we wish to distinguish various ablations, though we always mean by this the modified NTXent of Eq. (2). That the attractive component of NTXent is proportional to the cosine loss allows us to implement SPC by alternating two coupled updates on each minibatch. First, we update the encoder parameters using the full NTXent objective in Eq. (2) : each sample embedding zi = f (xi) is pulled to-ward its class vector Wyi (attraction) while being pushed away from other class vectors Wyj in the minibatch and from other instance embeddings zj̸ =i (repulsion). Second, we update the class vectors using only the attractive term, so that each class vector is moved toward embeddings of sam-ples from its class without any repulsive forces. Concretely, we perform a no-momentum SGD step on the cosine ob-jective L(W ) = − PMi=1 W Tyi zi/|W Tyi || zi|, followed by for each class c the projection Wc ← Wc/|Wc| to keep class vectors on the unit sphere. This “no-repulse” class update allows phenotypically similar classes to overlap in embed-ding space while the encoder is still trained with repulsive terms to prevent trivial collapse (Appendix A). 4   
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+> Table 1. BBBC021 ablation results, mean ±s.d. over three training runs. mAP score is reported with both well and treatment profiles. NTXent and SupContrast refer to the altered versions incorporating metadata described in Section 2.1. Note that removing repulsive terms from model updates (Cosine loss row) results in trivial collapse.
+
+Loss function mAP (well) mAP (treatment) NSC NSCB Softmax (WSL) .790 ± .012 .905 ± .009 .967 ± .005 .920 ± .006 
+
+L2-Softmax .803 ± .001 .882 ± .002 .932 ± .016 .923 ± .021 NTXent .892 ± .011 .931 ± .007 .974 ± .005 .956 ± .010 
+
+SupContrast .882 ± .008 .935 ± .006 .974 ± .005 .952 ± .006 Cosine .284 ± .010 .402 ± .012 .207 ± .056 .188 ± .063 
+
+Confine to sphere & split optimizers 
+
+NTXent .890 ± .009 .934 ± .010 .970 ± .016 .949 ± .012 NTXent w/o repulse (SPC) .924 ± .003 .959 ± .006 .980 ± .000 .967 ± .010 
+
+SupContrast .894 ± .004 .932 ± .016 .975 ± .020 .961 ± .007 SupContrast w/o repulse .900 ± .008 .948 ± .004 .974 ± .014 .956 ± .010 
+
+# 3. Results 
+
+We report results on three datasets: classic benchmark dataset BBBC021, two new screens of HaCaT cells and RxRx3-core. After training, all embedding vectors for eval-uation images originating from a given well are mean aver-aged to create a single well-level embedding profile. Simi-larly, embeddings for a perturbation are averaged to create a perturbation-level profile. For the ResNet models we also apply a domain adaptation technique to the batch norm lay-ers. Refitting batch norm layer statistics during evaluation has been known for some time in computer vision to be an effective way to reduce data distribution shift (Li et al., 2018; Xiao & Snoek, 2024; Liang et al., 2025) - in our case we use it to mitigate the effects of plate variation. The tech-nique has been applied previously in HCS (Lin & Lu, 2022; Sypetkowski et al., 2023; Kraus et al., 2024). Except for RxRx3-core, we do not perform postprocessing. Two metrics we work with are k-nearest neighbours with 
+
+k = 1 (1-NN) and mean average precision (mAP). In both cases we use cosine distance as the underlying distance metric. In this context, the precision and recall values for mAP are calculated at different thresholds of distance from a sample. See (Kalinin et al., 2024) for a detailed discussion of mAP in HCS. Unless otherwise stated, in the following sections both 1-NN and mAP use MoA as ground truth labels. All models are trained using perturbation (treatment or gene KO ID) as class, and results are mean averaged over three training runs. 
+
+3.1. BBBC021 
+
+BBBC021 (Caie et al., 2010; Ljosa et al., 2012) is comprised of MCF-7 cells treated with 113 small molecules at eight different concentrations. Among the full dataset there is a curated subset of 103 treatments annotated with MoA based on visibility of phenotypes and prior literature. Most prior work has focused on this portion of the data, which we also use for our own benchmarking. 3.1.1. A BLATIONS 
+
+We follow (Caicedo et al., 2018; Moshkov et al., 2024) in partitioning cells so that 60% form training data, and we use the other 40% for evaluation. The traditional way to report performance on BBBC021 has been under the NSC (Not-Same-Compound) and NSCB (Not-Same-Compound-or-Batch) scores on treatment-level profiles. These are both 1-NN based metrics. In the NSC score, distances are only calculated between samples that have different compound labels, so that high scores require alignment between dif-ferent compounds with the same MoA. NSCB additionally requires that neighbours come from a different batch. We begin by examining the effect of replacing the con-ventional WSL loss function with alternatives discussed in Section 2.1 - a regular softmax, the L2 variant, and the two contrastive options. For the loss functions with a tempera-ture hyperparameter we test three values, τ = 0 .1, 0.25 , 1
+
+and in all cases find τ = 0 .25 to give the best performance on MoA based metrics. We train a softmax based loss with and without the bias term but find limited difference, and report without the bias term in Table 1 for a consistent setup. Details of the other variants are given in Appendix C. We see (Table 1) a substantial metric gain using either of the contrastive objectives. In particular the well aggregated mAP score is ≈ 0.1 higher than in the non-contrastive case, and the treatment-level mAP finds an increase > 0.03 . Nor-malizing vectors and including the hyperparameter τ does not, by itself, result in improved metrics. On the second half of Table 1 we find simply confining to a sphere and using two optimizers does not improve performance but with the exclusion of repulsive terms it does, particularly for NTXent which is strictly speaking the 5
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Table 2. BBBC021: comparison with previous work 
+
+Study Type NSC NSCB (Ljosa et al., 2013) CellProfiler / Factor Analysis 94% 77% (Singh et al., 2014) CellProfiler 90% 85% (Lafarge et al., 2019) Autoencoder 92.9% 82.2% (Ando et al., 2017) Transfer Learning 96% 95% (Lin & Lu, 2022) Transfer Learning / BEN 96% 88% (Janssens et al., 2021) DeepCluster 97% 85% (Perakis et al., 2021) SimCLR 97% 94% (Caicedo et al., 2018) WSL 97% 86% (Cross-Zamirski et al., 2022) WS-DINO (treatment) 92% 90% Ours SPC 98.0% 96.7% 0 15 30 45 60 75 90 
+
+> Epoch
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Inter-prototype mean cosine distance
+> WSL
+> SPC (random init)
+> SPC (collapsed init)
+> Cosine
+
+(a) SPC avoids collapse 0 15 30 45 60 75 90  
+
+> Epoch
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> Intra-moa mean cosine distance
+> WSL
+> SPC
+> NTXent
+
+(b) Prototype alignment within MoA groups 
+
+Figure 3. Arguments made in the text around improved MoA clustering and avoiding collapse are empirically supported by cosine distances between prototypes during training. 
+
+case where our earlier derivation was valid. From here we continue with the NTXent w/o repulse setup (SPC). Methods which use treatment metadata during training have described themselves as weakly supervised (Caicedo et al., 2018) or unsupervised (Janssens et al., 2021). In Table 2 we compare SPC to other results using metadata up to treatment level. SPC gives improved NSC and NSCB scores comparative to extant methods. Comparing with the closest analogue, the treatment classifier (Caicedo et al., 2018), we find +1% NSC and +10 .2% NSCB. 3.1.2. P ROTOTYPE COSINE DISTANCES 
+
+In motivating the contrastive loss and removal of repulsive terms, we suggested that this would enable treatment proto-types of the same MoA to cluster more closely than under the classification objective WSL. We also made the claim that our encoder-only repulsion objective would not be sub-ject to mode collapse. Here we study the cosine distances between prototypes during training to establish empirically whether these claims hold. Figure 3a plots the mean cosine distance between prototypes during training. It is seen that SPC records cosine distances similar to that in WSL, and is clearly distinguished from the collapse situation illustrated by using cosine model loss. Even in the case where SPC is initialized with all vectors at a point, after one epoch the method has escaped collapse and trains successfully. To examine how closely packed prototypes are for a given MoA, we also provide inter-prototype distances calculated only between prototypes of the same MoA (intra-moa), so that a lower average indicates better alignment. Figure 3b shows a wide differential between WSL which converges to ∼0.54 and SPC to ∼0.17 (and NTXent 0.25 ). We find earlier arguments are supported by prototype training dy-namics. Looking at this graph, one may wonder if WSL or NTXent have peak performance at an early epoch. Figure 8 in Appendix C shows this not to be the case, and that performance increases over the duration of training. 6
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Table 3. HaCaT cells: 1-NN/mAP scores on well profiles, mean ± s.d. over three training runs. 
+
+Method Screen Unseen cells Unseen plates Unseen perturbations 1-NN mAP 1-NN mAP 1-NN mAP CellProfiler JUMP .327 .115 .271 .113 .330 .196 SimCLR JUMP .249 ± .004 .078 ± .001 .192 ± .007 .080 ± .000 .321 ± .046 .141 ± .000 WSL JUMP .482 ± .008 .164 ± .003 .398 ± .004 .152 ± .000 .461 ± .010 .240 ± .010 SPC JUMP .496 ± .002 .207 ± .001 .420 ± .004 .194 ± .002 .525 ± .002 .298 ± .004 
+
+CellProfiler CRISPR .550 .197 .522 .246 .755 .243 SimCLR CRISPR .403 ± .003 .098 ± .000 .388 ± .004 .116 ± .001 .598 ± .001 .163 ± .001 WSL CRISPR .626 ± .003 .326 ± .002 .545 ± .009 .318 ± .003 .772 ± .003 .370 ± .009 SPC CRISPR .714 ± .014 .450 ± .004 .584 ± .017 .410 ± .013 .804 ± .008 .483 ± .011 3.2. HaCaT datasets 
+
+To explore a more challenging, real-world scenario we evalu-ate on two new cell painting screens, where the resultant im-ages have not been curated. We adopt HaCaT cells, a spon-taneously immortalised human keratinocyte cell line, and select two perturbant modalities: small molecules and ge-netic CRISPR knockouts. The JUMP-MoA small molecule library was initially developed by the Joint Undertaking for Morphological Profiling (JUMP) Cell Painting Consor-tium and aims at generating a large publicly available cell painting dataset (Chandrasekaran et al., 2023). This library comprises 90 compounds, 4 replicates per plate, covering 47 distinct MoA classes (Cimini et al., 2023), and thus serves as a suitable choice to elicit a broad range of cellular phenotypes. For CRISPR perturbations we selected 207 genes anticipated to produce distinct phenotypes across the key cell painting channels, including those linked to mito-chondrial function, Golgi apparatus, F-actin, and nuclear division/cell cycle. Chemical screening was performed at three compound concentrations (0.1, 1.0 and 10 μM) with three replicate plates per concentration, while the genetic screen was performed with 5 replicate plates. Images were acquired in 4 channels at 40X magnification, 10 fields of view per well. Training and evaluation are carried out with three different approaches to test splits. In the first case, cells, we use a 60:40 image split similarly to the BBBC021 split. Then we hold back plates, one of each concentration for JUMP, and two of the five for CRISPR. Finally we hold back perturba-tions, for JUMP keeping back all 3 plates of 1μM treatments, and for CRISPR holding back a random 40% of KOs as well as 40% of control wells. In this way we verify the model can learn similarity between perturbations not seen during training. We compare with CellProfiler, SimCLR and WSL. Cell-Profiler v4.2.5 is applied to segment cellular objects and measure approximately 1500 morphological features. This 0 20 40 60 80 100 
+
+> Epoch
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> mAP
+> SPC ViT/L (fine-tune)
+> SPC ViT/B (fine-tune)
+> WSL ViT/B (fine-tune)
+> SPC ResNet18 (baseline)
+> Pretrained DINOv2 ViT/L (baseline)
+
+Figure 4. Performance of fine-tuned ViT models against baseline SPC and pretrained DINOv2. 
+
+was followed by aggregating to a well median, feature selec-tion, and robust z-scoring to the plate DMSO control median and median-absolute-deviation values. WSL and SimCLR are trained with the same hyperparameter configuration as SPC. On these datasets we find it advantageous to train SPC with τ = 0 .1. We report results in Table 3. Numbers for the JUMP dataset are a better estimate of model performance because we randomized well positions to account for the confounding effects of plate layout and ran multiple treat-ments for each MoA. For CRISPR we have only the KO label, so results reduce to perturbation metrics and further-more we used a typical CRISPR screen layout with each perturbation represented by a single well per plate rather than four randomized positions. Nonetheless, in all cases SPC results in a clear improvement. 3.2.1. F INE -TUNING DINO V2 MODELS 
+
+In the section on BBBC021, we compared with WS-DINO (Cross-Zamirski et al., 2022). WS-DINO uses WSL as 7
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Table 4. RxRx3-core metrics for biological recall and drug-target interaction. Each biological recall column is a different database. Highest score bolded , and second highest underlined . *: Data from (Kraus et al., 2025). **: Data from (Huang et al., 2025). †: Mean over three training runs, individual runs reported in Appendix C. 
+
+Method Parameters Biological recall Drug-target interaction CORUM HuMAP Reactome StringDB AP Z-score ↑
+
+Random embeddings* - .107 .111 .107 .115 .214 ± .003 0.00 CellProfiler* - .361 .444 .160 .330 .276 ± .018 3.34 OpenPhenom-S/16* 25M .300 .352 .158 .281 .274 ± .017 3.89 Phenom-1* 307M .395 .482 .188 .349 .290 ± .017 4.35 Phenom-2* 1,860M .486 .553 .197 .415 .307 ± .015 6.04 
+
+ViT-WSL** 22M .249 .290 .148 .242 .259 ± .013 3.37 MolPhenix** 36M .262 .306 .142 .241 - -CLOOME** 25M .328 .406 .135 .278 - -CellCLIP** 1,477M .354 .416 .145 .307 .257 ± .015 2.81 CWA-MSN** 22M .386 .447 .158 .327 .267 ± .015 3.55 SPC-ResNet18 (ours) † 11M .428 .498 .204 .382 .298 ± .016 4.31 a fine-tuning method for DINO trained vision transform-ers. We now ask the question of whether we outperform WSL as a fine-tuning mechanism, and also if there is any improvement over the trained-from-scratch ResNet18 mod-els. To do so we work with the cell holdout CRISPR Ha-CaT dataset, and leverage pretrained DINOv2 (Oquab et al., 2023) models. LoRA (Hu et al., 2022) allows training of a low-dimensional subspace of the linear layers inside a trans-former, helping to avoid overfit on smaller datasets. We train ViT/B DINOv2 models for WSL and SPC, applying LoRA with subspace dimension r = 16 to both. SPC outperforms WSL and both converge without overfit (Figure 4). Increas-ing to a ViT/L enables a small performance improvement over the fully trained ResNet18. An analogous experiment on the JUMP HaCaT data shows similar fine-tuning trends (Appendix C, Figure 14). 
+
+3.3. RxRx3-core 
+
+Among the vision transformer methods that have been inves-tigated for HCS recently, one of the most celebrated has been OpenPhenom (Kraus et al., 2024). In (Kraus et al., 2024) it is shown by progressively training on larger and larger su-persets of the RxRx3 HUVEC cell dataset, performance of a masked autoencoder (He et al., 2022) scales accordingly on the biological database relationship recall metric proposed in (Celik et al., 2022), and can outperform WSL. In a follow up article, the OpenPhenom group released to the community a subset of RxRx3 called RxRx3-core, intended as a bench-mark dataset (Kraus et al., 2025). RxRx3-core comprises 222,601 images of 736 CRISPR KOs and 1,674 compounds over 8 concentrations. They evaluate on this dataset both the publicly available OpenPhenom model as well as the larger Phenom-1, and the ∼2B parameter Phenom-2 introduced 0.0025 0.01 0.025 0.1 0.25 1.0 2.5 10.0 Max 
+
+> Compound Concentration
+> 0.22
+> 0.24
+> 0.26
+> 0.28
+> 0.30
+> 0.32
+> Avg. Precision
+> Random Embeddings
+> OpenPhenom
+> SPC
+
+Figure 5. Mean average precision of OpenPhenom and SPC at different concentrations, with ± s.d. over 100 random seeds of negative samples. 
+
+in (Kenyon-Dean et al., 2024). OpenPhenom is trained on the full RxRx3 dataset, which is approximately 160x the size of RxRx3-core and contains additional perturbations as well as many more crops from the same cell populations (same source image). Phenom-1 and Phenom-2 are trained on larger datasets around 40x and 7x the size of RxRx3 respectively. We train SPC on RxRx3-core, and evaluate two zero-shot prediction tasks using the evaluation code provided by (Kraus et al., 2025), including applying the same PCA-CS postprocessing step. Both tasks use perturbation profiles. The first is the biological recall metric by (Celik et al., 2022) mentioned above, where for each gene it is calculated the proportion of known relationships which are recalled by examining the top and bottom 5% of cosine distances to other perturbation profiles. The second metric is a drug-target interaction score using average precision to estimate how effectively the model ranks cosine similarity of a com-pound’s known target genes against a set of genes selected 8
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+at random. Results are presented in Table 4. We find higher perfor-mance (all metrics except Z-score) than Phenom-1 which is over 25x as large and trained on the full RxRx3, as well as CellProfiler, OpenPhenom and the recent contrastive meth-ods in the second part of the table. Phenom-2 is a private model trained on a very large collection of HUVEC cells. Even with access to this model and compute, in many scenar-ios it would be unrealistic to be able to train on so many cells of one type, leaving a model which can perform effectively with limited data such as SPC as the best choice. 
+
+# 4. Related Work 
+
+Contrastive learning is widely used in unsupervised repre-sentation learning. Popular realizations include SimCLR (Chen et al., 2020a) and MoCo v2 (Chen et al., 2020b). Var-ious methods implement image clustering in a contrastive setting. This can be explicit as with Contrastive Clustering (Li et al., 2021) or implicit in the sense that the technique involves refining models that are trained with contrastive learning (Van Gansbeke et al., 2020; Niu et al., 2022). Ap-plying contrastive learning in the labelled data setting is a motivating theme of SupContrast (Khosla et al., 2020). A study of augmentations in contrastive learning with cell microscopy as an application was conducted in (Bendidi et al., 2023). The L2-softmax loss, and extensions involving margins and subclusters, have been studied in facial recognition (Ranjan et al., 2017; Wang et al., 2017; 2018). In these works it is typically shown that the explicit spherical geometry outper-forms a conventional softmax in image classification tasks. One variant, ArcFace (Deng et al., 2019), was previously considered in HCS (Yang et al., 2022). HCS and facial recognition share a link in both being supplied with large numbers of classes with limited representation. Approxi-mating a softmax with a contrastive loss in the large class setting has been found useful or necessary in the past (Mnih & Kavukcuoglu, 2013; Wu et al., 2018). The approach in (Wu et al., 2018) shows contrastive losses to be effec-tive in the limit of each image having its own class vector representation, in this case the > 10 6 images of ImageNet. Our approach is related to spherical interpolation which has a history in computer graphics (Shoemake, 1985). NTXent, our loss function of choice, was named in (Chen et al., 2020a) but appears in earlier work (Wu et al., 2018; Sohn, 2016) sometimes being referred to as NCELoss. 
+
+# 5. Conclusion 
+
+A notable feature distinguishing consumer images from those generated in HCS is some level of semantic labelling always being present in the form of experimental meta-data. Our work demonstrates this metadata can support contrastive objectives that outperform WSL and other pop-ular methods on small datasets. By avoiding training with MoA and injecting only the chemical or genetic content of a well, we inherit the desirable property of WSL that the ap-proach is viable in any arrayed screen regardless of how well annotated the content. The results on RxRx3-core indicate that modest computational resources can produce models that compete with or in some cases outperform current large scale microscopy machine learning, even when the data sam-ples are drawn from many different experimental batches. This is of significant value to organisations participating in drug discovery or biological research. 
+
+# Impact Statement 
+
+This paper presents work whose goal is to advance the field of machine learning for scientific image analysis, specif-ically representation learning for high-content biological microscopy. The contributions are methodological and are intended to support research applications such as phenotypic screening and exploratory biological analysis. The work does not involve human-identifiable data, is not intended for clinical or decision-making use, and does not introduce ethical concerns beyond those already well understood for the application of machine learning in biological research. We therefore do not anticipate significant societal or ethical consequences specific to this work, beyond its contribution to established scientific workflows. 
+
+# Acknowledgements 
+
+We would like to thank Simon Boulton, David House, Ka-trin Rittinger, Jacob Bush, Paul Mercer and the rest of the Crick-GSK Prosperity Partnership for making this work pos-sible. We also thank the Crick HPC team for their tireless efforts in providing a first class research computing platform at the Francis Crick Institute. This project was funded by a Prosperity Partnership grant from the Engineering and Phys-ical Sciences Research Council (EPSRC), EP/V038028/1, by GSK and by the Francis Crick Institute which receives its core funding from Cancer Research UK, the UK Medical Research Council, and the Wellcome Trust. 
+
+# References 
+
+Ando, D. M., McLean, C. Y., and Berndl, M. Improving phe-notypic measurements in high-content imaging screens. 
+
+BioRxiv , 2017. 2, 6, 15 Arevalo, J., Su, E., Ewald, J. D., van Dijk, R., Carpenter, A. E., and Singh, S. Evaluating batch correction methods for image-based cell profiling. Nature Communications ,9
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+15(1):6516, 2024. 19 Bendidi, I., Bardes, A., Cohen, E., Lamiable, A., Bollot, G., and Genovesio, A. No free lunch in self supervised representation learning. arXiv preprint arXiv:2304.11718 ,2023. 9 Bickle, M. The beautiful cell: high-content screening in drug discovery. Analytical and bioanalytical chemistry ,398:219–226, 2010. 1 Bray, M.-A., Singh, S., Han, H., Davis, C. T., Borgeson, B., Hartland, C., Kost-Alimova, M., Gustafsdottir, S. M., Gibson, C. C., and Carpenter, A. E. Cell painting, a high-content image-based assay for morphological profiling using multiplexed fluorescent dyes. Nature protocols , 11 (9):1757–1774, 2016. 1, 20 Bushiri Pwesombo, D., Beese, C., Schmied, C., and Sun, H. Semisupervised contrastive learning for bioactivity pre-diction using cell painting image data. Journal of Chemi-cal Information and Modeling , 65(2):528–543, 2025. 2 Caicedo, J. C., McQuin, C., Goodman, A., Singh, S., and Carpenter, A. E. Weakly supervised learning of single-cell feature embeddings. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition ,pp. 9309–9318, 2018. 2, 5, 6 Caie, P. D., Walls, R. E., Ingleston-Orme, A., Daya, S., Houslay, T., Eagle, R., Roberts, M. E., and Carragher, N. O. High-content phenotypic profiling of drug response signatures across distinct cancer cells. Molecular cancer therapeutics , 9(6):1913–1926, 2010. 5 Carpenter, A. E., Jones, T. R., Lamprecht, M. R., Clarke, C., Kang, I. H., Friman, O., Guertin, D. A., Chang, J. H., Lindquist, R. A., Moffat, J., et al. Cellprofiler: image analysis software for identifying and quantifying cell phenotypes. Genome biology , 7:1–11, 2006. 2 Celik, S., Huetter, J.-C., Melo, S., Lazar, N., Mohan, R., Tillinghast, C., Biancalani, T., Fay, M., Earnshaw, B., and Haque, I. S. Biological cartography: Building and benchmarking representations of life. In NeurIPS 2022 Workshop on Learning Meaningful Representations of Life , 2022. 8 Chandrasekaran, S. N., Ackerman, J., Alix, E., Ando, D. M., Arevalo, J., Bennion, M., Boisseau, N., Borowa, A., Boyd, J. D., Brino, L., et al. Jump cell painting dataset: morpho-logical impact of 136,000 chemical and genetic perturba-tions. bioRxiv , pp. 2023–03, 2023. 7 Chandrasekaran, S. N., Cimini, B. A., Goodale, A., Miller, L., Kost-Alimova, M., Jamali, N., Doench, J. G., Fritch-man, B., Skepner, A., Melanson, M., et al. Three mil-lion images and morphological profiles of cells treated with matched chemical and genetic perturbations. Nature Methods , pp. 1–8, 2024. 19 Chen, T., Kornblith, S., Norouzi, M., and Hinton, G. Asimple framework for contrastive learning of visual rep-resentations. arXiv preprint arXiv:2002.05709 , 2020a. 3, 9Chen, X., Fan, H., Girshick, R., and He, K. Improved baselines with momentum contrastive learning. arXiv preprint arXiv:2003.04297 , 2020b. 9 Cimini, B. A., Chandrasekaran, S. N., Kost-Alimova, M., Miller, L., Goodale, A., Fritchman, B., Byrne, P., Garg, S., Jamali, N., Logan, D. J., et al. Optimizing the cell painting assay for image-based profiling. Nature Protocols , pp. 1–44, 2023. 7, 20 Cross-Zamirski, J. O., Williams, G., Mouchet, E., Schönlieb, C.-B., Turkki, R., and Wang, Y. Self-supervised learning of phenotypic representations from cell images with weak labels. arXiv preprint arXiv:2209.07819 , 2022. 6, 7 Deng, J., Guo, J., Xue, N., and Zafeiriou, S. Arcface: Additive angular margin loss for deep face recognition. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 4690–4699, 2019. 9 Doron, M., Moutakanni, T., Chen, Z. S., Moshkov, N., Caron, M., Touvron, H., Bojanowski, P., Pernice, W. M., and Caicedo, J. C. Unbiased single-cell morphology with self-supervised vision transformers. bioRxiv , pp. 2023– 06, 2023. 2 Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., et al. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929 , 2020. 2 Draganov, A., Vadgama, S., and Bekkers, E. J. The hid-den pitfalls of the cosine similarity loss. arXiv preprint arXiv:2406.16468 , 2024. 4 Fradkin, P., Azadi Moghadam, P., Suri, K., Wenkel, F., Bashashati, A., Sypetkowski, M., and Beaini, D. How molecules impact cells: Unlocking contrastive phe-nomolecular retrieval. Advances in Neural Information Processing Systems , 37:110667–110701, 2024. 2 Haslum, J. F., Matsoukas, C., Leuchowius, K.-J., Müllers, E., and Smith, K. Metadata-guided consistency learning for high content images. In Medical Imaging with Deep Learning , pp. 918–936. PMLR, 2024. 2 He, K., Zhang, X., Ren, S., and Sun, J. Deep residual learn-ing for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition ,pp. 770–778, 2016. 2 10 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+He, K., Chen, X., Xie, S., Li, Y., Dollár, P., and Girshick, R. Masked autoencoders are scalable vision learners. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 16000–16009, 2022. 8Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al. Lora: Low-rank adaptation of large language models. ICLR , 1(2):3, 2022. 8 Huang, P.-J., Liao, Y.-H., Kim, S., Park, N., Park, J., and Shin, D. Efficient cell painting image representation learning via cross-well aligned masked siamese network. 
+
+arXiv preprint arXiv:2509.19896 , 2025. 2, 8 Janssens, R., Zhang, X., Kauffmann, A., de Weck, A., and Durand, E. Y. Fully unsupervised deep mode of action learning for phenotyping high-content cellular images. 
+
+Bioinformatics , 37(23):4548–4555, 2021. 6 Kalinin, A. A., Arevalo, J., Vulliard, L., Serrano, E., Tsang, H., Bornholdt, M., Rajwa, B., Carpenter, A. E., Way, G. P., and Singh, S. A versatile information retrieval framework for evaluating profile strength and similarity. 
+
+bioRxiv , 2024. 5 Kenyon-Dean, K., Wang, Z. J., Urbanik, J., Donhauser, K., Hartford, J., Saberian, S., Sahin, N., Bendidi, I., Celik, S., Fay, M., et al. Vitally consistent: Scaling biological rep-resentation learning for cell microscopy. arXiv preprint arXiv:2411.02572 , 2024. 2, 8 Khosla, P., Teterwak, P., Wang, C., Sarna, A., Tian, Y., Isola, P., Maschinot, A., Liu, C., and Krishnan, D. Supervised contrastive learning. Advances in neural information processing systems , 33:18661–18673, 2020. 3, 9 Kim, V., Adaloglou, N., Osterland, M., Morelli, F. M., Ha-lawa, M., König, T., Gnutt, D., and Marin Zapata, P. A. Self-supervision advances morphological profiling by un-locking powerful image representations. Scientific Re-ports , 15(1):4876, 2025. 2, 15 Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980 , 2014. 16 Kraus, O., Kenyon-Dean, K., Saberian, S., Fallah, M., McLean, P., Leung, J., Sharma, V., Khan, A., Balakr-ishnan, J., Celik, S., et al. Masked autoencoders for microscopy are scalable learners of cellular biology. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 11757–11768, 2024. 2, 3, 5, 8 Kraus, O., Comitani, F., Urbanik, J., Kenyon-Dean, K., Arumugam, L., Saberian, S., Wognum, C., Celik, S., and Haque, I. S. Rxrx3-core: Benchmarking drug-target interactions in high-content microscopy. arXiv preprint arXiv:2503.20158 , 2025. 8, 15, 20 Krentzel, D., Shorte, S. L., and Zimmer, C. Deep learning in image-based phenotypic drug discovery. Trends in Cell Biology , 33(7):538–554, 2023. 2 Lafarge, M. W., Caicedo, J. C., Carpenter, A. E., Pluim, J. P., Singh, S., and Veta, M. Capturing single-cell phenotypic variation via unsupervised representation learning. In 
+
+International Conference on Medical Imaging with Deep Learning , pp. 315–325. PMLR, 2019. 2, 6 Li, Y., Wang, N., Shi, J., Hou, X., and Liu, J. Adaptive batch normalization for practical domain adaptation. Pattern Recognition , 80:109–117, 2018. 5, 15 Li, Y., Hu, P., Liu, Z., Peng, D., Zhou, J. T., and Peng, X. Contrastive clustering. In Proceedings of the AAAI conference on artificial intelligence , volume 35, pp. 8547– 8555, 2021. 9 Liang, J., He, R., and Tan, T. A comprehensive survey on test-time adaptation under distribution shifts. Interna-tional Journal of Computer Vision , 133(1):31–64, 2025. 5Lin, A. and Lu, A. Incorporating knowledge of plates in batch normalization improves generalization of deep learning for microscopy images. In Machine Learning in Computational Biology , pp. 74–93. PMLR, 2022. 5, 6, 15 Ljosa, V., Sokolnicki, K. L., and Carpenter, A. E. Annotated high-throughput microscopy image sets for validation. 
+
+Nature methods , 9(7):637–637, 2012. 5 Ljosa, V., Caie, P. D., Ter Horst, R., Sokolnicki, K. L., Jenkins, E. L., Daya, S., Roberts, M. E., Jones, T. R., Singh, S., Genovesio, A., et al. Comparison of meth-ods for image-based profiling of cellular morphologi-cal responses to small-molecule treatment. Journal of biomolecular screening , 18(10):1321–1329, 2013. 6, 15 Loshchilov, I. and Hutter, F. Decoupled weight decay regu-larization. arXiv preprint arXiv:1711.05101 , 2017. 16 Lu, M., Weinberger, E., Kim, C., and Lee, S.-I. Cell-CLIP - learning perturbation effects in cell painting via text-guided contrastive learning. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. URL https://openreview.net/forum?id= W3JnXa9mW2. 2 Mnih, A. and Kavukcuoglu, K. Learning word embeddings efficiently with noise-contrastive estimation. Advances in neural information processing systems , 26, 2013. 9 Moshkov, N., Bornholdt, M., Benoit, S., Smith, M., McQuin, C., Goodman, A., Senft, R. A., Han, Y., Babadi, M., 11 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+Horvath, P., et al. Learning representations for image-based profiling of perturbations. Nature communications ,15(1):1594, 2024. 2, 5 Niu, C., Shan, H., and Wang, G. Spice: Semantic pseudo-labeling for image clustering. IEEE Transactions on Image Processing , 31:7264–7278, 2022. 9 Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193 ,2023. 8 Orton, R. J., Sturm, O. E., Vyshemirsky, V., Calder, M., Gilbert, D. R., and Kolch, W. Computational modelling of the receptor-tyrosine-kinase-activated mapk pathway. 
+
+Biochemical Journal , 392(2):249–261, 2005. 16 Perakis, A., Gorji, A., Jain, S., Chaitanya, K., Rizza, S., and Konukoglu, E. Contrastive learning of single-cell phenotypic representations for treatment classification. In Machine Learning in Medical Imaging: 12th Interna-tional Workshop, MLMI 2021, Held in Conjunction with MICCAI 2021, Strasbourg, France, September 27, 2021, Proceedings 12 , pp. 565–575. Springer, 2021. 2, 6 Ranjan, R., Castillo, C. D., and Chellappa, R. L2-constrained softmax loss for discriminative face verifi-cation. arXiv preprint arXiv:1703.09507 , 2017. 3, 4, 9Sanchez-Fernandez, A., Rumetshofer, E., Hochreiter, S., and Klambauer, G. Cloome: contrastive learning un-locks bioimaging databases for queries with chemical structures. Nature Communications , 14(1):7339, 2023. 2 Shoemake, K. Animating rotation with quaternion curves. In 
+
+Proceedings of the 12th annual conference on Computer graphics and interactive techniques , pp. 245–254, 1985. 9, 14 Singh, S., Bray, M.-A., Jones, T., and Carpenter, A. Pipeline for illumination correction of images for high-throughput microscopy. Journal of microscopy , 256(3):231–236, 2014. 6, 15 Sohn, K. Improved deep metric learning with multi-class n-pair loss objective. Advances in neural information processing systems , 29, 2016. 9 Sypetkowski, M., Rezanejad, M., Saberian, S., Kraus, O., Urbanik, J., Taylor, J., Mabey, B., Victors, M., Yosinski, J., Sereshkeh, A. R., et al. Rxrx1: A dataset for evaluating experimental batch correction methods. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 4285–4294, 2023. 2, 5 Van der Maaten, L. and Hinton, G. Visualizing data using t-sne. Journal of machine learning research , 9(11), 2008. 16 Van Gansbeke, W., Vandenhende, S., Georgoulis, S., Proes-mans, M., and Van Gool, L. Scan: Learning to classify images without labels. In European conference on com-puter vision , pp. 268–285. Springer, 2020. 9 Wang, F., Xiang, X., Cheng, J., and Yuille, A. L. Normface: L2 hypersphere embedding for face verification. In Pro-ceedings of the 25th ACM international conference on Multimedia , pp. 1041–1049, 2017. 3, 4, 9 Wang, H., Wang, Y., Zhou, Z., Ji, X., Gong, D., Zhou, J., Li, Z., and Liu, W. Cosface: Large margin cosine loss for deep face recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition ,pp. 5265–5274, 2018. 9 Wang, T. and Isola, P. Understanding contrastive represen-tation learning through alignment and uniformity on the hypersphere. In International conference on machine learning , pp. 9929–9939. PMLR, 2020. 3 Wei, J.-H., Zhang, Z. C., Wynn, R. M., and Seemann, J. Gm130 regulates golgi-derived spindle assembly by ac-tivating tpx2 and capturing microtubules. Cell , 162(2): 287–299, 2015. 17 Wu, Z., Xiong, Y., Stella, X. Y., and Lin, D. Unsupervised feature learning via non-parametric instance discrimina-tion. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2018. 9 Xiao, Z. and Snoek, C. G. Beyond model adaptation at test time: A survey. arXiv preprint arXiv:2411.03687 , 2024. 5Yang, S., Shen, T., Fang, Y., Wang, X., Zhang, J., Yang, W., Huang, J., and Han, X. Deepnoise: signal and noise disen-tanglement based on classifying fluorescent microscopy images via deep learning. Genomics, Proteomics & Bioin-formatics , 20(5):989–1001, 2022. 9 Yao, H., Hanslovsky, P., Huetter, J.-C., Hoeckendorf, B., and Richmond, D. Weakly supervised set-consistency learning improves morphological profiling of single-cell images. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 6978– 6987, 2024. 2 Yu, Y., Tenenholtz, N., Mackey, L., Wei, Y., Alvarez-Melis, D., Amini, A. P., and Lu, A. X. Causal inte-gration of chemical structures improves representations of microscopy images for morphological profiling. arXiv preprint arXiv:2504.09544 , 2025. 2 12 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Zhang, D., Li, Y., and Zhang, Z. Deep metric learning with spherical embedding. Advances in Neural Information Processing Systems , 33:18772–18783, 2020. 4 13 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+# A. Theoretical arguments 
+
+A.1. Correspondence between cosine similarity loss and spherical arc 
+
+In the notation that follows ˆz denotes a unit vector in the direction of z. A convenient expression for the path along a spherical arc is provided by graphics algorithm SLERP (Shoemake, 1985). SLERP gives a spherically interpolated point between two vectors w, z on a unit sphere, with 
+
+t ∈ [0 , 1] indicating what proportion of distance along the arc the interpolated point should be 
+
+r(t) = sin[(1 − t)Ω] sin Ω ˆw + sin[ tΩ] sin Ω ˆz, (A.1) where Ω is the angle between ˆw and ˆz. It is a well known fact of high dimensional geometry that on an n-sphere, just as in the case of an ordinary sphere in three dimensional space, the shortest path between two points lies on a great circle. Great circles are defined by the intersection of the spherical surface with a 2-plane passing through the ori-gin. On specifying a 2-plane using two points on the arc, the SLERP formula can be confirmed with straightforward geometry (Figure 6). As described in the main article, the path we are interested in is the one starting at a class vector w and ending at a model embedding vector z = f (x) where image x has the same class as w.
+
+Proposition. The tangent to the shortest spherical path between w and z is a negative multiple of the gradient of the cosine similarity loss function. 
+
+The definition of the cosine similarity is cos Ω =
+
+zT w/|z|| w| where Ω is the angle between z and w. The cosine loss is the negative of this quantity. Computing the gradient of the cosine loss we get 
+
+∇w
+
+
+
+− zT w
+
+|z|| w|
+
+
+
+= − z
+
+|z|| w| + zT w
+
+|z|| w|3 w
+
+= − z
+
+|z|| w| + |z|| w| cos Ω 
+
+|z|| w|3 w
+
+= − 1
+
+|w| (ˆz − cos Ω ˆw) . (A.2) Treating Eq. (A.1) as the path of a point over the sphere, we compute its tangent vector by taking the derivative with respect to t.
+
+## ˆwr
+
+## ˆz
+
+## Ω∆t
+
+Figure 6. Verifying the SLERP formula 
+
+dr
+
+dt t=0 
+
+= ddt 
+
+ sin[(1 − t)Ω] sin Ω ˆw + sin[ tΩ] sin Ω ˆz
+
+
+
+> t=0
+
+= Ωsin Ω 
+
+
+
+− cos[(1 − t)Ω] ˆw + cos[ tΩ] ˆz
+
+
+
+> t=0
+
+= Ωsin Ω 
+
+
+
+− cos Ω ˆw + ˆz
+
+
+
+,
+
+which is proportional to the negative of the gradient in Eq. (A.2) when Ω/ sin Ω ≥ 0. This is the case since we use the smaller arc on a great circle giving 0 ≤ Ω ≤ π. □
+
+A.2. Encoder-only repulsion resists collapse 
+
+Consider loss function (2) in the main article with logarithm expanded 
+
+L =
+
+> M
+
+X
+
+> i=1
+
+− log sim (zi, W yi )+ log 
+
+> M
+
+X
+
+> j=1
+
+[sim (zi, W yj ) + sim (zi, zj̸ =i)] 
+
+!
+
+.
+
+We provide a toy analysis with a batch size of two, so that we have two samples z1 and z2 with associated prototypes 
+
+Wy1 and Wy2 . Writing out terms explicitly gives 
+
+L = − log sim (z1, W y1 )+ log[ sim (z1, W y1 ) + sim (z1, W y2 ) + sim (z1, z2)] 
+
+− log sim (z2, W y2 )+ log[ sim (z2, W y1 ) + sim (z2, W y2 ) + sim (z2, z1)] .
+
+Assume all prototypes exist at a point and the encoder is in an entirely collapsed state so that similarities are identical 
+
+s = sim (zi, W yj ) = sim (z1, z2). Then we have 
+
+Lcollapse = − log s + log[ s + s + s] − log s + log[ s + s + s]= 2 log 3 .
+
+14 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+Now consider a mild perturbation of the encoder, so that 
+
+z1 and z2 no longer sit exactly on top of the prototype vectors W . Assume for simplicity that they deviate the same distance from the collapsed W so that we now have sim (z1, W y1 ) = sim (z2, W y2 ) = αs where α is some scalar value. We also have sim (z1, z2) = βs where β
+
+is another scalar. Then the new loss function becomes 
+
+Lpert = − log αs + log[2 αs + βs ] − log αs + log[2 αs + βs ]= 2 log[2 + βα ].
+
+Then as β → 0 we have Lpert → 2 log 2 < 2 log 3 = 
+
+Lcollapse and more generally as long as β < α we have that Lpert < L collapse . Remembering s is a similarity, this implies that as long as the distance between z1 and z2 is greater than their distance to the prototypes, the perturbed loss function is smaller than at the collapsed encoder state. Since the perturbed samples can be made arbitrarily close to W while maintaining this property, there must be local directions of the loss function smaller than the collapsed state, implying the existence of a gradient in descent direc-tions. The prototype update will then move the Wyi toward the now separated z inducing a separation in the previously collapsed W .This analysis indicates that collapse is not a stable state for either the encoder or the prototypes, and that in such a state slight perturbations of the encoder lead to reduced loss and separated samples and prototypes. More generally because the prototype update moves prototypes towards the class-conditional batch mean, the prototypes would only collapse globally if the encoder collapsed first, but the preceding analysis suggests this is unlikely to occur. With larger batch size, assuming M < D and that all inter-sample similarities βs are equal (for example sitting on the vertices of a regular simplex), then an almost identical analysis shows that Lpert = M log[ M + ( M − 1) β/α ]
+
+with β = α in the collapsed state, leading to the same conclusions as in the case with a batch size of two. Note the importance of the instance-instance terms in pro-viding a de-collapsing gradient. Without them, since the 
+
+Wyi are all equal at collapse, any perturbation of the encoder would give 
+
+L =
+
+> M
+
+X
+
+> i=1
+
+− log αis + log 
+
+> M
+
+X
+
+> j=1
+
+αis
+
+ = M log M. 
+
+So the encoder would not escape the collapsed state.  
+
+> Figure 7. Raw 1080x1080 HaCaT images are resized to 512x512 and then tiled.
+
+# B. Pre-processing and training details 
+
+We perform similar BBBC021 preprocessing to that in (Ando et al., 2017) including using the illumination cor-rection functions (Singh et al., 2014), log transforming data and making use of the single cell crops defined in (Ljosa et al., 2013), but we rescale channels independently. To preprocess the HaCaT datasets we resized each image to 512x512 pixels and generated 16 crops under a 4x4 tiling scheme (see Figure 7). Since we have 10 fields per well the 4x4 tiling results in each well having 160 associated images of shape 128x128x4. We then filter the dataset by removing any tiles with very limited cellular content. We do this by calculating an intensity threshold in the nuclear channel over the whole dataset (10% of the maximum minus minimum intensities, post outlier clipping). Tiles where less than 5% of the pixels pass the threshold value are removed from the dataset. We now rescale each channel independently to lie in a 0 to 1 range after first clipping outlier intensities on a per channel basis. The outlier clipping thresholds we use are the 0.01 and 99.9 percentiles as in (Kim et al., 2025). Images are converted to uint8 for storage. RxRx3-core is largely already pre-processed - we tile the dataset 2x2 to generate four 256x256 crops as in (Kraus et al., 2025). Our implementation of domain adaptation is similar to pre-vious work (Li et al., 2018; Lin & Lu, 2022) but we do not make any changes to sampling during training. We use controls to compute the batch normalization statistics for BBBC021 and the HaCaT datasets, but for RxRx3-core where controls are not consistent across modalities we revert to the usual random sampling from batch. All ResNet18 models used an embedding dimension 384. For BBBC021 we use the 3-channel augmentation scheme RandAugment with magnitude set to 12. For the multi-15 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+
+channel HaCaT and RxRx3-core data we use three standard augmentations, RandomResizedCrop with scale (0.8, 1.0), RandomHorizontalFlip with probability 0.5, and Gaussian-Blur with kernel size 9, sigma 5, probability 0.5. We use the torchvision package to implement augmentations. Im-ages in uint8 form are standardized by converting to float32, subtracting 127.5 from each pixel and then dividing by 255. BBBC021 and HaCaT were trained with the Adam opti-mizer (Kingma & Ba, 2014) set to initial learning rate of 0.0003 and no weight decay, a batch size of 16 and SPC SGD learning rate 0.1. RxRx3-core was trained with the same hyperparameter configuration as the HaCaT dataset, except we increase the batch size to 512 so that training completes in a reasonable amount of time. Vision trans-formers were trained with AdamW (Loshchilov & Hutter, 2017) initial learning rate 0.0003, weight decay 0.05 and betas (0.9, 0.95), SPC SGD initial learning rate 0.1, a cosine annealing scheduler with 5 warmup epochs, embedding di-mension 768, a batch size of 256 and τ = 0 .1. Training runs were terminated after 100 epochs without early stopping. The majority of training and evaluation was performed on a 32GB memory NVIDIA V100 GPU with a 20-core In-tel Xeon Gold 6148 CPU and 256GB RAM. Vision trans-former and RxRx3-core training runs were performed on an NVIDIA H100 GPU. 
+
+# C. Further results 
+
+C.1. BBBC021 
+
+We collect in Table 5 extended results for BBBC021, in-cluding the temperature ablation study. Replicate metrics quantify the extent to which the closest samples in a well pro-file’s neighbourhood are other wells of the same treatment. An interesting phenomenon emerges of replicate metrics falling on increase of MoA scores. Replicate based metrics penalize a sample being next to a different compound of the same MoA, while MoA metrics require the treatment to be close to other compounds of the same MoA. In support of the arguments we made in the main article, we find the exact softmax functions including the L2 version generally better at separating a treatment from the rest of the dataset, but less effective at creating biological clusters of similar treat-ments. To some extent this is visible qualitatively (Figure 9). Table 5 also shows that ablating the domain adaptation and SGD learning rate components of SPC leads to the same conclusions reached in the main article, that a contrastive objective and dropping repulsive terms improves biological clustering. Figure 8 provides the mAP score during training of WSL, SPC and NTXent, illustrating progression on the main met-ric without overfitting, and convergence of SPC to higher numbers over three training runs. 0 20 40 60 80 100  
+
+> Epoch
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> mAP (MoA)
+> SPC
+> NTXent
+> WSL
+> Figure 8. BBBC021 evaluation data, treatment profile MoA mAP during training with ± standard deviation across three runs.
+
+C.2. HaCaT datasets 
+
+C.2.1. Q UALITATIVE OBSERVATIONS 
+
+We now train a model on both the JUMP and CRISPR datasets, using the cell train splits of each dataset, and in-vestigate the evaluation profiles for relationships between perturbations. A t-SNE (Van der Maaten & Hinton, 2008) of well profiles (Figure 10) shows consistent clustering of multiple replicates for a given treatment, and also local structure such as concentration gradients and multiple com-pounds of the same MoA in adjacent mini-clusters. Some cluster arrangements violate MoA. In one we find three compounds marked with different MoA: PD-198306 (MAP kinase inhibitor), neratinib (EGFR inhibitor), selumetinib (MEK inhibitor). An explanation is offered by all three lying on the MAPK/ERK signalling pathway (Orton et al., 2005). Inspection of the images gives marginal visual confir-mation (Figure 11). The circumstance is clearer if we apply TGF-beta stimulation to the cells. Under these conditions the cells develop a characteristic staining pattern in the mi-tochondrial (red) channel. These observations suggest the algorithm is able to detect subtle cellular changes that visual inspection would agree with under more extreme conditions, and also illustrate the difficulty in effectively quantifying performance on datasets that are not curated in the manner of BBBC021. Aurora kinase inhibitor compounds interfere with chromo-some segregation during mitosis and have a very clear visual phenotype (Figure 1d). Examining the t-SNE we find clus-tering nearby CRISPR KOs of Aurora A kinase (AURKA) and ANLN. ANLN is also involved in mitosis, presenting a similar phenotype consisting of enlarged, multinucleated cells. To confirm the t-SNE is a faithful representation of model derived distances, we use perturbation profiles to compute the cosine distances between aurora kinase inibitor AMG900 and all perturbations in both datasets (Figure 12). The three unhighlighted perturbations closer than AURKA 16 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Table 5. Extended BBBC021 results 
+
+Method Well profile Treatment profile MoA 1-NN Replicate 1-NN Replicate mAP MoA mAP MoA mAP NSC NSCB 
+
+Loss function variants 
+
+(WSL) Softmax 0.995 0.818 0.669 0.790 0.905 96.7% 92.0% Softmax w/ bias 0.994 0.812 0.657 0.792 0.911 94.4% 92.7% 
+
+L2-Softmax ( τ = 0 .1) 0.992 0.931 0.847 0.666 0.789 82.2% 78.6% 
+
+L2-Softmax ( τ = 0 .25 ) 0.988 0.701 0.496 0.803 0.882 93.2% 92.3% 
+
+L2-Softmax ( τ = 1 .0) 0.797 0.566 0.10 0.292 0.388 40.1% 30.7% NTXent ( τ = 0 .1) 0.989 0.709 0.495 0.824 0.882 91.2% 91.3% NTXent ( τ = 0 .25 ) 0.995 0.692 0.457 0.892 0.931 97.4% 95.6% NTXent ( τ = 1 .0) 0.981 0.646 0.373 0.841 0.858 91.2% 79.7% SupContrast ( τ = 0 .1) 0.992 0.697 0.462 0.826 0.894 93.8% 92.0% SupContrast ( τ = 0 .25 ) 0.993 0.686 0.453 0.882 0.935 97.4% 95.2% SupContrast ( τ = 1 .0) 0.971 0.633 0.345 0.785 0.822 91.2% 76.8% Cosine 0.680 0.517 0.096 0.284 0.402 20.7% 18.8% 
+
+Confine to sphere & split optimizers ( τ = 0 .25 , lr = 0 .1)
+
+NTXent 0.996 0.693 0.460 0.890 0.934 97.0% 94.9% (SPC) NTXent w/o repulse 0.996 0.669 0.425 0.924 0.959 98.0% 96.7% 
+
+SupCon 0.993 0.700 0.476 0.894 0.932 97.5% 96.1% SupCon w/o repulse 0.992 0.662 0.409 0.900 0.948 97.4% 95.6% 
+
+SGD learning rate ablations 
+
+SPC ( lr = 0 .01 ) 0.995 0.668 0.421 0.907 0.947 97.4% 96.7% SPC ( lr = 1 ) 0.994 0.646 0.393 0.909 0.939 97.7% 96.3% 
+
+No batch norm domain adaptation 
+
+WSL 0.998 0.867 0.753 0.708 0.880 87.7% 92.0% SPC 1.000 0.720 0.537 0.903 0.918 88.0% 96.0% 
+
+(a) L2-Softmax ( τ = 0 .1) (b) SPC ( τ = 0 .25 )
+
+Figure 9. High performance on replicate matching doesn’t necessarily improve biologically meaningful clustering. Circled in the 
+
+L2-Softmax plot are instances where all treatment replicates are tightly packed, but detached from a main MoA cluster. By contrast SPC MoA clusters are well defined, even if there is internal overlap of treatments. Plots generated with TSNE on evaluation well profiles. 
+
+are CRISPR KOs of CCNA2, CDK1 and GOLGA2 which are closely related genes also involved in cell cycle and mitosis. For example GOLGA2 activates AURKA through its interaction with TPX2 (Wei et al., 2015). It is seen that we are able to effectively deduce which gene KOs have similar effects to the AMG900 molecule. This type of tight clustering between chemical and genetic perturbations is an open challenge, and more generally even a small improve-ment in the ability to match chemicals to known phenotypic landmarks can greatly impact drug discovery by enabling 17 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Figure 10. SPC aligns Aurora kinase inhibitor molecules with associated gene KOs, among other phenotypic clusters. t-SNE of well profiles, with several arrangements highlighted. Highlighted unclustered wells are typically low concentration treatments. Insets: ANLN KO and AMG900. 
+
+Negative control Neratinib (0.1μM) Selumetinib (0.1μM) PD-198306 (1μM) No TGF-beta TGF-beta 
+
+Figure 11. Visual similarity between three compounds with different MoA that SPC identified as similar, and negative controls for comparison. Cells are also shown with TGF-beta stimulation where the mitochondrial response becomes prominent. 
+
+18      
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint Asymmetric Contrastive Objectives for Efficient Phenotypic Screening
+> Figure 12. Ordered cosine distances between perturbation profiles and AMG900. First row: all profiles, second row: closest 50.
+> (a) Untreated (b) Dexamethasone
+> Figure 13. Glucocorticoid receptor agonist dexamethasone is diffi-cult to distinguish from control samples by inspecting images.
+
+the assignment of unknown chemical entities to a specific mechanism of action, target, or biological function (Chan-drasekaran et al., 2024). We also find convincing qualitative clustering of the gluco-corticoid receptor agonist dexamethasone. Dexamethasone is an example of a compound for which it is challenging to see any visually discernible effect (Figure 13), and further-more we have found limited success extracting it with Cell-Profiler. Quantitatively the mAP for this MoA is 0.14 using CellProfiler and 0.64 for the model of Figure 10 illustrating that our deep learning method can identify phenotypes that might otherwise be missed. C.2.2. O UT -OF -DISTRIBUTION GENERALIZATION AND BATCH EFFECTS 
+
+Considering the extent to which SPC can make inferences about concepts that were not included in the optimization objective as metadata, we first note treatment information does not directly encode MoA or, for RxRx3-core, the rela-tionships among genes and their interactions with molecules. Strong results on these tasks demonstrates that we’ve effec-tively learnt meaningful biological relationships that weren’t injected during training.  
+
+> Table 6. Out-of-distribution generalization on HaCaT screens.
+
+Method Training data Eval data 1-NN mAP WSL CRISPR JUMP .335 .090 SPC CRISPR JUMP .429 .119 WSL JUMP CRISPR .510 .179 SPC JUMP CRISPR .550 .227 WSL JUMP rerun JUMP .473 .145 SPC JUMP rerun JUMP .511 .178  
+
+> Table 7. SPC batch effect quantification with HaCaT cells.
+
+Dataset Graph conn. Silhouette KBET JUMP 1 screen .450 .817 .652 JUMP 2 screens .450 .806 .600 Nonetheless, it is also of interest to see how SPC generalizes to classes and batches not present during training. In the main article we reported for the HaCaT screens results with holdout plates and perturbations. We now take this a step further and report results training on one screen, JUMP or CRISPR, and evaluating on the other. This allows us to assess performance on a perturbation modality and exper-imental batch not seen during training (the CRISPR and JUMP screens were performed five months apart). Table 6 results show that SPC, unlike WSL, continues to outper-form CellProfiler and SimCLR on an unseen perturbation modality (compare cell holdout column in Table 3). These results, along with main article results on BBBC021 and RxRx3-core (which contains 180 experimental batches and 1744 plates) indicate a robustness to batch effects. We add a quantification of batch effects with a second HaCaT JUMP screen which has been prepared and imaged under the same conditions as the one described in the main article, except four months later, allowing us to isolate batch effects from other differences in screen content. Employing three metrics measuring batch effects (see (Arevalo et al., 2024)), graph connectivity, silhouette batch and KBET, we take plate as the batch variable and report scores in Table 7. It is seen that there is relatively little increase in batch effect metrics by incorporating a second experimental batch. We further report results training on the JUMP rerun dataset and evaluating on the JUMP dataset included in the main article. On Table 6 we find performance in this regime is competitive to that on Table 3 suggesting there will be comparatively little performance loss when evaluating on a held out screen if similar phenotypes were seen during training. 19 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+Table 8. Further RxRx3-core results on biological database recall and drug-target interaction. All results in this table use a ResNet18 model. Except where indicated, perturbation was used as the training label. 
+
+Method Biological recall Drug-target interaction CORUM HuMAP Reactome SIGNOR StringDB AP Z-score ↑
+
+L2-Softmax( τ = 0 .01 ) .418 .468 .184 .189 .365 .295 ± .017 3.93 
+
+L2-Softmax( τ = 0 .1) .408 .501 .189 .189 .364 .268 ± .017 2.48 WSL .414 .494 .195 .189 .371 .287 ± .019 3.16 SimCLR .371 .410 .181 .204 .327 .251 ± .015 1.73 SPC (well label) .361 .433 .152 .143 .299 .263 ± .018 2.08 SPC mean .428 .498 .204 .198 .382 .298 ± .016 4.31 
+
+SPC training run 1 .423 .511 .221 .200 .386 .298 ± .017 4.09 SPC training run 2 .443 .497 .200 .195 .385 .298 ± .015 4.45 SPC training run 3 .420 .487 .193 .200 .376 .297 ± .017 4.40 0 20 40 60 80 100 
+
+> Epoch
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> 0.20
+> 0.22
+> mAP
+> SPC ViT/L (fine-tune)
+> SPC ViT/B (fine-tune)
+> WSL ViT/B (fine-tune)
+> SPC ResNet18 (baseline)
+> Pretrained DINOv2 ViT/L (baseline)
+
+Figure 14. HaCaT JUMP data shows similar fine-tuning trends to CRISPR data (cell holdout). 
+
+C.3. RxRx3-core 
+
+Table 8 reports results for individual SPC training runs. We also repeat the comparison with the exact softmax ap-proaches tested on BBBC021 including the L2 variety. And to help isolate the impact of the metadata on results we train a baseline SimCLR model and an SPC model using wells as targets. Examining Table 8 we conclude that neither the contrastive structure alone, nor the form of SPC without per-turbation information is sufficient to produce the improved RxRx3-core scores. However, comparing with WSL and L2
+
+we find the perturbation metadata alone does not produce a model which clearly outperforms Phenom-1. This implies that both the perturbation metadata information and the SPC loss structure are important components in the improved performance on biological recall and drug-target interaction prediction. More details on the metrics used in Table 4 and Table 8, including the definition of the Z-score, are given in (Kraus et al., 2025). 
+
+# D. HaCaT screening 
+
+We followed the standard cell painting assay protocol (Bray et al., 2016; Cimini et al., 2023), except for optimisations of dye concentrations to achieve optimal staining in Ha-CaT cells. For our staining procedures, MitoTracker was added live to cells, followed by cell fixation, permeabili-sation and staining for the following subcellular compart-ments: nuclear DNA (Hoechst 33342), endoplasmic reticu-lum (concanavalin Alexa-488), RNA and nucleoli (syto-14), Golgi apparatus and plasma membrane (wheat germ agglu-tinin Alexa-555), and F-actin (phalloidin Alexa-568). Eight chemical substitutions to JUMP-MoA were made due to intellectual property constraints and two due to supply is-sues. We treated JUMP for 3 days. CRISPR screening was performed using 10 nM guide RNA, treating for 5 days to ensure maximum gene knockdown efficiency. Images were acquired using an Opera Phenix Plus high content microscope, and were max projected per channel. 20 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted May 22, 2026. ;https://doi.org/10.1101/2024.04.19.590313 doi: bioRxiv preprint
+
+Asymmetric Contrastive Objectives for Efficient Phenotypic Screening 
+
+# E. Algorithm pseudocode 
+
+Algorithm 1 SPC training 
+
+Require: Dataset {(xi, y i)}Ni=1 , encoder fθ , class vectors 
+
+W ∈ RD×C , temperature τ
+
+Require: Encoder optimizer Opt θ , prototype learning rate 
+
+ηW
+
+1: while not converged do 
+
+2: Initialize encoder parameters θ and class vectors W
+
+3: Normalize each class vector: Wc ← Wc/∥Wc∥2
+
+4: for each minibatch {(xi, y i)}Mi=1 do 
+
+5: Compute embeddings zi = fθ (xi)
+
+6: Normalize embeddings and prototypes: ˆzi ←
+
+zi/∥zi∥2, ˆWc ← Wc/∥Wc∥2
+
+7: Compute encoder loss L (Eq. (2)) 
+
+8: Update encoder with full contrastive objective: 
+
+θ ← Opt θ (θ, ∇θ L)
+
+9: Detach embeddings ˆzi from the computation graph 
+
+10: Compute prototype-only attractive loss 
+
+LW = −
+
+> M
+
+X
+
+> i=1
+
+ˆz⊤ 
+
+> i
+
+ˆWyi .
+
+11: Update only prototypes appearing in the minibatch: 
+
+Wyi ← Wyi − ηW ∇Wyi LW
+
+12: Renormalize updated prototypes: Wyi ←
+
+Wyi /∥Wyi ∥2
+
+13: end for 
+
+14: end while 
+
+15: 16: return Trained encoder fθ
+
+21
