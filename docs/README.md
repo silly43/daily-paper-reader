@@ -6,114 +6,74 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-21 ~ 2026-06-19
-- 运行时间：2026-06-19 08:01:38 UTC
+- 最新运行日期：2026-06-19
+- 运行时间：2026-06-19 22:11:41 UTC
 - 运行状态：成功
-- 本次总论文数：31
-- 精读区：0
-- 速读区：31
+- 本次总论文数：18
+- 精读区：7
+- 速读区：11
 
 ### 今日简报（AI）
-今日速读31篇论文，聚焦对比学习的前沿进展，精选3篇高分文章。最值得关注的方向是语义字典引导的对比学习统一视觉表示生成，以及几何感知对比学习在少样本调制识别中的创新应用。建议读者重点阅读这三篇高分论文，深入理解对比学习的采样条件、归纳偏置及其在统一视觉与少样本任务中的实践价值。
-- 详情：[/20260521-20260619/README](/20260521-20260619/README)
+今日共梳理18篇论文，精读7篇，其中《Extracting Governing Equations from Latent Dynamics via Multi-View Contrastive Learning》与《S²COPE: Self-Supervised Concept Discovery via Preference Learning》均获9.0高分。最值得关注的两个方向是：多视图对比学习提取潜在动力学方程、以及基于偏好学习的自监督概念发现。建议优先深入阅读这两篇精读论文，它们分别代表了动力学建模与无监督表征学习的前沿进展。
+- 详情：[/202606/19/README](/202606/19/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Extracting Governing Equations from Latent Dynamics via Multi-View Contrastive Learning](/202606/19/2606.13260v1-extracting-governing-equations-from-latent-dynamics-via-multi-view-contrastive-learning)  
+   标签：评分：9.0/10、query:world-models
+   evidence：通过对比学习从潜在动力学中提取控制方程，学习预测性世界模型
+2. [S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning](/202606/19/2606.14586v1-s2cope-self-supervised-concept-discovery-via-preference-learning)  
+   标签：评分：9.0/10、query:ssl
+   evidence：基于偏好学习的自监督概念发现
+3. [Contrastive learning of dynamical representations for enhanced molecular sampling](/202606/19/2606.15495v1-contrastive-learning-of-dynamical-representations-for-enhanced-molecular-sampling)  
+   标签：评分：9.0/10、query:ssl
+   evidence：自监督对比学习框架用于动力学表示
+4. [Sensorimotor World Models: Perception for Action via Inverse Dynamics](/202606/19/2606.20104v1-sensorimotor-world-models-perception-for-action-via-inverse-dynamics)  
+   标签：评分：9.0/10、query:world-models
+   evidence：基于逆动力学正则化的潜在世界模型
+5. [Current World Models Lack a Persistent State Core](/202606/19/2606.20545v1-current-world-models-lack-a-persistent-state-core)  
+   标签：评分：9.0/10、query:world-models
+   evidence：对世界模型持久状态的批评与基准
+6. [Breaking the bottleneck: self-supervised deep learning framework for fully automated fossil CT segmentation](/202606/19/biorxiv-10-64898-2026-06-07-730692-v1-breaking-the-bottleneck-self-supervised-deep-learning-framework-for-fully-automated-fossil-ct-segmentation)  
+   标签：评分：9.0/10、query:ssl
+   evidence：使用SimCLR对比预训练进行化石CT分割
+7. [MAE-UNETR++: Masked Autoencoder Pretraining for 3-D Lung Nodule Segmentation](/202606/19/biorxiv-10-64898-2026-06-17-733000-v1-mae-unetr-masked-autoencoder-pretraining-for-3-d-lung-nodule-segmentation)  
+   标签：评分：9.0/10、query:ssl
+   evidence：掩码自编码器预训练用于3D肺结节分割
 
 ### 速读区论文标签
-1. [Learning from Semantic Dictionaries: Discriminative Codebook Contrastive Learning for Unified Visual Representation and Generation](/20260521-20260619/2605.25012v1-learning-from-semantic-dictionaries-discriminative-codebook-contrastive-learning-for-unified-visual-representation-and-generation)  
-   标签：评分：9.0/10、query:ssl
-   evidence：自监督框架中的掩码token重建损失和码本对比
-2. [Geometry-Aware Contrastive Learning for Few-Shot Automatic Modulation Recognition](/20260521-20260619/2605.26600v1-geometry-aware-contrastive-learning-for-few-shot-automatic-modulation-recognition)  
-   标签：评分：9.0/10、query:ssl
-   evidence：用于自动调制识别的几何感知对比学习自监督方法
-3. [The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning](/20260521-20260619/2606.04280v1-the-loss-is-not-enough-sampling-conditions-and-inductive-bias-in-contrastive-representation-learning)  
-   标签：评分：9.0/10、query:ssl
-   evidence：对比学习采样条件和潜在几何的理论分析
-4. [Geometric Second-Order Feature Correlation Learning for Self-Supervised Speech Emotion Recognition](/20260521-20260619/2606.06550v1-geometric-second-order-feature-correlation-learning-for-self-supervised-speech-emotion-recognition)  
-   标签：评分：9.0/10、query:ssl
-   evidence：提出二阶相关性学习用于自监督学习表示聚合
-5. [DisPOSE: Projected Polystochastic Diffusion for Self-Supervised Multi-View 3D Human Pose Estimation](/20260521-20260619/2606.07419v2-dispose-projected-polystochastic-diffusion-for-self-supervised-multi-view-3d-human-pose-estimation)  
-   标签：评分：9.0/10、query:ssl
-   evidence：自监督扩散框架用于多视角3D人体姿态估计
-6. [Masked and Predictive Self-Supervised Foundation Models for 3D Brain MRI](/20260521-20260619/2606.13315v1-masked-and-predictive-self-supervised-foundation-models-for-3d-brain-mri)  
-   标签：评分：9.0/10、query:ssl
-   evidence：研究掩码自编码器和预测架构用于自监督MRI预训练
-7. [S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning](/20260521-20260619/2606.14586v1-s2cope-self-supervised-concept-discovery-via-preference-learning)  
-   标签：评分：9.0/10、query:ssl
-   evidence：利用大视觉语言模型通过偏好学习进行自监督概念发现
-8. [Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning](/20260521-20260619/2606.14765v1-momentum-guided-semantic-forecasting-mofore-for-self-supervised-video-representation-learning)  
-   标签：评分：9.0/10、query:ssl
-   evidence：动量引导语义预测用于自监督视频表示学习
-9. [bMAE: Masked Autoencoder Latent Representations for Bulk RNA-seq Tissues](/20260521-20260619/biorxiv-10-64898-2026-03-03-709470-v2-bmae-masked-autoencoder-latent-representations-for-bulk-rna-seq-tissues)  
-   标签：评分：9.0/10、query:ssl
-   evidence：用于批量RNA-seq数据的掩蔽自编码器自监督学习
-10. [Breaking the bottleneck: self-supervised deep learning framework for fully automated fossil CT segmentation](/20260521-20260619/biorxiv-10-64898-2026-06-07-730692-v1-breaking-the-bottleneck-self-supervised-deep-learning-framework-for-fully-automated-fossil-ct-segmentation)  
-   标签：评分：9.0/10、query:ssl
-   evidence：自监督SimCLR对比预训练用于化石CT分割
-11. [Towards Controllable Image Generation through Representation-Conditioned Diffusion Models](/20260521-20260619/2605.27343v1-towards-controllable-image-generation-through-representation-conditioned-diffusion-models)  
+1. [How do Self-Supervised Remote Sensing Vision Models Transfer to Downstream Tasks?](/202606/19/2606.13896v1-how-do-self-supervised-remote-sensing-vision-models-transfer-to-downstream-tasks)  
    标签：评分：8.0/10、query:ssl
-   evidence：自监督表示条件扩散模型
-12. [A self-supervised learning approach to deep filter banks for texture recognition](/20260521-20260619/2605.27843v1-a-self-supervised-learning-approach-to-deep-filter-banks-for-texture-recognition)  
+   evidence：自监督地理空间基础模型下游任务迁移评估
+2. [RECTOR: Masked Region-Channel-Temporal Modeling for Affective and Cognitive Representation Learning](/202606/19/2606.15278v1-rector-masked-region-channel-temporal-modeling-for-affective-and-cognitive-representation-learning)  
    标签：评分：8.0/10、query:ssl
-   evidence：提出使用掩码自编码器的自监督学习方法用于纹理识别
-13. [Bayesian Gated Non-Negative Contrastive Learning](/20260521-20260619/2605.28441v1-bayesian-gated-non-negative-contrastive-learning)  
+   evidence：基于遮蔽自编码器风格的自监督学习用于脑电/颅内脑电
+3. [You Don't Need Strong Assumptions: Visual Representation Learning via Temporal Differences](/202606/19/2606.15956v1-you-dont-need-strong-assumptions-visual-representation-learning-via-temporal-differences)  
    标签：评分：8.0/10、query:ssl
-   evidence：贝叶斯门控非负对比学习用于解耦表示
-14. [Remembering by Reconstructing: Domain Incremental Learning With Test-Time Training on Video Streams](/20260521-20260619/2605.31108v1-remembering-by-reconstructing-domain-incremental-learning-with-test-time-training-on-video-streams)  
+   evidence：通过时间差异的自监督视觉表示学习
+4. [Expanding SPHERE-JEPA: A Family of Statistical Regularizers for the Hypersphere](/202606/19/2606.17603v1-expanding-sphere-jepa-a-family-of-statistical-regularizers-for-the-hypersphere)  
    标签：评分：8.0/10、query:ssl
-   evidence：使用自监督掩蔽自编码器头进行域增量学习与测试时训练
-15. [Generate in Reconstruction Space, Match in Semantic Space: Transport Geometry for One-Step Generation](/20260521-20260619/2606.00514v1-generate-in-reconstruction-space-match-in-semantic-space-transport-geometry-for-one-step-generation)  
+   evidence：自监督学习中防止坍缩的正则化器
+5. [DASH: Dual-View Self-Distillation with Multi-Layer Hidden Representations for Robust Speech Recognition](/202606/19/2606.19203v1-dash-dual-view-self-distillation-with-multi-layer-hidden-representations-for-robust-speech-recognition)  
    标签：评分：8.0/10、query:ssl
-   evidence：自监督特征提升生成训练
-16. [IdEst: Assessing Self-Supervised Learning Representations via Intrinsic Dimension](/20260521-20260619/2606.03338v1-idest-assessing-self-supervised-learning-representations-via-intrinsic-dimension)  
+   evidence：提出DASH自蒸馏框架用于鲁棒语音识别
+6. [Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages](/202606/19/2606.19940v1-analyzing-language-and-geographical-variation-in-speech-representations-across-60-indic-languages)  
    标签：评分：8.0/10、query:ssl
-   evidence：提出IdEst方法估计自监督表示的本征维度以评估表示质量
-17. [Balancing Image Compression and Generation with Bootstrapped Tokenization](/20260521-20260619/2606.05552v1-balancing-image-compression-and-generation-with-bootstrapped-tokenization)  
+   evidence：自监督语音编码器表示分析
+7. [Multi-Modal Contrastive Learning for Implicit Earth Embeddings via Location Tying](/202606/19/2606.20167v1-multi-modal-contrastive-learning-for-implicit-earth-embeddings-via-location-tying)  
    标签：评分：8.0/10、query:ssl
-   evidence：自引导学习用于图像标记化和生成
-18. [Lighting-Aware Representation Learning under Controllable Lighting Variation](/20260521-20260619/2606.06899v1-lighting-aware-representation-learning-under-controllable-lighting-variation)  
-   标签：评分：8.0/10、query:ssl
-   evidence：扩展对比学习，引入光照感知辅助目标
-19. [DisPOSE: Projected Polystochastic Diffusion for Self-Supervised Multi-View 3D Human Pose Estimation](/20260521-20260619/2606.07419v1-dispose-projected-polystochastic-diffusion-for-self-supervised-multi-view-3d-human-pose-estimation)  
-   标签：评分：8.0/10、query:ssl
-   evidence：用于多视图3D人体姿态估计的自监督框架
-20. [SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization](/20260521-20260619/2606.08332v1-smi-efficient-self-supervised-learning-via-mutual-information-inspired-dependency-optimization)  
-   标签：评分：8.0/10、query:ssl
-   evidence：基于互信息的新自监督目标SMI
-21. [Self-supervised Learning Matters: A Simple Ensemble Solution for Micro-Gesture Recognition](/20260521-20260619/2606.09261v1-self-supervised-learning-matters-a-simple-ensemble-solution-for-micro-gesture-recognition)  
-   标签：评分：8.0/10、query:ssl
-   evidence：通过掩码视频建模预训练的自监督RGB模型
-22. [Evaluating the Representation Space of Diffusion Models via Self-Supervised Principles](/20260521-20260619/2606.09718v1-evaluating-the-representation-space-of-diffusion-models-via-self-supervised-principles)  
-   标签：评分：8.0/10、query:ssl
-   evidence：提出受自监督学习启发的框架来评估扩散模型的表示空间
-23. [Implicit Neural Representations of Individual Behavior](/20260521-20260619/2606.12200v1-implicit-neural-representations-of-individual-behavior)  
-   标签：评分：8.0/10、query:ssl
-   evidence：通过隐式神经表示进行策略表示的自监督生成模型
-24. [Optimized Multi-Contrast Self-Supervised MRI Reconstruction using Learned k-space Partitioning](/20260521-20260619/2606.19182v1-optimized-multi-contrast-self-supervised-mri-reconstruction-using-learned-k-space-partitioning)  
-   标签：评分：8.0/10、query:ssl
-   evidence：使用学习k空间划分的自监督多对比MRI重建
-25. [Asymmetric Contrastive Objectives for Efficient Phenotypic Screening](/20260521-20260619/biorxiv-10-1101-2024-04-19-590313-v4-asymmetric-contrastive-objectives-for-efficient-phenotypic-screening)  
-   标签：评分：8.0/10、query:ssl
-   evidence：用于表型筛选的非对称对比目标
-26. [A genetic algorithm for self-supervised models of oscillatory neurodynamics](/20260521-20260619/biorxiv-10-1101-2024-12-31-630823-v6-a-genetic-algorithm-for-self-supervised-models-of-oscillatory-neurodynamics)  
-   标签：评分：8.0/10、query:ssl
-   evidence：用于拟合振荡神经动力学自监督模型的遗传算法
-27. [scDynOmics: An Optimized Transformer Model for Representation Learning from Single-Cell Multiomics](/20260521-20260619/biorxiv-10-64898-2026-02-28-708160-v2-scdynomics-an-optimized-transformer-model-for-representation-learning-from-single-cell-multiomics)  
-   标签：评分：8.0/10、query:ssl
-   evidence：使用Transformer对单细胞多组学进行自监督表示学习
-28. [Topology-aware reconstruction of cellular state landscapes from microscopy using self-supervised learning](/20260521-20260619/biorxiv-10-64898-2026-05-30-728966-v1-topology-aware-reconstruction-of-cellular-state-landscapes-from-microscopy-using-self-supervised-learning)  
-   标签：评分：8.0/10、query:ssl
-   evidence：自监督学习用于从显微镜图像重建细胞状态景观
-29. [Self-supervised Internal Learning Enhances Isotropic Resolution for Three-dimensional Fluorescence Microscopy](/20260521-20260619/biorxiv-10-64898-2026-06-04-717237-v1-self-supervised-internal-learning-enhances-isotropic-resolution-for-three-dimensional-fluorescence-microscopy)  
-   标签：评分：8.0/10、query:ssl
-   evidence：自监督内部学习用于各向同性恢复
-30. [Finetuning masking challenges narrow-task evaluation of cell foundation models](/20260521-20260619/biorxiv-10-64898-2026-06-04-730272-v1-finetuning-masking-challenges-narrow-task-evaluation-of-cell-foundation-models)  
-   标签：评分：8.0/10、query:ssl
-   evidence：自监督深度学习网络预训练于细胞转录组
-31. [TifBERT: a self-supervised foundation model for normalization-robust bulk RNA-seq representation learning](/20260521-20260619/biorxiv-10-64898-2026-06-08-728683-v1-tifbert-a-self-supervised-foundation-model-for-normalization-robust-bulk-rna-seq-representation-learning)  
-   标签：评分：8.0/10、query:ssl
-   evidence：全转录组bulk RNA-seq表示学习的自监督框架
+   evidence：多模态对比学习用于自监督预训练
+8. [Inferential planning in the frontal cortex](/202606/19/biorxiv-10-1101-2025-11-26-690672-v2-inferential-planning-in-the-frontal-cortex)  
+   标签：评分：8.0/10、query:world-models
+   evidence：使用分层生成模型进行推理规划，预测未来动作
+9. [DOMINO: graph diffusion learning identifies spatial domain structures with enhanced accuracy and scalability](/202606/19/biorxiv-10-64898-2025-12-15-694536-v2-domino-graph-diffusion-learning-identifies-spatial-domain-structures-with-enhanced-accuracy-and-scalability)  
+   标签：评分：7.0/10、query:ssl
+   evidence：使用对比学习框架进行空间域检测
+10. [RepGene: Toward a Unified Gene Representation Space Robust to Missing Biological Views](/202606/19/biorxiv-10-64898-2026-06-11-731512-v1-repgene-toward-a-unified-gene-representation-space-robust-to-missing-biological-views)  
+   标签：评分：7.0/10、query:ssl
+   evidence：自监督表示学习用于基因嵌入
+11. [Beyond Scalar Distances: Semantic Attribute Gradients from Frozen MLLMs for Visual Embeddings](/202606/19/2606.15134v1-beyond-scalar-distances-semantic-attribute-gradients-from-frozen-mllms-for-visual-embeddings)  
+   标签：评分：6.0/10、query:ssl
+   evidence：通过多模态大模型推导属性进行自监督视觉表示学习
 
 
 <div class="dpr-home-promo-card">

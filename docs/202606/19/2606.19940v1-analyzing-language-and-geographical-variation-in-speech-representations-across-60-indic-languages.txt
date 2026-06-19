@@ -1,0 +1,171 @@
+Title: Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages
+
+URL Source: https://arxiv.org/pdf/2606.19940v1
+
+Published Time: Fri, 19 Jun 2026 00:38:02 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages 
+
+# Pavan Kumar J 1, Agneedh Basu 1, Pranav Bhat 1, Sujith Pulikodan 1, Visruth Sanka 1, Nihar Desai 1,Prasanta K Ghosh 21 AI & Robotics Technology Park (ARTPARK), I-Hub @ IISc, Bangalore, India 
+
+> 2
+
+# Department of Electrical Engineering, Indian Institute of Science, Bangalore, India 
+
+pavanjk@artpark.in 
+
+# Abstract 
+
+Self-supervised speech encoders are often fine-tuned with language supervision, which can overlook geographical vari-ation. To understand the learned representations under joint supervision of language and district compared to language-only supervision, we fine-tune Whisper-base and Wav2Vec2.0-base for classification tasks with joint language-district (386 classes) and language-only classification (60 languages). The language-district supervision improves district discrimination conditioned on language in the embedding space while strong marginal language classification. We analyze the structure of the learned embeddings using Normalized Conditional Mutual Information (NCMI), showing that language-district supervi-sion produces global language clusters with structured within language subclusters aligned to district variation, enhancing ge-ographical separability without degrading language-level orga-nization. 
+
+Index Terms : speech embeddings, multilingual speech pro-cessing, language identification 
+
+# 1. Introduction 
+
+Speech embedding spaces learned by deep neural networks have become foundational to modern speech processing sys-tems, supporting tasks such as language identification (LID), automatic speech recognition (ASR), speaker verification, and accent classification. Beyond downstream performance, recent work shows that supervised and self-supervised models learn embeddings that capture structured acoustic and linguistic in-formation. T¨ or¨ o et al. [1] demonstrate that distances in multi-lingual speech embedding spaces reflect typological and phono-logical relationships across languages, suggesting that models implicitly organize languages according to linguistic similar-ity. Likewise, Bartelds and Wieling [2] show that neural acous-tic representations encode fine-grained pronunciation varia-tion, enabling direct quantification of language variation from speech. Together, these findings indicate that learned speech embeddings preserve meaningful acoustic–linguistic structure. Building on this representational capacity, research on Indic language identification (LID) spans supervised, self-supervised, and cross-corpora approaches. CNN and ANN models trained on log-Mel spectrograms have been widely applied to lan-guages [3, 4]. Cross-corpora robustness has been improved using MFCC features with TDNN and ECAPA-TDNN archi-tectures, often combined with normalization and enhancement techniques including CMS, CMVN, RASTA, and PCEN [5, 6]. Recent supervised LID work increasingly leverages self-supervised pre-training. Studies showed that phonotactic rep-resentations learned from unlabeled speech capture language-discriminative structure effectively [7]. Adaptive multilingual pre-training further improves fine-grained language and dialect identification under low-resource settings [8]. Unified ASR-LID frameworks integrate language identi-fication within encoder-decoder architectures for Indic lan-guages [9], while domain-adapted Whisper-base variants demonstrate the effectiveness of hybrid multilingual and mul-titask training for spoken LID and transcription [10]. Col-lectively, these approaches show that supervised and semi-supervised learning effectively encode language identity in mul-tilingual speech representations. Beyond language-level dis-crimination, embedding geometry has been shown to capture dialectal and geographical structure. Dialect-based supervision shapes representation spaces, producing systematic but some-times unstable clustering [11]. Accent and dialect informa-tion can also be reliably extracted from pre-trained speech and speaker embeddings [12]. In the Indian context, jointly model-ing dialect identification and ASR improves downstream perfor-mance, highlighting the importance of geographical variation in multilingual systems [13, 14]. These findings suggest that dis-trict or dialect-level variation constitutes structured information within speech representations rather than noise. Existing studies on Indic language identification often bal-ance between broad multilingual coverage and fine-grained ge-ographical or dialect modeling. Some works focus on a smaller set of languages to enable detailed analysis of dialectal or re-gional variation, while others scale to larger language invento-ries with supervision primarily at the language level. As a re-sult, the interaction between supervision granularity and the in-ternal geometry of multilingual speech embeddings particularly in capturing systematic within language geographical variation at scale remains underexplored. In this work, we address this gap by analyzing multilin-gual speech representations across 60 Indic languages span-ning 165 districts, resulting in 386 language–district classes with balanced per-class data. We fine-tune Whisper-base [15] and Wav2Vec 2.0-base [16] under two objectives: (i) language-only classification and (ii) joint language–district classifica-tion. We evaluate representations using classification accuracy, language-conditioned probing with logistic regression (report-ing both accuracy and F1 score), and a metric computed on the embedding space, Normalized Conditional Mutual Informa-tion (NCMI), to quantify the structure of the learned embed-dings. Our results show that fine-grained supervision enhances district-level discriminability while preserving strong language separability and induces structured within-language subclusters in the embedding space. These findings demonstrate that su-pervision granularity systematically shapes multilingual speech representation geometry in linguistically diverse settings. To 
+
+> arXiv:2606.19940v1 [eess.AS] 18 Jun 2026
+
+our knowledge, no prior work has explored joint language-district classification at this scale for Indian languages. 
+
+# 2. Dataset 
+
+We conduct experiments on a subset of the Vaani speech cor-pus [17], a large-scale Indian speech dataset with fine-grained geographical metadata, making it well suited for analyzing the interaction between language-level supervision and geographi-cal variation in multilingual speech models. We select 60 languages spanning 165 districts, yielding 386 language-district classes. This subset balances typological and geographical coverage while ensuring sufficient data per class. For the joint language-district setup, each class contains approx-imately 3 hours of speech, totaling 1158 hours. Data are split at the speaker level into training (2.4 h), validation (0.2 h), and test (0.4 h) partitions to prevent speaker overlap. In addition to the joint setup, we construct two language-only regimes. The balanced setting contains 3 hours per lan-guage (180 hours total), uniformly sampled across districts to preserve intra-language geographical diversity. The unbalanced setting uses the same 1158 hours as the joint setup but collapses labels to language only, retaining natural data imbalance. This design isolates the effect of supervision granularity while con-trolling for data scale and speaker independence. Table 1: Classification performance (Accuracy / F1(mean), %). 
+
+Overall Lang Distict 
+
+Setup Acc F1 Acc F1 Acc F1 
+
+Whisper-base 
+
+LD-386 44.27 - 84.79 79.00 47.09 43.16 L-60 66.99 67.13 66.99 67.13 - -L-60-FD 84.77 78.10 84.77 78.10 - -
+
+Wav2Vec2.0-base 
+
+LD-386 21.73 - 71.56 55.66 23.91 21.87 L-60 64.16 66.43 64.16 66.43 - -L-60-FD 81.93 73.61 81.93 73.61 - -
+
+# 3. Experimental Setup & Embedding Analysis 
+
+3.1. Pretrained Models Architecture 
+
+We evaluate two pretrained speech encoders: Whisper-base and Wav2Vec2.0-base. Whisper-base operates on log-Mel spectro-gram inputs, while Wav2Vec2.0-base processes raw waveforms via a convolutional feature encoder followed by a Transformer context network. In both cases, the encoder produces frame-level representations of dimension D, and all layers are fine-tuned end-to-end without freezing, allowing adaptation to dif-ferent supervision objectives. We analyze Wav2Vec2.0-base and Whisper-base due to their complementary properties. Wav2Vec2.0-base, pre-trained in a self-supervised manner on large English corpora includ-ing LibriSpeech [18] provides high-quality embeddings to ex-amine how an English-trained model captures fine-grained acoustic and language-specific structure in unseen Indic lan-guages. Whisper-base, trained on large-scale multilingual speech, serves as a benchmark for cross-lingual representa-tion. Using these architectures allows us to isolate the effects Table 2: Language-conditioned probing for district classifi-cation performance using embeddings from different training regimes. Accuracy (%) and mean F1 are shown for Whisper-base and Wav2Vec2.0-base 
+
+Setup Whisper-base Wav2Vec2.0-base 
+
+Acc (%) F1 (mean) Acc (%) F1 (mean) LD-386 91.59 91.29 87.56 87.14 
+
+L-60 81.41 80.89 77.72 77.05 L-60-FD 86.88 86.46 59.92 58.53 of model capacity and pretraining regime on embedding struc-ture without confounding domain-specific biases. 
+
+3.2. Utterance-Level Embedding Representations 
+
+For speech utterance a frame-level output obtained from the encoder of either Whisper-base or Wav2Vec2.0-base , are con-verted to utterance-level embeddings using attention-based tem-poral pooling. For Whisper-base, D = 512 , while for Wav2Vec2.0-base, D = 768 . Given frame-level encoder out-puts X ∈ RT ×D (with T frames and embedding dimension 
+
+D), attention-based temporal pooling computes the utterance embedding as 
+
+hutt = X⊤α, α = softmax (fattn (X)) ,
+
+where fattn : RT ×D → RT is a two-layer feed-forward net-work with tanh activation that produces a scalar score for each frame, α ∈ RT are the normalized attention weights over time, and hutt ∈ RD is the resulting fixed-dimensional utterance em-bedding (512 for Whisper-base and 768 for Wav2Vec2.0-base). This formulation enables the model to assign higher weights to acoustically salient frames when forming compact utterance-level Embedding representations. 
+
+3.3. Normalized Conditional Mutual Information (NCMI) 
+
+To quantify how well embeddings capture district-level struc-ture while respecting language, we compute Normalized Con-ditional Mutual Information (NCMI) on the test embeddings. Let the test dataset be Dtest = {(xi, ℓ i, d i)}Ni=1 ,
+
+where xi ∈ RD is the embedding of sample i extracted from the attention pooling layer of the fine-tuned model, ℓi is its ground-truth language, and di is its ground-truth district. For each sample i, we find its k nearest neighbors in the embed-ding space, denoted Nk (i). We then restrict to neighbors that share the same language ℓi. Let pi(di, n | ℓi) be the fraction of these neighbors having district label n, jointly with the sam-ple’s district di. The per-sample conditional mutual information between the sample’s district and its neighbors, conditioned on language, is 
+
+Ii(D; Nk | L) = X 
+
+> n∈N k(i)
+
+pi(di, n | ℓi) log pi(di, n | ℓi)
+
+pi(di | ℓi) pi(n | ℓi) ,Hi(D | L) = X 
+
+> n∈N k(i)
+
+pi(n | ℓi) log 1
+
+pi(n | ℓi) ,
+
+where pi(di | ℓi) and pi(n | ℓi) are the marginal probabil-ities among neighbors with language ℓi. The per-sample con-ditional entropy of district labels given language is Hi(D | L),which measures the uncertainty of the neighbor districts con-ditioned on the sample’s language. Finally, the dataset-level normalized conditional mutual information is obtained by aver-aging over all N samples: Table 3: Language-wise marginal F1 scores. Languages are columns; setups are grouped by model.                                                                                                                               
+
+> Setup Awadhi Bearybashe Garhwali Gondi Halbi Haryanvi Hindi IduMishmi Karbi Kashmiri Lotha Nimadi Punjabi Rajasthani Rengma Sadri Surjapuri Tulu
+> Whisper-base
+> LD-386 91.1 49.23 68.37 90.4 79.86 66.53 87.27 82.3 84.87 84.99 87.66 84.01 86.76 72.38 91.87 51.91 65.54 71.15 L-60 72.65 53.73 43.55 76.73 71.72 35.56 60.77 79.47 80.41 60.04 84.99 56.66 64.92 49.36 88.94 24.35 42.96 65.6 L-60-FD 95.01 46.43 65.14 87.2 81.41 65.35 87.02 86.3 91.49 88.27 86.21 81.71 87.64 72.7 591.65 38.16 65.1 72.73 Wav2Vec2.0-base
+> LD-386 84.66 4.42 29.17 59.28 45.76 43.12 81.51 34.36 56.47 49.45 31.69 37.76 68.0 53.28 44.37 21.94 52.28 20.21 L-60 82.37 48.18 48.33 83.8 68.74 51.97 54.69 77.24 85.15 72.73 76.31 44.52 71.55 56.09 85.32 23.91 57.76 58.01 L-60-FD 89.98 56.08 60.99 91.04 76.76 52.59 84.41 77.79 86.67 74.91 74.21 72.87 89.68 67.82 86.12 38.6 64.07 67.72
+
+Table 4: Language-conditioned district classification performance (F1-score) using multinomial logistic regression, evaluated within language-specific embedding subspaces.                                                                                                                               
+
+> Setup Assamese Bengali Bhojpuri Chhattisgarhi English Gujarati Hindi Kannada Maithili Malayalam Marathi Marwadi Nepali Oriya Punjabi Tamil Telugu Urdu
+> Whisper-base
+> LD-386 90.02 85.12 92.7 92.36 96.18 98.21 64.08 68.37 90.75 83.68 80.51 94.21 88.85 89.6 98.19 80.16 72.55 98.41
+> L-60 75.78 62.81 76.07 73.93 82.62 90.12 38.73 50.13 72.68 65.14 60.54 80.59 75.42 77.36 89.71 63.8 47.23 90.39 L-60-FD 80.12 73.62 86.15 86.17 89.53 93.27 50.84 58.53 85.42 74.4 68.44 89.58 80.62 80.34 95.87 71.25 60.04 96.07
+> Wav2Vec2.0-base
+> LD-386 83.52 77.04 86.4 85.72 89.56 92.36 57.8 61.47 86.67 72.96 70.82 89.95 80.62 83.95 95.86 75.21 62.88 94.61
+> L-60 59.87 50.64 74.67 73.86 64.01 83.75 41.77 46.72 76.94 56.72 55.13 81.55 68.08 74.04 85.6 59.53 41.3 87.27 L-60-FD 52.91 20.05 42.4 45.27 30.49 60.18 14.79 22.47 52.58 31.59 26.81 62.86 55.02 50.4 56.71 35.39 12.88 59.78
+
+NCMI k = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+Ii(D; Nk | L)
+
+Hi(D | L) .
+
+High NCMI indicates that embeddings are organized such that districts form coherent local clusters within each language, and its variation with k captures the hierarchical structure of the embedding space. This formulation mirrors the imple-mentation in our Python code, where neighbors, joint proba-bilities, and weighting are explicitly computed from the em-beddings. While we present NCMI conditioned on language, the same formulation can be applied by conditioning on dis-trict instead, allowing evaluation of how well embeddings cap-ture language discriminative structure within geographic re-gions. To quantify how conditional structure persists across neighborhood scales, we integrate the NCMI curve in log k,thus capturing the cumulative strength of conditional infor-mation from local to global neighborhoods. We then com-pute a normalized asymmetry score ∆scale as the relative dif-ference between district-conditioned and language-conditioned AUC . This scalar provides a scale-invariant measure of condi-tional dominance: negative values indicate stronger persistence of language-level structure, while values closer to zero reflect more balanced multi-scale organization. The implementation of our experiments utilizes 
+
+PyTorch [19] to build the attention pooling layer, 
+
+HuggingFace Transformers [20] for pretrained models and fine-tuning, and scikit-learn [21], SciPy [22], and 
+
+NumPy [23] for embedding processing, calculating NCMI, and statistical computations. 
+
+3.4. Fine-Tuned Model Architecture 
+
+From Utterance-Level Embedding hutt ∈ RD We apply a feed-forward classifier with one hidden layer (ReLU + dropout) fol-lowed by a linear projection. The logits optimized using cross-entropy loss. We consider three supervision settings: L-60 ,language-only classification over 60 languages; LD-386 , joint language-district classification over 386 classes; and L-60-FD ,language-only classification over the full dataset used in LD-386 (district labels collapsed to 60 languages). 
+
+3.5. Experimental Setup 
+
+All models are fine-tuned for classification and overall perfor-mance is reported on a held out test set. For LD-386, marginal language probabilities are computed by summing probabilities across districts belonging to the same language, enabling di-rect comparison with L-60 and L-60-FD. To analyze embedding structure, we first perform linear probing by training a logistic regression classifier for district prediction conditioned on lan-guage using the learned utterance-level Embedding hutt across all setups. We further compute Normalized Conditional Mutual Information (NCMI) on utterance-level Embedding hutt under two conditions: conditioning on language, I(Di; Dj | L), and conditioning on district, I(Li; Lj | D). NCMI is estimated us-ing k-nearest neighbors with Euclidean distance for varying k
+
+to study local and global geometric structure. All experiments are trained using the AdamW optimizer on a single NVIDIA L4 GPU (24 GB). 
+
+# 4. Experiments and Results 
+
+4.1. Language Classification Performanc 
+
+Table 1 reports overall classification accuracy, marginal lan-guage performance (obtained by aggregating district probabili-ties for LD-386), and district-level performance for joint mod-els. For Whisper-base, LD-386 achieves strong marginal lan-guage performance (84.79% accuracy, 79.00 F1), comparable to L-60-FD (84.77%, 78.10 F1), while additionally enabling dis-trict prediction (47.09% accuracy, 43.16 F1). For Wav2Vec2.0-base, L-60-FD attains the highest language accuracy (81.93%), exceeding LD-386 (71.56%), though LD-386 uniquely captures district-level structure (23.91% accuracy, 21.87 F1). Thus, joint supervision preserves competitive language separability while organizing district information that language-only models can-not directly model. Table 3 further presents language-wise marginal F1 scores. For Whisper-base, LD-386 is competitive or superior across many languages (e.g., Garhwali, Gondi, Haryanvi, Lotha, Ni-madi), indicating that explicit geographical supervision en-hances robustness without harming language discrimination. For Wav2Vec2.0-base, increasing data scale in L-60-FD of-ten yields the highest marginal F1, though several languages remain comparable under LD-386. Due to space constraints, (a) Whisper-base (Lang-Cond.) (b) Whisper-base (Dist-Cond.) (c) Wav2Vec2.0-base (Lang-Cond.) (d) Wav2Vec2.0-base (Dist-Cond.)    
+
+> Experiment Setup: LD-386 L-60-FD L-60
+
+Figure 1: Normalized Conditional Mutual Information (NCMI) as a function of k. From left to right: Whisper-base language-conditioned, Whisper-base district-conditioned, Wav2Vec2.0-base language-conditioned, and Wav2Vec2.0-base district-conditioned. 
+
+only a representative subset of languages is shown; the re-maining languages follow trends consistent with the aggregate results. Overall, joint language-district supervision maintains strong marginal language performance, whereas language-only supervision primarily benefits from increased data scale. 
+
+4.2. Language-Conditioned Probing and Embedding Structure 
+
+We evaluate district structure using language-conditioned prob-ing with a multinomial logistic regression classifier trained independently within each language-specific embedding sub-space. Table 2 reports mean F1 scores. Joint language-district supervision (LD-386) achieves the strongest district performance for both models. For Whisper-base, LD-386 reaches 91.29 mean F1, outperforming L-60 (80.89) and L-60-FD (86.46). For Wav2Vec2.0-base, LD-386 attains 87.14 mean F1, compared to 77.05 for L-60, while performance drops sharply to 58.53 under L-60-FD. The substantial degradation in Wav2Vec2.0-base when scaling language-only training indi-cates collapse of intra-language district structure. The same trend appears at the per-language level Table 4. For example, under Whisper-base, LD-386 improves Hindi and Kannada district F1 by large margins over L-60. For Wav2Vec2.0-base, L-60-FD shows severe degradation across several languages (e.g., Hindi and Telugu), whereas LD-386 re-mains consistently strong. These representative cases reflect the broader pattern across languages. Combined with the marginal language results from the previous section, these findings show that explicit district supervision organizes fine-grained geo-graphical variation in a linearly accessible manner. Language-only supervision particularly for Wav2Vec2.0-base tends to col-lapse intra-language structure as data scale increases, while joint supervision yields more structured and informative em-beddings without sacrificing language separability. 
+
+4.3. Embedding Structure via NCMI 
+
+Figure 1 presents NCMI as a function of neighborhood size k
+
+(log-scale). Smaller k captures highly local embedding neigh-borhoods, while larger k reflects increasingly global structure. Evaluation over N = 114 ,596 test samples produces smooth and stable trends. Under language conditioning (Fig. 1a, Fig. 1c), LD-386 consistently achieves higher district-level NCMI across nearly all neighborhood sizes for both Whisper-base and Wav2Vec2.0-base. The separation is most pronounced at small k, indicating stronger preservation of fine-grained district structure within language clusters. Although NCMI decreases with increasing k as neighborhoods become more global, the relative ordering remains stable. The effect is partic-ularly sharp for Wav2Vec2.0-base, where language-only super-vision shows clearer intra-language collapse, Whisper-base ex-hibits comparatively more stable district retention across scales. Under district conditioning (Fig. 1b, Fig. 1d), all models exhibit high NCMI at small k, confirming strong local lan-guage purity. As k increases, NCMI gradually declines. For Wav2Vec2.0-base, language-only training produces stronger global language clustering at large k, while LD-386 maintains more balanced behavior. In contrast, Whisper-base shows more stable trends, with LD-386 preserving district structure with-out sacrificing language separability. Consistent with earlier marginal classification results, LD-386 achieves comparable or better language accuracy, indicating that its lower large-scale NCMI does not imply weaker language discrimination. To summarize, we report the normalized AUC asymmetry score for the LD-386 setup. For Whisper-base, AUC D|L =2.68 and AUC L|D = 5 .43 , yielding ∆scale = −0.34 . For Wav2Vec2.0-base, AUC D|L = 2 .08 and AUC L|D = 5 .43 ,yielding ∆scale = −0.45 . The negative values indicate stronger persistence of language-level structure across neighborhood scales. The larger magnitude for Wav2Vec2.0-base reflects greater coarse-level dominance, whereas Whisper-base retains relatively more district-level structure, resulting in a more bal-anced embedding geometry. The asymmetric NCMI behavior supports a hierarchically organized embedding space, district coherence is strongest lo-cally, while language separation remains stable globally. Impor-tantly, no explicit hierarchical constraint was imposed during training the structure emerges implicitly from joint language-district supervision. Across experiments, Whisper-base ex-hibits more stable and stronger NCMI trends than Wav2Vec2.0-base, likely reflecting pretraining alignment, as Whisper-base was trained on multilingual (including Indic) data whereas Wav2Vec2.0-base was primarily pretrained on English. 
+
+# 5. Conclusion and Future Work 
+
+We show that supervision granularity shapes multilingual speech embeddings: joint language-district training, while in-creasing task difficulty, preserves strong marginal language performance and markedly improves district discriminability. Language-conditioned probing and NCMI analysis reveal that fine-grained supervision forms structured within-language sub-clusters reflecting geographical variation, whereas language-only training yields region-invariant embeddings. Whisper-base encoders exhibit stronger and more stable geographical encod-ing than Wav2Vec2.0-base. Overall, fine-grained supervision enhances embedding structure without compromising language separability. Future work will explore leveraging this struc-ture for low-resource language-district pairs via representation sharing and its impact on downstream tasks such as automatic speech recognition and text-to-speech in multilingual settings. 
+
+# 6. References 
+
+[1] T. T¨ or¨ o, A. Suni, and J. ˇ Simko, “Neighbors and relatives: How do speech embeddings reflect linguistic connections across the world?” PLoS One , vol. 20, no. 8, p. e0330755, 2025. [2] M. Bartelds and M. Wieling, “Quantifying language variation acoustically with few resources,” in Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies ,2022, pp. 3735–3741. [3] H. Mukherjee, S. Ghosh, S. Sen, O. Sk Md, K. Santosh, S. Phadikar, and K. Roy, “Deep learning for spoken language identification: Can we visualize speech signal patterns?” Neu-ral Computing and Applications , vol. 31, no. 12, pp. 8483–8501, 2019. [4] S. Godbole, V. Jadhav, and G. Birajdar, “Indian language identifi-cation using deep learning,” in ITM Web of Conferences , vol. 32. EDP Sciences, 2020, p. 01010. [5] S. Dey, G. Saha, and M. Sahidullah, “Cross-corpora language recognition: A preliminary investigation with indian languages,” in 2021 29th European Signal Processing Conference (EU-SIPCO) . IEEE, 2021, pp. 546–550. [6] S. Dey, M. Sahidullah, and G. Saha, “Cross-corpora spoken lan-guage identification with domain diversification and generaliza-tion,” Computer Speech & Language , vol. 81, p. 101489, 2023. [7] G. Ramesh, C. S. Kumar, and K. S. R. Murty, “Self-supervised phonotactic representations for language identification.” in Inter-speech , 2021, pp. 1514–1518. [8] M. M. Shaik, D. Klakow, and B. M. Abdullah, “Self-supervised adaptive pre-training of multilingual speech models for language and dialect identification,” arXiv preprint arXiv:2312.07338 ,2023. [9] N. Jakhar, S. Srivastava, and A. Baby, “A unified approach to mul-tilingual automatic speech recognition with improved language identification for indic languages.” in INTERSPEECH , 2024. [10] S. Sasmal, H. Nikam, P. Dhote, M. Bhargava, and L. Singh, “Dhwani - domain adapted hybrid whisper for audio transcrip-tion in indic languages,” in 2025 IEEE Pune Section International Conference (PuneCon) , 2025, pp. 1–6. [11] J. Dunn, “Variation and instability in dialect-based embedding spaces,” in Tenth Workshop on NLP for similar languages, Va-rieties and dialects (VarDial 2023) , 2023, pp. 67–77. [12] S. Ghorbani and J. H. Hansen, “Advanced accent/dialect identifi-cation and accentedness assessment with multi-embedding mod-els and automatic speech recognition,” The Journal of the Acous-tical Society of America , vol. 155, no. 6, pp. 3848–3860, 2024. [13] S. Kumar, P. K. Ghosh et al. , “Jointly improving dialect identifica-tion and asr in indian languages using multimodal feature fusion,” in Proc. Interspeech 2025 , 2025, pp. 2770–2774. [14] S. Kumar, S. Sharma, S. Udupa, S. Badiger, A. Singh, J. Ban-dekar, S. Murthy, P. K. Ghosh et al. , “Improving dialect identifi-cation in indian languages using multimodal features from dialect informed asr,” in ICASSP 2025-2025 IEEE International Con-ference on Acoustics, Speech and Signal Processing (ICASSP) .IEEE, 2025, pp. 1–5. [15] A. Radford, J. W. Kim, T. Xu, G. Brockman, C. McLeavey, and I. Sutskever, “Robust speech recognition via large-scale weak supervision,” in International conference on machine learning .PMLR, 2023, pp. 28 492–28 518. [16] A. Baevski, Y. Zhou, A. Mohamed, and M. Auli, “wav2vec 2.0: A framework for self-supervised learning of speech repre-sentations,” Advances in neural information processing systems ,vol. 33, pp. 12 449–12 460, 2020. [17] S. Pulikodan, A. Singh, A. Basu, N. Desai, P. K. J, P. D. Bhat, R. Dharmaraju, R. Gupta, S. Udupa, S. Kumar, S. Sharma, V. Vishwakarma, V. Sanka, D. Tewari, H. Dhand, A. Kamat, S. Singh, S. Vashishth, P. Talukdar, R. Acharya, and P. K. Ghosh, “Vaani: Capturing the language landscape for an inclusive digital india,” 2026. [Online]. Available: https://arxiv.org/abs/2603.28714 [18] V. Panayotov, G. Chen, D. Povey, and S. Khudanpur, “Lib-rispeech: an asr corpus based on public domain audio books,” in 2015 IEEE international conference on acoustics, speech and signal processing (ICASSP) . IEEE, 2015, pp. 5206–5210. [19] A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan, T. Killeen, Z. Lin, N. Gimelshein, L. Antiga et al. , “Pytorch: An imperative style, high-performance deep learning library,” Ad-vances in neural information processing systems , vol. 32, 2019. [20] T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz et al. , “Transformers: State-of-the-art natural language processing,” in Proceedings of the 2020 conference on empirical methods in natural language processing: system demonstrations , 2020, pp. 38–45. [21] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel, B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer, R. Weiss, V. Dubourg et al. ,“Scikit-learn: Machine learning in python,” the Journal of ma-chine Learning research , vol. 12, pp. 2825–2830, 2011. [22] P. Virtanen, R. Gommers, T. E. Oliphant, M. Haberland, T. Reddy, D. Cournapeau, E. Burovski, P. Peterson, W. Weckesser, J. Bright 
+
+et al. , “Scipy 1.0: fundamental algorithms for scientific comput-ing in python,” Nature methods , vol. 17, no. 3, pp. 261–272, 2020. [23] C. R. Harris, K. J. Millman, S. J. Van Der Walt, R. Gommers, P. Virtanen, D. Cournapeau, E. Wieser, J. Taylor, S. Berg, N. J. Smith et al. , “Array programming with numpy,” nature , vol. 585, no. 7825, pp. 357–362, 2020.

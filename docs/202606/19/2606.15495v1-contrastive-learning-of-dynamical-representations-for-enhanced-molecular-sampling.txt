@@ -1,0 +1,1633 @@
+Title: Contrastive learning of dynamical representations for enhanced molecular sampling
+
+URL Source: https://arxiv.org/pdf/2606.15495v1
+
+Published Time: Tue, 16 Jun 2026 01:08:15 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Contrastive learning of dynamical representations for enhanced molecular sampling 
+
+Kai Zhu, 1, 2, a) Jintu Zhang, 1, a) Pietro Novelli, 3 Tingjun Hou, 1, b) and Luigi Bonati 2, c) 
+
+> 1)
+
+College of Pharmaceutical Sciences, Zhejiang University, Hangzhou, 310058, Zhejiang, China 
+
+> 2)
+
+Atomistic Simulations, Italian Institute of Technology, Genova 16152, Italy 
+
+> 3)
+
+Computational Statistics and Machine Learning, Italian Institute of Technology, Genova 16152, Italy 
+
+Identifying collective variables that capture slow dynamical modes is essential for sampling rare events in complex systems. Existing machine-learning approaches often require predefined metastable states, care-fully chosen descriptors, or training trajectories with high-quality kinetic information. Here, we introduce SelfTICA, a self-supervised contrastive-learning framework that reformulates collective-variable discovery as dynamical representation learning. SelfTICA defines positive and negative pairs from time-lagged molecular configurations, learns reusable features through a contrastive objective linked to spectral variational princi-ples, and extracts orthogonal slow modes by applying time-lagged independent component analysis in the learned representation space. By decoupling representation learning from slow-mode extraction, SelfTICA avoids direct optimization of eigendecomposition-based objectives and enables spectra and collective variables to be evaluated across lag times without retraining. Across different atomistic systems, SelfTICA learns dy-namical representations from limited, biased, or exploratory data and converts them into collective variables that accelerate rare-event exploration and improve free-energy convergence. 
+
+I. INTRODUCTION 
+
+Atomistic simulations have become a cornerstone for investigating microscopic physics, chemistry, and biology 1. Their practical scope, however, is often limited by the difficulty of sampling rare events within accessible computational timescales. Enhanced sampling methods address this limitation by accelerating the exploration of configurational space 2, commonly through a bias po-tential applied along a small set of collective variables (CVs) 3. The efficiency of this strategy critically depends on the quality of the chosen CVs, which should capture the slow degrees of freedom that govern the process of in-terest. Accordingly, a variety of machine learning (ML) approaches have been developed to construct CVs from molecular simulation data 4,5 . Supervised classifiers 6,7 
+
+can be trained to distinguish metastable states; unsu-pervised models such as (variational) autoencoders 8–12 
+
+compress molecular configurations into low-dimensional representations. Despite their success, these approaches often lack explicit dynamical constraints and may there-fore identify structural rather than dynamical features. A physically grounded description of molecular tran-sitions is provided by the committor function, which is often regarded as an ideal CV 13 . For a transition between reactant and product basins, the committor gives the probability that a trajectory initiated from a given config-uration reaches the product basin before returning to the reactant basin. It therefore provides a rigorous character-ization of rare-event pathways with a clear physical and 
+
+> a) Contributed equally to this work
+> b) Electronic mail: tingjunhou@zju.edu.cn
+> c) Electronic mail: luigi.bonati@iit.it
+
+mathematical interpretation. This has motivated a range of ML-based approaches for committor learning that use simulation data to approximate transition probabilities or transition pathways 14–18 . In practice, however, com-mittor learning can be computationally demanding be-cause it requires extensive sampling of transition-state regions, predefined initial and final states, and is most naturally formulated for two-state processes. An alternative approach is based on the spectral de-composition of the transfer operator, which describes the evolution of probability distributions toward the equilib-rium one. Its leading eigenfunctions characterize the slow modes of the system, while the corresponding eigenvalues determine the timescales over which these modes relax to equilibrium. The variational approach for conforma-tional dynamics (VAC) 19–22 provides a framework for ap-proximating these spectral components within a chosen feature space φ(R) through normalized time-correlation functions. Building on this idea, several methods 23–25 
+
+have been developed to learn CVs associated with the dominant slow modes of systems by optimizing vari-ational objectives associated with the leading spectral components of the dynamical operator 26 . However, these methods face two challenges. First, they require a feature space that can resolve the leading spectral components of the dynamical operator. Although such feature space can be learned by optimizing spectral variational objec-tives 23 , doing so requires differentiating through eigen-vectors or singular vectors of estimated operators, which can become unstable near degenerate eigenvalues 27 and reduce training robustness. Second, they require trajec-tories with rich transition information. While unbiased MD may suffice for simple systems, complex systems of-ten require enhanced sampling techniques, where the bias can distort the observed dynamics. Existing correction 
+
+> arXiv:2606.15495v1 [physics.comp-ph] 13 Jun 2026
+
+2strategies, such as the time-rescaling 28 used in Deep-TICA 23 , the integrator-dependent path-reweighting 25 or generator-based approaches 29,30 , can partially address this issue, but they typically require assumptions about the biasing protocol (such as a static or quasi-static bias) or the effective dynamics. To overcome these limitations, we introduce SelfTICA, a self-supervised framework that formulates CV discov-ery as a dynamical representation-learning problem. Self-TICA builds on contrastive learning, which learns a rep-resentation from positive and negative pairs constructed directly from data without manual annotations. In con-ventional applications, positive pairs are often defined as different views or augmentations of the same object and are used to pretrain representations for downstream prediction tasks in computer vision 31–33 , molecular rep-resentation learning 34–36 , and other domains. In Self-TICA, by contrast, we use a dynamical contrastive frame-work in which positive and negative pairs are defined through time-lagged relationships in molecular trajecto-ries 37 . Configurations connected by the dynamics are encouraged to remain close in the learned feature space, whereas mismatched configurations are separated. SelfTICA first learns time-lagged dynamical features via contrastive learning and then applies TICA in the learned representation space to obtain orthogonal slow modes for enhanced sampling. This representation-first formulation provides a strategy for CV discovery in which machine learning is used to construct a reusable dynam-ical basis rather than to directly optimize a lag-time-specific slow coordinate. This separation avoids dif-ferentiating through eigendecompositions during train-ing, improves robustness, and allows spectra and implied timescales to be evaluated across lag times without re-training the encoder. SelfTICA can extract useful biasing coordinates even from limited, biased, or exploratory tra-jectories when pathway-relevant configurations are sam-pled. These CVs can then be used directly in enhanced-sampling simulations to accelerate rare-event exploration and improve free-energy convergence. We demonstrate these advantages through a sequence of systems with increasing complexity. The triple-well potential and alanine dipeptide benchmarks establish the core methodological properties of SelfTICA, including stable training, post-training lag-time analysis, and ro-bust CV construction. Mini-protein folding shows that SelfTICA can learn effective CVs also from exploratory enhanced sampling trajectories. Finally, by leveraging graph neural network (GNN) 38 encoders, we extend the framework to complex atomistic environments, including solvent-mediated calixarene host–guest binding and cat-alytic N2 dissociation on Fe(111).   
+
+> II. RESULTS A. Advantages of the SelfTICA framework
+
+SelfTICA constructs CVs through a two-stage proce-dure (Fig. 1). In the first stage, contrastive pairs are built from a molecular dynamics trajectory. Given a lag time τ , defined as the time interval used to compare two configurations along the trajectory, configurations sepa-rated by this interval, (R(i) 
+
+> t
+
+, R(i) 
+
+> t+τ
+
+), are treated as dy-namically connected positive pairs, whereas mismatched configurations (R(i) 
+
+> t
+
+, R(j) 
+
+> t+τ
+
+) with i̸ = j serve as negative pairs. A neural-network encoder φ is then trained on these pairs to learn a latent dynamical representation. The encoder can be implemented either as a feedforward NN for predefined molecular descriptors or as a GNN, which represents the atomistic system as a graph and learns local chemical environments through neighbor ag-gregation, avoiding the need for manually constructed structural descriptors. The time evolution in the latent space is then modeled by a learnable predictor P , such that 
+
+P zt ≈ zt+τ (1) where zt = φ(Rt) and zt+τ = φ(Rt+τ ). The predic-tor can be chosen as a linear model for unbiased sim-ulations 37 , or as a small feedforward neural network to capture the non-linear modification induced by the bi-asing potential in the case of biased enhanced sampling trajectories. The similarity between the evolved representation from sample i and the time-lagged one from sample j is mea-sured by their scalar product: 
+
+Dij =
+
+D
+
+P z(i) 
+
+> t
+
+, z(j)
+
+> t+τ
+
+E
+
+. (2) For matched time-lagged pairs, the score Dii is encour-aged to be large, whereas for mismatched pairs, the score 
+
+Dij with i̸ = j is penalized. This yields the following con-trastive loss 37,39 ,
+
+L(φ, P ) = 1
+
+N (N − 1) 
+
+X
+
+> i̸=j
+
+D2 
+
+> ij
+
+− 2
+
+N
+
+> N
+
+X
+
+> i=1
+
+Dii . (3) where the first term suppresses similarity between neg-ative pairs and the second one promotes similarity be-tween positive pairs. When the predictor is optimized for a given encoder, this objective reduces to the variational approach for Markov processes (VAMP)-2 score 26,37 (see Methods), which measures how well a feature space cap-tures the dominant dynamical modes. Thus, minimiz-ing Eq. 3 encourages the encoder to learn features en-riched in slow dynamical information. However, unlike methods that directly optimize neural-network outputs through variational spectral objectives, which can re-quire differentiating through eigenvalue problems, Self-TICA achieves this goal through a simpler contrastive 3Positive pair 
+
+Encoder  𝜑𝜑  Similarity 𝐷𝐷 𝑖𝑖𝑖𝑖 Predictor  𝑃𝑃 
+
+> R𝑡𝑡
+> R𝑡𝑡+ 𝜏𝜏
+
+𝜑𝜑 
+
+𝜑𝜑 
+
+z𝑡𝑡 
+
+z𝑡𝑡+ 𝜏𝜏 
+
+A. More stable training  B. Multi-lag TICA evaluation  C. Biased data learning 
+
+𝑃𝑃 
+
+𝑃𝑃𝑧𝑧 𝑡𝑡 
+
+𝑃𝑃𝑧𝑧 𝑡𝑡 ≈ 𝑧𝑧 𝑡𝑡+ 𝜏𝜏  R 𝜑𝜑 
+
+z
+
+𝑠𝑠 
+
+Collective variables 
+
+�,�
+
+𝐷𝐷 𝑖𝑖𝑖𝑖 
+
+> 𝑃𝑃 z𝑡𝑡
+> (𝑖𝑖 )
+> z𝑡𝑡+ 𝜏𝜏
+> (𝑖𝑖 )
+
+Representation  𝑢𝑢 1𝑢𝑢 2
+
+> 𝑠𝑠 1
+> 𝑠𝑠 2
+> TICA
+> z1
+> z2
+
+TICA 
+
+𝑅𝑅 𝑡𝑡  
+
+> (𝑖𝑖 )
+
+𝑅𝑅 𝑡𝑡+ 𝜏𝜏  
+
+> (𝑖𝑖 )
+
+𝑅𝑅 𝑡𝑡+ 𝜏𝜏 
+
+> (𝑖𝑖 )
+
+⋯
+
+> Negative pair
+
+⋯
+
+Collective Variable Construction with SelfTICA   
+
+> Feature space TICA space
+> Non-orthogonal Orthogonal
+
+Slow mode extraction 
+
+𝑅𝑅 𝑡𝑡 
+
+> (𝑖𝑖 )
+
+𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃  𝑃𝑃  𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃 𝑗𝑗 
+
+FIG. 1: Schematic illustration of SelfTICA. (Top) Construction of contrastive pairs. Matched time-lagged configurations, 
+
+(R(i) 
+
+> t
+
+, R(i) 
+
+> t+τ
+
+), define positive pairs, whereas mismatched configurations, (R(i) 
+
+> t
+
+, R(j) 
+
+> t+τ
+
+) with i̸ = j, define negative pairs. (Middle left) Self-supervised representation learning. A shared encoder φ maps Rt and Rt+τ to zt and zt+τ . The predictor output P zt
+
+is compared with zt+τ through Dij , and the contrastive loss in Eq. 3 promotes matched pairs while suppressing mismatched pairs. (Middle right) CV extraction. After training, TICA is applied to the learned feature space to obtain orthogonal slow modes, which are used as the final CVs. (Bottom) Key advantages of SelfTICA: (A) more stable training without direct eigendecomposition optimization; (B) evaluation of TICA eigenvalue spectra at multiple lag times using a fixed encoder; and (C) learning CVs from biased or exploratory data. 
+
+representation-learning objective and thereby signifi-cantly improves training stability. Although the learned latent features encode dynamical information, the individual components are not guaran-teed to be orthogonal or ranked according to the slow dynamical processes they describe, and therefore cannot be directly used as CVs. For this reason, after training, we apply TICA 40,41 , a statistical technique that projects the data along maximally autocorrelated directions over a chosen lag time. The associated eigenvalues ˜λi quantify the autocorrelation retained by each mode over this lag time, which is connected to the implied timescales of the learned slow processes. This post-training spectral de-composition approximates the leading eigenfunctions and eigenvalues λi of the transfer operator and yields orthogo-nal slow modes as the final CVs. Because TICA is applied only after representation training, the TICA lag time can be varied independently of the contrastive-training one, allowing spectra, CVs, and implied timescales to be eval-uated without retraining the encoder. Together, these steps define a framework for CV dis-covery that provides three key advantages: stable en-coder training without differentiating through eigende-compositions, post-training evaluation of spectra, im-plied timescales, and CVs across TICA lag times, and extraction of kinetically informative CVs from unbiased, biased, or exploratory trajectories. 
+
+B. Triple-well potential 
+
+We first validate SelfTICA on a triple-well potential with three metastable basins separated by energy barri-ers (Fig. 2a), for which reference slow modes were ob-tained from the spectral decomposition of the underlying stochastic generator (Fig. 2c). SelfTICA was trained on unbiased trajectories generated at kB T = 1 .0 (Supple-mentary Fig. 1), where barrier crossings are sufficiently frequent to capture the dominant slow dynamics, using only the particle coordinates (x, y ) as input descriptors 4a
+
+c
+
+b
+
+Slow modes from PES TICA from learned features 
+
+Potential energy surface Learned features from SelfTICA 
+
+e f
+
+d
+
+g2.0 1.5 1.0 0.5 0.0 0.5 1.0 1.5 2.0     
+
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> 0
+> 2
+> 4
+> 6
+> 8
+> Potential energy 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Slow mode 1
+> 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Slow mode 2
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Mode value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Mode value 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Slow mode 1
+> 21012
+
+p.x                                         
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Slow mode 2
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Mode value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Mode value 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 1
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 2
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 3
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 1
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 2
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 3
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 1
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 2
+> 21012
+> p.x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> Feature 3
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> Feature value 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> SelfTICA 1
+> 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> SelfTICA 2
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> TICA value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> TICA value 21012
+
+p.x     
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> SelfTICA 1
+> 21012
+
+p.x                   
+
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> p.y
+> SelfTICA 2
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> TICA value
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> TICA value 0.0 0.25 0.5 0.75 1.0
+> Coordinate along MFEP
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> CV value
+> DeepTICA
+> SelfTICA 246810
+> Lag time
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> 26
+> Implied timescale
+> Slow mode 1
+> SelfTICA
+> Linear TICA 0.00
+> 0.50
+> 1.00
+> DeepTICA
+> SelfTICA (trained at =1)
+> 0.00
+> 0.50
+> 1.00
+> DeepTICA
+> SelfTICA (trained at =10)
+> 10 210 110 010 110 210 3
+> Lag time (ps)
+> 0.00
+> 0.50
+> 1.00
+> DeepTICA
+> SelfTICA (trained at =100)
+> Eigenvalue
+
+FIG. 2: Triple-well potential. (a) Potential energy surface defined over the particle coordinates (px, p y ). (b) Encoder features learned by SelfTICA from the unbiased trajectory. (c) Reference slow modes obtained from the spectral decomposition of the generator associated with the potential energy surface. (d) TICA components extracted from the learned encoder features. (e) Learned CV profiles along the MFEP, averaged over 25 independently trained SelfTICA and DeepTICA models. Shaded regions indicate the corresponding model-to-model standard deviation, and the dashed line denotes the reference profile obtained from the exact slow mode. (f) Eigenvalue spectra of the leading components as a function of lag time. Gray dashed vertical lines mark the training lag time for each SelfTICA model. (g) First implied timescale as a function of lag time, estimated from unbiased trajectories at kBT = 0 .6 using linear TICA and SelfTICA models trained at either kBT = 0 .6 or kBT = 1 .0. The dashed line indicates the reference implied timescale computed from the eigenvalue associated with the first slow mode. 
+
+for the feed-forward network. The learned encoder fea-tures already capture the main slow dynamical structure (Fig. 2b), but are not mutually orthogonal and therefore cannot be directly used as CVs. Applying TICA in the learned feature space yields orthogonal slow modes that recover the reference eigenfunctions (Fig. 2d). We next tested whether SelfTICA can learn useful dynamical representations also from biased sampling simulations 42 performed at a lower temperature kBT =0.6 (Supplementary Fig. 1). In this setting, the nonlinear predictor reaches a lower training loss more rapidly than the linear predictor (Supplementary Fig. 2) and more consistently recovers the reference slow modes (Supple-mentary Fig. 3), without explicit reweighting of time-lagged correlations. We then assessed whether the representation-first de-sign improves training stability relative to direct slow-mode optimization methods like DeepTICA. Across 25 independently trained models on the same kBT = 1 .0
+
+dataset, SelfTICA shows substantially lower model-to-model variability than DeepTICA along the minimum free energy path (Supplementary Fig. 4), especially in the sparsely sampled transition region (Fig. 2e). The same trend is observed when the standard deviation is pro-jected over the full two-dimensional configuration space (Supplementary Fig. 5). Finally, we tested the advantage of separating con-trastive training from spectral decomposition. Because the encoder is kept fixed after training, TICA can be per-formed at different lag times without retraining the neu-ral network model. On unbiased trajectories at kBT =1.0, SelfTICA encoders trained with τ = 1 and 10 repro-duce the reference eigenvalue spectra of DeepTICA mod-els trained separately at each lag time, whereas training with an overly long lag time, τ = 100 , leads to eigen-value collapse due to the loss of dynamical correlation (Fig. 2f). The eigenspectrum therefore provides a diag-nostic for lag-time selection. On the same temperature trajectories, the implied timescales obtained from Self-TICA train with τ = 1 rapidly approach the reference value computed from the generator, whereas linear TICA substantially underestimates the timescale at short lag times and converges more slowly (Fig. 2g). 5c
+
+b
+
+d
+
+a
+
+e-1.0                       
+
+> -0.5
+> 0.5
+> 1.0 SelfTICA 202
+> [rad]
+> 2
+> 0
+> 2
+> [rad]
+> Trained at = 0.1 ps 202
+> [rad]
+> 2
+> 0
+> 2
+> [rad]
+> Trained at = 10 ps (ref) Dataset 1 Dataset 2 Dataset 3
+> 0.00
+> 0.03
+> 0.06
+> 0.09
+> 0.12
+> 0.15
+> Standard deviation
+> DeepTICA
+> SelfTICA Dataset 1 Dataset 2 Dataset 3
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> RMSE of Free Energy (kJ/mol)
+> Ref = 9.52 kJ/mol
+> DeepTICA
+> SelfTICA 510 15 20
+> Lag time (ps)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Implied timescale (ns)  450 K
+> 500 K
+> 600 K
+> Ref 10 110 110 3
+> Lag time
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Eigenvalue
+> Component 1
+> Component 2 202
+> [rad]
+> 2
+> 0
+> 2
+> [rad]
+> Evaluated at = 1 ps 202
+> [rad]
+> 2
+> 0
+> 2
+> [rad]
+> Evaluated at = 10 ps
+
+FIG. 3: Alanine dipeptide . (a) Eigenvalue spectra versus lag time. Solid curves show a SelfTICA model trained at τ = 0 .1
+
+and evaluated across lag times; dashed curves show reference models trained at each lag time. (b) SelfTICA CV isolines in the 
+
+φ–ψ space for different evaluation lag times, with a τ = 10 trained model as reference. (c) Standard deviation of SelfTICA and DeepTICA models trained on datasets of increasing trajectory length. (d) RMSE of ∆F from 10 OPES-MetaD simulations using models trained on datasets of increasing trajectory length. (e) First implied timescale versus lag time, evaluated at 450, 500, and 600 K; dashed curves denote temperature-specific reference models. 
+
+C. Alanine dipeptide 
+
+We next consider alanine dipeptide, a standard bench-mark for conformational sampling. The model was trained on an OPES multithermal 43 trajectory (Supple-mentary Fig. 6) in vacuum using 45 heavy-atom pairwise distances as input descriptors. We first examined whether a single trained encoder can support CV extraction across different TICA lag times. A SelfTICA encoder trained at a deliberately short contrastive-training lag time, τ = 0 .1 ps, yields poorly separated leading eigenvalues (Fig. 3a) and sub-optimal CVs when TICA is performed at the same short lag time (Fig. 3b). However, increasing only the TICA lag time while keeping the encoder fixed substantially im-proves the CVs, which progressively approach those ob-tained from a model trained directly at τ = 10 ps. This shows that the encoder can serve as a reusable latent ba-sis, enabling lag-time selection and CV refinement at the evaluation stage without retraining. We then tested whether this training design improves stability relative to direct slow-mode optimization. Us-ing three training datasets of increasing size and an inde-pendent test set (Supplementary Fig. 7), we trained 10 independent SelfTICA and DeepTICA models for each dataset. Across all training datasets, SelfTICA exhibits lower model-to-model variance than DeepTICA, demon-strating more stable CV learning under different amounts of training data (Fig. 3c). This reduced variance is also reflected in biased simulations: models with lower CV variance yield more accurate free-energy estimates, as measured by the RMSE of ∆F from 10 OPES-MetaD simulations (Fig. 3d). Similar robustness is observed with GNN encoders (Supplementary Fig. 8), indicating that SelfTICA is not tied to a specific neural network frame-work. Finally, we tested whether the representation learned from multithermal data captures a common slow process rather than a temperature-specific structural descriptor. Using the same trained encoder, implied timescales com-puted from independent trajectories at 450, 500, and 600 K are approximately 1.21, 0.51, and 0.12 ns, respec-tively, consistent with direct MD estimates (Fig. 3e). Ex-tending the analysis to 300 K further using an ensemble of many short unbiased trajectories reveals a substan-tially slower relaxation process (Supplementary Fig. 9), in agreement with the expected temperature dependence of alanine dipeptide dynamics. The preserved ordering of timescales across temperatures indicates that SelfTICA learns a kinetically consistent slow mode. 
+
+D. Chignolin mini-protein folding 
+
+Chignolin is one of the smallest proteins capable of folding into a stable structure, with folding and unfolding governed by hydrogen bonds between key residue pairs (Fig. 4a). Here, we study its CLN025 variant, for which long-timescale unbiased MD simulations on Anton pro-vide a valuable reference 44 , and use the same 210 inter-atomic distances adopted in previous work for CV train-ing 23 . This system allows us to test whether SelfTICA can learn useful CVs even from imperfect exploratory tra-jectories, where transitions are sparse and the dynamics 6c
+
+e
+
+a
+
+Asp3 Gly7 
+
+Glu5 
+
+Thr8 
+
+b
+
+d0 200 400 600 800 1000                        
+
+> Simulation time (ns)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> C RMSD (nm)  OPES-Explore + SelfTICA
+> 1
+> 1SelfTICA 0200 400 600 800 1000
+> Time (ns)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> C RMSD (nm)  OPES-Explore + C RMSD
+> 20
+> 28 Bias (kJ/mol) 0250 500 750 1000
+> Simulation time (ns)
+> 20
+> 15
+> 10
+> 5
+> 0
+> 5
+> 10
+> F (kJ/mol)
+> CRMSD
+> SelfTICA
+> Reference 0.4 0.8 1.2 1.6
+> Asp 3N-Gly 7O distance (nm)
+> 0.4
+> 0.8
+> 1.2
+> 1.6
+> 2.0
+> Asp 3N-Thr 8O distance (nm)
+> 11
+> SelfTICA (DES) 0.4 0.8 1.2 1.6
+> Asp 3N-Gly 7O distance (nm)
+> 0.4
+> 0.8
+> 1.2
+> 1.6
+> 2.0
+> Asp 3N-Thr 8O distance (nm)
+> 11
+> DeepTICA 0.4 0.8 1.2 1.6
+> Asp 3N-Gly 7O distance (nm)
+> 0.4
+> 0.8
+> 1.2
+> 1.6
+> 2.0
+> Asp 3N-Thr 8O distance (nm)
+> Folded
+> Unfolded
+> 11
+> SelfTICA
+
+FIG. 4: Chignolin folding. (a) Schematic representation of the chignolin system and the two key interatomic distances used to characterize the folding transition. (b) Time evolu-tion of the C α RMSD from an OPES-explore simulation bi-ased along the C α RMSD. Data points are colored according to the bias potential. (c) Projection of SelfTICA and Deep-TICA CVs trained on either biased or D. E. Shaw trajectories onto the two-dimensional space defined by the Asp3N–Gly7O and Asp3N–Thr8O distances. (d) Time evolution of the C α
+
+RMSD from an OPES-explore simulation biased along the SelfTICA CV. Data points are colored according to the Self-TICA CV. (e) Convergence of the free energy difference ( ∆F )as a function of simulation time for different biasing protocols. Shaded regions represent the statistical uncertainty estimated from three independent trajectories. 
+
+are generated under a non-stationary bias. To generate such data, we used the exploration variant of OPES 45 ,using the C α RMSD as a deliberately simple and subop-timal CV (Fig. 4b). Although this initial C α RMSD-biased trajectory con-tained only 3 folding–unfolding transitions, it sam-pled folded, unfolded, and transition-pathway configura-tions, providing a deliberately imperfect but transition-informative training set. SelfTICA trained in this ex-ploratory dataset learns a CV that closely resembles that obtained from a long unbiased reference trajec-tory and varies smoothly along the transition pathway when projected onto the two key interatomic distances (Fig. 4c). In contrast, DeepTICA trained on the same OPES-explore data shows larger deviations from the ref-erence CV and less consistent variation along the transi-tion pathway. We next used the SelfTICA CV to drive OPES-explore simulations (Fig. 4d). Compared with the initial C α
+
+RMSD, which provides only a global geometric measure of structural deviation, the SelfTICA CV learns time-lagged dynamical correlations and better resolves the folding transition pathway. As a result, biasing along the latter leads to fast and reliable convergence of the free-energy difference ∆F (Fig. 4e). Notably, this per-formance is comparable to that achieved by a SelfTICA model trained on unbiased trajectories (Supplementary Fig. 12), showing that effective CVs can be extracted even from sparse exploratory biased simulations. 
+
+E. Calixarene host-guest systems Inner env. node Outer env. node 
+
+> System node (pooled)
+> Ignored env. node
+> Selected system atom
+> Selected environment atom
+
+c
+
+d e
+
+a b0 20 40 60 80 100                                          
+
+> Time (ns)
+> 4
+> 8
+> 12
+> 16
+> z (Å)
+> rt= 4 Å, rl= 18 Å 020 40 60 80 100
+> Time (ns)
+> 4
+> 8
+> 12
+> 16
+> z (Å)
+> rt= 5 Å, rl= 18 Å 020 40 60 80 100
+> Time (ns)
+> 4
+> 8
+> 12
+> 16
+> z (Å)
+> rt= 6 Å, rl= 18 Å 025 50 75 100 125 150
+> Time (ns)
+> 4
+> 8
+> 12
+> 16
+> z (Å)
+> rt= 5 Å, rl= 18 Å
+> 1
+> 0
+> 1
+> SelfTICA 025 50 75 100 125 150
+> Simulation time (ns)
+> 40
+> 35
+> 30
+> 25
+> 20
+> G (kJ/mol)
+> DeepTDA
+> SelfTICA
+> Reference 6420246
+> DeepTDA supervised CV bound unbound
+
+FIG. 5: OAMe–G2 binding. (a) The system is partitioned into system atoms and environment atoms. Truncated graphs include all system atoms and environment atoms within a dis-tance rt. A larger cutoff rl > r t is additionally applied to de-fine edges between system atoms. (b) Node selection for the calixarene system, including selected host–guest atoms and nearby solvent oxygen atoms used to construct the graph rep-resentation. (c) Initial trajectories obtained using DeepTDA CVs trained with different cutoff distances. (d) Biased trajec-tory generated using the SelfTICA CV trained on the rt = 5 ÅDeepTDA trajectory, together with the final static DeepTDA bias. (e) Convergence of the binding free energy difference (∆G) as a function of simulation time using the SelfTICA CV. Shaded regions represent the statistical uncertainty esti-mated from three independent trajectories. 
+
+Our fourth test case considers small-molecule bind-ing to the octa-acid calixarene host OAMe from the 7SAMPL5 challenge, where water molecules are known to modulate the barriers for both association and dis-sociation 46,47 . This system therefore tests whether Self-TICA can be combined with GNN encoders to learn CVs in a solvent-mediated binding process, without manually defining hydration-site descriptors. We used a GNN 38 
+
+with a truncated-graph construction 48 , in which selected host–guest atoms define the system nodes and nearby wa-ter oxygen atoms provide the local solvent environment (Fig. 5a,b). Exploratory simulations performed with a classifier-based CV (DeepTDA 7) revealed that including the sol-vent environment is essential for observing binding– unbinding transitions. Graph representations excluding surrounding water molecules, or including only water within rt = 4 Å, produced almost no transitions, indi-cating that a minimal solvent environment is insufficient to describe the dissociation dynamics (Supplementary Fig. 13 and Fig. 5c). In contrast, transitions emerged when water molecules within rt = 5 Å were included, suggesting that key waters mediating ligand dissociation are located within approximately 5 Å of the host. We therefore used the rt = 5 Å trajectory as ex-ploratory data for training a SelfTICA CV, which was subsequently used to enhance the sampling along the learned slow modes. Since the exploratory simulation al-ready provided a broad configurational coverage, we also retained the static OPES bias from the previous simula-tion. This procedure led to a substantially larger num-ber of binding–unbinding transitions (Fig. 5d) and en-abled the binding free energy to converge in a few tens of ns to the reference values 47 (Fig. 5e and Supplemen-tary Fig. 14), while significantly reducing the sampling uncertainty compared to a classifier-only CV. 
+
+F. Catalytic Dissociation of N2 on Fe(111) Surfaces 
+
+Our final test system concerns the heterogeneous cat-alytic dissociation of N2 on the Fe(111) surface, a rep-resentative benchmark for studying surface dynamics in heterogeneous catalysis 49 . The reaction involves a se-quence of metastable states, including gas-phase N2,vertical and horizontal adsorption, precursor formation, bond cleavage at the transition state, and the final disso-ciated state with two adsorbed nitrogen atoms 50,51 . At 300 K, the Fe(111) surface maintains a relatively stable stepped structure while sampling several intermediates along the reaction pathway, including four adsorbed con-figurations denoted as γ, δ, α, and α′52 .This system tests whether a GNN-based SelfTICA CV can capture coupled adsorption and bond-breaking events without manually designed reaction coordinates or even structural descriptors. To generate initial train-ing data, we followed a previously reported OPES-MetaD protocol 49 based on two physically motivated CVs: the nitrogen–nitrogen distance, d(N , N) , which en-hances bond stretching and cleavage, and the Fe–N coor-ba               
+
+> 2
+> 13
+> 45
+> c123451.0 0.5 0.0 0.5 1.0
+> SelfTICA CV
+> 0
+> 20
+> 40
+> 60
+> 80
+> Free energy (kJ/mol) 0.0 0.5 1.0 1.5 2.0
+> Time (ns)
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> SelfTICA
+> OPES-Explore + SelfTICA
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> N-N distance (Å)
+
+FIG. 6: Catalytic dissociation of N2 on the Fe(111) sur-face. (a) Time evolution of the SelfTICA CV from OPES-explore simulations driven by the SelfTICA model. The data points are colored according to the N−N distance. (b) Ex-ploratory free energy profile projected onto the SelfTICA CV, reconstructed from the biased simulations. (c) Representa-tive metastable configurations identified from the exploratory FES. 
+
+dination number, which describes the interaction geome-try with the surface (Supplementary Fig. 15). SelfTICA was then trained using a GNN encoder (Supplementary Fig. 16). The learned CV is capable of effectively sampling the catalytic process (Fig. 6a), with improved efficiency com-pared to simulations that apply a bias to one or both structural CVs (Supplementary Fig. 17). It is interesting to note that a single SelfTICA CV is capable of driving the sampling of both the adsorption and dissociation pro-cesses. Consistently, the free energy exhibits five distinct minima corresponding to the gas phase N (gas )2 , three dif-ferent adsorption states γ, α, and α′ 49 and the final dis-sociated state (Fig. 6b,c), and although it was obtained from a very short (2 ns) simulation, it is consistent with the reference free energy obtained from a much longer simulation 49 .
+
+III. DISCUSSION 
+
+In this work, we introduced SelfTICA, a self-supervised strategy to construct biasing coordinates from molecu-lar simulation data. Rather than requiring predefined metastable states, carefully optimized trial CVs, or tra-jectories with already converged kinetic information, Self-TICA learns a dynamical representation directly from time-lagged molecular configurations. The method first uses contrastive learning to identify a reusable latent ba-sis that preserves dynamical connectivity and then ap-plies TICA in this representation space to extract or-thogonal slow modes that can be used as collective vari-8ables for enhanced sampling. This representation-first design separates the learning of dynamical features from the spectral extraction of slow variables. As a result, Self-TICA avoids direct optimization of eigendecomposition-based objectives, improves training stability, and allows spectra, implied timescales, and CVs to be evaluated across lag times without retraining the neural-network encoder. This design enables SelfTICA to learn informative bi-asing variables even from limited, biased, or exploratory trajectories, reducing the need for equilibrated or kineti-cally optimal training data. These CVs can then be used in subsequent enhanced-sampling simulations to improve sampling efficiency and accelerate free-energy conver-gence. Importantly, SelfTICA should not be viewed as a way to reconstruct unbiased kinetics or slow modes from arbitrary biased simulations, but rather as a bias-design strategy that converts imperfect simulation data into pathway-relevant slow coordinates for enhanced sam-pling. An important feature is that the learned encoder can be viewed as a reusable dynamical basis rather than as a lag-time-specific model. This property makes the ap-proach naturally extensible. First, it provides a route toward transfer learning, where trajectories from related systems could be combined to learn a unified represen-tation and then adapted efficiently to specific molecular systems 53,54 . Second, because the representation cap-tures dominant dynamical features, it may provide an ef-ficient starting point for learning more expensive objec-tives, including committor learning 16 and infinitesimal-generator-based formulations 29 . The same representa-tion could also be combined with path-sampling strate-gies 55,56 .In conclusion, our results suggest that self-supervised dynamical representation learning can serve as a gen-eral bridge between molecular simulation data and en-hanced sampling. By learning reusable representations from time-lagged data and converting them into slow bi-asing coordinates, SelfTICA offers a scalable strategy for iterative CV discovery in complex molecular and atom-istic systems where optimal descriptors are not known in advance.  
+
+> IV. METHODS
+
+In the following sections, we first describe how Self-TICA constructs time-lagged contrastive datasets from unbiased or biased molecular dynamics trajectories. We then introduce the encoder architectures used to repre-sent molecular configurations, especially GNNs. Finally, we connect the contrastive objective to a VAMP-2-type variational score, discuss the use of linear and nonlin-ear predictors, and describe how TICA is applied in the learned feature space to construct the final CVs.  
+
+> A. Enhanced Sampling Protocols Based on OPES
+
+OPES is a family of CV-based enhanced sampling methods that accelerate configurational exploration by constructing a bias potential V (s) to drive the sampled distribution toward a prescribed target distribution, 
+
+V (s) = 1
+
+β log p(s)
+
+ptg (s) , (4) where s denotes the CVs, p(s) is the equilibrium proba-bility distribution estimated during the simulation, and 
+
+ptg (s) is the target distribution. Different choices of ptg (s) define different OPES vari-ants with distinct sampling objectives. OPES-MetaD 42 
+
+uses a well-tempered 57 target distribution and estimates the unbiased probability through on-the-fly reweighting, thereby progressively building a quasi-static bias that facilitates free-energy estimation along predefined CVs. In contrast, OPES-explore 45 estimates p(s) from the sampled distribution rather than from the reweighted one, producing a more exploratory bias that helps es-cape metastable basins and generate diverse transition data when the initial CVs are suboptimal. OPES-multithermal 43 constructs the target distribution as a mixture of overlapping probability distributions associ-ated with different effective temperatures, allowing the simulation to sample configurations relevant over a broad temperature range.  
+
+> B. Trajectory Data Generation for SelfTICA Training
+
+SelfTICA is trained on time-lagged datasets con-structed from molecular dynamics trajectories. Given a trajectory, we sample pairs of configurations separated by a lag time τ , denoted as (Rt, Rt+τ ). Within each mini-batch, the matched pair (R(i) 
+
+> t
+
+, R(i) 
+
+> t+τ
+
+) is treated as a positive pair because it follows the system’s τ -time evolution, whereas mismatched pairs (R(i) 
+
+> t
+
+, R(j) 
+
+> t+τ
+
+) with 
+
+i̸ = j are treated as negative pairs because they are not true τ -time successors. This construction enables label-free learning of dynamical representations directly from trajectory data, without requiring predefined metastable states or reaction-coordinate labels. However, the qual-ity and diversity of the learned representation depend strongly on the trajectory used for training. Ideally, the training data are generated from unbi-ased MD simulations, for which time-lagged pairs di-rectly sample the equilibrium dynamics of the system. In complex molecular systems, however, unbiased simu-lations often remain trapped in metastable basins and may not provide sufficient transitions for learning the relevant slow degrees of freedom. We therefore also con-struct training datasets from biased or exploratory tra-jectories generated by OPES-based enhanced sampling protocols. In this setting, the goal is not to reconstruct 9unbiased kinetics exactly, but to generate sufficiently di-verse trajectories that preserve the relevant transition-pathway information needed for CV discovery.  
+
+> C. Encoder architectures
+
+SelfTICA can be combined with different encoder ar-chitectures. When informative descriptors are available, such as pairwise distances or dihedral angles, we use a feed-forward neural network encoder to map them to a multidimensional latent representation. For systems where handcrafted descriptors are difficult to define, we employ a SchNet-based GNN 38,58 . A molec-ular configuration is represented as a graph, where atoms are nodes and interatomic distances are edge features. Edges are constructed within a cutoff radius, defining the neighborhood N (i) of atom i. The initial node features are obtained from atomic numbers and updated through message passing as hidden feature vectors h(l) 
+
+> i
+
+, while ge-ometric information enters through the interatomic dis-tance rij .At each message-passing layer, neighboring informa-tion is aggregated as 
+
+M(l) 
+
+> i
+
+= M 
+
+> j∈N (i)
+
+M (l)
+
+> θ
+
+
+
+h(l) 
+
+> i
+
+, h(l) 
+
+> j
+
+, r ij 
+
+
+
+, (5) where M (l) 
+
+> θ
+
+is a learnable message function and L
+
+denotes a permutation-invariant aggregation operation. The node feature is then updated by 
+
+h(l+1)  
+
+> i
+
+= U (l)
+
+> θ
+
+
+
+h(l) 
+
+> i
+
+, M(l)
+
+> i
+
+
+
+. (6) where U (l) 
+
+> θ
+
+is a learnable update function that combines the current node feature with the aggregated message. After L message-passing layers, node features are pooled into a graph-level representation, 
+
+z = Rθ
+
+
+
+ρ
+
+
+
+{h(L) 
+
+> i
+
+}Np
+
+> i=1
+
+ 
+
+, (7) where ρ is a permutation-invariant pooling function, Np
+
+is the number of pooled nodes, and Rθ is a learnable readout network. The resulting feature vector z is used for contrastive training and subsequent TICA analysis. For large systems with complex environments, we use a dual-cutoff truncated graph 48 . The selected atoms are partitioned into system nodes, which define the re-active region or CV, and environment nodes, such as solvent or surface atoms, which provide contextual in-formation. System nodes are always included, whereas environment nodes are retained only within an outer cut-off rt = rc + ∆ b from the system nodes, where rc is the local interaction cutoff and ∆b is a buffer for sta-ble neighbor-list updates. Edges involving environment nodes use the cutoff rc, while system–system edges may use a larger long-range cutoff rl to preserve connectivity between important reactive atoms. Pooling is restricted to system nodes, retaining environmental effects while re-ducing computational cost and noise from intermittently included environment atoms.  
+
+> D. Connection between the contrastive loss and the VAMP-2 score
+
+Turri et al. 37 have shown that the contrastive loss in Eq. 3 is closely related to the optimization of eigen-functions of the dynamical operator. In our setting, the encoder φ defines a finite-dimensional feature space, 
+
+zt = φ(Rt). For a fixed encoder, minimizing the con-trastive objective with respect to the predictor gives 
+
+P ∗ = arg min  
+
+> P
+
+L(φ, P ) = C−100 C0τ C−1 
+
+> τ τ
+
+, (8) where C00 = ⟨ztz⊤ 
+
+> t
+
+⟩, Cτ τ = ⟨zt+τ z⊤ 
+
+> t+τ
+
+⟩, and C0τ =
+
+⟨ztz⊤ 
+
+> t+τ
+
+⟩. Substituting the optimal predictor P ∗ back into the contrastive objective yields 
+
+L(φ, P ∗) = − C−1/200 C0τ C−1/2 
+
+> τ τ
+> 2
+> F
+
+, (9) up to constants independent of the encoder. Thus, when the predictor is optimal, minimizing the contrastive ob-jective is equivalent to maximizing the VAMP-2 score 26 ,defined as the sum of squared singular values of the nor-malized finite-dimensional dynamical operator. For equilibrium molecular dynamics satisfying detailed balance, the dynamics are reversible with respect to the Boltzmann distribution. In this reversible limit, the dy-namical operator admits a self-adjoint representation, and the slow modes can equivalently be viewed as the leading eigenfunctions of the reversible transfer operator. Stationarity implies that the two equal-time covariance matrices are identical, C00 = Cτ τ = C0, where C0 de-notes the equilibrium covariance of the learned features, while reversibility allows the time-lagged covariance to be written as C0τ = Cτ . Under these conditions, the VAMP-2 score reduces to the VAC objective, given by the sum of the squared Ritz eigenvalues, P 
+
+> i
+
+λ2 
+
+> i
+
+. Since the contrastive objective is the negative of this score up to encoder-independent constants, it becomes 
+
+L(φ, P ∗) = − X
+
+> i
+
+λ2 
+
+> i
+
+(10) in the reversible equilibrium limit. Minimizing the con-trastive loss, therefore, encourages the learned feature space to approximate the dominant eigenspace of the transfer operator.  
+
+> E. Linear and nonlinear predictors
+
+The choice of predictor depends on the type of trajec-tory used for training. In practice, we use a linear pre-10 dictor for equilibrium or approximately stationary trajec-tories, and a nonlinear predictor when the training tra-jectory is generated under a strongly time-dependent or exploratory bias. For unbiased equilibrium trajectories, the time-lagged evolution is governed by the transfer op-erator Tτ . In the learned finite-dimensional feature space, the predictor can be viewed as an approximation of the projected transfer operator. We therefore use a linear predictor, represented by a matrix P , to model the evo-lution from zt to zt+τ . In this setting, the connection between the contrastive objective and the VAMP-2 score is exact for the optimal linear predictor in the learned feature space, as described above. For biased or exploratory trajectories, however, the ap-plied bias alters the effective dynamics observed during training. As discussed by Devergne et al. 29,30 , this can be understood as a perturbation of the dynamical generator, 
+
+Tτ = eτ L, T ′ 
+
+> τ
+
+= eτ L′
+
+, L′ = L + ∆ LV , (11) where Tτ and T ′ 
+
+> τ
+
+are the unbiased and biased transfer op-erators, L and L′ are their infinitesimal generators, and 
+
+∆LV denotes the perturbation induced by the bias poten-tial. Thus, biased simulations may modify the finite-time transfer operator and change the apparent slow processes sampled during training. In this case, a single global lin-ear matrix may be too restrictive. We therefore use a nonlinear predictor, implemented as a neural network, to more flexibly approximate the effective time-lagged evo-lution while preserving the representation-first structure of SelfTICA. Importantly, when a nonlinear predictor is used, we re-gard it as a flexible approximation to the effective time-lagged evolution rather than as a strict finite-dimensional linear transfer-operator estimator. The nonlinear pre-dictor is therefore not intended to recover the unbiased dynamics exactly. Instead, we assume that the applied bias enhances exploration without destroying the rele-vant slow modes, so that the biased trajectories still re-tain sufficient kinetic information for CV discovery.  
+
+> F. TICA in the learned feature space for CV construction
+
+After optimization, the encoder provides a latent rep-resentation z = φ(R) that retains time-lagged dynam-ical information, but the individual feature coordinates are not necessarily orthogonal slow modes. We therefore apply TICA in the learned feature space to extract slow dynamical modes as linear combinations of the encoder features, 
+
+˜ψi(R) = w⊤ 
+
+> i
+
+φ(R), (12) where ˜ψi(R) denotes the i-th TICA component and wi
+
+is the corresponding projection vector. Using the same covariance matrices C0 and Cτ , the projection vectors are obtained by solving the generalized eigenvalue problem 
+
+Cτ wi = ˜λiC0wi. (13) This variational problem identifies linear combinations of encoder features with maximal time-lagged autocorre-lation. The eigenvectors wi define mutually orthogonal projections under the covariance metric. The leading TICA components are then used as CVs for enhanced sampling, which in the one-dimensional case corresponds to s(R) = ˜ψ1(R). The correspond-ing eigenvalues ˜λi quantify the relaxation times of the learned slow processes through the implied timescales, 
+
+ti = −τ / log |˜λi|. Since TICA is applied only after con-trastive training, the TICA lag time can be chosen inde-pendently of the contrastive-training lag time, enabling spectra, CVs, and implied timescales to be evaluated across lag times without retraining the encoder.  
+
+> G. SelfTICA Procedure
+
+We outline here the key steps of the SelfTICA proce-dure: 
+
+• Step 1. Collect configurations from unbiased MD or biased simulations driven by generic, trial, or suboptimal CVs, aiming to sample diverse configu-rations rather than a converged free-energy surface. 
+
+• Step 2. Construct matched and mismatched time-lagged pairs and train an encoder φ with the Self-TICA contrastive loss to learn dynamical molecular features. 
+
+• Step 3. Keep the encoder fixed and apply TICA in the learned representation space to extract or-thogonal slow modes. (Optional:) Repeat analysis at different lag times to evaluate eigenspectra, im-plied timescales, and alternative CVs. 
+
+• Step 4. Use the leading TICA component as the final ML-based CV for enhanced sampling.  
+
+> V. DATA AVAILABILITY
+
+Training and simulation data are available on GitHub 59 and Hugging Face 60 . 
+
+> VI. CODE AVAILABILITY
+
+The code for training SelfTICA CVs is available through the open-source mlcolvar library 61 alongside di-dactic tutorials, which is the preferred way to access the most updated code. To obtain the results reported in the manuscript, a frozen version is also available on Hugging Face 60 . The PLUMED 62,63 interface for the application of the bias is available on GitHub 59 and Hugging Face 60 .11 
+
+VII. BIBLIOGRAPHY 
+
+> 1
+
+D. Frenkel and B. Smit, Understanding molecular simulation: from algorithms to applications (Elsevier, 2023). 
+
+> 2
+
+J. Henin, T. Lelievre, M. R. Shirts, O. Valsson, and L. Dele-motte, “Enhanced sampling methods for molecular dynamics simulations,” Living Journal of Computational Molecular Science 
+
+4, 1583 (2022). 
+
+> 3
+
+O. Valsson, P. Tiwary, and M. Parrinello, “Enhancing impor-tant fluctuations: Rare events and metadynamics from a concep-tual viewpoint,” Annual review of physical chemistry 67 , 159–184 (2016). 
+
+> 4
+
+S. Mehdi, Z. Smith, L. Herron, Z. Zou, and P. Tiwary, “Enhanced sampling with machine learning,” Annual Review of Physical Chemistry 75 , 347–370 (2024). 
+
+> 5
+
+K. Zhu, E. Trizio, J. Zhang, R. Hu, L. Jiang, T. Hou, and L. Bonati, “Enhanced sampling in the age of machine learning: Algorithms and applications,” Chemical Reviews (2025). 
+
+> 6
+
+L. Bonati, V. Rizzi, and M. Parrinello, “Data-driven collective variables for enhanced sampling,” The journal of physical chem-istry letters 11 , 2998–3004 (2020). 
+
+> 7
+
+E. Trizio and M. Parrinello, “From enhanced sampling to reaction profiles,” The Journal of Physical Chemistry Letters 12 , 8621– 8626 (2021). 
+
+> 8
+
+W. Chen and A. L. Ferguson, “Molecular enhanced sampling with autoencoders: On-the-fly collective variable discovery and accel-erated free energy landscape exploration,” Journal of computa-tional chemistry 39 , 2079–2102 (2018). 
+
+> 9
+
+W. Chen, A. R. Tan, and A. L. Ferguson, “Collective variable dis-covery and enhanced sampling using autoencoders: Innovations in network architecture and error function design,” The Journal of chemical physics 149 (2018). 
+
+> 10
+
+Z. Belkacemi, P. Gkeka, T. Lelièvre, and G. Stoltz, “Chasing collective variables using autoencoders and biased trajectories,” Journal of chemical theory and computation 18 , 59–78 (2021). 
+
+> 11
+
+Y. Wang, J. M. L. Ribeiro, and P. Tiwary, “Past–future in-formation bottleneck for sampling molecular reaction coordinate simultaneously with thermodynamics and kinetics,” Nature com-munications 10 , 3573 (2019). 
+
+> 12
+
+D. Wang and P. Tiwary, “State predictive information bottle-neck,” The Journal of Chemical Physics 154 (2021). 
+
+> 13
+
+E. Vanden-Eijnden et al. , “Transition-path theory and path-finding algorithms for the study of rare events.” Annual review of physical chemistry 61 , 391–420 (2010). 
+
+> 14
+
+A. Ma and A. R. Dinner, “Automatic method for identifying re-action coordinates in complex systems,” The Journal of Physical Chemistry B 109 , 6769–6779 (2005). 
+
+> 15
+
+H. Jung, R. Covino, A. Arjun, C. Leitold, C. Dellago, P. G. Bol-huis, and G. Hummer, “Machine-guided path sampling to dis-cover mechanisms of molecular self-organization,” Nature Com-putational Science 3, 334–345 (2023). 
+
+> 16
+
+P. Kang, E. Trizio, and M. Parrinello, “Computing the commit-tor with the committor to study the transition state ensemble,” Nature Computational Science , 1–10 (2024). 
+
+> 17
+
+E. Trizio, P. Kang, and M. Parrinello, “Everything everywhere all at once: a probability-based enhanced sampling approach to rare events,” Nature Computational Science , 1–10 (2025). 
+
+> 18
+
+A. Megías, S. Contreras Arredondo, C. G. Chen, C. Tang, B. Roux, and C. Chipot, “Iterative variational learning of committor-consistent transition pathways using artificial neural networks,” Nature Computational Science (2025). 
+
+> 19
+
+J.-H. Prinz, H. Wu, M. Sarich, B. Keller, M. Senne, M. Held, J. D. Chodera, C. Schütte, and F. Noé, “Markov models of molecular kinetics: Generation and validation,” The Journal of chemical physics 134 (2011). 
+
+> 20
+
+G. Pérez-Hernández, F. Paul, T. Giorgino, G. De Fabritiis, and F. Noé, “Identification of slow molecular order parameters for markov model construction,” The Journal of chemical physics 
+
+139 (2013). 
+
+> 21
+
+F. Nuske, B. G. Keller, G. Pérez-Hernández, A. S. Mey, and F. Noé, “Variational approach to molecular kinetics,” Journal of chemical theory and computation 10 , 1739–1752 (2014). 
+
+> 22
+
+H. Wu, F. Nüske, F. Paul, S. Klus, P. Koltai, and F. Noé, “Vari-ational koopman models: Slow collective variables and molecular kinetics from short off-equilibrium simulations,” The Journal of chemical physics 146 (2017). 
+
+> 23
+
+L. Bonati, G. Piccini, and M. Parrinello, “Deep learning the slow modes for rare events sampling,” Proceedings of the National Academy of Sciences 118 , e2113533118 (2021). 
+
+> 24
+
+W. Chen, H. Sidky, and A. L. Ferguson, “Nonlinear discovery of slow molecular modes using state-free reversible vampnets,” The Journal of chemical physics 150 (2019). 
+
+> 25
+
+K. Shmilovich and A. L. Ferguson, “Girsanov reweighting en-hanced sampling technique (grest): On-the-fly data-driven dis-covery of and enhanced sampling in slow collective variables,” The Journal of Physical Chemistry A 127 , 3497–3517 (2023). 
+
+> 26
+
+A. Mardt, L. Pasquali, H. Wu, and F. Noé, “Vampnets for deep learning of molecular kinetics,” Nature communications 9,5 (2018). 
+
+> 27
+
+A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan, T. Killeen, Z. Lin, N. Gimelshein, L. Antiga, A. Desmaison, A. Kopf, E. Yang, Z. DeVito, M. Raison, A. Tejani, S. Chil-amkurthy, B. Steiner, L. Fang, J. Bai, and S. Chintala, “Py-torch: An imperative style, high-performance deep learning li-brary,” Advances in Neural Information Processing Systems , 32 
+
+(2019). 
+
+> 28
+
+Y. I. Yang and M. Parrinello, “Refining collective coordinates and improving free energy representation in variational enhanced sampling,” Journal of chemical theory and computation 14 ,2889–2894 (2018). 
+
+> 29
+
+T. Devergne, V. R. Kostic, M. Parrinello, and M. Pontil, “From biased to unbiased dynamics: An infinitesimal generator ap-proach,” in Advances in Neural Information Processing Systems 
+
+(2024). 
+
+> 30
+
+T. Devergne, V. Kostic, M. Pontil, and M. Parrinello, “Slow dynamical modes from static averages,” The Journal of Chemical Physics 162 (2025). 
+
+> 31
+
+T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework for contrastive learning of visual representations,” in 
+
+Proceedings of the 37th International Conference on Machine Learning , Proceedings of Machine Learning Research, Vol. 119, edited by H. D. III and A. Singh (PMLR, 2020) pp. 1597–1607. 
+
+> 32
+
+K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for unsupervised visual representation learning,” in Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (2020). 
+
+> 33
+
+A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agar-wal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from nat-ural language supervision,” in Proceedings of the 38th Interna-tional Conference on Machine Learning , Proceedings of Machine Learning Research, Vol. 139, edited by M. Meila and T. Zhang (PMLR, 2021) pp. 8748–8763. 
+
+> 34
+
+Y. Wang, J. Wang, Z. Cao, and A. Barati Farimani, “Molecu-lar contrastive learning of representations via graph neural net-works,” Nature Machine Intelligence 4, 279–287 (2022). 
+
+> 35
+
+T. Yu, H. Cui, J. C. Li, Y. Luo, G. Jiang, and H. Zhao, “Enzyme function prediction using contrastive learning,” Science 
+
+379 , 1358–1363 (2023). 
+
+> 36
+
+Y. Jia, B. Gao, J. Tan, J. Zheng, X. Hong, W. Zhu, H. Tan, Y. Xiao, L. Tan, H. Cai, et al. , “Deep contrastive learning enables genome-wide virtual screening,” Science 391 , eads9530 (2026). 
+
+> 37
+
+G. Turri, L. Bonati, K. Zhu, M. Pontil, and P. Novelli, “Self-supervised evolution operator learning for high-dimensional dy-namical systems,” in The Fourteenth International Conference on Learning Representations (2026). 
+
+> 38
+
+J. Zhang, L. Bonati, E. Trizio, O. Zhang, Y. Kang, T. Hou, and M. Parrinello, “Descriptor-free collective variables from geo-metric graph neural networks,” Journal of Chemical Theory and 12 
+
+Computation (2024). 
+
+> 39
+
+J. Z. HaoChen, C. Wei, A. Gaidon, and T. Ma, “Provable guar-antees for self-supervised deep learning with spectral contrastive loss,” in Advances in Neural Information Processing Systems ,Vol. 34 (Curran Associates, Inc., 2021) pp. 5000–5011. 
+
+> 40
+
+L. Molgedey and H. G. Schuster, “Separation of a mixture of independent signals using time delayed correlations,” Physical review letters 72 , 3634 (1994). 
+
+> 41
+
+C. R. Schwantes and V. S. Pande, “Modeling molecular kinetics with tica and the kernel trick,” Journal of chemical theory and computation 11 , 600–608 (2015). 
+
+> 42
+
+M. Invernizzi and M. Parrinello, “Rethinking metadynamics: from bias potentials to probability distributions,” The journal of physical chemistry letters 11 , 2731–2736 (2020). 
+
+> 43
+
+M. Invernizzi, P. M. Piaggi, and M. Parrinello, “Unified approach to enhanced sampling,” Physical Review X 10 , 041034 (2020). 
+
+> 44
+
+K. Lindorff-Larsen, S. Piana, R. O. Dror, and D. E. Shaw, “How fast-folding proteins fold,” Science 334 , 517–520 (2011). 
+
+> 45
+
+M. Invernizzi and M. Parrinello, “Exploration vs convergence speed in adaptive-bias enhanced sampling,” Journal of Chemi-cal Theory and Computation 18 , 3988–3996 (2022). 
+
+> 46
+
+J. Yin, N. M. Henriksen, D. R. Slochower, M. R. Shirts, M. W. Chiu, D. L. Mobley, and M. K. Gilson, “Overview of the sampl5 host–guest challenge: Are we doing better?” Journal of computer-aided molecular design 31 , 1–19 (2017). 
+
+> 47
+
+V. Rizzi, L. Bonati, N. Ansari, and M. Parrinello, “The role of water in host-guest interaction,” Nature Communications 12 , 93 (2021). 
+
+> 48
+
+P. Kang, J. Zhang, E. Trizio, T. Hou, and M. Parrinello, “Com-mittors without descriptors,” Journal of Chemical Theory and Computation (2026). 
+
+> 49
+
+L. Bonati, D. Polino, C. Pizzolitto, P. Biasi, R. Eckert, S. Re-itmeier, R. Schlögl, and M. Parrinello, “The role of dynamics in heterogeneous catalysis: Surface diffusivity and n2 decom-position on fe (111),” Proceedings of the National Academy of Sciences 120 , e2313023120 (2023). 
+
+> 50
+
+M. Grunze, M. Golze, W. Hirschwald, H.-J. Freund, H. Pulm, U. Seip, M. Tsai, G. Ertl, and J. Küppers, “ π-bonded n 2 on fe (111): the precursor for dissociation,” Physical review letters 53 ,850 (1984). 
+
+> 51
+
+J. J. Mortensen, L. B. Hansen, B. Hammer, and J. K. Nørskov, “Nitrogen adsorption and dissociation on fe (111),” Journal of Catalysis 182 , 479–488 (1999). 
+
+> 52
+
+J. Qian, Q. An, A. Fortunelli, R. J. Nielsen, and W. A. God-dard III, “Reaction mechanism and kinetics for ammonia synthe-sis on the fe (111) surface,” Journal of the American Chemical Society 140 , 6288–6297 (2018). 
+
+> 53
+
+J. Falk, L. Bonati, P. Novelli, M. Parrinello, and M. Pontil, “Transfer learning for atomistic simulations using gnns and kernel mean embeddings,” Advances in Neural Information Processing Systems 36 , 29783–29797 (2023). 
+
+> 54
+
+P. Novelli, G. Meanti, P. J. Buigues, L. Rosasco, M. Parrinello, M. Pontil, and L. Bonati, “Fast and fourier features for transfer learning of interatomic potentials,” npj Computational Materials 
+
+11 , 293 (2025). 
+
+> 55
+
+J. Zhang, O. Zhang, L. Bonati, and T. Hou, “Combining transi-tion path sampling with data-driven collective variables through a reactivity-biased shooting algorithm,” Journal of Chemical Theory and Computation 20 , 4523–4532 (2024). 
+
+> 56
+
+H. Jung, K.-i. Okazaki, and G. Hummer, “Transition path sam-pling of rare events by shooting from the top,” The Journal of chemical physics 147 (2017). 
+
+> 57
+
+A. Barducci, G. Bussi, and M. Parrinello, “Well-tempered metadynamics: a smoothly converging and tunable free-energy method,” Physical review letters 100 , 020603 (2008). 
+
+> 58
+
+K. T. Schütt, H. E. Sauceda, P.-J. Kindermans, A. Tkatchenko, and K.-R. Müller, “Schnet–a deep learning architecture for molecules and materials,” The Journal of Chemical Physics 148 
+
+(2018). 
+
+> 59
+
+GitHub : https://github.com/Kai-Zhu-2001/SelfTICA/ .
+
+> 60
+
+Hugging Face : https://huggingface.co/datasets/ Kai-Zhu-2001/SelfTICA .
+
+> 61
+
+L. Bonati, E. Trizio, A. Rizzi, and M. Parrinello, “A uni-fied framework for machine learning collective variables for en-hanced sampling simulations: mlcolvar,” The Journal of Chemi-cal Physics 159 (2023). 
+
+> 62
+
+G. A. Tribello, M. Bonomi, D. Branduardi, C. Camilloni, and G. Bussi, “Plumed 2: New feathers for an old bird,” Computer physics communications 185 , 604–613 (2014). 
+
+> 63
+
+“Promoting transparency and reproducibility in enhanced molec-ular simulations,” Nature methods 16 , 670–673 (2019). 
+
+> 64
+
+G. Bussi and M. Parrinello, “Accurate sampling using langevin dynamics,” Physical Review E—Statistical, Nonlinear, and Soft Matter Physics 75 , 056707 (2007). 
+
+> 65
+
+O. Valsson and M. Parrinello, “Variational approach to enhanced sampling and free energy calculations,” Physical review letters 
+
+113 , 090601 (2014). 
+
+> 66
+
+M. J. Abraham, T. Murtola, R. Schulz, S. Páll, J. C. Smith, B. Hess, and E. Lindahl, “Gromacs: High performance molec-ular simulations through multi-level parallelism from laptops to supercomputers,” SoftwareX 1, 19–25 (2015). 
+
+> 67
+
+R. Salomon-Ferrer, D. A. Case, and R. C. Walker, “An overview of the amber biomolecular simulation package,” Wiley Interdis-ciplinary Reviews: Computational Molecular Science 3, 198–210 (2013). 
+
+> 68
+
+S. Piana, K. Lindorff-Larsen, and D. E. Shaw, “How robust are protein folding simulations with respect to force field parameter-ization?” Biophysical journal 100 , L47–L49 (2011). 
+
+> 69
+
+A. D. MacKerell Jr, D. Bashford, M. Bellott, R. L. Dunbrack Jr, J. D. Evanseck, M. J. Field, S. Fischer, J. Gao, H. Guo, S. Ha, 
+
+et al. , “All-atom empirical potential for molecular modeling and dynamics studies of proteins,” The journal of physical chemistry B 102 , 3586–3616 (1998). 
+
+> 70
+
+B. Hess, H. Bekker, H. J. Berendsen, and J. G. Fraaije, “Lincs: A linear constraint solver for molecular simulations,” Journal of computational chemistry 18 , 1463–1472 (1997). 
+
+> 71
+
+T. Darden, D. York, L. Pedersen, et al. , “Particle mesh ewald: An n log (n) method for ewald sums in large systems,” Journal of chemical physics 98 , 10089–10092 (1993). 
+
+> 72
+
+J. Wang, R. M. Wolf, J. W. Caldwell, P. A. Kollman, and D. A. Case, “Development and testing of a general amber force field,” Journal of computational chemistry 25 , 1157–1174 (2004). 
+
+> 73
+
+G. Bussi, D. Donadio, and M. Parrinello, “Canonical sampling through velocity rescaling,” The Journal of chemical physics 126 
+
+(2007). 
+
+> 74
+
+V. Limongelli, M. Bonomi, and M. Parrinello, “Funnel metady-namics as accurate binding free-energy method,” Proceedings of the National Academy of Sciences 110 , 6358–6363 (2013). 
+
+> 75
+
+S. Bhakat and P. Söderhjelm, “Resolving the problem of trapped water in binding cavities: prediction of host–guest binding free energies in the sampl5 challenge by funnel metadynamics,” Jour-nal of computer-aided molecular design 31 , 119–132 (2017). 
+
+> 76
+
+A. P. Thompson, H. M. Aktulga, R. Berger, D. S. Bolintineanu, W. M. Brown, P. S. Crozier, P. J. In’t Veld, A. Kohlmeyer, S. G. Moore, T. D. Nguyen, et al. , “Lammps-a flexible simu-lation tool for particle-based materials modeling at the atomic, meso, and continuum scales,” Computer physics communications 
+
+271 , 108171 (2022). 
+
+> 77
+
+I. Batatia, D. P. Kovacs, G. Simm, C. Ortner, and G. Csanyi, “Mace: Higher order equivariant message passing neural net-works for fast and accurate force fields,” in Advances in Neural Information Processing Systems , Vol. 35, edited by S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh (Curran Associates, Inc., 2022) pp. 11423–11436. 
+
+> 78
+
+S. Perego and L. Bonati, “Data efficient machine learning poten-tials for modeling catalytic reactivity via active learning and en-hanced sampling,” npj Computational Materials 10 , 291 (2024). 13  
+
+> VIII. ACKNOWLEDGMENTS
+
+We are grateful to T. Devergne and E. Trizio for helpful discussions and feedback on the manuscript. K.Z. grate-fully acknowledges support from Zhejiang University and thanks R. Hu for providing computational resources. We also acknowledge the CINECA award under the ISCRA initiative for providing access to high-performance com-puting resources and support.  
+
+> IX. FUNDING
+
+The authors disclose support for the research of this work from the National Key Research and Development Program of China [grant number 2025ZD1803103].  
+
+> X. AUTHOR CONTRIBUTIONS
+
+K.Z. and L.B. designed the study and T.H. and L.B. supervised the project. K.Z. and P.N. developed the Self-TICA code, while J.Z. and K.Z. developed the GNN-related code. K.Z. performed all model training and simulations. All authors analyzed and discussed the re-sults. K.Z. and J.Z. drafted the initial version of the manuscript, and all authors contributed to the revision and editing.  
+
+> XI. COMPETING INTERESTS
+
+The authors declare no competing interests. 14 
+
+SUPPLEMENTARY INFORMATION S1. TRIPLE-WELL POTENTIAL A. Computational details Simulation details The triple-well potential energy surface, U (x, y ), is defined as a function of the Cartesian coordinates 
+
+x and y as 
+
+U (x, y ) = 3 e−x2 
+
+e−(y− 13 )2
+
+− e−(y− 53 )2 
+
+− 5e−y2 
+
+e−(x−1) 2
+
++ e−(x+1) 2 
+
++ 0 .2x4 + 0 .2
+
+
+
+y − 13
+
+4
+
+.
+
+(S1) The simulation of the diffusion of an ideal particle of mass 1 has been performed using Langevin dynamics based on the Bussi-Parrinello algorithm 64 as implemented in the ves_md_linearexpansion 65 module of PLUMED 62,63 . The damping constant in the Langevin equation was set to 10/time-unit. The time unit was defined arbitrarily and corresponds to 200 timesteps. Unbiased simulations were performed at kB T = 1 .0, whereas biased simulations were performed at the lower temperature of kB T = 0 .6. All simulations were run for 20,000 time units. In the biased simulations, the OPES bias was updated every 500 steps, and the barrier parameter was set to 10 kBT .
+
+Training details The Cartesian coordinates (x, y ) of the diffusing particle were used as input features to a feed-forward neural network (FFNN) with architecture [2 , 50 , 50 , 5] . The predictor was parameterized as a three-layer feedforward neural network, with each layer containing five neurons. A shifted softplus activation function was employed throughout all networks 58 . The contrastive loss was regularized with a coefficient of 1 × 10 −6. Model parameters were optimized using the ADAM optimizer with a learning rate of 1 × 10 −3. Training was performed for 500 epochs. For the numerical stability benchmark, the lag time was set to τ = 1 time unit, corresponding to 200 integration steps. 
+
+B. Additional results 
+
+Supplementary Fig. 1: The distributions obtained from different trajectories and the time evolution of px. The blue and green curves correspond to unbiased simulations at kB T = 0 .6 and kB T = 1 .0, respectively, while the red curve corresponds to a biased simulation at kB T = 0 .6 with a bias applied along the y coordinate. 15 
+
+Supplementary Fig. 2: Training stability of SelfTICA on biased triple-well trajectories. Results are shown for trajectories biased along the y-coordinate (top row) and the x-coordinate (bottom row), using either a linear or a nonlinear predictor. Each block reports the training and validation loss curves together with the two leading TICA eigenvalues estimated from the learned representations. 
+
+Supplementary Fig. 3: Encoder features learned from trajectories biased along the y-coordinate, together with the corresponding TICA projections obtained using linear and nonlinear predictors. 16 
+
+Supplementary Fig. 4: Minimum free energy path (MFEP) projected onto the two-dimensional configuration space. The black curve with markers denotes the MFEP connecting the two metastable basins on the potential energy surface. 
+
+Supplementary Fig. 5: Projection of the standard deviation across 25 independently trained SelfTICA and DeepTICA models onto the configuration space. 17    
+
+> S2. ALANINE DIPEPTIDE A. Computational details Simulation details
+
+All simulations of alanine dipeptide (Ace-Ala-Nme) in vacuum were performed using the GROMACS 
+
+v2022.5 66 molecular dynamics engine patched with PLUMED 62,63 , employing the Amber99SB force field 67 and a 2 fs integration timestep. Langevin dynamics 64 was used for thermostatting at a temperature of 300 K, with a damping coefficient given by γi = mi/(τ − t), where τ − t = 0 .05 ps. For the trial simulation, an OPES multithermal simulation was carried out over a temperature range of 300–600 K for a total duration of 1000 ns. The first 100 ns of the trajectory were discarded to ensure that the bias had reached a quasi-stationary regime. Frames from 100–120 ns, 100–200 ns, and 100–600 ns were then used to construct the training datasets, denoted as dataset 1, dataset 2, and dataset 3, respectively. The remaining 600–1000 ns segment was held out as the test set. To assess the stability of the learned CVs, OPES-MetaD biased simulations driven by each trained SelfTICA or DeepTICA CV were performed for 20 ns. In these simulations, the OPES bias was updated every 500 steps, and the barrier parameter was set to 40 kJ mol −1.To evaluate implied timescales, additional unbiased simulations were performed at 450, 500, and 600 K, with trajectory lengths of 500, 200, and 100 ns, respectively. These trajectories were not used for training and served only to assess whether the learned representation preserves the temperature-dependent relaxation times of the slow process. For each temperature, the trained SelfTICA encoder was kept fixed, TICA was applied to the learned features at different lag times, and the implied timescales were computed from the corresponding TICA eigenvalues.  
+
+> Training details
+
+For the FFNN-based models, we used 45 pairwise heavy-atom distances as input features to a feed-forward neural network with architecture [45 , 30 , 30 , 5] . The predictor was parameterized as a three-layer feedforward neural network, with each layer containing five neurons. Rectified linear unit (ReLU) activations were employed in all hidden layers. For the GNN-based models, all heavy atoms in the system were treated as reactive atoms, and a cutoff of rc = 10 Åwas applied. The GNN consisted of three message-passing layers, each using 16 Gaussian basis functions and 32 filters, with 64 hidden channels. The final output feature dimension was set to 8. Message aggregation was performed using a minimum-value operation. The contrastive loss was regularized with a coefficient of 1 × 10 −6. Model parameters were optimized using the Adam optimizer with a learning rate of 1 × 10 −3. Training was carried out for 500, 200, and 100 epochs on Dataset 1, Dataset 2, and Dataset 3, respectively. For the numerical stability benchmark, the lag time was set to τ = 10 .   
+
+> B. Additional results
+> Supplementary Fig. 6: The time evolution of the ϕangle in the initial multithermal run. The points are colored according to their potential energy.
+
+18 
+
+Supplementary Fig. 7: Distribution of alanine dipeptide training datasets with increasing trajectory lengths. Scatter plots show the sampled configurations projected onto the ϕ–ψ dihedral-angle space. Dataset 1, Dataset 2, and Dataset 3 were constructed from frames in the 100–120 ns, 100–200 ns, and 100–600 ns time windows, respectively. 
+
+Supplementary Fig. 8: Standard deviation and RMSE of free-energy differences ∆F (in kBT ), obtained from GNN-based SelfTICA and DeepTICA models trained on datasets of different lengths and evaluated over 10 OPES simulations. 
+
+Supplementary Fig. 9: Left, trajectories of the dihedral angle ϕ from 200 independent unbiased simulations initialized from configurations uniformly distributed along the SelfTICA CV between −1 and 1. Right, first implied timescale as a function of lag time computed from these trajectories. 19 
+
+Supplementary Fig. 10: Time evolution of the ϕ dihedral angle at 450 K, 500 K, and 600 K. The data points are colored according to the corresponding ψ dihedral angle. 
+
+Supplementary Fig. 11: Encoder output features and corresponding TICA components learned by SelfTICA models trained at different lag times. 20     
+
+> S3. CHIGNOLIN MINI-PROTEIN FOLDING A. Computational details Simulation details
+
+To investigate the folding and unfolding behavior of chignolin (CLN025; peptide sequence Tyr–Tyr–Asp–Pro–Glu–Thr–Gly–Thr–Trp–Tyr) in explicit solvent, we carried out molecular dynamics simulations using GROMACS v2024.5 66 patched with PLUMED 62,63 , employing the CHARMM22 ∗68 force field. The solvent environ-ment was modeled using the CHARMM TIP3P 69 water model. This setup is consistent with previous long-timescale unbiased simulations on this system 44 , enabling direct comparison of results. All simulations were conducted in the NVT ensemble at 340 K, using a 2 fs integration time step. The Asp and Glu residues, as well as the N- and C-termini, were modeled in their charged states. The simulation box contained 1,907 water molecules and two sodium ions to ensure charge neutrality. Bond constraints involving hydrogen atoms were enforced using the LINCS 70 algorithm, and long-range electrostatic interactions were computed via the particle mesh Ewald (PME) 71 method, with a 1 nm cutoff for all nonbonded interactions. For the trial simulation, a 1000 ns OPES-explore simulation was carried out at 340 K using the C α RMSD as a deliberately simple preliminary CV. For the production simulations, OPES-explore was applied to bias the first SelfTICA CV. In all OPES-explore simulations, the bias was updated every 500 steps and the barrier parameter was set to 20 kJ mol −1. 
+
+> Training details
+
+To train the models, we used 210 interatomic distances as input descriptors. The DeepTDA model was implemented as an FFNN with architecture [210 , 50 , 50 , 1] , using target centers of [−7.0, 7.0] and target sigmas of 
+
+[0 .2, 0.2] . For a fair comparison, DeepTICA and SelfTICA used the same encoder backbone, defined as an FFNN with architecture [210 , 50 , 50 , 5] . In SelfTICA, the predictor was parameterized as a three-layer feedforward neural network, with each layer containing five neurons. A lag time of τ = 50 ps was used for both SelfTICA and DeepTICA training. ReLU activations were employed throughout all networks. The contrastive loss was regularized with a coefficient of 
+
+1 × 10 −6.Model parameters were optimized using the Adam optimizer with a learning rate of 1 × 10 −3. The SelfTICA and DeepTICA models were trained for 100 epochs, whereas the DeepTDA model was trained for 500 epochs to ensure convergence.     
+
+> B. Additional results
+> Supplementary Fig. 12: Time evolution of the C αRMSD and convergence of the free-energy difference ∆Fin OPES-explore simulations biased along the SelfTICA CV trained on the D. E. Shaw trajectory.
+
+21    
+
+> S4. CALIXARENE HOST-GUEST SYSTEMS A. Computational details Simulation details
+
+We performed all simulations using GROMACS v2024.5 66 in combination with the PLUMED 62,63 plugin. The system was described using the GAFF 72 force field with RESP charges, and the solvent was modeled with the TIP3P water model. Simulations were conducted at a temperature of 300 K using a velocity-rescaling thermostat 73 
+
+with a time constant of 0.1 ps, and an integration time step of 2 fs was employed. The simulation box was cubic with a side length of 40.27 Å, containing 2,100 water molecules, the OAMe host, and the selected guest molecule. Sodium ions were added to neutralize the system. Following the standard SAMPL5 host–guest setup, a virtual atom V1 was defined at the center of the OAMe host and used as the reference point for the binding coordinate. At each simulation step, the coordinates were aligned so that the vertical axis of the box coincided with the binding axis h, and the box was centered on V1. To initiate the trial simulations, we first carried out 30 ns unbiased MD simulations in both the bound and unbound states to train the DeepTDA CVs. We then performed 100 ns OPES-MetaD simulations using the learned DeepTDA CVs. For production, we carried out 250 ns OPES-MetaD simulations using the first SelfTICA CV, while retaining the final static DeepTDA bias to preserve the broad configurational coverage generated during the initial exploration. In all OPES-MetaD simulations, the bias was updated every 500 steps, and the barrier parameter was set to 50 kJ mol −1. 
+
+> The funnel restraint
+
+Our research adopts the same funnel-shaped restraint 74 as used in previous studies 47,75 . This restraint confines the ligand within a cylindrical volume located above the binding site, thereby limiting the accessible space of the unbound state (U). As the ligand approaches the binding pocket, the funnel progressively widens, ensuring that it does not interfere with the binding process. Having aligned the system using PLUMED to a reference configuration in which the binding axis lies along the vertical ( z) direction, we define h as the projection of the geometric center of the ligand’s carbon atoms onto the binding axis. This projection serves as the radial coordinate. When h > 10 Å, the funnel surface forms a cylinder of radius Rcyl = 2 Å aligned along the vertical axis. For h < 10 Å, the funnel expands into an umbrella-like shape with a 45 ◦ opening angle, and its surface is described by the relation r = 12 − h.The restraining force that pushes the ligand back when it crosses the funnel surface is harmonic: F = −kFx, where 
+
+x is the displacement from the surface and kF = 20 kJ/mol Å −2. Additionally, a harmonic restraint is applied along the h coordinate to prevent the ligand from the host and reaching the upper boundary of the simulation box. This restraint takes the form F = −kU(h − 18) for h > 18 Å, with kU = 40 kJ/mol Å −2.Because of the funnel restraint, the free energy difference between the bound and the unbound state that we extract from enhanced sampling simulations needs a correction that can be calculated as: 
+
+∆G = − 1
+
+β log 
+
+
+
+C0πR 2cyl 
+
+Z
+
+> B
+
+dh exp [ −β (W (h) − Wu)] 
+
+
+
+(S2) where β = 1  
+
+> kBT
+
+, C0 = 11660  
+
+> −3
+
+is the standard concentration, h is the coordinate along the funnel’s axis, W (h) is the free energy along the funnel axis, and WU its reference value in state U.  
+
+> Training details
+
+We employed a GNN to construct collective variables for the calixarene system. Specifically, 7 atoms from the guest molecule and 11 atoms from the host backbone were selected as reactive atoms, while nearby water oxygen atoms were treated as environment atoms. Models were trained using short-range cutoff radii of rc = 3 , 4, 5 Å, together with an additional buffer of ∆b = 1 Å, corresponding to effective cutoffs of rt = 4 , 5, 6 Å. A fixed long-range cutoff of rl = 18 Å was applied to all reactive atoms. As a control, we also trained a host–guest-only model in which the graph representation included only the selected reactive atoms, excluded water oxygen atoms, and used a cutoff distance of 18 Å. For the DeepTDA models, the GNN consisted of two message-passing layers with 16 Gaussian basis functions and 16 filters per layer, each employing 20 hidden channels, and using target centers of [−7.0, 7.0] and target sigmas of 
+
+[0 .2, 0.2] . For the SelfTICA models, we employed a SchNet architecture with two message-passing layers, 12 Gaussian basis functions, and 12 filters per layer, each with 12 hidden channels, followed by an output feature dimension of 4. Message aggregation was performed using an attention mechanism. The predictor was parameterized as a three-layer feedforward neural network, with each layer containing four neurons. The contrastive loss was regularized with a coefficient of 1 × 10 −6. Model parameters were optimized using the Adam optimizer with a learning rate of 1 × 10 −3. The SelfTICA models were trained for 100 epochs, whereas the DeepTDA models were trained for 500 epochs to ensure convergence. The lag time used to construct the time-lagged training dataset was set to τ = 1 ps. 22 
+
+B. Additional results 
+
+Supplementary Fig. 13: OPES simulation driven by a graph-based DeepTDA CV. The ligand position z is plotted over time and colored by the DeepTDA CV value. Only selected host–guest atoms were included in the graph, with a cutoff distance of 18 Å. 
+
+Supplementary Fig. 14: Free energy profiles for the SelfTICA simulation. The average estimates from three independent simulations are reported as a green solid line, whereas the uncertainty, computed as the standard deviation over three replicas, is depicted as a shaded green region. The reference values are provided as gray dashed lines, and the 0.5 kB T interval around the reference is marked by gray dotted lines. 23      
+
+> S5. CATALYTIC DISSOCIATION OF N2ON FE(111) SURFACES A. Computational details Simulation details
+
+Simulations of the catalytic dissociation of N2 on the Fe(111) surface were carried out using the 
+
+LAMMPS software 76 , patched with MACE 77 and PLUMED 62 . The system consisted of a total of 194 atoms, including 192 Fe atoms forming the slab and 2 N atoms comprising the N2 molecule. The simulation box dimensions were 
+
+16 .235 × 14 .060 × 39 .113 Å3. The interatomic potential was described using an MACE model 77 trained via an active learning procedure 78 , enabling an accurate representation of the potential energy surface across the relevant configurational space. All simulations were performed in the NVT ensemble with an integration time step of 0.5 fs .The temperature was controlled using a stochastic velocity-rescaling thermostat 73 with a coupling time constant of 
+
+100 fs .In the simulation setup, the bottom two layers of the slab were kept fixed to impose boundary conditions mimicking a semi-infinite surface. Periodic boundary conditions were applied in the x and y directions, while along the z
+
+direction, a reflecting wall was placed 10.4 Å above the surface. During sampling, an upper wall was applied to the nitrogen–nitrogen distance, dNN , at 2.2 Å to restrict the exploration to the relevant dissociation region. During sampling, the iron–nitrogen coordination number was computed as a continuous and differentiable switching function, 
+
+CN, Fe = X
+
+> i∈N
+
+X
+
+> j∈Fe
+
+1 − (rij /r 0)n
+
+1 − (rij /r 0)m , (S3) where rij is the distance between nitrogen atom i and iron atom j. The sums run over the two nitrogen atoms of 
+
+N2 and all Fe atoms included in the coordination-number definition. The switching parameters were set to r0 = 2 .5, ,
+
+n = 6 , and m = 12 , so that Fe–N contacts shorter than r0 contribute strongly, whereas more distant pairs contribute smoothly toward zero. For all OPES simulations of the N2 dissociation system, including both the initial OPES-MetaD run and the subsequent OPES-explore simulations, the bias was updated every 500 steps, and the barrier parameter was set to 82 kJ mol −1. 
+
+> Training details
+
+We employed a GNN to train the MLCV for this system. All 194 atoms were represented as nodes in the graph, and interatomic edges were constructed using a cutoff radius of rc = 5 Å, enabling the model to capture interactions spanning approximately two layers of Fe atoms. The GNN architecture used within SelfTICA consisted of two message-passing layers, each using 16 Gaussian radial basis functions and 20 filters, with 20 hidden channels per layer, followed by a latent feature representation of dimension 8. Message aggregation was performed using mean pooling. The predictor was parameterized as a three-layer feedforward neural network, with each layer containing eight neurons. The contrastive loss was regularized with a coefficient of 1 × 10 −6. Model parameters were optimized using the Adam optimizer with a learning rate of 1 × 10 −3. The SelfTICA model was trained for 100 epochs. The lag time used to construct the time-lagged training dataset was set to τ = 0 .05 ps.      
+
+> B. Additional results
+> Supplementary Fig. 15: Time evolution of the N−Ndistance from OPES-MetaD simulation driven by the N−Ndistance and coordination number. Data points are colored according to the coordination number.
+
+24 
+
+Supplementary Fig. 16: Projection of the SelfTICA CV onto the two-dimensional space defined by the N−N distance and the coordination number. 
+
+Supplementary Fig. 17: Time evolution of the N−N distance from three independent OPES-explore simulations driven by the 
+
+N−N distance, coordination number, and SelfTICA CV, respectively. Data points are colored according to the coordination number.

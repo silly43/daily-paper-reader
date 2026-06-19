@@ -1,0 +1,471 @@
+Title: RepGene: Toward a Unified Gene Representation Space Robust to Missing Biological Views
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.06.11.731512v1.full.pdf
+
+Number of Pages: 16
+
+Markdown Content:
+# RepGene: Toward a Unified Gene Representation Space Robust to Missing Biological Views 
+
+Haiyang Hou 1,2 Tianyi Xia 2 Luni Hu 2 Hua Qin 2 Yong Zhang 3 Yuxiang Li 3
+
+Shuangsang Fang 2,∗ Lei Cao 2,∗ 
+
+> 1
+
+School of Artificial Intelligence, University of Chinese Academy of Sciences, Beijing  
+
+> 2
+
+BGI Research, Beijing 3 BGI Research, Wuhan 
+
+* Correspondence: {fangshuangsang, caolei2}@genomics.cn 
+
+## Abstract 
+
+Genes can be described through multiple heterogeneous biological views, includ-ing genomic sequence, transcript sequence, protein sequence, textual knowledge, and single-cell expression context, yet existing gene embeddings remain largely modality-specific and difficult to compare or reuse when many views are unavail-able. We study a narrower but practically important question: whether pretrained embeddings from these distinct sources can be organized into a shared gene repre-sentation interface that remains usable under severe missing-modality conditions. To investigate this question, we introduce RepGene , a lightweight single-branch framework that combines modality adapters, a shared encoder, presence-aware fusion, and self-supervised cross-view objectives to map five biological views into one latent space. Our goal is not to claim a new multimodal learning principle or to establish superiority over all simpler fusion strategies, but to provide an initial technical instantiation for testing whether such a shared interface is feasible in a fixed-feature setting. Under a two-stage protocol in which RepGene is trained self-supervised on frozen upstream embeddings and evaluated by downstream linear probing, we find preliminary evidence that the learned representation is broadly competitive in the full-modality setting and remains informative when only partial modality subsets are observed at inference time. The strongest signal in our study is robustness under missing views: average performance changes are often limited when one modality is removed, and even single-view inference remains non-trivial in the evaluated benchmark regime. These results do not resolve unified biologi-cal representation learning, and they should be interpreted in light of incomplete simple-fusion baselines, limited architectural ablation, benchmark dependence, and possible upstream feature exposure. We therefore position RepGene as a feasibility study and a starting point for stronger comparisons, broader benchmarks, and leakage-aware validation. 
+
+## 1 Introduction 
+
+Genes can be characterized through multiple biological views, including genomic sequence, transcript sequence, protein sequence, textual knowledge, and single-cell expression context. Recent biological foundation models make these views increasingly accessible, but the resulting embeddings typically remain separated into modality-specific spaces that are difficult to compare, compose, or reuse when only a subset of views is available. 
+
+> Preprint.
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+This fragmentation creates a practical bottleneck for gene representation learning. In realistic settings, not every gene is observed through every modality, and downstream performance can depend as much on modality choice as on the learning architecture itself. This motivates a broader question than standard multimodal fusion: can heterogeneous pretrained gene embeddings be organized into a shared representation interface that remains usable under partial modality availability? In this work, we study that question through RepGene , a unified single-branch framework for missing-modality-robust gene representation learning. Rather than building a large modality-specific multi-tower system, RepGene uses lightweight adapters to normalize heterogeneous input dimensions, a shared encoder to process all views through one common pathway, presence-aware fusion to aggregate only observed modalities, and self-supervised objectives to encourage cross-view consistency. We emphasize from the outset that our goal is not to claim that unified biological representation learning is solved, nor that the present design is already superior to simpler fusion alternatives. Instead, we aim to provide an initial technical instantiation and empirical feasibility study of this research direction. A central design hypothesis in RepGene is that routing different modalities through one shared encoding pathway may encourage a more comparable latent geometry than keeping them in separate modality-specific branches. In the current paper, however, this should be read as a motivated architectural choice rather than a definitively isolated causal mechanism: our experiments are intended to test whether the overall shared-space formulation is workable in a fixed-feature setting, not to fully settle which architectural component is strictly necessary. Our evaluation follows a strict two-stage protocol. In stage one, RepGene is trained self-supervised using frozen foundation-model features and without access to downstream benchmark labels. In stage two, the learned representations are frozen and assessed using benchmark-defined linear probes under strict train–test splits. This setup is designed to evaluate representation informativeness rather than end-to-end supervised adaptation. Within this scope, we ask three focused questions: whether a shared-space model can produce competitive fused representations, whether the learned representation remains usable when modalities are missing at inference time, and whether multimodal shared-space training preserves meaningful single-view usability after joint learning. Among these, the missing-modality question is the most central, because practical gene-centered applications often face incomplete modality coverage rather than clean, fully observed multimodal records. We make the following contributions: • We formulate unified gene representation under severe missing-modality conditions as a concrete feasibility question over five heterogeneous biological views. • We present RepGene as a lightweight single-branch instantiation of this idea, combining modality adapters, a shared encoder, presence-aware fusion, and self-supervised alignment objectives in a fixed-feature regime. • We provide preliminary frozen-linear-probe evidence that the learned shared space remains informative across multiple task families and under substantial modality removal at inference time. • We explicitly delineate the current evidence boundary of this study, including incomplete simple-fusion baselines, limited architectural ablation, benchmark dependence, possible upstream feature exposure, and restricted organismal scope. Taken together, these contributions position RepGene as an initial step toward a unified gene represen-tation interface rather than a definitive solution. We therefore frame the paper as a feasibility-oriented study whose main value lies in clarifying what appears promising, what remains unresolved, and what stronger validation is still required. 
+
+## 2 Related Work 
+
+2.1 Unimodal biological foundation models 
+
+Large pretrained models have recently become available across multiple biological views spanning the central dogma and related knowledge channels [Crick, 1970]. In genomics, models such as Evo2, DNABERT-2, HyenaDNA, and the Nucleotide Transformer learn sequence representations 2
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+from DNA and genomic corpora [Brixi et al., 2026, Zhou et al., 2024, Dalla-Torre et al., 2023]. In transcriptomics and proteomics, LucaOne and protein language models such as ESM and ProtTrans provide rich embeddings from nucleotide or amino-acid sequences [He et al., 2025, Lin et al., 2023, Hayes et al., 2025, Elnaggar et al., 2021]. In parallel, text-derived gene representations and single-cell foundation models provide additional semantic and cellular-context views for the same biological entities [Chen and Zou, 2023, Alibaba Cloud, 2025, Cui et al., 2024, Theodoris et al., 2023, Yang et al., 2022, Hao et al., 2024]. These models greatly expand the design space of gene embeddings, but they also create a fragmented ecosystem. Each upstream model defines its own embedding geometry, training distribution, and biological bias, so users often choose one modality-specific embedding family per downstream task rather than operating over a common cross-view interface. 
+
+2.2 Gene embedding benchmarks and modality heterogeneity 
+
+Recent benchmark efforts show that gene-embedding quality can depend strongly on which biological view is used, and that inter-modality heterogeneity remains substantial even when intra-modality representations are relatively consistent. The Gene Benchmark work and subsequent benchmarking studies make this especially clear: modality choice is often a dominant determinant of downstream behavior, which motivates studying cross-view alignment rather than continuing to treat each view as an isolated silo [Kan-Tor et al., 2025, Zhong et al., 2023, 2025, Schultheiss et al., 2022, Du et al., 2019]. This benchmark landscape matters for our paper in two ways: it provides a practical evaluation protocol for frozen linear probes across diverse gene-understanding tasks, and it sharpens the central question of this work. Our goal is not to ask which single modality is universally best, but whether heterogeneous modalities can be mapped into a shared representation layer that remains useful even when views are missing. 
+
+2.3 Multimodal integration in biology 
+
+A growing body of work studies multimodal modeling in biology, including surveys of multimodal foundation models and task-specific fusion systems [Wang et al., 2025, Zheng et al., 2025a]. However, many multimodal designs remain multi-branch or modality-specialized, which can make them harder to scale under missing-modality settings and can blur whether they are learning a truly shared semantic interface or only a downstream fusion rule. Recent multimodal biological systems, including PRISME, sciLaMA, and BioLangFusion, further underscore the momentum of this direction [Zheng et al., 2025b, Hu et al., 2025, Mollaysa et al., 2025]. These efforts differ in modality coverage, task focus, evaluation setup, or public reproducibility status, so direct comparison is non-trivial. Our work is therefore framed as a feasibility study centered on one question: whether a minimal single-branch pathway can align heterogeneous gene embeddings into a common space. 
+
+2.4 Missing-modality robust representation learning 
+
+Outside biology, single-branch multimodal learning, shared embedding spaces, and masked recon-struction have shown that a unified pathway can sometimes provide robustness to partial observations [Girdhar et al., 2023, He et al., 2022, Chen et al., 2020, Oord et al., 2018, Mollaysa et al., 2024]. These ideas are especially relevant to our setting because gene-centered applications often face uneven modality availability rather than cleanly complete multimodal records. RepGene adopts this line of thinking, but adapts it to gene representation learning with heterogeneous upstream biological foundation models. The novelty we emphasize is not the use of adapters alone, but the attempt to induce one shared gene representation interface from five distinct biological views under missing-modality training. 
+
+Scope of comparison. The works above motivate the need for a shared representation interface, but they also clarify the boundary of our study. RepGene uses existing unimodal foundation models as upstream feature providers rather than replacing them, and our comparison should therefore be 3
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+interpreted as a feasibility study of cross-view alignment under a fixed feature-extraction setting, not as a claim that one paper exhausts the space of multimodal gene modeling. 
+
+## 3 Approach 
+
+We present RepGene, a single-branch framework for unified multimodal gene representation learning. The framework is designed to test a broader feasibility hypothesis: whether heterogeneous gene embeddings extracted from different biological foundation models can be aligned into one shared latent space that remains usable under severe missing-modality conditions. Figure 1 gives an overview of the full architecture and training signals. Raw embeddings Adjusted embeddings Encoded embeddings Fused embeddings Reconstructed embeddings Genomic Transcriptomic Proteomic Text Single-cell Transcriptomic       
+
+> Adapters Shared encoder Fuser Decoders
+> X’ XLrec
+> Lcon
+
+Figure 1: Overview of the RepGene framework. (A) Heterogeneous inputs from five views are projected by adapters into a shared latent space and processed by a single shared encoder. (B) Presence-aware fusion aggregates encoded modality embeddings while explicitly accounting for which modalities are available at training or inference time. (C) Training combines inter-modal contrastive alignment, masked-view reconstruction, and pseudo-cluster regularization, yielding a unified gene representation that remains usable under missing modalities. 
+
+3.1 Problem formulation 
+
+Let M = {DNA , MRNA , PROTEIN , TEXT , SC RNA } denote the full set of five biological views. For each gene g, we distinguish between raw modality availability and training-time visibility .Specifically, let omg ∈ { 0, 1} indicate whether a raw embedding from modality m exists for gene g,and let pmg ∈ { 0, 1} indicate whether that modality is exposed to the encoder after stochastic masking during training. At inference time, pmg = omg .The observed input collection for gene g is therefore 
+
+Xg = xmg ∈ Rdm : m ∈ M , o mg = 1 , (1) where xmg denotes the modality-specific embedding of gene g under view m.In our study, these embeddings are extracted from five upstream models: Evo2 for genomics, LucaOne for transcriptomics, ESM-C for proteomics, Qwen3 Embedding in the GenePT style to encode NCBI gene summaries for text, and scGPT for single-cell transcriptomics (abbreviated as scTx). The corresponding raw feature dimensions are heterogeneous, so RepGene first maps them into a common hidden space and then processes them through a shared encoder [Brixi et al., 2026, He et al., 2025, Hayes et al., 2025, Chen and Zou, 2023, Alibaba Cloud, 2025, Cui et al., 2024]. Table 1 summarizes the five upstream embedding sources and their raw feature dimensions. The goal is to learn a mapping 
+
+fθ : Xg 7 → zg , (2) such that zg ∈ Rd captures complementary information across modalities while remaining com-putable from any observed subset of views at inference time. 
+
+3.2 Model architecture 
+
+RepGene follows a simple pipeline: Adapters → Shared encoder → Presence-aware fusion → Decoders and heads .
+
+This design is intentionally lightweight. Rather than allocating separate deep towers to each modality, it forces all views through the same encoding pathway so that we can test whether one shared latent geometry can emerge from heterogeneous pretrained inputs. 4
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Table 1: Upstream embedding sources used in RepGene. Dimensions denote raw output sizes before adaptation. 
+
+OMICS SOURCE DATA SOURCE 
+
+FOUNDATION MODEL 
+
+DIM BIOLOGICAL VALUE / DESCRIPTION 
+
+Genomics NCBI Ref-Seq Evo2 (7B) 4096 Captures regulatory syntax and long-range genomic context from raw DNA sequences. Transcriptomics NCBI Ref-Seq LucaOne 2560 Encodes transcript-level patterns including isoforms and splicing-related variation. Proteomics NCBI Ref-Seq ESM-C (600M) 1152 Represents protein-level structural and evo-lutionary information. Text NCBI gene summary GenePT (Qwen3 Embedding) 1024 Integrates curated textual knowledge about gene function and context. scTx Built-in model scGPT 512 Provides cell-state and expression-context information from single-cell transcriptomics. 
+
+Modality adapters. To handle varying input dimensions, each modality uses a lightweight adapter 
+
+Am that projects the raw upstream embedding into a common hidden dimension dmodel = 256 :
+
+hmg = Am(xmg ). (3) In our implementation, each adapter is a small two-layer MLP with batch normalization and nonlin-earity. 
+
+Shared encoder. All adapted features are processed by the same transformer encoder E:
+
+˜zmg = E(hmg ). (4) Because the same encoder parameters are reused across all modalities, every view is forced to traverse a common semantic pathway. This is the core architectural mechanism through which RepGene encourages cross-view comparability. 
+
+Presence-aware fusion. We fuse encoded representations by averaging only over modalities that remain visible after masking: 
+
+zg =
+
+P 
+
+> m∈M
+
+pmg ˜zmg
+
+max  1, P 
+
+> m∈M
+
+pmg
+
+ . (5) This fusion rule is simple but explicit about missingness. It prevents unavailable views from con-tributing spurious signals and yields a unified gene representation from any available subset. 
+
+Decoders and auxiliary heads. The fused representation is then used by modality-specific decoders and a pseudo-cluster prediction head. These components provide reconstruction and structure-preservation signals during training, but they are not used as downstream task-specific predictors. See Appendix A.5 for further discussion of the role of the shared encoder. 
+
+3.3 Training objectives 
+
+RepGene is trained with three complementary objectives: 
+
+Ltotal = λcon Lcon + λrec Lrec + λcls Lcls . (6) 
+
+Inter-modal contrastive alignment. For a mini-batch B, let 
+
+Pg = (m, n ) : m̸ = n, p mg = 1 , p ng = 1 
+
+be the set of visible cross-modal positive pairs for gene g, and let 
+
+Bn = g′ ∈ B : png′ = 1 
+
+be the set of genes in the batch for which modality n is visible. We evaluate the contrastive objective only for genes with |P g | > 0:
+
+Lcon = 1
+
+P 
+
+> g∈B
+
+|P g |
+
+X
+
+> g∈B
+
+X
+
+> (m,n )∈P g
+
+− log exp(sim(˜ zmg , ˜zng )/τ )
+
+P 
+
+> g′∈B n
+
+exp(sim(˜ zmg , ˜zng′ )/τ ) . (7) Here sim( ·, ·) denotes cosine similarity and τ is a temperature parameter [Chen et al., 2020, Oord et al., 2018]. 5
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Masked-view reconstruction. To make the fused representation robust to missing modalities, RepGene reconstructs original feature-space inputs from the fused latent code: 
+
+ˆxmg = Dm(zg ), (8) and optimizes 
+
+Lrec = X
+
+> m∈M
+
+omg ˆxmg − xmg 
+
+> 22
+
+. (9) Using omg rather than pmg ensures that synthetically masked modalities remain reconstruction tar-gets whenever the raw modality is originally available. This objective encourages zg to preserve information that can help recover missing or corrupted views [He et al., 2022]. 
+
+Pseudo-cluster regularization. We also add a structural regularizer by predicting pseudo-cluster assignments derived from unsupervised organization of the training features. Let yclu  
+
+> g
+
+denote the pseudo-label for gene g, and let qϕ(zg ) be a classifier over clusters. Then: 
+
+Lcls = − X
+
+> g
+
+yclu  
+
+> g
+
+log qϕ(zg ). (10) This term helps preserve coarse biological organization during shared-space learning. 
+
+3.4 Dynamic modality and feature masking 
+
+To emulate realistic incomplete-view conditions, RepGene applies both modality-level and feature-level masking during training. For each mini-batch, we sample a masking pattern over originally available modalities that may hide zero, one, two, three, or four views for each gene, and within retained modalities we additionally mask a fraction of feature dimensions. If modality m is synthetically masked for gene g, we replace its encoder input by a zero vector and set pmg = 0 , training the model to form consistent gene representations from partial-view subsets rather than always-complete multimodal inputs [Mollaysa et al., 2024]. However, if that modality is originally available, omg = 1 is unchanged, so the original feature remains a reconstruction target through Lrec . Truly absent modalities satisfy omg = 0 and therefore contribute neither to fusion nor to reconstruction. 
+
+3.5 Method boundary statement 
+
+RepGene is intentionally a first-generation framework. It studies whether a unified representation interface can emerge from a minimal shared-pathway design with self-supervised objectives, but it does not by itself establish optimality over stronger simple-fusion baselines, alternative backbone combinations, or leakage-aware benchmark variants. We therefore present the method as a concrete feasibility probe for shared-space alignment rather than as a definitive formulation of multimodal biological representation learning. 
+
+## 4 Feasibility Study and Preliminary Evaluation 
+
+This section evaluates RepGene as a preliminary empirical study rather than a final performance contest. The goal is to assess whether a shared-space formulation can produce useful gene repre-sentations across diverse tasks and remain informative when substantial modality missingness is introduced at inference time. 
+
+4.1 Experimental setup Upstream features. We use five pretrained embedding sources spanning genomics, transcriptomics, proteomics, text, and single-cell transcriptomics, with input views given by DNA nucleotide se-quences, mRNA nucleotide sequences, amino-acid sequences, natural-language gene descriptions, and scRNA-seq expression profiles. These features are treated as fixed upstream representations, and RepGene operates on top of them without fine-tuning the underlying foundation models. 6
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Benchmark and tasks. We evaluate on a gene-understanding benchmark that includes multiple task families such as genomic properties, regulatory functions, protein-related properties, functional annotations, and disease-associated prediction settings. The benchmark is used as a common frozen-representation test bed rather than as supervision for representation learning. 
+
+Two-stage evaluation protocol. Our evaluation follows a strict two-stage paradigm. First, Rep-Gene is trained self-supervised using only pretrained modality features and without access to down-stream benchmark labels. Second, the learned gene representations are frozen and evaluated with benchmark-specified linear probes under strict train–test splits. This setup is intended to measure the informativeness of the learned shared representation space rather than supervised adaptation to each downstream task. 
+
+Benchmark provenance and protocol scope. Benchmark provenance details and interpretive scope are summarized in Appendix H.1. We use the Gene Benchmark as a standardized linear-probing interface for feasibility evaluation rather than as the sole source of biological ground truth. 
+
+4.2 Feasibility questions 
+
+We organize the evaluation around three questions. 
+
+Q1: Can a shared-space model produce competitive fused gene representations? This question asks whether a unified latent interface can remain informative across diverse tasks when all available modalities are fused through one shared pathway. 
+
+Q2: Does the representation remain usable under partial modality subsets? This question targets the core missing-modality setting. We test whether the learned space remains informative when only a subset of the five views is available at inference time. 
+
+Q3: Does shared-space training help single-view usability after multimodal learning? This question examines whether a representation learned jointly across views retains useful information even when queried from only one observed modality. 
+
+4.3 Main observations 
+
+Across the benchmark tasks, the results are consistent with the view that a shared-space formulation can be workable in the present evaluation regime. In the full-modality setting, RepGene yields fused representations that are broadly competitive with several unimodal feature sources while providing a single common representation interface rather than requiring task-by-task modality selection. Figure 2 shows that this behavior is not concentrated in only one task family. Instead, the fused representation remains reasonably competitive across genomic properties, regulatory functions, localization, biological processes, and protein-related tasks, which is consistent with the intended role of RepGene as a shared interface rather than a modality-specialized expert. Table 2: Robustness to missing modalities. Mean AUC over 9 binary and 9 multi-label tasks under different observed-modality configurations.                         
+
+> Configuration Binary Multi-label
+> Full modalities 0.752 0.672 Miss genomics 0.755 0.672 Miss proteomics 0.760 0.663 Miss transcriptomics 0.735 0.671 Miss text 0.753 0.651 Miss scTx 0.737 0.677 Only genomics 0.705 0.606 Only proteomics 0.738 0.669 Only transcriptomics 0.685 0.621 Only text 0.679 0.659 Only scTx 0.689 0.566
+
+7
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint Fused Genomic (Evo2) Transcriptomic (LucaOne) Proteomic (ESM-C) Text (Qwen3 Embedding) Single-cell Tx (scGPT)
+
+Genomic properties Regulatory functions Localization Biological processes Protein properties Figure 2: Task-family overview across biological domains. The radar chart summarizes mean AUC by domain for fused RepGene and the five unimodal feature sources. It shows that the fused representation remains competitive across domains rather than inheriting the narrow strengths and weaknesses of a single modality. The clearest empirical signal appears in the missing-modality setting. As shown in Table 2, remov-ing a single modality usually changes average performance only modestly, and even single-view inference remains informative; detailed per-task binary and multi-label breakdowns are deferred to Appendix H.3 (Tables 6 and 7). We interpret this as evidence that the learned latent space remains us-able under substantial modality removal, while noting that some modalities appear more redundant or task-dependent than others because certain miss-one settings slightly improve over the full-modality result. A masking ablation is reported in Appendix H.2. Feature masking improves over no masking, and the combined feature-plus-modality masking strategy performs best; see Table 4 for the family-level summary and Table 5 for the task-level breakdown. 
+
+4.4 Interpretation and scope 
+
+Taken together, the full-modality and partial-modality results provide preliminary evidence that a shared-space formulation can be viable within the present fixed-feature, frozen-linear-probe setting. The strongest support is for feasibility under missing modalities, not for the stronger claim that RepGene has already been shown to outperform simpler fusion alternatives or that its shared encoder has been conclusively validated as the decisive mechanism. This interpretation remains bounded by the current evidence. Evaluation is limited to one benchmark ecosystem, baseline coverage is still incomplete for simple fusion and broader subset comparisons, and the upstream encoders may encode benchmark-relevant information from pretraining. We therefore view the current study as an encouraging first step that motivates stronger baselines, broader ablations, and leakage-aware follow-up evaluation. 
+
+## 5 Limitations 
+
+This paper is intended as a feasibility study rather than a definitive validation of unified gene representation learning. The current results suggest that heterogeneous pretrained gene embeddings can be organized into a shared latent interface that remains informative under missing-modality conditions, but they do not establish that the present formulation is optimal. 8
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Several limitations shape this interpretation. First, baseline coverage remains incomplete, especially for simple mean/concat fusion, broader 2–3 modality subsets, and fully matched raw single-modality comparisons, so the current evidence does not yet isolate gains from shared-space learning itself. Second, although RepGene is motivated by a shared-encoder design, the present ablations do not fully establish which architectural components are necessary. Third, evaluation is limited to one benchmark ecosystem, one fixed set of upstream feature providers, and a frozen-linear-probe setting, so broader generalization remains unresolved. Fourth, because the upstream models are pretrained on large biological corpora, sequences, and text collections, the results should be interpreted as evidence in a cascaded foundation-model setting rather than as leakage-free biological generalization. Taken together, these limitations mean that RepGene should be read as an encouraging but still incomplete first step toward unified gene representation. 
+
+## 6 Conclusion 
+
+We studied whether pretrained embeddings from five biological views can be organized into a shared gene representation interface that remains usable under severe missing-modality conditions. In this setting, RepGene provides a lightweight single-branch instantiation of that idea through modality adaptation, shared encoding, presence-aware fusion, and self-supervised cross-view training. Across frozen-linear-probe evaluations, the results provide preliminary evidence that such a shared-space formulation can remain broadly informative in the full-modality setting and, more importantly, under substantial modality removal at inference time. We interpret this as support for the feasibility of unified gene representation in a fixed-feature regime, not as a definitive demonstration that the present formulation is optimal or that its individual architectural components are fully validated. More broadly, our findings suggest that a common interface across heterogeneous biological foundation-model embeddings may be achievable, but stronger simple baselines, broader archi-tectural ablations, alternative upstream encoders, and leakage-aware benchmarks remain necessary. We therefore view RepGene as an encouraging first step rather than a settled endpoint. 
+
+## 7 Broader Impact 
+
+This work explores whether heterogeneous biological foundation-model embeddings can be aligned into a unified representation interface for genes. If such interfaces become reliable, they may help reduce fragmentation across biological data modalities, simplify downstream model selection, and support more flexible computational pipelines for hypothesis generation in functional genomics and biotechnology. At the same time, this direction carries several risks. First, a unified representation may encourage over-trust in compact embeddings whose apparent generality exceeds their actual evidence base, especially when upstream models inherit biases from pretraining corpora or when downstream benchmarks only partially reflect real biological complexity. Second, biological representation systems may be misused in high-stakes settings such as disease prioritization or therapeutic reasoning without sufficient domain validation. For these reasons, we do not present RepGene as a deployable biomedical decision system. We instead view it as a research prototype whose outputs should be interpreted with caution, evaluated under leakage-aware protocols, and used only with appropriate biological oversight. More generally, any future release of shared biological embedding systems should be accompanied by clear documentation of training assets, benchmark scope, and known failure modes. 
+
+## Author contributions 
+
+Haiyang Hou (first author, PhD student) led the project design, implemented the methods, and wrote the manuscript. Lei Cao (primary corresponding author) served as the technical advisor and mentor, providing guidance on methodology and experimental design. Shuangsang Fang (co-corresponding author) was the project lead and coordinated research resources and team management. Tianyi Xia engaged in extensive discussions. Luni Hu and Hua Qin raised questions and participated in part of the discussions. Yong Zhang and Yuxiang Li provided research support and resource backing. 9
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+## References 
+
+Alibaba Cloud. Qwen3 technical report. Technical report, Alibaba Group, 2025. URL https: //arxiv.org/abs/2505.09388 .Guillaume Brixi et al. Genome modelling and design across all domains of life with evo 2. Nature ,2026. URL https://www.nature.com/articles/s41586-026-10176-5 .Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. In International Conference on Machine Learning ,pages 1597–1607. PMLR, 2020. Yiqun T. Chen and James Zou. GenePT: A simple but effective foundation model for genes and cells built from ChatGPT. Proceedings of the National Academy of Sciences , 120, 2023. Francis Crick. Central dogma of molecular biology. Nature , 227(5258):561–563, 1970. Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Felix Luo, Nan Duan, and Bo Wang. scGPT: Toward building a foundation model for single-cell multi-omics using generative AI. Nature Methods , 21:1470–1480, 2024. Hugo Dalla-Torre, L. Gonzalez, J. Mendoza-Revilla, N. L. Carranza, A. H. Grzak, et al. The nucleotide transformer: Building and evaluating robust foundation models for human genomics. 
+
+bioRxiv , 2023. Jingcheng Du, Peilin Jia, Yuchun Dai, Cui Tao, Zhongming Zhao, and Degui Zhi. Gene2vec: Distributed representation of genes based on co-expression. BMC Genomics , 20:1–13, 2019. Ahmed Elnaggar, Michael Heinzinger, Christian Dallago, Ghalia Rehawi, Yu Wang, Llion Jones, et al. ProtTrans: Toward understanding the language of life through self-supervised learning. IEEE Transactions on Pattern Analysis and Machine Intelligence , 44(10):7112–7127, 2021. Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. Imagebind: One embedding space to bind them all. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15180–15190, 2023. Jia Hao, Bin Gong, Zhen Wang, et al. Large-scale foundation model on single-cell transcriptomics. 
+
+Nature Methods , 21(6):1234–1247, 2024. T. Hayes et al. Simulating 500 million years of evolution with a language model. Science , 387, 2025. Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked autoencoders are scalable vision learners. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 16000–16009, 2022. Yong He, Zhaorong Pan, Yunfan Du, et al. Generalized biological foundation model with uni-fied nucleic acid and protein language. Nature Machine Intelligence , 2025. doi: 10.1038/ s42256-025-01044-4. URL https://www.nature.com/articles/s42256-025-01044-4 .Hongru Hu, Shuwen Zhang, Yongin Choi, Venkat S. Malladi, and Gerald Quon. sciLaMA: A single-cell representation learning framework to leverage prior knowledge from large language models. bioRxiv , 2025. doi: 10.1101/2025.01.28.635153. URL https://www.biorxiv.org/ content/10.1101/2025.01.28.635153v1 .Yoav Kan-Tor, Michael Morris Danziger, Eden Zohar, Matan Ninio, and Yishai Shimoni. Does your model understand genes? a benchmark of gene properties for biological and text models. OpenReview, 2025. URL https://openreview.net/forum?id=GDDqq0w6rs .Zeming Lin, Halil Akin, Roshan Rao, Brian Hie, Zhongkai Zhu, Wanting Lu, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model. Science , 379(6637):1123–1130, 2023. A. Mollaysa et al. Modality invariant multimodal learning to handle missing modalities: A single-branch approach. arXiv preprint arXiv:2408.07445 , 2024. URL https://arxiv.org/abs/ 2408.07445 .10 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Amina Mollaysa, Artem Moskalev, Pushpak Pati, et al. BioLangFusion: Multimodal fusion of DNA, mRNA, and protein language models. arXiv preprint arXiv:2506.08936 , 2025. URL 
+
+https://arxiv.org/abs/2506.08936 .Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748 , 2018. URL https://arxiv.org/abs/1807.03748 .Sandra J. Schultheiss, Balázs Szalkai, Anna Gogleva, and Martin Hofmann-Apitius. Benchmarking gene embedding methods across diverse prediction tasks. Nature Computational Science , 2: 455–465, 2022. Christina V. Theodoris, Ling Xiao, Anant Chopra, Mark D. Chaffin, Zeina R. Al-Sayegh, et al. Transfer learning enables predictions in network biology. Nature , 618(7965):616–624, 2023. Bo Wang, Haotian Cui, Jian Chen, et al. Towards multimodal foundation models in molecular cell biology. Nature , 640(8059):623–633, April 2025. doi: 10.1038/s41586-025-08710-y. Fan Yang, Wenchuan Wang, Fang Wang, et al. scBERT as a large-scale scrna-seq language model for cell type annotation. Nature Machine Intelligence , 4:852–866, 2022. L. Zheng et al. Multi-branch architectures for biological sequence fusion: A review. Bioinformatics ,41, 2025a. Yilin Zheng et al. Platform for representation and integration of multimodal molecular embeddings. 
+
+arXiv preprint arXiv:2507.07367 , 2025b. doi: 10.48550/arXiv.2507.07367. URL https:// arxiv.org/abs/2507.07367 .Jeffrey Zhong, Lechuan Li, Ruth Dannenfelser, and Vicky Yao. Benchmarking gene embeddings from sequence, expression, network, and text models for functional prediction tasks. bioRxiv , 2025. URL https://www.biorxiv.org/content/10.1101/2025.01.29.635607v1 .Li Zhong, Thomas Bechtler, Sachini Londhe, Christian Mertes, and Julien Gagneur. Evaluation of input data modality choices on functional gene embeddings. NAR Genomics and Bioinformatics , 5 (4):lqad095, 2023. Zhihan Zhou, Yanrong Ji, Weijian Li, Pratik Dutta, Ramana Davuluri, and Han Liu. DNABERT-2: Efficient foundation model and benchmark for multi-species genomes. In International Conference on Learning Representations , 2024. 11 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+## A Implementation Details 
+
+A.1 Modality adapters 
+
+Each modality-specific adapter Am maps a raw upstream embedding xmg ∈ Rdm into a shared hidden space of size dmodel = 256 . In the current implementation, each adapter is a two-layer MLP: 
+
+hmg = W m 
+
+> 2
+
+σ BN( W m 
+
+> 1
+
+xmg + bm 
+
+> 1
+
+) + bm 
+
+> 2
+
+, (11) where BN denotes batch normalization and σ(·) is a pointwise nonlinearity. The purpose of the adapters is to handle heterogeneous input dimensions. They are intentionally lightweight and should not be interpreted as the main source of shared semantics. 
+
+A.2 Shared encoder 
+
+After adaptation, each modality is processed by the same transformer encoder E. The shared encoder uses two transformer layers, four attention heads, a feed-forward hidden size of 512, dropout of 0.3, and GELU activations. Because all modalities pass through the same encoder parameters, the model is encouraged to process them through one common latent pathway. 
+
+A.3 Presence-aware fusion 
+
+For a gene g, let pmg ∈ { 0, 1} denote the observation indicator for modality m. The fused representa-tion is computed by dynamic mean pooling over observed encoded modalities: 
+
+zg =
+
+P 
+
+> m∈M
+
+pmg ˜zmg
+
+max  1, P 
+
+> m∈M
+
+pmg
+
+ . (12) This choice avoids introducing a separate heavy fusion tower and keeps the representation directly tied to the subset of available views. 
+
+A.4 Decoders 
+
+Each modality uses a decoder Dm that mirrors the corresponding adapter architecture. These decoders are used only during self-supervised training to reconstruct masked or missing feature views from the fused representation. 
+
+A.5 Why the shared encoder matters 
+
+A potential misreading is that RepGene merely projects all modalities to the same dimensionality and then combines them. That is not the intended mechanism: the adapters only map heterogeneous backbone outputs into a common hidden size, whereas the shared encoder exposes every modality to the same parameterized transformation and forces them through a common semantic pathway. This pathway interacts directly with the training objectives. Inter-modal contrastive learning pulls views of the same gene closer in latent space, masked-view reconstruction requires the fused repre-sentation to preserve information useful for recovering originally available but synthetically hidden inputs, and presence-aware fusion trains the model to form stable gene-level representations from variable modality subsets. The shared encoder is therefore not a cosmetic dimensionality-matching device, but the component through which these pressures act jointly to shape a common latent geometry. 
+
+## B Training Hyperparameters 
+
+During training, we jointly apply modality-level masking and feature-level masking. If a modality is dropped for a sample, its input is replaced with zeros and its presence indicator is set to zero. For retained modalities, 10% of feature dimensions are randomly masked. Table 3 summarizes the training hyperparameters used in all reported experiments. 12 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Table 3: Training hyperparameters used in RepGene. 
+
+Setting Value 
+
+Batch size 512 Optimizer AdamW Learning rate 1 × 10 −4
+
+Weight decay 1 × 10 −6
+
+Epochs 80 Temperature τ 0.07 
+
+λcon /λ rec /λ cls 0.1 / 0.1 / 2.0 Feature mask ratio 0.10 Dropped modalities: 0 / 1 / 2 / 3 / 4 0.60 / 0.10 / 0.10 / 0.10 / 0.10 
+
+## C Evaluation Protocol Notes 
+
+C.1 Two-stage paradigm 
+
+The evaluation protocol is designed to isolate representation quality from task-specific supervised training. In stage one, RepGene is trained using self-supervised objectives on pretrained modality features only. In stage two, the learned gene representations are frozen and passed to linear probes defined on benchmark train–test splits. This protocol is important because it prevents downstream labels from directly shaping the represen-tation model. As a result, the reported scores should be interpreted as evidence about representation informativeness rather than end-to-end task optimization. 
+
+C.2 Interpretive scope 
+
+The benchmark used in this paper is a practical test bed for feasibility evaluation, but it should not be treated as exhaustive. The current results support cautious conclusions about shared-space viability in one benchmarked setting, not universal claims across all biological data regimes. 
+
+## D Supplementary Project Overview 
+
+Figure 3 provides a project-level overview of the problem setting, model components, and evaluation scope. 
+
+## E Leakage-aware Notes 
+
+The evaluation in this paper should be interpreted with awareness that the upstream foundation models may have been pretrained on broad corpora that overlap semantically, and in some cases structurally, with concepts used in downstream benchmarks. We therefore do not claim that the current benchmark fully isolates biological generalization from possible upstream feature exposure. A stronger future evaluation protocol would pair shared-space learning with leakage-aware dataset curation, explicit temporal or source-level separation where possible, and direct comparison against simpler fusion baselines under the same train–test splits. We include this note to mark the intended evidence boundary of the current study rather than to imply that such controls have already been fully implemented. 
+
+## F Additional Boundary Notes 
+
+Several important checks remain future work for this direction: • broader simple-fusion baselines such as mean pooling and concatenation, • systematic evaluation over all 2–3 modality subsets, • stronger sensitivity analysis to the choice of upstream foundation models, 13 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Data Provenance Algorithm Framework Benchmarking 
+
+> Genomics Transcriptomics Proteomics Text Single-cell transcriptomics
+> Evo2 LucaOne ESM-C GenePT (Qwen3 Embedding) scGPT DNA embeddings RNA embeddings Protein embeddings Text embeddings scRNA embeddings  Inference Multimodal encoding Multimodal fusion Pretraining Initial encoding Multimodal encoding Multimodal alignment Multimodal fusion Multimodal reconstruction Masked modality/feature modeling Pre-trained RepGene model
+> Fused gene embeddings Genomic properties Regulatory functions Localization Biological processes Protein properties
+> Strong correlation Tasks
+
+Figure 3: Project-level overview of the RepGene study. This figure provides a broader visual summary of the problem setting, model components, and evaluation scope. We keep it in the appendix so that the main paper can prioritize the core framework, the main comparative visualization, and the primary quantitative evidence. • broader species coverage and out-of-distribution biological settings, • more explicit licensing, release, and leakage-audit documentation for end-to-end repro-ducibility. These omissions do not invalidate the current feasibility results, but they do limit the scope of the claims that can be made at this stage. 
+
+F.1 Evidence boundary 
+
+The present version deliberately avoids claims that exceed the available evidence. In particular, we do not frame RepGene as a definitive solution, a universal replacement for modality-specific embeddings, or a fully settled answer to unified biological representation learning. Several important validation checks remain outside the current evidence boundary. Table 8 sum-marizes the conservative interpretation table, and the main unresolved next-step validations include simple mean/concat fusion baselines, systematic 2–3 modality subset baselines, broader matched single-view comparisons, and more extensive backbone-sensitivity studies. 
+
+## G Reproducibility and Supplementary Evidence 
+
+To support reproducibility under double-blind review, we provide an anonymized project repository: 
+
+https://github.com/houhaiyang/RepGene 
+
+The repository contains the implementation framework, evaluation configuration, and supplementary materials referenced in this submission. In addition, we provide supplementary result notes at: 
+
+https: //github.com/houhaiyang/RepGene/blob/main/benchmark/supplementary_data.md 
+
+14 
+
+.CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint These supplementary notes include additional evidence relevant to reviewer questions about single-modality inference, including direct comparisons between RepGene representations under restricted observed modalities and the corresponding raw single-modality embeddings in selected settings. We treat these materials as supporting evidence for the feasibility claims in this paper, not as a substitute for a broader future comparison suite covering all simple fusion baselines and all 2–3 modality subsets. 
+
+## H Moved Supporting Material 
+
+H.1 Benchmark provenance and protocol scope 
+
+We use the Gene Benchmark as a standardized linear-probing test bed for feasibility evaluation. While the benchmark paper itself is recent, the underlying task labels are organized from established biological resources and prior studies, including curated knowledge bases such as GO, KEGG, Reactome, and the Human Protein Atlas. We therefore treat the benchmark as a practical evaluation interface rather than as the sole source of biological ground truth. 
+
+H.2 Masking ablation 
+
+Table 4: Ablation on masking strategies. Values are mean AUC over binary and multi-label task families. 
+
+Configuration Binary mean Multi-label mean 
+
+No mask 0.686 0.633 Only mask features 0.722 0.662 Mask features + modalities 0.753 0.672 
+
+Table 4 supports the main-text claim that combining feature masking with modality masking produces the strongest average performance across binary and multi-label task families. Table 5 further shows that this advantage is not limited to aggregate means, but is broadly reflected across the individual binary and multi-label tasks. 
+
+H.3 Detailed missing-modality results 
+
+Tables 6 and 7 provide the per-task breakdowns underlying the aggregate missing-modality trends reported in the main text. 
+
+H.4 Evidence-boundary table 
+
+Table 8 clarifies the intended interpretation of the current results by distinguishing the feasibility claims supported by the experiments from stronger conclusions that are outside the evidence provided in this paper. 15 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
+
+Table 5: Detailed task-level ablation on masking strategies. The combined feature-plus-modality masking strategy yields the strongest overall pattern across tasks. The highest values in each column are highlighted in bold .
+
+BINARY CLASSIFICATION TASKS (M EAN AUC) CONFIGURATION TF VS NON -TF LONG /S HORT BIVALENT DOSAGE CCD T R. CCD P ROT . N1 N ET N1 T ARGETS HLA C LASS 
+
+Mask features & modalities 0.911 0.670 0.952 0.987 0.739 0.583 0.768 0.779 0.385 Only mask features 0.910 0.653 0.865 0.980 0.680 0.591 0.793 0.770 0.553 
+
+No mask 0.900 0.591 0.877 0.983 0.657 0.614 0.780 0.763 0.405 MULTI -L ABEL CLASSIFICATION TASKS (M EAN AUC) CONFIGURATION MOL . F UNC . PROT . C LASS SUBCELL . BIO . P ROC . DISEASE RNA T ISSUE LIGAND DOMAIN PTM Mask features & modalities 0.697 0.707 0.571 0.705 0.612 0.550 0.684 0.788 0.735 Only mask features 0.685 0.680 0.569 0.688 0.588 0.538 0.687 0.781 0.739 
+
+No mask 0.681 0.670 0.565 0.681 0.577 0.534 0.678 0.778 0.736 
+
+Table 6: Detailed mean AUC scores on binary tasks under different modality availability scenarios. “Miss X” denotes the absence of modality X, while “Only X” uses exclusively modality X. 
+
+INPUT MODALITIES TF VS NON -TF LONG /S HORT BIVALENT DOSAGE SENS . CCD T R. CCD P ROT . N1 N ET N1 T ARGETS HLA C LASS 
+
+Full 0.903 0.670 0.952 0.987 0.739 0.583 0.768 0.779 0.385 Miss genomics 0.905 0.727 0.839 0.980 0.744 0.590 0.781 0.750 0.480 Miss proteomics 0.895 0.698 0.883 0.986 0.733 0.568 0.763 0.734 0.585 Miss transcriptomics 0.902 0.638 0.902 0.985 0.744 0.564 0.772 0.786 0.320 Miss text 0.893 0.692 0.922 0.985 0.746 0.558 0.781 0.732 0.465 Miss scTx 0.908 0.611 0.911 0.985 0.684 0.548 0.724 0.739 0.528 Only genomics 0.853 0.557 0.816 0.977 0.610 0.547 0.699 0.708 0.575 Only proteomics 0.913 0.640 0.863 0.971 0.665 0.561 0.750 0.725 0.558 Only transcriptomics 0.842 0.594 0.823 0.977 0.598 0.561 0.703 0.730 0.338 Only text 0.878 0.498 0.829 0.898 0.648 0.551 0.668 0.728 0.413 Only scTx 0.771 0.612 0.802 0.894 0.736 0.561 0.758 0.632 0.440 
+
+Table 7: Detailed mean AUC scores on multi-label tasks across different modality configurations. 
+
+INPUT MODALITIES MOL . F UNC . PROT . C LASS SUBCELL . L OC . BIO . P ROC . DISEASE RNA T ISSUE LIGAND DOMAIN PTM Full 0.697 0.707 0.571 0.705 0.612 0.550 0.684 0.788 0.735 Miss genomics 0.699 0.705 0.573 0.702 0.613 0.549 0.685 0.785 0.735 Miss proteomics 0.688 0.696 0.567 0.692 0.616 0.548 0.670 0.765 0.722 Miss transcriptomics 0.701 0.704 0.573 0.706 0.621 0.547 0.680 0.774 0.733 Miss text 0.661 0.677 0.563 0.664 0.580 0.550 0.647 0.782 0.733 Miss scTx 0.713 0.709 0.574 0.713 0.617 0.540 0.700 0.796 0.735 Only genomics 0.620 0.614 0.537 0.611 0.552 0.518 0.609 0.706 0.683 Only proteomics 0.702 0.689 0.571 0.691 0.580 0.526 0.702 0.815 0.743 Only transcriptomics 0.630 0.638 0.541 0.621 0.549 0.522 0.633 0.751 0.702 Only text 0.723 0.680 0.569 0.719 0.615 0.516 0.696 0.729 0.686 Only scTx 0.532 0.545 0.536 0.564 0.557 0.539 0.562 0.610 0.650 
+
+Table 8: Conservative interpretation of the current empirical evidence. 
+
+Supported interpretation Not claimed in this paper 
+
+A shared latent interface across five biological views appears feasible. Unified biological representation learning is solved. Fused representations are competitive in the stud-ied benchmark setting. RepGene is universally superior across all tasks, species, and backbones. Partial-modality inference remains informative. Missing-modality robustness is fully character-ized under all masking regimes. Shared-space learning is promising enough to justify deeper follow-up work. Current evidence exhausts the relevant baselines or leakage concerns. 
+
+16 
+
+.CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 15, 2026. ;https://doi.org/10.64898/2026.06.11.731512 doi: bioRxiv preprint
