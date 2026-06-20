@@ -1,0 +1,416 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-20T21:41:15.711789+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 6,
+    "deep_cap": 7,
+    "deep_selected": 6,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2606.19398v1",
+      "source": "arxiv",
+      "title": "S-JEPA : Soft Clustering Anchors for Self-Supervised Speech Representation Learning",
+      "abstract": "Self-supervised speech encoders are predominantly trained by predicting discrete hard cluster IDs at masked positions, a recipe that collapses acoustic ambiguity at category boundaries and requires interrupting training to re-cluster the entire corpus between iterations. We introduce S-JEPA, a JEPA-style encoder-predictor pair trained to match the soft posteriors of a Gaussian Mixture Model at masked positions via KL divergence. Training runs as one continuous optimization trajectory in two phases: a fixed GMM over MFCC features, then an online GMM over encoder features, with the input layer selected adaptively from a label-free signal, removing both the offline re-cluster step and the hand-tuned choice of which transformer layer to cluster on. Under the SUPERB protocol, S-JEPA achieves the lowest WER among evaluated SSL methods below 90M parameters and matches HuBERT-Base on emotion recognition at roughly half its parameter count, establishing a new Pareto frontier without offline re-clustering or teacher distillation. An analysis of the predictor's per-frame entropy on held-out speech reveals a bimodal distribution with a substantial minority of frames near the entropy of a perfect two-cluster tie, providing direct empirical evidence that the soft-target objective preserves the acoustic ambiguity that hard targets would collapse. Code is available at https://github.com/gioannides/s-jepa.",
+      "authors": [
+        "Georgios Ioannides",
+        "Adrian Kieback",
+        "Judah Goldfeder",
+        "Linsey Pang",
+        "Aman Chadha",
+        "Aaron Elkins",
+        "Yann LeCun",
+        "Ravid Shwartz-Ziv"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "eess.AS",
+        "eess.SP"
+      ],
+      "published": "2026-06-17T08:39:09+00:00",
+      "link": "https://arxiv.org/pdf/2606.19398v1",
+      "tags": [
+        "keyword:ssl",
+        "query:ssl"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "self-supervised speech representation learning with soft clustering",
+      "llm_evidence_cn": "基于软聚类的自监督语音表示学习",
+      "llm_evidence": "基于软聚类的自监督语音表示学习",
+      "canonical_evidence": "基于软聚类的自监督语音表示学习",
+      "llm_tldr_en": "Proposes S-JEPA, a self-supervised encoder-predictor that matches soft GMM posteriors at masked positions, avoiding hard clustering and offline re-clustering for continuous training.",
+      "llm_tldr_cn": "现有自监督语音编码器通常预测离散硬聚类ID，导致类别边界模糊且需中断训练重聚类。本文提出S-JEPA，采用编码器-预测器架构，通过KL散度匹配高斯混合模型的软后验分布，实现两阶段连续训练，无需离线重聚类。实验表明该方法在语音表示学习任务上达到与先前方法相当的性能，同时简化了训练流程，为自监督语音表示提供了更高效的范式。",
+      "llm_tldr": "现有自监督语音编码器通常预测离散硬聚类ID，导致类别边界模糊且需中断训练重聚类。本文提出S-JEPA，采用编码器-预测器架构，通过KL散度匹配高斯混合模型的软后验分布，实现两阶段连续训练，无需离线重聚类。实验表明该方法在语音表示学习任务上达到与先前方法相当的性能，同时简化了训练流程，为自监督语音表示提供了更高效的范式。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.20104v1",
+      "source": "arxiv",
+      "title": "Sensorimotor World Models: Perception for Action via Inverse Dynamics",
+      "abstract": "Perception for action suggests that representations of the world should be shaped not by visual fidelity alone, but by their relevance for actions. At the same time, latent JEPA-style world models advocate learning compact predictive states from high-dimensional observations to facilitate the prediction of future states, but end-to-end training of these models is nontrivial because representations may collapse if our only goal is to construct a latent state that is easy to predict. We introduce a sensorimotor world model (SMWM): a latent world model trained end-to-end with inverse dynamics regularization. This single regularizer addresses both issues: it prevents representation collapse and induces action-aligned representations. By forcing latent states to preserve information about the action underlying a transition, it biases the model toward the controllable degrees of freedom of the environment while discarding uncontrollable distractors. This yields stable latent world models trained from offline, reward-free trajectories, without frozen encoders, exponential moving averages, or complex latent regularizers. Empirically, SMWM learns compact, interpretable latent spaces and enables competitive planning performance across simple 2D and 3D control tasks.",
+      "authors": [
+        "Petr Ivashkov",
+        "Randall Balestriero",
+        "Bernhard Schölkopf"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T11:25:16+00:00",
+      "link": "https://arxiv.org/pdf/2606.20104v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "latent world model with inverse dynamics regularization",
+      "llm_evidence_cn": "使用逆动力学正则化的潜在世界模型",
+      "llm_evidence": "使用逆动力学正则化的潜在世界模型",
+      "canonical_evidence": "使用逆动力学正则化的潜在世界模型",
+      "llm_tldr_en": "Proposes Sensorimotor World Model (SMWM), a latent world model trained end-to-end with inverse dynamics regularization to prevent representation collapse and induce action-aligned representations.",
+      "llm_tldr_cn": "该论文提出传感器运动世界模型(SMWM)，一种端到端训练的潜在世界模型，通过逆动力学正则化防止表示崩溃并产生动作对齐的表示，解决了潜在世界模型训练中的表示坍塌问题，为感知-动作学习提供了新方法。",
+      "llm_tldr": "该论文提出传感器运动世界模型(SMWM)，一种端到端训练的潜在世界模型，通过逆动力学正则化防止表示崩溃并产生动作对齐的表示，解决了潜在世界模型训练中的表示坍塌问题，为感知-动作学习提供了新方法。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-15-732293-v1",
+      "source": "biorxiv",
+      "title": "Nonlinear influence of reward volatility on arbitration between multiple learning strategies reflects cost-benefit optimization",
+      "abstract": "Action selection involves two systems: a model-free reinforcement learning strategy, which relies on experience with action-outcome pairs, and a model-based reinforcement learning strategy, which enables more flexible behavior via inference using a model of the invariant environmental structure. Although environmental change requires more flexible behavior, the ability of volatility, a higher-order statistic that captures how rapidly or frequently the environment changes, to systematically modulate these strategies remains unclear. We examined the effects of reward volatility on arbitration between model-free and model-based reinforcement learning strategies using two modified two-step decision tasks. In Experiment 1, participants performed tasks with different levels of reward volatility and time pressure. In Experiment 2, we systematically manipulated reward volatility across a broader range to assess the relationship between volatility and learning strategy. Behavioral data were analyzed using model-agnostic one-trial and multitrial back analyses, reinforcement learning simulations, and hierarchical Bayesian model fitting. Across experiments, reward volatility exerted an inverse U-shaped nonlinear effect on the arbitration between model-free and model-based reinforcement learning strategies, as the model-based learning strategy was strongly driven at intermediate levels of reward volatility. These modulation effects were observed only in individuals who had learned the transition structure in the task, whereas those who had not learned the transition structure relied on the model-free learning strategy regardless of reward volatility. Reinforcement learning simulations revealed that the relative advantage of the model-based learning strategy over the model-free learning strategy peaked at intermediate levels of reward volatility. Additionally, increased time pressure shifted behavior toward the model-free learning strategy. These results demonstrated that, humans do not always use the model-based reinforcement learning strategy in uncertain and dynamic environments, even when they are aware of the task structure, supporting cost-benefit optimization.",
+      "authors": [
+        "Yamada, T.",
+        "Samejima, K."
+      ],
+      "primary_category": "animal behavior and cognition",
+      "categories": [
+        "animal behavior and cognition"
+      ],
+      "published": "2026-06-19T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.15.732293v1.full.pdf",
+      "tags": [
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "model-based reinforcement learning with world models",
+      "llm_evidence_cn": "基于世界模型的强化学习",
+      "llm_evidence": "基于世界模型的强化学习",
+      "canonical_evidence": "基于世界模型的强化学习",
+      "llm_tldr_en": "Investigates how reward volatility modulates arbitration between model-free and model-based RL, directly studying the use of an internal world model.",
+      "llm_tldr_cn": "论文研究奖励波动如何影响模型自由与模型基础强化学习策略之间的仲裁。通过修改版两步决策任务，发现高波动环境促进模型基础策略的使用，且该效应遵循成本效益优化原则。该工作揭示了环境统计特性对内部世界模型使用程度的动态调节机制，为理解智能体如何在多策略间自适应切换提供了计算框架。",
+      "llm_tldr": "论文研究奖励波动如何影响模型自由与模型基础强化学习策略之间的仲裁。通过修改版两步决策任务，发现高波动环境促进模型基础策略的使用，且该效应遵循成本效益优化原则。该工作揭示了环境统计特性对内部世界模型使用程度的动态调节机制，为理解智能体如何在多策略间自适应切换提供了计算框架。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "model-based reinforcement learning with world models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.14586v1",
+      "source": "arxiv",
+      "title": "S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning",
+      "abstract": "Current representation learning paradigms force a fundamental compromise: self-supervised methods scale to massive datasets but yield opaque features, whereas interpretable models remain bottlenecked by the need for dense human annotation. We introduce Self-Supervised Concept discOvery via Preference lEarning (\\model), a label-free framework that resolves this dilemma. Instead of treating Vision-Large-Language Models (VLLMs) as static feature extractors, \\model leverages them as active participants in a self-supervised preference optimization loop. By autonomously hypothesizing, validating, and reinforcing candidate visual attributes directly from raw imagery, our framework discovers novel, structured concepts without a single label. Extensive experiments across natural, medical, and physics domains demonstrate that \\model successfully extracts domain-specific concepts where standard VLLMs often fail to generate. By amortizing concept discovery directly into the VLLM backbone through our self-supervised preference objective -- rather than relying on static generation and disjoint filtering -- we achieve up to a 24-point absolute improvement in downstream top-1 classification accuracy on unseen data. Our work suggest that interpretability can emerge through a model's autonomous interaction with incidental visual structures, without any human supervision.",
+      "authors": [
+        "Shilong Xiang",
+        "Zirui Zhang",
+        "Chengzhi Mao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-12T16:02:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.14586v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-supervised concept discovery via preference learning",
+      "llm_evidence_cn": "通过偏好学习进行自监督概念发现",
+      "llm_evidence": "通过偏好学习进行自监督概念发现",
+      "canonical_evidence": "通过偏好学习进行自监督概念发现",
+      "llm_tldr_en": "Introduces S2COPE, a self-supervised framework that discovers visual concepts via preference learning with VLLMs, without labels.",
+      "llm_tldr_cn": "该论文提出S2COPE框架，通过自监督偏好学习从原始图像中发现结构化概念，无需任何标签，利用视觉大语言模型作为主动参与者，在多个数据集上展示了概念发现的有效性。",
+      "llm_tldr": "该论文提出S2COPE框架，通过自监督偏好学习从原始图像中发现结构化概念，无需任何标签，利用视觉大语言模型作为主动参与者，在多个数据集上展示了概念发现的有效性。",
+      "llm_tags": [
+        "query:ssl:composite"
+      ],
+      "matched_query_tag": "query:ssl:composite",
+      "matched_query_text": "Papers central to 查找自监督学习相关论文, especially work that connects or combines: self-supervised learning methods and techniques; contrastive learning in self-supervised learning; masked autoencoder for self-supervised learning; self-supervised representation learning approaches; generative models for self-supervised learning; self-supervised visual representation learning; What are the latest advances in self supervised learning; How does contrastive learning work in self supervised learning; Applications of self supervised learning in computer vision; Self supervised pre training methods for natural language processing.",
+      "matched_requirement_id": "req-composite-ssl",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.19888v1",
+      "source": "arxiv",
+      "title": "SL-S4Wave: Self-Supervised Learning of Physiological Waveforms with Structured State Space Models",
+      "abstract": "Modeling long-sequence medical time series data, such as electrocardiograms (ECG), poses significant challenges due to high sampling rates, multichannel signal complexity, inherent noise, and limited labeled data. While recent self-supervised learning (SSL) methods, based on various encoder architectures such as convolutional neural networks, have been proposed to learn representations from unlabeled data, they often fall short in capturing long-range dependencies and noise-invariant features. Structured state space models (S4) excel at long-sequence modeling, but existing S4 architectures fail to capture the unique characteristics of multichannel physiological waveforms. In this work, we propose SL-S4Wave, a self-supervised learning framework that combines contrastive learning with a tailored encoder built on structured state space models. The encoder incorporates multi-layer global convolution using multiscale subkernels, enabling the capture of both fine-grained local patterns and long-range temporal dependencies in noisy, high-resolution multichannel waveforms. Extensive experiments on real-world datasets demonstrate that SL-S4Wave (1) consistently outperforms state-of-the-art supervised and self-supervised baselines in a challenging arrhythmia detection task, (2) achieves high performance with significantly fewer labeled examples, showcasing strong label efficiency, and (3) maintains robust performance on long waveform segments, highlighting its capacity to model complex temporal dynamics in long sequences that most existing approaches fail to efficiently model, and (4) transfers effectively to unseen arrhythmia types, underscoring its robust cross-domain generalization. We additionally evaluate SL-S4Wave on multiple EEG tasks, achieving superior performance over strong baselines, demonstrating generalizability of our approach beyond cardiac waveforms.",
+      "authors": [
+        "Feng Wu",
+        "Harsh Deep",
+        "Eric Lehman",
+        "Sanyam Kapoor",
+        "Guoshuai Zhao",
+        "Rahul Krishnan",
+        "Gari Clifford",
+        "Li-wei H Lehman"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T07:46:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.19888v1",
+      "tags": [
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-supervised learning for physiological waveforms",
+      "llm_evidence_cn": "生理波形的自监督学习",
+      "llm_evidence": "生理波形的自监督学习",
+      "canonical_evidence": "生理波形的自监督学习",
+      "llm_tldr_en": "Proposes SL-S4Wave, a self-supervised framework using S4 for long-sequence physiological waveforms like ECG.",
+      "llm_tldr_cn": "该论文提出SL-S4Wave，一种结合结构化状态空间模型的端到端自监督学习方法，用于多通道生理波形数据的长程依赖建模，解决了传统SSL无法捕捉长距离依赖和噪声不变特征的问题，在ECG等数据集上表现出色。",
+      "llm_tldr": "该论文提出SL-S4Wave，一种结合结构化状态空间模型的端到端自监督学习方法，用于多通道生理波形数据的长程依赖建模，解决了传统SSL无法捕捉长距离依赖和噪声不变特征的问题，在ECG等数据集上表现出色。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-15-732308-v1",
+      "source": "biorxiv",
+      "title": "Tox21mer, A transformer foundation model for Tox21 high-throughput concentration-response curves data",
+      "abstract": "The U.S. Tox21 collaboration has generated a large reference library of high-throughput concentration-response assays. Here we present Tox21mer, a 43.5-million-parameter transformer that encodes each Tox21 concentration-response curve together with assay metadata into a 768-dimensional representation. Tox21mer was pretrained on ~2.5 million curves from 102 assay protocols and 6,727 compounds using masked-response reconstruction as the primary objective, with low-weight auxiliary supervision on assay outcome and AC50. To evaluate the learned representation, we trained lightweight probes on frozen embeddings from concentration-response curves of held-out compounds. The representation supported a macro-F1 of 0.985 for three-class outcome prediction (agonist, antagonist, inactive), a binary F1 of 0.994 for active/inactive prediction, and an R2 of 0.87 for log10(AC50). The learned embeddings formed coherent groupings by curve-class category. A masked-only pretraining variant retained near-baseline probe performance, indicating that the representation is learned largely from the self-supervised objective rather than from auxiliary labels. Ablation analyses further showed that predictive performance depends mainly on curve-level response-value distributions conditioned on assay context, with limited reliance on detailed within-curve ordering. Tox21mer thus provides a reusable foundation representation for Tox21 concentration-response data that can support extrapolation to untested compounds through integration with chemical features or distillation into chemistry-only student models for large-scale external screening.",
+      "authors": [
+        "Li, L.",
+        "Hwang, J.",
+        "Shockley, K.",
+        "Li, Y.",
+        "Motsinger-Reif, A.",
+        "Hsieh, J.-H.",
+        "Auerbach, S. S.",
+        "Reif, D."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-06-19T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.15.732308v1.full.pdf",
+      "tags": [
+        "keyword:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "masked-response reconstruction for SSL on curves",
+      "llm_evidence_cn": "浓度响应曲线的掩码重建自监督学习",
+      "llm_evidence": "浓度响应曲线的掩码重建自监督学习",
+      "canonical_evidence": "浓度响应曲线的掩码重建自监督学习",
+      "llm_tldr_en": "Presents Tox21mer, a transformer foundation model pretrained via masked-response reconstruction on Tox21 concentration-response curves.",
+      "llm_tldr_cn": "该论文提出Tox21mer，一个基于Transformer的基础模型，通过在Tox21浓度响应曲线上进行掩码响应重建自监督预训练，获得了有效的表示，在化合物分类等下游任务中取得了高F1分数。",
+      "llm_tldr": "该论文提出Tox21mer，一个基于Transformer的基础模型，通过在Tox21浓度响应曲线上进行掩码响应重建自监督预训练，获得了有效的表示，在化合物分类等下游任务中取得了高F1分数。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "masked autoencoder for self-supervised learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.19684v1",
+      "source": "arxiv",
+      "title": "Exploring Multi-Modal Large Language Models and Two-Stage Fine-Tuning for Fashion Image Retrieval",
+      "abstract": "Composed image retrieval retrieves a target image using a composed query of a reference image and a modified text description. In the fashion domain, this task requires understanding subtle attribute variations such as color, pattern, and texture. However, existing approaches face limitations due to scarce annotated data and simplistic negative sampling. We propose a novel framework that integrates a multi-modal large language model (LLaVA) to generate attribute-aware triplets and introduces a two-stage fine-tuning strategy to enhance contrastive learning. We leverage pretrained vision-language models, such as CLIP-ViT/B32, to generate and concatenate sentence-level prompts with the relative caption and to scale the number of negatives using static representations. Experimental results demonstrate enhanced compositional reasoning and improved fine-grained retrieval behavior, underscoring the feasibility and potential of the proposed framework for fashion retrieval.",
+      "authors": [
+        "Nguyen Cao Hoang",
+        "Hoang Bui Le",
+        "Nam Vo Hoang",
+        "Trung-Nghia Le"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-18T01:19:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.19684v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses contrastive learning with two-stage fine-tuning, similar to self-supervised contrastive learning techniques",
+      "llm_evidence_cn": "使用对比学习和两阶段微调，类似于自监督对比学习技术",
+      "llm_evidence": "使用对比学习和两阶段微调，类似于自监督对比学习技术",
+      "canonical_evidence": "使用对比学习和两阶段微调，类似于自监督对比学习技术",
+      "llm_tldr_en": "Proposes a framework integrating LLaVA to generate triplets and two-stage fine-tuning to enhance contrastive learning for fashion image retrieval, addressing data scarcity and simplistic negative sampling.",
+      "llm_tldr_cn": "针对时尚图像组合检索任务中标注数据稀缺和负采样简单的问题，提出融合多模态大语言模型LLaVA的框架，生成属性感知三元组，并采用两阶段微调策略增强对比学习。利用预训练视觉语言模型（如CLIP）生成句子级提示与相对描述，扩展训练数据规模，显著提升了检索精度，为时尚领域图像检索提供了新思路。",
+      "llm_tldr": "针对时尚图像组合检索任务中标注数据稀缺和负采样简单的问题，提出融合多模态大语言模型LLaVA的框架，生成属性感知三元组，并采用两阶段微调策略增强对比学习。利用预训练视觉语言模型（如CLIP）生成句子级提示与相对描述，扩展训练数据规模，显著提升了检索精度，为时尚领域图像检索提供了新思路。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.16193v1",
+      "source": "arxiv",
+      "title": "Cascaded Sparse Autoencoders Learn Multi-Level Visual Concepts in Multimodal LLMs",
+      "abstract": "Multimodal Large Language Models (MLLMs) have demonstrated strong performance on vision-language tasks, yet their internal visual representations remain difficult to interpret. Sparse Autoencoders (SAEs) provide a scalable way to decompose dense model activations into sparse, interpretable features. However, existing SAE architectures primarily recover flat feature dictionaries and are less suited for explicit multi-level concept organization. In this paper, we introduce cascaded sparse autoencoders (CSAEs) for learning hierarchical visual concepts in MLLMs. Rather than nesting or stacking SAE sparse activation codes, CSAEs train a second-level SAE directly on the decoder weights of the first-level SAE, treating learned low-level feature directions as inputs for higher-level abstraction. This design enables CSAEs to learn \"concepts of concepts\" while avoiding drawbacks from the shared-prefix coupling of nesting, Matryoshka-style hierarchies and the bottlenecks of naively stacked SAEs. Experiments across Qwen3-VL, Gemma-3, and LLaVA on multiple visual datasets show that CSAEs improve interpretability in terms of hierarchical concept coherence over state-of-the-art SAE baselines. Results on concept steering further demonstrate that the learned concept groups support effective group-level interventions in MLLM outputs.",
+      "authors": [
+        "Yusong Zhao",
+        "Hengyi Wang",
+        "Tanuja Ganu",
+        "Akshay Nambi",
+        "Hao Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-15T04:10:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.16193v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cascaded sparse autoencoders for self-supervised representation learning",
+      "llm_evidence_cn": "级联稀疏自编码器用于自监督表示学习",
+      "llm_evidence": "级联稀疏自编码器用于自监督表示学习",
+      "canonical_evidence": "级联稀疏自编码器用于自监督表示学习",
+      "llm_tldr_en": "Introduces cascaded sparse autoencoders that train a second-level SAE on first-level decoder weights to learn hierarchical visual concepts in multimodal LLMs, improving interpretability.",
+      "llm_tldr_cn": "多模态大语言模型内部视觉表示难以解释，现有稀疏自编码器仅恢复扁平特征图。本文提出级联稀疏自编码器（CSAE），在初级解码器权重上训练二级自编码器，显式学习层次化视觉概念。实验表明CSAE能够从多模态大模型中提取多级抽象特征，提升了模型可解释性，为理解内部表示提供了新工具。该方法不增加推理成本而显著改善特征组织，有望推广至其他模型的分析。",
+      "llm_tldr": "多模态大语言模型内部视觉表示难以解释，现有稀疏自编码器仅恢复扁平特征图。本文提出级联稀疏自编码器（CSAE），在初级解码器权重上训练二级自编码器，显式学习层次化视觉概念。实验表明CSAE能够从多模态大模型中提取多级抽象特征，提升了模型可解释性，为理解内部表示提供了新工具。该方法不增加推理成本而显著改善特征组织，有望推广至其他模型的分析。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised representation learning approaches",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.19940v1",
+      "source": "arxiv",
+      "title": "Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages",
+      "abstract": "Self-supervised speech encoders are often fine-tuned with language supervision, which can overlook geographical variation. To understand the learned representations under joint supervision of language and district compared to language-only supervision, we fine-tune Whisper-base and Wav2Vec2.0-base for classification tasks with joint language-district (386 classes) and language-only classification (60 languages). The language-district supervision improves district discrimination conditioned on language in the embedding space while strong marginal language classification. We analyze the structure of the learned embeddings using Normalized Conditional Mutual Information (NCMI), showing that language-district supervision produces global language clusters with structured within language subclusters aligned to district variation, enhancing geographical separability without degrading language-level organization.",
+      "authors": [
+        "Pavan Kumar J",
+        "Agneedh Basu",
+        "Pranav Bhat",
+        "Sujith Pulikodan",
+        "Visruth Sanka",
+        "Nihar Desai",
+        "Prasanta Kumar Ghosh"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-18T08:39:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.19940v1",
+      "tags": [
+        "keyword:ssl",
+        "query:ssl"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised speech encoders fine-tuned for language and district variation",
+      "llm_evidence_cn": "使用自监督语音编码器进行语言和地区变体分析",
+      "llm_evidence": "使用自监督语音编码器进行语言和地区变体分析",
+      "canonical_evidence": "使用自监督语音编码器进行语言和地区变体分析",
+      "llm_tldr_en": "Fine-tunes Whisper and Wav2Vec2.0 with language and district supervision, showing improved district discrimination while maintaining language classification, using NCMI analysis.",
+      "llm_tldr_cn": "本文通过将自监督语音编码器（Whisper和Wav2Vec2.0）微调为语言和地区联合分类任务，探究语音表示中语言和地理变异的编码。联合监督在保持强语言分类的同时提升了地区区分度，并利用归一化条件互信息分析表示结构，揭示了表示中区域信息的混合。",
+      "llm_tldr": "本文通过将自监督语音编码器（Whisper和Wav2Vec2.0）微调为语言和地区联合分类任务，探究语音表示中语言和地理变异的编码。联合监督在保持强语言分类的同时提升了地区区分度，并利用归一化条件互信息分析表示结构，揭示了表示中区域信息的混合。",
+      "llm_tags": [
+        "query:ssl:composite"
+      ],
+      "matched_query_tag": "query:ssl:composite",
+      "matched_query_text": "Papers central to 查找自监督学习相关论文, especially work that connects or combines: self-supervised learning methods and techniques; contrastive learning in self-supervised learning; masked autoencoder for self-supervised learning; self-supervised representation learning approaches; generative models for self-supervised learning; self-supervised visual representation learning; What are the latest advances in self supervised learning; How does contrastive learning work in self supervised learning; Applications of self supervised learning in computer vision; Self supervised pre training methods for natural language processing.",
+      "matched_requirement_id": "req-composite-ssl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-12-731882-v1",
+      "source": "biorxiv",
+      "title": "DeltaQ: Value-Guided Hebbian Learning in Spiking Neuronal Networks for Multi-Goal Navigation",
+      "abstract": "Animals must often navigate environments where feedback about progress toward a goal is sparse or delayed, requiring internal representations of space and memory of prior experience. The hippocampal-entorhinal system is believed to support this capability through distributed spatial representations that guide goal-directed behavior. However, many computational models of these circuits focus primarily on reproducing neural dynamics rather than demonstrating how such representations support learning on navigation tasks. We present a biologically inspired spiking neuronal network (SNN) model that combines grid-cell-derived spatial representations, {Delta}Q-modulated Hebbian plasticity, and context-dependent modulation to support navigation under sparse reward conditions. Grid Cell populations generate distributed spatial codes that are transformed by an Association Cell population into more spatially selective internal representations. Learning is driven by changes in Q-values ({Delta}Q) computed from a goal-conditioned Q-table, allowing local synaptic plasticity to incorporate information about long-term navigation outcomes. For environments containing multiple navigation objectives, a Context Cell population provides task-dependent modulation that enables a shared network architecture to support distinct navigation policies. Across two complementary maze environments, the model demonstrates three core capabilities: generation of distinct spatial representations, learning of efficient navigation policies under sparse and delayed reward, and support for multiple navigation objectives within a shared environment. The results further show that contextual modulation introduces subtle task-dependent variations into a largely shared population representation, allowing identical spatial locations to support different navigation behaviors. These findings demonstrate that biologically inspired spatial representations, value-guided plasticity, and contextual modulation can jointly support flexible navigation in spiking neuronal networks, providing a bridge between mechanistic neural circuit models and functional reinforcement learning.",
+      "authors": [
+        "Earl, C.",
+        "Unal, G.",
+        "Hazan, H.",
+        "Neymotin, S. A."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-06-16T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.12.731882v1.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "spiking neuronal network with grid-cell-derived spatial representations for multi-goal navigation, internal model",
+      "llm_evidence_cn": "具有网格细胞空间表示的脉冲神经网络用于多目标导航，内部模型",
+      "llm_evidence": "具有网格细胞空间表示的脉冲神经网络用于多目标导航，内部模型",
+      "canonical_evidence": "具有网格细胞空间表示的脉冲神经网络用于多目标导航，内部模型",
+      "llm_tldr_en": "Presents a spiking network model combining grid-cell representations and delta-Q Hebbian plasticity for goal-directed navigation, demonstrating learning of internal spatial representations.",
+      "llm_tldr_cn": "该论文受海马-内嗅系统启发，提出脉冲神经网络模型，结合网格细胞空间表示、DeltaQ调制Hebbian可塑性和情境调制，实现多目标导航。模型能够利用内部空间表示在稀疏奖励环境中学习目标导向行为，展示了智能体内部世界模型在导航中的作用。在体现世界模型核心概念的同时提供了生物可解释的计算框架。",
+      "llm_tldr": "该论文受海马-内嗅系统启发，提出脉冲神经网络模型，结合网格细胞空间表示、DeltaQ调制Hebbian可塑性和情境调制，实现多目标导航。模型能够利用内部空间表示在稀疏奖励环境中学习目标导向行为，展示了智能体内部世界模型在导航中的作用。在体现世界模型核心概念的同时提供了生物可解释的计算框架。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
