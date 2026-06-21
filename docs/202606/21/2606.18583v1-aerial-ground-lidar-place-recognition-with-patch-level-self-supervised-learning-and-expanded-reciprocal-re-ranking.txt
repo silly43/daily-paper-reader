@@ -1,0 +1,603 @@
+Title: Aerial-ground LiDAR place recognition with patch-level self-supervised learning and expanded reciprocal re-ranking
+
+URL Source: https://arxiv.org/pdf/2606.18583v1
+
+Published Time: Thu, 18 Jun 2026 00:26:21 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Aerial-ground LiDAR place recognition with patch-level self-supervised learning and expanded reciprocal re-ranking 
+
+## Yandi Yang a, Xianghong Zou b,∗, Jianping Li c, Haofeng Xie d, Saurav Uprety a, Hongzhou Yang a and Naser El-Sheimy a
+
+> a
+
+Department of Geomatics Engineering, University of Calgary, Calgary, T2N 1N4, Canada 
+
+> b
+
+School of Advanced Manufacturing, Nanchang University, Nanchang, 330031, China 
+
+> c
+
+School of Electrical and Electronic Engineering, Nanyang Technological University, 639798, Singapore 
+
+> d
+
+School of Remote Sensing and Information Engineering, Wuhan University, Wuhan, 430079, China 
+
+A R T I C L E I N F O 
+
+Keywords :Mobile Mapping Aerial–ground Localization Self-supervised Learning Re-ranking Place Recognition 
+
+A B S T R A C T 
+
+LiDAR place recognition determines one’s position on a prior point cloud map. The most studied ground-level LiDAR place recognition suffers from pre-visit requirements, incomplete coverage, and limited perspectives. Using pre-acquired, full-coverage Airborne Laser Scanning (ALS) data as an aerial prior map overcomes these drawbacks, making cross-view place recognition necessary and advantageous. However, aerial-ground LiDAR place recognition faces significant challenges, including the domain gap between aerial and ground point clouds, false positives during initial retrieval, and a lack of large-scale benchmarks. To address these challenges, we present a novel retrieval and re-ranking framework for aerial-ground LiDAR place recognition. Based on the priors that neighboring point cloud patches share similar semantics with anchor patch, our retrieval network introduces patch-level self-supervised learning modules at multiple scales and integrates with scene-level learning to improve global feature discriminativeness between aerial and ground point clouds. Furthermore, leveraging the structured spatial distribution of ALS point clouds, we introduce an Expanded Reciprocal (ER) re-ranking algorithm to exploit neighborhood information maximally and refine each feature based on neighbor features, which are then used to update the similarity matrix for final ranking. To evaluate our approach, we establish a new large-scale benchmark named CS-Urban-Scenes. Collected via a backpack mobile mapping system with post-processed kinematic (PPK) optimized trajectories, the dataset features an 18.1 km trajectory and a 7.2 km 2 coverage area. Extensive experiments demonstrate that our retrieval network outperforms existing state-of-the-art (SOTA) methods, achieving a 9.8% improvement in average Recall@1 and a 3.2% improvement in average Recall@1% on the CS-Urban-Scenes, while also showing the best performance on the CS-Campus3D dataset. Additionally, our ER re-ranking algorithm further boosts the average Recall@1 by 4.9% on CS-Campus3D and 10.2% on CS-Urban-Scenes without additional training. 
+
+## 1. Introduction 
+
+Reliable localization is essential for Mobile Mapping Systems (MMS) (Schwarz and El-Sheimy, 2004) and robotics (Li et al., 2026) applications. As a core task, place recognition enables an MMS or robot to identify its position within a prior map. Standard solutions leverage Global Nav-igation Satellite Systems (GNSS), Inertial Navigation Sys-tems (INS), or visual sensors. However, GNSS signals are easily obstructed in urban canyons due to signal occlusion and multipath effects (Nassar and El-Sheimy, 2006). INS-based odometry suffers from cumulative drift without ex-ternal corrections (El-Sheimy and Youssef, 2020). Although various visual localization methods have been proposed (Jia et al., 2026; Yang et al., 2026), they remain sensitive to illumination and viewpoint changes. In contrast, LiDAR di-rectly provides 3D point clouds and is robust to illumination changes. As LiDAR becomes more affordable and easier  
+
+> ⋆
+
+This research was supported by Jiangxi Provincial Natural Science Foundation (No.20252BAC200598, No.20261BCG330036) 
+
+> ∗
+
+Corresponding author  
+
+> yandi.yang@ucalgary.ca
+
+(Y. Yang); ericxhzou@ncu.edu.cn (X. Zou); jianping.li@ntu.edu.sg (J. Li); xiehaofeng@whu.edu.cn (H. Xie);  
+
+> saurav.uprety1@ucalgary.ca
+
+(S. Uprety); honyang@ucalgary.ca (H. Yang);  
+
+> elsheimy@ucalgary.ca
+
+(N. El-Sheimy) 
+
+to integrate onto MMSs, LiDAR-based place recognition has become increasingly important for applications such as SLAM (Li et al., 2023) and global localization (Wu et al., 2026). A common place recognition pipeline relies on prior street-view point cloud maps (Zou et al., 2026) or image databases (Lee et al., 2026). However, ground-level place recognition remains limited as the ground prior maps depend on pre-visiting the region, cannot fully cover the entire area, and suffer from blockages of ground perspectives. Airborne Laser Scanning (ALS) point clouds, acquired from aerial platforms, have been made publicly available by many government agencies. Compared with ground point cloud maps, they are pre-collected and geo-referenced, cover complete regions at city or national scales, and provide richer details. These characteristics make aerial-ground LiDAR place recognition practical in mobile mapping applications. Take ground localization as an example. Within areas cov-ered by ALS data, an MMS or robot can determine its position using only ground LiDAR. This approach can cir-cumvent the failures of other sensors, such as GNSS outages in urban canyons, long-term drift in IMUs, and illumination or viewpoint variations in visual sensors. Consequently, this can serve as an external localization source for multi-sensor fusion. The diagram for aerial-ground LiDAR place 
+
+: Preprint submitted to Elsevier Page 1 of 16  
+
+> arXiv:2606.18583v1 [cs.CV] 17 Jun 2026 Fig. 1. Diagram of aerial-ground LiDAR place recognition. Within a prior ALS point cloud database, submap locations are denoted by asterisks: blue and red indicate positive and negative candidates, respectively, relative to the ground query.
+
+recognition is detailed in Figure 1. Given a ground query, the task is to retrieve the closest aerial submap from the aerial database. However, several challenges remain in aerial-ground LiDAR place recognition. (1) Domain gap (Zou et al., 2023; Yang et al., 2024) between aerial and ground heterogeneous point clouds: As shown in Figure 2, different data coverages cause only partial overlap and the varied density results in a lack of reliable point correspondences. Furthermore, differ-ent sensor noises exist due to the varying scanning distances. These factors pose challenges to the distinctiveness of global features between cross-view data. (2) Numerous false posi-tives in the initial retrieval: Due to repetitive buildings and structure in aerial point cloud database, relying solely on a single global descriptor often causes mismatches (Zhong et al., 2017; Yang et al., 2025). This one-way search ignores the mutual relationship between the query and other top-ranked candidates in the database. (3) Lack of large-scale benchmarks: Existing aerial-ground datasets are mostly lim-ited to small areas (Guan et al., 2023). They lack the long tra-jectories and environmental diversity to test localization in urban areas. Current methods struggle with these challenges due to two primary reasons. (1) Existing retrieval approaches focus on scene-level metric learning (Komorowski, 2021; Vidanapathirana et al., 2022) and ignore feature represen-tation learning at the patch level. Although sufficient for single-platform scenarios, they are vulnerable to the cross-domain gap between aerial and ground point clouds. (2) Re-ranking serves as a post-processing step to refine initial retrieval results. Conventional re-ranking pipelines (Sarfraz et al., 2018; Shao et al., 2023) rarely exploit the structured spatial distribution of the database, relying solely on fea-ture distances while ignoring the spatial consistency among neighboring candidates. They are susceptible to similar false positives in large-scale ALS point cloud database, thereby degrading retrieval accuracy. To address these challenges, we propose a comprehen-sive aerial-ground LiDAR place recognition framework and establish a new large-scale dataset in dense urban areas. The main contributions of this paper are as follows. 1) We propose a new LiDAR place recognition pipeline that incorporates patch-level self-supervised learning at mul-tiple scales with scene-level learning to improve global feature representation, thus mitigating the domain gap between aerial and ground point clouds. 2) We present a new Expanded Reciprocal (ER) re-ranking algorithm by considering the structured spatial distri-bution of the aerial database. Exploiting neighborhood relationships from both the query and database sides, expanding reciprocal neighbors refines the initial global features and mitigates false positives without additional network training. 3) Comprehensive experiments are conducted on the newly proposed CS-Urban-Scenes dataset in challenging urban environments, which features an 18.1 km ground tra-jectory and a 7.2 km 2 ALS coverage area. The results demonstrate that both our retrieval and re-ranking meth-ods outperform existing SOTA approaches. The remainder of this paper is organized as follows. Section 2 reviews the existing literature. Section 3 introduces the proposed patch-level learning and re-ranking framework, while Section 4 describes the characteristics of the CS-Urban-Scenes dataset. Extensive quantitative and qualitative evaluations, along with detailed analyses, are presented in Section 5. Finally, Section 6 concludes the paper. 
+
+## 2. Related work 
+
+2.1. Patch-level self-supervised learning 
+
+Image self-supervised learning (SSL) increasingly adopts image patches as a processing unit. Although initial methods predict relative positions between patches (Doersch et al., 2015) or concatenate patch features randomly (Misra and Maaten, 2020), vision Transformers (ViTs) have demonstrated the potential for denser image representations. Masked autoencoders (He et al., 2022) improve this by masking random patches and reconstructing the original image in pixels. DINOv3 (Siméoni et al., 2025) introduces Gram anchoring to mitigate the degradation of patch-level consistency. SelfPatch is a visual pretext task for learning better patch-level representations (Yun et al., 2022). Some methods(Wang et al., 2021) also utilize patch-to-patch matching in multi-view stereo. In visual place recognition, CNNs (Hausler et al., 2021) can be used to extract patch-level descriptors. Transformer’s self-attention mechanism is leveraged to select a set of key patches, filtering out distractions for efficient re-ranking (Zhu et al., 2023). Several patch-based point cloud learning algorithms have been proposed, such as MLP-based methods (Long    
+
+> :Preprint submitted to Elsevier Page 2 of 16 Fig. 2. Domain gap between aerial and ground point clouds. Gray and red points denote the aerial and ground data, respectively.
+
+et al., 2022). Transformer-based methods (Gao et al., 2025) adopt a "mask-and-reconstruct" objective, where an encoder learns latent representations from unmasked patches, while a decoder reconstructs the masked ones based on these features. In addition, Mamba-based point cloud analysis (Zha et al., 2025) uses patch tokens as units. In addition to generating patches using the K-Nearest Neighbors (KNN) and Farthest Point Sampling (FPS) algorithms, Octformer (Wang, 2023) generates patches based on an octree structure, FlatFormer (Liu et al., 2023) partitions the point cloud into equal-sized groups, and PTv3 (Wu et al., 2024) uti-lizes space-filling curves to serialize points. PointTPA forms structured local patches from unorder point clouds for better 3D scene understanding (Liu et al., 2026). 
+
+2.2. LiDAR place recognition 
+
+Point cloud features can be extracted directly by both handcrafted (Yuan et al., 2024; Lim et al., 2025) and deep learning (Komorowski, 2021; Vidanapathirana et al., 2022; Zou et al., 2023) algorithms, which are then used to search the database to identify revisited areas. Furthermore, some approaches partition raw point clouds into segments before feature extraction. SegMap (Dube et al., 2020) decomposes point clouds into segments and matches learning-based seg-ment descriptors for retrieval. SSC (Li et al., 2021) applies semantic information into Scan Context (Kim and Kim, 2018) for more effective representation. SGPR (Kong et al., 2020) forms the point clouds into a semantic graph and models place recognition into a graph matching problem. Point clouds can also be projected into range images (Luo et al., 2025) or Bird’s-Eye-View (BEV) images (Skuddis et al., 2026) to leverage 2D computer vision techniques. Nev-ertheless, domain gap between aerial and ground data causes segmentation inconsistencies, resulting in mismatched point cloud clusters. Furthermore, projecting point clouds into images yields inconsistent representations. For example, due to the different coverages between aerial and ground data, the projected BEV images vary significantly, which degrades feature learning during network training. For aerial-ground LiDAR place recognition, Cross-Loc3D (Guan et al., 2023) extracts features through multi-grained voxelization and multi-scale sparse convolution, followed by an iterative refinement process. GAPR (Jie et al., 2023) employs MinkFPN as the backbone for feature extraction, followed by a transformer encoder to capture the overlaps between ground and aerial point clouds. HOT-FormerLoc (Griffiths et al., 2025) performs hierarchical attention to facilitate multi-scale feature interaction. Both BEV features from CNN and point features from sparse convolution are extracted (Wang et al., 2025) and the ex-periments are conducted on two datasets, both of which comprise data collected by a UAV and a UGV. However, these approaches only consider scene-level supervision and neglect fine features at the patch level, which makes the generated global descriptors easily corrupted by the domain gap between aerial and ground data. Some methods rely on other publicly available maps, which either suffer from the data imbalance of OpenStreetMap (OSM) (Cho et al., 2022) or require other sensors for orientation when using satellite images (Shi et al., 2026). 
+
+2.3. Re-ranking 
+
+Retrieval results from place recognition can be further refined with a re-ranking module. Local features can be utilized for geometric verification (Cao et al., 2020) or to estimate a similarity score (Xiao et al., 2025) to refine image retrieval results. Local features can also be utilized in re-ranking point cloud retrieval (Vidanapathirana et al., 2023). However, the coverage difference between aerial and ground point clouds limits the extraction of reliable local features across the two sources. Other methods rely solely on global features for re-ranking. Query expansion refines the query using the top-ranked features (Radenović et al., 2018; Shao et al., 2023). Contextual information is considered to improve retrieval performance (Zhong et al., 2017; Sarfraz et al., 2018). Global features can also be propagated and refined through a graph (Zhang et al., 2023; Yang et al., 2025). However, these re-ranking methods neglect the spatial distribution of ALS point clouds, leading to performance degradation in ground-to-aerial retrieval. Re-ranking can also be implemented via learnable mod-ules. 𝑅 2Former unifies image retrieval and re-ranking for place recognition using pure transformers (Zhu et al., 2023). CVNet utilizes an end-to-end learnable 4D CNN to predict the similarity between two images (Lee et al., 2024). Despite their strong performance, these methods require computa-tionally expensive network training. Although Large Lan-guage Models (LLMs) have been utilized in image retrieval    
+
+> :Preprint submitted to Elsevier Page 3 of 16 Fig. 3. Overview of our aerial-ground LiDAR place recognition method. Given a ground query and an aerial point cloud database, we train the network through on both scene and patch levels at the retrieval stage. The scene-level learning is to pull positive pairs closer and push negatives apart, while the multi-scale patch-level learning relies on self-supervised learning. During the re-ranking stage, the initial retrieval results are refined using our Expanded Reciprocal (ER) re-ranking algorithm.
+
+re-ranking (Tharwat et al., 2026) and point cloud under-standing (Xu et al., 2025), the scarcity of point clouds remain a bottleneck in LiDAR place recognition tasks. 
+
+## 3. Proposed method 
+
+The proposed framework aims to bridge the cross-source domain gap and filter out numerous false positives from the initial retrieval, thereby enhancing place recognition accu-racy between aerial and ground point clouds. Figure 3 illus-trates the overall workflow of our method, and the problem is defined in 3.1. Self-supervised patch-level learning operates at multiple octree scales, and the network is optimized through a joint loss that combines patch-level with scene-level loss described in Section 3.2. Finally, as demonstrated in Section 3.3, expanded reciprocal neighbors are leveraged to refine the global features and compute updated pairwise distances, which are then used to re-rank the initial candidate set. 
+
+3.1. Problem formulation 
+
+Let  = { 𝑀 1, 𝑀 2, … , 𝑀 𝑚 } be a database consisting of 𝑚 aerial LiDAR submaps. Let 𝑃 𝑞 be a ground query point cloud captured at an unknown location. The proposed framework follows a two-stage pipeline: first retrieval and then re-ranking. 
+
+Retrieval. The objective of the initial retrieval stage is to map these heterogeneous point clouds into a shared feature space via an embedding function 𝑓 (⋅) = 𝑎 (ℎ(⋅)) , where 
+
+ℎ(⋅) extracts multi-scale local features and 𝑎 (⋅) aggregates them into a global descriptor. For the query 𝑃 𝑞 , its global descriptor is matched against the database  using the 𝐿 2
+
+norm to yield a list of top-𝑘 retrieval candidates: 
+
+𝑅 = { 𝑃 𝑅 1 , 𝑃 𝑅 2 , … , 𝑃 𝑅 𝑘 }, (1) where 𝑅 is sorted in ascending order based on the feature distance ‖𝑓 (𝑃 𝑞 ) − 𝑓 (𝑃 𝑖 )‖2. To optimize the embedding function, the network enforces a triplet constraint on the global descriptors: 
+
+‖𝑓 (𝑃 𝑞 ) − 𝑓 (𝑃 𝑝 )‖2 < ‖𝑓 (𝑃 𝑞 ) − 𝑓 (𝑃 𝑛 )‖2, (2) where 𝑃 𝑝 ∈  and 𝑃 𝑛 ∈  denote the geographically close positive sample and distant negative sample relative to 𝑃 𝑞 ,respectively. 
+
+Re-ranking. To filter out numerous false positives, a global feature-based re-ranking stage is introduced. The ini-tial global features are refined to compute updated pairwise distances (Section 3.3), which are then used to permute the initial candidate set into the final re-ranked list 𝑅𝑅 :
+
+𝑅𝑅 = { 𝑃 𝑅𝑅 1 , 𝑃 𝑅𝑅 2 , … , 𝑃 𝑅𝑅 𝑘 }. (3) An effective re-ranking algorithm ensures that the top-ranked candidates are geographically closer to the query, satisfying the constraint: 
+
+𝑔𝑒𝑜 (𝐱 𝑞 , 𝐱 𝑅𝑅 𝑖 ) ≤  𝑔𝑒𝑜 (𝐱 𝑞 , 𝐱 𝑅 𝑖 ), ∀𝑖, (4) where 𝐱 𝑞 , 𝐱 𝑅 𝑖 , and 𝐱 𝑅𝑅 𝑖 denote the ground-truth geoloca-tions of 𝑃 𝑞 , 𝑃 𝑅 𝑖 , and 𝑃 𝑅𝑅 𝑖 , respectively, and 𝑔𝑒𝑜 (⋅) repre-sents the Euclidean distance of the geographical coordinates. 
+
+3.2. Retrieval with multi-scale patch-level learning 
+
+Considering that neighboring point cloud patches share similar semantics with the anchor patch, we utilize a self-supervised learning scheme to improve global feature rep-resentations across aerial and ground heterogeneous data. In this section, we first introduce the backbone and feature aggregator, and then detail the multi-scale patch-level self-supervised learning scheme. Finally, we formulate a train-ing loss that combines self-supervised and metric learning objectives. Figure 4 shows the architecture of our retrieval network. Scene-level supervision is implemented via metric learning   
+
+> :Preprint submitted to Elsevier Page 4 of 16
+
+using positive and negative pairs between the ground and aerial data, while patch-level self-supervised learning is per-formed on independent single point clouds across multiple scales of an octree. 
+
+Backbone. We utilize OctFormer (Wang, 2023) as the backbone ℎ(⋅) to extract features due to its scalability in large-scale point clouds. Given an input point cloud 𝑃 ,OctFormer serializes it into an ordered sequence of non-empty octree nodes via Z-order serialization. Each non-empty node at depth 𝑜 ∈  serves as a 3D patch, denoted as 𝐱 (𝑖 ) 
+
+> 𝑜
+
+∈ 𝑃 . These serialized features are partitioned into non-overlapping local windows of a fixed size 𝐾 . Controlled by a dilation rate 𝐷 , the patch features at depth 𝑜 are padded and reconfigured into attention tokens: ̃
+
+𝐗 𝑜 = Flatten(Transpose(Reshape( ̂𝐗 𝑜 ))) , (5) where ̃ 𝐗 𝑜 ∈ ℝ𝐵 ×𝐾 ×𝐶 represents the grouped window tokens, with 𝐵 and 𝐶 denoting the window count and channel dimension, respectively. A standard self-attention mechanism runs across all windows: 
+
+𝐅 𝑜 = Sof tmax 
+
+(
+
+𝐐𝐊 ⊤
+
+√𝑑 
+
++ 𝐁 
+
+)
+
+𝐕 , with 𝐐 , 𝐊 , 𝐕 =̃ 𝐗 𝑜 𝐖 𝑞,𝑘,𝑣 ,
+
+(6) where 𝐖 𝑞,𝑘,𝑣 are learnable projection weights, and 𝐁 is the conditional positional encoding bias. The output tensor 𝐅 𝑜 ∈
+
+ℝ𝐵 ×𝐾 ×𝐶 gathers the updated patch representations across all 
+
+𝐵 windows at depth 𝑜 . Finally, 𝐅 𝑜 is converted back to the linear array through Reverse( ⋅) and with padding elements removed through Mask( ⋅), before being down sampled to output the feature for each patch: 
+
+𝐟 (𝑖 ) 
+
+> 𝑜
+
+= ℎ(𝐱 (𝑖 ) 
+
+> 𝑜
+
+) = Downsample(Reverse(Mask( 𝐅 𝑜 ))) (𝑖 ). (7) 
+
+Feature aggregator. Given the features 𝐟 (𝑖 ) 
+
+> 𝑜
+
+extracted by the backbone from all patches at depth 𝑜 , we employ a cross-attention mechanism to adaptively pool them into a fixed set of tokens (Goswami et al., 2024). Let 𝐊 𝑜 =
+
+𝐕 𝑜 = { 𝐟 (𝑖 ) 
+
+> 𝑜
+
+}𝑁 𝑖 =1 ∈ ℝ𝑁 ×𝐶 stack the patch features as the keys and values. Utilizing a learnable query matrix 𝐐 𝜃 ∈ ℝ𝑘 ×𝑑 ,where 𝑘 and 𝑑 denote the token count and channel dimension respectively, the adaptive pooling layer generates the initial tokens 𝐓 𝑜 ∈ ℝ𝑘 ×𝑑 :
+
+𝐓 𝑜 = Softmax 
+
+( 𝐐 𝜃 𝐊 ⊤𝑜 
+
+√𝑑 
+
+)
+
+𝐕 𝑜 . (8) These pooled tokens are subsequently refined by a token fuser, which consists of a stack of four residual two-layer MLP blocks, yielding the intermediate tokens 𝐇 𝑜 ∈ ℝ𝑘 ×𝑑 .
+
+𝐇 𝑜 is then mapped through an MLP-Mixer (Tolstikhin et al., 2021) performing consecutive token-mixing and channel-mixing: 
+
+𝐔 𝑜 = 𝐇 𝑜 + 𝐖 2𝜎 (𝐖 1LN (𝐇 𝑜 )⊤)⊤ , (9) 
+
+𝐌 𝑜 = 𝐔 𝑜 + 𝐖 4𝜎 (𝐖 3LN (𝐔 𝑜 )) , (10) where LN represents layer normalization, 𝜎 is the non-linear activation function, and 𝐖 1,2,3,4 denote the learnable weight parameters of the token-mixing and channel-mixing layers, respectively. Finally, the resulting matrix 𝐌 𝑜 ∈ ℝ𝑘 ×𝑑 is flat-tened and 𝐿 2-normalized to yield the final global descriptor. 
+
+Multi-scale patch-level self-supervised learning. To mitigate the domain gap between aerial and ground point clouds, we extend the self-supervised 2D patch-level pretext task (Yun et al., 2022) to 3D point clouds. Based on the intuition that neighboring point cloud patches share similar semantics with the anchor patch, we design an asymmetric patch-level distillation framework with octree structures. Similar neighboring patches are selected and aggregated to provide multi-scale self-supervision for the central patch. This framework not only increases local structural consis-tency between point cloud patches, but also improves the distinctiveness of global features for retrieval. Let 𝑜 ∈  denote the depth of an octree from a point cloud. For each non-empty central patch 𝐱 (𝑖 ) 
+
+> 𝑜
+
+, we first retrieve its spatial neighboring patches  (𝑖 ) 
+
+> 𝑜
+
+. To select patches sharing similar semantics, we extract the raw feature 
+
+𝐟 (𝑖 ) 
+
+> 𝑜
+
+= ℎ(𝐱 (𝑖 ) 
+
+> 𝑜
+
+) through the backbone and compute the cosine similarity with its neighbors: 
+
+𝑠 𝑜 (𝑖, 𝑗 ) = 𝐟 (𝑖 )⊤𝑜 𝐟 (𝑗 )
+
+> 𝑜
+
+‖𝐟 (𝑖 ) 
+
+> 𝑜
+
+‖2‖𝐟 (𝑗 ) 
+
+> 𝑜
+
+‖2
+
+, ∀𝑗 ∈  (𝑖 ) 
+
+> 𝑜
+
+. (11) Based on similarity scores, we filter and retain the most similar patches to construct a positive candidate group (𝑖 ) 
+
+> 𝑜
+
+⊂
+
+ (𝑖 ) 
+
+> 𝑜
+
+.To mitigate the effects of potentially noisy patches in 
+
+(𝑖 ) 
+
+> 𝑜
+
+, the teacher network leverages cross-attention blocks to aggregate these neighboring features. Specifically, the anchor patch feature 𝐟 (𝑖 ) 
+
+> 𝜃,𝑜
+
+serves as the query token ( 𝐪 ), while the anchor patch and its positive neighbors in (𝑖 )
+
+> 𝑜
+
+form the keys and values. Through this aggregation module, the network synthesizes the target representation 𝐲 (𝑖 )̃𝜃,𝑜 . Our task aims to align the student feature 𝐟 (𝑖 ) 
+
+> 𝜃,𝑜
+
+with the teacher representation 𝐲 (𝑖 )̃𝜃,𝑜 .
+
+Training loss. The self-supervised loss is formulated at multiple scales: 
+
+SSL = ∑
+
+> 𝑜 ∈
+
+1
+
+𝑁 𝑜 𝑁 𝑜 ∑
+
+> 𝑖 =1
+
+
+
+(
+
+𝑔 𝜃 
+
+(
+
+𝐟 (𝑖 )
+
+> 𝜃,𝑜
+
+)
+
+, sg 
+
+(
+
+𝑔 ̃𝜃 
+
+(
+
+𝐲 (𝑖 )̃𝜃,𝑜 
+
+))) 
+
+, (12) where 𝑁 𝑜 represents the total number of non-empty voxels at the octree depth 𝑜 ,  is the cross-entropy loss, and sg (⋅) is the stop-gradient operator. We utilize a self-distillation scheme to optimize the model. The student network parameterized by 𝜃 is optimized via gradient descent, whereas the teacher   
+
+> :Preprint submitted to Elsevier Page 5 of 16
+
+network parameters ̃ 𝜃 are updated via an Exponential Mov-ing Average (EMA) of the student network, formulated as ̃𝜃 ← 𝑚̃𝜃 + (1 − 𝑚 )𝜃 , where 𝑚 is the momentum coefficient. The projection head 𝑔 is implemented as an MLP followed by a Softmax to produce a probability distribution. SSL is designed to minimize the distance between a center point cloud patch and its similar neighboring patches. The global triplet margin loss global learns an embed-ding space that minimizes the distance between the query point cloud feature 𝑓 (𝑃 𝑞 ) and its positive sample feature 
+
+𝑓 (𝑃 𝑝 ).
+
+global = max( ‖𝑓 (𝑃 𝑞 )− 𝑓 (𝑃 𝑝 )‖2 −‖𝑓 (𝑃 𝑞 )− 𝑓 (𝑃 𝑛 )‖2 +𝑚, 0) .
+
+(13) Here, ‖⋅‖2 denotes the 𝐿 2 norm and 𝑚 is the margin. The to-tal loss is composed of the two losses with a hyperparameter 
+
+𝜆 .
+
+total = global + 𝜆 SSL . (14) 
+
+3.3. Re-ranking with expanded reciprocal neighbors 
+
+To mitigate the numerous false positives in the initial retrieval results, we introduce a training-free and lightweight re-ranking method. Given that the ALS database is con-tinuously collected with uniform spatial overlaps, we uti-lize reciprocal neighbors (Zhong et al., 2017) and perform neighborhood expansion to leverage this structured spatial distribution. In this section, we first formulate the reciprocal neighbors and then perform neighbor expansion. Cross dis-tances are calculated using the refined features to update the final ranking. Figure 11 and Figure 15 demonstrate the geographical distributions after re-ranking, where spatially close point clouds tend to cluster, regardless of whether they are cor-rectly retrieved or not. Algorithm 1 summarizes our re-ranking pipeline, which requires no additional training and directly utilizes and refines global features. 
+
+Reciprocal neighbors. Let  =  ∪  be the union of the ground query set  and the aerial database . We compute the initial distances 𝑑 (𝑖, 𝑗 ) between any two point cloud features 𝑖, 𝑗 ∈ . For each point cloud 𝑖 , its 𝑘 -nearest neighbors are denoted as  (𝑖, 𝑘 ).
+
+𝑑 (𝑖, 𝑗 ) = 1 − ⟨𝑓 (𝑖 ), 𝑓 (𝑗 )⟩‖𝑓 (𝑖 )‖2‖𝑓 (𝑗 )‖2
+
+, ∀𝑖, 𝑗 ∈ . (15) 
+
+𝑁 (𝑖, 𝑘 ) = { 𝑗 1, 𝑗 2, … , 𝑗 𝑘 }, |𝑁 (𝑖, 𝑘 )| = 𝑘. (16) The reciprocal neighbors of 𝑖 , denoted as (𝑖 ), require that any neighbor 𝑗 and 𝑖 are mutually ranked within each other’s top-𝑘 lists. Figure 5 illustrates the concept of recip-rocal neighbors. 
+
+𝑅 (𝑖 ) = { 𝑗 ∣ ( 𝑗 ∈ 𝑁 (𝑖, 𝑘 )) ∧ ( 𝑖 ∈ 𝑁 (𝑗, 𝑘 ))} . (17) 
+
+Neighbor expansion. Since truly similar point clouds may fall outside 𝑁 (𝑖, 𝑘 ) and thus be excluded from 𝑅 (𝑖 ),we extend reciprocal neighbors to include the 𝑘 -reciprocal neighbors of each element in 𝑅 (𝑖 ), which is defined as the extended reciprocal neighbor set 𝐸 (𝑖 ). The neighborhood expansion process is demonstrated in Figure 6. 
+
+𝐸 (𝑖 ) = 𝑅 (𝑖 ) ∪ ⋃
+
+> 𝑗 ∈𝑅 (𝑖 )
+
+𝑅 (𝑗 ). (18) Based on the expanded neighborhood (𝑖 ), for each point cloud 𝑖 ∈  we refine the feature 𝑓 (𝑖 ) to 𝑓 ′(𝑖 ) by averaging all elements within 𝐸 (𝑖 ).
+
+𝑓 ′(𝑖 ) = 
+
+{ 1
+
+> |𝐸 (𝑖 )|
+
+∑𝑥 ∈𝐸 (𝑖 ) 𝑓 (𝑥 ), if |𝐸 (𝑖 )| > 0,𝑓 (𝑖 ), if |𝐸 (𝑖 )| = 0 . (19) 
+
+Re-ranking. Given a ground query 𝑃 𝑞 ∈  and an aerial database submap 𝑀 𝑖 ∈ , the final distance 𝑑 final (𝑃 𝑞 , 𝑀 𝑖 )
+
+is calculated using the refined features. 
+
+𝑑 ′(𝑖, 𝑗 ) = 1 − ⟨𝑓 ′(𝑖 ), 𝑓 ′(𝑗 )⟩‖𝑓 ′(𝑖 )‖2‖𝑓 ′(𝑗 )‖2
+
+, ∀𝑖, 𝑗 ∈ , (20) 
+
+𝑑 𝑓 𝑖𝑛𝑎𝑙 (𝑃 𝑞 , 𝑀 𝑖 ) = 1
+
+|𝐸 (𝑃 𝑞 )| + |𝐸 (𝑀 𝑖 )|⎡⎢⎢⎣∑ 
+
+> 𝑥 ∈𝐸 (𝑃 𝑞 )
+
+𝑑 ′(𝑥, 𝑀 𝑖 )+ ∑
+
+> 𝑦 ∈𝐸 (𝑀 𝑖 )
+
+𝑑 ′(𝑃 𝑞 , 𝑦 )
+
+]
+
+,
+
+(21) where 𝑑 ′(𝑖, 𝑗 ) denotes the distance between the refined fea-tures of point clouds 𝑖 and 𝑗 . The re-ranking is performed based on the final distance matrix 𝑑 𝑓 𝑖𝑛𝑎𝑙 .
+
+## 4. CS-Urban-Scenes dataset 
+
+Our multi-source heterogeneous dataset, CS-Urban-Scenes, integrates Mobile Laser Scanning (MLS) and Aerial Laser Scanning (ALS) data from urban areas in Calgary. Figure 7 presents an overview of the CS-Urban-Scenes dataset, where MLS trajectories are mapped onto satellite imagery sharing same geographic coverage with the aerial point cloud database. 1 Sensor configurations of the back-packing mobile mapping system are also provided. This dataset is constructed to benchmark aerial-ground LiDAR place recognition algorithms under large-scale urban scenar-ios. It captures a large urban area of 7.2 km 2 with 18.1 km         
+
+> 1Image of the ALS system: https://www.riegl.com/en-canada/ products/detail/riegl-vp-1
+> :Preprint submitted to Elsevier Page 6 of 16 Fig. 4. Architecture of our retrieval network, which integrates multi-scale patch-level self-supervised learning modules and scene-level metric learning. Our patch-level learning operates under the assumption that neighboring patches and the anchor patch have semantic similarity.
+
+of trajectories, where the ground-truth poses are computed via Post-Processing Kinematic (PPK). 
+
+Study area. The data were collected around the main campus of the University of Calgary. The dataset captures a structured urban environment, mainly containing buildings, trees, and street infrastructure. While the MLS point clouds are limited within 1.5 𝑘𝑚 2, the ALS point clouds cover an area of 7.2 𝑘𝑚 2 as illustrated in Figure 7. 
+
+Ground data acquisition. The MLS point clouds were acquired using a backpack mobile mapping system, in-tegrated with a Velodyne VLP-16 LiDAR, a NovAtel PwrPak7-E1 GNSS/INS system, and a NovAtel GPS-702-GG-HV antenna. The LiDAR provides an effective range of 100 m and a point accuracy of ±3 cm. When there is no GNSS outage, the GNSS/INS solution achieves a positional accuracy of 1 cm and an attitude accuracy of 0.01 degree after Inertial Explorer post-processing, yielding MLS point cloud maps with an accuracy of 5 cm. Five subsets are collected with a total trajectory length of 18.1 km. 
+
+Aerial data acquisition. Acquired in 2020, the Calgary ALS point clouds are provided by the Government of Canada 
+
+> 2
+
+. They have an average point density of 14 pts/ 𝑚 2, with horizontal and vertical accuracies of 0.2 m and 0.1 m, respectively. We selected the ALS point cloud data covering the university area, which spans 7.2 𝑘𝑚 2 (3.0 km × 2.4 km). 
+
+Dataset preparation. Ground submaps of radius 100 m were extracted from the MLS point clouds every 2 meters along the trajectory, yielding a total of 9,068 submaps. Ground points for each submap were removed using CSF (Zhang et al., 2016); the remaining non-ground points were then downsampled to 4,096 and normalized to the range [-1, 1]. Aerial point clouds were partitioned into 100 × 100 m2
+
+submaps with a stride of 19 m on both east and north directions. These aerial submaps were also ground-removed, downsampled and normalized. The total number of aerial submaps is 35,212.    
+
+> 2Natural Resources Canada: https://open.canada.ca/data/en/dataset/ 7069387e-9986-4297-9f55-0288e9676947
+> :Preprint submitted to Elsevier Page 7 of 16
+
+Fig. 5. Concept of reciprocal neighbors. Suppose a query whose top-5 neighbors consist of three positives ( 𝑃 1, 𝑃 2, 𝑃 3) and two negatives ( 𝑁 1, 𝑁 2). For each candidate, its own positive and negative samples are colorized in green and red, respectively. 
+
+𝑃 1, 𝑃 2, and 𝑃 3 are recognized as reciprocal neighbors because their own top-5 lists contain the query. In contrast, the negatives 𝑁 1 and 𝑁 2 are filtered out through this reciprocal mechanism. 
+
+Algorithm 1 Expanded Reciprocal Re-ranking 
+
+Input: Features of query set  and database  extracted by 
+
+𝑓 (⋅); neighborhood parameter 𝑘 
+
+Output: Final re-ranked distance matrix 𝑑 𝑓 𝑖𝑛𝑎𝑙  
+
+> 1:
+
+Let  =  ∪ . Compute 𝑑 (𝑖, 𝑗 ) for all 𝑖, 𝑗 ∈ . 
+
+> 2:
+
+Find 𝑘 -nearest neighbors 𝑁 (𝑖, 𝑘 ). 
+
+> 3:
+
+Find reciprocal neighbors 𝑅 (𝑖 ). 
+
+> 4:
+
+Find expanded reciprocal neighbors 𝐸 (𝑖 ). 
+
+> 5:
+
+Refine features 𝑓 ′(𝑖 ) 
+
+> 6:
+
+Compute 𝑑 ′(𝑖, 𝑗 ) based on refined features 𝑓 ′. 
+
+> 7:
+
+for each ground query 𝑃 𝑞 ∈  and aerial database submap 𝑀 𝑖 ∈  do  
+
+> 8:
+
+Let 𝑑 1 = ∑𝑥 ∈𝐸 (𝑃 𝑞 ) 𝑑 ′(𝑥, 𝑀 𝑖 ) 
+
+> 9:
+
+Let 𝑑 2 = ∑𝑦 ∈𝐸 (𝑀 𝑖 ) 𝑑 ′(𝑃 𝑞 , 𝑦 ) 
+
+> 10:
+
+𝑑 𝑓 𝑖𝑛𝑎𝑙 (𝑃 𝑞 , 𝑀 𝑖 ) = 𝑑 1+𝑑 2  
+
+> |𝐸 (𝑃 𝑞 )|+|𝐸 (𝑀 𝑖 )|
+> 11:
+
+end for Train-test split. To maintain an approximate train-to-test ratio of 4:1, we assigned MLS-2, MLS-3, MLS-5, and the latter part of MLS-4 to the training set, while setting MLS-1 and the first part of MLS-4 as the test set. This resulted in 7,242 submaps for training and 1,826 for testing. We use all the aerial submaps during training. We define a successful retrieval when the distance between the ground and aerial submaps is less than 100 m. 
+
+Fig. 6. Demonstration of neighborhood expansion. For a query point cloud 𝑖 , its initial neighbor set contains {𝐴, 𝐵, 𝐶, 𝐷, 𝐸 }.Since neighbor 𝐶 retrieves its own neighbors {𝐴, 𝐷, 𝐸, 𝐹 , 𝐺 },
+
+𝐹 and 𝐺 are also included through expansion. 
+
+Table 1 
+
+Aerial-ground LiDAR place recognition dataset. Dataset CS-Campus3D CS-Urban-Scenes (Ours) Environment Campus Urban Platform Robot / Airplane Backpack / Airplane Length / Coverage 7.8 km / 5.5 km 2 18.1 km / 7.2 km 2         
+
+> GT Trajectories U-blox GPS NovAtel PPK Ground Submaps 6,167 / 1,538 (train / test) 7,242 / 1,826 (train / test) Aerial Submaps 27,520 (Database) 35,212 (Database) Submap Size 100 m 100 m Positive Threshold 100 m 100 m
+
+## 5. Experiments 
+
+Our method consists of a retrieval stage followed by a re-ranking stage that refines the initial retrieval results without further training. In this section, we first introduce the experimental settings and then evaluate the two stages from both quantitative and qualitative perspectives. Finally, we provide ablation studies and further analysis of the results. 
+
+5.1. Settings 
+
+Retrieval baselines. For the evaluation of initial re-trieval, we train the MinkLoc3D (Komorowski, 2021), CrossLoc3D (Guan et al., 2023), and HOTFormerLoc (Grif-fiths et al., 2025) models on both the CS-Campus3D and CS-Urban-Scenes datasets. MinkLoc3D employs sparse vox-elization and convolutions to extract local features from point clouds. CrossLoc3D utilizes an iterative refinement process to obtain local features. HOTFormerLoc introduces relay tokens to facilitate multi-scale global-local interac-tions. 
+
+Re-ranking baselines. For the re-ranking stage, we ex-tract global features using CrossLoc3D, HOTFormerLoc, 
+
+: Preprint submitted to Elsevier Page 8 of 16 Fig. 7. Illustration of our CS-Urban-Scenes dataset. The coverage of the satellite imagery is consistent with that of the aerial point cloud database, spanning an area of 3 km by 2.4 km. 
+
+and our proposed model, and re-rank the retrieval results using various re-ranking methods, including 𝑘 -reciprocal (KR) (Zhong et al., 2017), ECN (Sarfraz et al., 2018), Cheb-GR (Yang et al., 2025), 𝛼 -QE (Radenović et al., 2018), and SuperGlobal (SG) (Shao et al., 2023). 𝑘 -reciprocal (KR) re-ranking refines retrieval scores by combining the original distance with a Jaccard distance, while the ECN refines initial feature distances using the contextual similarity of the top nearest neighbors. 𝛼 -QE expands each query with a distance-weighted average of its top neighbors, Cheb-GR refines query and database descriptors via graph-based propagation with adaptive thresholding, and SuperGlobal applies top descriptor augmentation followed by maximum-descriptor aggregation reranking. 
+
+Experimental datasets. We validate our retrieval and re-reranking algorithms on the CS-Campus3D (Guan et al., 2023) and our self-collected CS-Urban-Scenes datasets. While CS-Campus3D relies on a GPS module and uses indi-vidual LiDAR frames as queries, CS-Urban-Scenes utilizes NovAtel PPK processing and merges frames into submaps. Section 4 provides more details on the CS-Urban-Scenes, and Table 1 summarizes the comparison between two datasets. 
+
+Evaluation metrics. In the retrieval stage, we employ 
+
+Average Recall @𝑁 (AR @𝑁 ) and AR @1% , where AR @𝑁 
+
+measures the percentage of positives within the top 𝑁 
+
+predictions (or top 1% of the database). For re-ranking, we additionally report the mean Average Precision (mAP). 
+
+Training parameters. Our training is implemented in PyTorch and is conducted on an NVIDIA H100 GPU pro-vided by the Digital Research Alliance of Canada 3. The network warms up for the first 20 epochs, after which the teacher network begins updating via EMA. The training spans 300 epochs with a learning rate of 5 × 10 −4 and a loss weighting hyperparameter 𝜆 = 0 .1. For the self-supervised parameters, the teacher temperature, student temperature, and EMA momentum are configured as 0.04 , 0.1, and 0.996 ,respectively.                   
+
+> 3Digital Research Alliance of Canada: https://www.alliancecan.ca/
+> :Preprint submitted to Elsevier Page 9 of 16 Fig. 8. Retrieval recall curves of SOTA algorithms on CS-Urban-Scenes datasets.
+> Table 2
+> Retrieval results on CS-Campus3D. Method AR@1 AR@1% PointNetVLAD 19.1 43.6 MinkLoc3D 55.4 85.2 CrossLoc3D 72.3 86.1 HOTFormerLoc 78.4 89.5
+> Ours w/o SSL 75.5 90.8
+> Ours w/ SSL 81.1 91.3
+
+5.2. Quantitative results 
+
+Quantitatively, we conduct separate evaluations to initial retrieval and re-ranking results. For comparison of retrieval performance with SOTA algorithms, average recall rates (𝐴𝑅 @𝑁 ) are utilized. To evaluate the re-ranking stage, Mean Average Precision (mAP) is also adopted as the eval-uation metric. Table 2 reports the retrieval results on the CS-Campus3D dataset. As evaluated, our model achieves the best perfor-mance across all metrics with 81.1% in 𝐴𝑅 @1 and 91.3% in 𝐴𝑅 @1% . Furthermore, comparing our model with and without SSL highlights the effectiveness of patch-level self-supervised learning, which yields a 5.6% improvement in 
+
+𝐴𝑅 @1 . Figure 8 presents the top-25 average recall values of SOTA methods on the CS-Urban-Scenes dataset. Our method outperforms all other algorithms and the inclu-sion of patch-level self-supervised learning increases AR@1 by 5.7%. Based on the prior knowledge that neighboring patches share similar semantics with the anchor patch, we design a multi-scale patch-level self-supervised learning scheme, which enhances global feature representations to increase retrieval accuracy. To verify the efficacy of our proposed Expanded Re-ciprocal (ER) algorithm, we conduct comprehensive evalua-tions across different datasets and retrieval networks. Table 3 presents the performance improvement before and after ap-plying our ER re-ranker. It is observed that the utilization of ER yields substantial improvements across all metrics for all retrieval methods. On the CS-Urban-Scenes dataset, our ER algorithm increases the mAP of CrossLoc3D from 26.4% to 49.1% and mAP of our model from 33.4% to 57.9%, nearly doubling the initial performance. Table 4 and Table 5 compare our ER algorithm against five re-ranking methods across different retrieval networks and datasets. On the CS-Campus3D dataset (Table 4), most re-ranking methods bring improvements over the initial re-sults. For example, when utilizing global features from our model, other methods achieve an mAP between 64.5% and 68.9%, while our ER algorithm achieves 71.9%. On the CS-Urban-Scenes dataset (Table 5), other methods show limitations. For CrossLoc3D features, re-rankers like 𝛼 -QE, and SuperGlobal fail to maintain the initial AR@1 accuracy of 84.2%. In contrast, our ER algorithm increases the AR@1 to 94.5%. Furthermore, based on our retrieval features, the highest mAP achieved by other methods is 48.2% from ECN, whereas our ER algorithm reaches 57.9%, outperforming it by of 9.7%. By exploiting the structured spatial distribution of ALS point clouds, the expansion of reciprocal neigh-bors refines global features using neighborhood information, which mitigates false positives and significantly boosts the AR@1 accuracy without extra network training. 
+
+5.3. Qualitative results 
+
+To visually contrast the initial retrieval with the re-ranking, we structure our qualitative results into two parts. First, we map the retrieval recalls back onto the trajectories and colorize them according to their recalls (𝑅 @1 , 5, 10 , 15 , 20 , 25 and > 25 ). Second, we select rep-resentative scenarios to demonstrate successful re-ranking. We visualize the positions of the top-25 candidates on aerial images and the top-5 point clouds before and after the re-ranking. Figures 9 and 10 illustrate the recall results for the MLS-4-1 and MLS-1 datasets, respectively. We contrast the re-sults under three configurations: the baseline model without patch-level self-supervised learning (SSL), the model with patch-level SSL, and the results after Expanded Reciprocal (ER) re-ranking. The ER re-ranking is applied on the global features from the model with patch-level SSL. Compared to baseline, integrating patch-level SSL successfully increases retrieval recall, resulting in a higher number of 𝑅 @1 points. Furthermore, when our ER re-ranking is utilized, the trajec-tory is almost dominated by 𝑅 @1 .Figure 11 demonstrates successful re-ranking scenarios using our proposed Expanded Reciprocal (ER) re-ranking algorithm. Two representative queries are selected for vi-sualization. In aerial imagery, the 100-meter ground-truth radius is indicated by a yellow circle. The positions of the top-25 retrieved candidates before and after re-ranking are plotted, with green and red dots representing positive and negative candidates. Additionally, we visualize the top-5 retrieved point clouds in both configurations, rendered in green (positive) and red (negative). By expanding reciprocal neighbors, true positives are promoted to rank-1, and the precision of top-5 is enhanced. Although the initial retrieved candidates scatter across the aerial database, they tend to cluster around the query center after re-ranking.   
+
+> :Preprint submitted to Elsevier Page 10 of 16
+
+Table 3 
+
+Improvement in rank-𝑁 and mAP with our Expanded Reciprocal (ER) re-ranker on different retrieval methods and datasets. "Initial" and "ER" denote the retrieval results before and after re-ranking, respectively, with the best results in bold. We report the results with the neighborhood parameter of 𝑘 = 10 for CS-Campus3D and 𝑘 = 30 for CS-Urban-Scenes. CS-Campus3D CS-Urban-Scenes AR@1 AR@5 mAP AR@1 AR@5 mAP Retrieval Initial ER Initial ER Initial ER Initial ER Initial ER Initial ER CrossLoc3D 72.3 78.2 79.4 80.5 53.0 64.6 84.2 94.5 92.4 97.3 26.4 49.1 
+
+HOTFormerLoc 78.4 83.4 84.3 86.1 56.9 68.3 81.1 85.4 88.8 90.0 30.6 50.8 Ours 81.1 86.0 85.5 87.9 63.6 71.9 86.0 96.2 94.4 98.8 33.4 57.9 Table 4 
+
+Comparison on CS-Campus3D dataset with different re-ranking methods. Best results are in bold. AR@1 AR@5 mAP Retrieval KR ECN Cheb 𝛼 -QE SG ER KR ECN Cheb 𝛼 -QE SG ER KR ECN Cheb 𝛼 -QE SG ER CrossLoc3D 71.0 73.1 71.7 73.9 71.0 78.2 76.0 77.3 77.2 76.1 75.5 80.5 55.2 56.0 53.9 61.3 55.6 64.6 
+
+HOTFormerLoc 77.9 80.6 80.6 80.0 79.0 83.4 82.4 86.2 85.1 82.9 82.5 86.1 57.6 59.5 63.2 63.9 63.8 68.3 Ours 80.8 83.2 82.7 81.9 81.4 86.0 84.1 87.4 85.8 84.0 84.1 87.9 64.5 66.2 68.9 67.9 68.3 71.9 Table 5 
+
+Comparison on CS-Urban-Scenes dataset with different re-ranking methods. Best results are in bold. AR@1 AR@5 mAP Retrieval KR ECN Cheb 𝛼 -QE SG ER KR ECN Cheb 𝛼 -QE SG ER KR ECN Cheb 𝛼 -QE SG ER CrossLoc3D 91.2 85.9 84.6 77.8 75.8 94.5 94.6 92.2 92.1 86.1 83.0 97.3 34.9 27.9 27.1 34.7 27.8 49.1 
+
+HOTFormerLoc 80.5 80.7 84.7 81.0 80.1 85.4 88.6 89.7 89.9 84.6 84.5 90.0 31.9 45.1 34.4 43.1 43.0 50.8 Ours 88.3 85.8 90.4 83.8 85.2 96.2 95.7 96.6 96.6 87.5 88.7 98.8 35.2 48.2 37.4 46.7 46.1 57.9 
+
+5.4. Ablation studies 
+
+Number of positive patches. We evaluate the impact of the number of positive patches ( |(𝑖 ) 
+
+> 𝑜
+
+|) in the self-supervised module. As summarized in Table 6, introducing positive patches consistently increased retrieval accuracy. Setting the number of positive patches to 4 achieves the best perfor-mance, with the AR@1 reaching 81.1% on CS-Campus3D and 86.0% on CS-Urban-Scenes. However, further increas-ing this number to 6 or 8 leads to a slight performance degradation, as a larger neighborhood within the octree introduces dissimilar patches or noise. 
+
+Scale of patch-level learning. Table 7 evaluates the im-pact of multi-scale patch-level learning. The results indicate that utilizing self-supervision at any octree depth improves the baseline. Besides, leveraging all three depths delivers the highest performance, which demonstrates that the multi-scale module captures both local and large-scale semantics. 
+
+Number of neighbors in re-ranking. Ablation studies are also conducted on the re-ranking stage . Figures 12 and 13 show how the neighborhood parameter 𝑘 affects performance. First, the results demonstrate the compatibility 
+
+Fig. 9. Recall maps along the trajectories of the test set part of MLS-4 dataset. Trajectory points are colorized based on their categories (from 𝑅 @1 to 𝑅 > 25 ). The expanded reciprocal (ER) re-ranking is conducted based on the global features from the model with patch-level self-supervised learning (SSL). : Preprint submitted to Elsevier Page 11 of 16 Fig. 10. Recall maps along the trajectories of the MLS-1 dataset. Trajectory points are colorized based on their categories (from                                                                             
+
+> 𝑅 @1 to 𝑅 > 25 ). The expanded reciprocal (ER) re-ranking is conducted based on the global features from the model with patch-level self-supervised learning (SSL).
+> Table 6
+> Ablation studies on the number of positive patches. CS-Campus3D CS-Urban-Scenes # Pos. Patches AR@1 AR@1% AR@1 AR@1%
+> ×75.5 90.8 80.3 96.1 279.3 93.2 85.7 98.4 481.1 91.3 86.0 99.5
+> 680.5 91.7 84.7 98.1 877.8 90.9 81.2 97.7
+> Table 7
+> Ablation studies on the scale of patch-level learning. Octree Depth CS-Campus3D CS-Urban-Scenes 432AR@1 AR@1% AR@1 AR@1%
+> ×××75.5 90.8 80.3 96.1
+> ✓××78.9 89.1 84.2 98.1
+> ×✓×79.1 92.3 82.3 94.9
+> ××✓80.1 90.7 83.4 97.6
+> ✓✓✓81.1 91.3 86.0 99.5 Table 8
+> Comparison of the efficiency of different retrieval methods. Method Parameters (M) Inference Time (ms) MinkLoc3D 1.1 1.3 CrossLoc3D 15.4 2.2 HOTFormerLoc 35.4 5.9 Ours 34.5 4.7
+
+of our method. On both datasets, using any of the three base-line methods with the ER algorithm boosts performance. Second, the optimal choice for 𝑘 differs on the dataset. For the campus, all curves peak at 𝑘 = 10 . In contrast, for the urban scene, the best AR@1 is achieved at 𝑘 = 35 and the highest mAP is reached at 𝑘 = 50 .       
+
+> Table 9
+> Comparison of the efficiency of different re-ranking methods. Method Processing Time (s)
+> 𝑘 -reciprocal 26.42 ECN 21.57
+> 𝛼 -QE 17.17 Cheb-GR 3.33 SuperGlobal 2.60 ER(Ours) 12.33
+
+5.5. Analyses 
+
+Efficiency. We evaluate the runtime on the CS-Urban-Scenes dataset, which comprises 1,826 ground query scans and a database of 35,212 ALS point clouds. To evaluate the efficiency of different retrieval methods, we calculate the average inference time per query. As shown in Table 8, compared to sparse convolution-based networks like Min-kLoc3D and CrossLoc3D, Transformer-based architectures generally have larger parameter sizes and higher inference times. Meanwhile, we calculate the re-ranking on the whole dataset. As illustrated in Table 9, 𝑘 -reciprocal is the slowest because it applies query expansion and computes Jaccard distances for all pairs. Our Expanded Reciprocal (ER) also builds reciprocal neighbors on the joint set, but we aver-age features within each expanded neighborhood and score pairs from both sides. Consequently, it runs faster than 
+
+𝑘 -reciprocal while remaining more thorough than Super-Global, which only considers top database candidates. 
+
+Attention map. To visualize the impact of our patch-level self-supervised learning (SSL), we visualize the atten-tion maps within the octree partition windows. As illustrated in Figure 14, we select four queries and plot the attention weights over their neighboring patches. Without patch-level SSL, the attention weights are scattered across non-essential patches. In contrast, when our patch-level SSL is utilized, the attention maps become more discriminative and focused on the semantic relations of the query patch. 
+
+Deficiencies. As shown in Figure 15, we analyze the failure cases in both the retrieval and re-ranking stages. The    
+
+> :Preprint submitted to Elsevier Page 12 of 16 Fig. 11. Successful re-ranking queries. Green and red represent positive and negative candidates, respectively. After re-ranking, true positives are successfully promoted to rank-1 and the top-25 candidates cluster on the aerial image.
+
+first ground query contains a structured tree distribution. Although a true positive is retrieved at Top-2, the ER re-ranking fails due to ambiguities from other aerial submaps with similar tree layouts. The second query has large blank areas with sparse vegetation, which degrades feature repre-sentations and challenges both stages. These failures stem from the domain gap in different spatial coverage and noise variances, as well as scene challenges including repetitive or missing structures. Notably, even in failure cases, while the Top-25 retrieval candidates are scattered across the aerial map, our re-ranking method groups these candidates into several clusters. This behavior verifies our motivation of leveraging the structured spatial distribution of ALS point clouds. 
+
+Future work. Estimating accurate 6DoF poses remains an important direction for future work. Traditional methods typically retrieve candidates first and then employ fine reg-istration for pose estimation (Yuan et al., 2024). However, this coarse-to-fine localization paradigm easily fails when applied between aerial and ground point clouds. Due to the severe domain gap illustrated in Figure 2, establishing suf-ficient feature correspondences is challenging, making the         
+
+> :Preprint submitted to Elsevier Page 13 of 16 Fig. 12. Parameter sensitivity of the neighborhood size 𝑘 in the ER re-ranking method on CS-Campus3D.
+> Fig. 13. Parameter sensitivity of the neighborhood size 𝑘 in the ER re-ranking method on CS-Urban-Scenes.
+
+feature matching process difficult. Furthermore, traditional registration approaches demand high memories, restricting efficient localization on city-scale ALS databases. Learning-based LiDAR global localization can be categorized into absolute pose regression (APR) (Li et al., 2024) and scene coordinate regression (SCR) (Wu et al., 2026). APR meth-ods directly regress global poses from input point clouds, whereas SCR methods estimate individual point or pixel coordinates. In addition to single-shot LiDAR global lo-calization, some methods focus on sequential localization (Zou et al., 2025). However, most existing networks focus on ground-platform datasets, leaving aerial-ground LiDAR localization unexplored. 
+
+## 6. Conclusion 
+
+We propose a robust aerial-ground LiDAR place recog-nition approach that bridges the domain gap through joint scene-level and patch-level self-supervised learning. To mit-igate false positives from the retrieval results, our Expanded Reciprocal (ER) re-ranking algorithm leverages the struc-tured spatial distribution of the aerial database and incorpo-rates expanded reciprocal neighbors into the final distance metric. Evaluation of both retrieval and re-ranking stages on our newly collected CS-Urban-Scenes dataset shows that our pipeline outperforms current state-of-the-art methods. Future work will extend this framework to 6-DoF pose estimation in aerial-ground LiDAR global localization.           
+
+> Fig. 14. Attention maps within octree windows.
+> Fig. 15. Failure cases of re-ranking. Top: initial and re-ranked top-25 candidates. Bottom: the query and its top-5 candidates (from left to right). Positive and negative candidates are colored green and red, respectively.
+
+## CRediT authorship contribution statement 
+
+Yandi Yang: Conceptualization of this study, Method-ology, Software, Validation, Writing – original draft. Xi-anghong Zou: Conceptualization of this study, Methodol-ogy, Writing review. Jianping Li: Methodology, Writing   
+
+> :Preprint submitted to Elsevier Page 14 of 16
+
+review. Haofeng Xie: Methodology, Writing review. Saurav Uprety: Data collection, Writing review. Hongzhou Yang: 
+
+Data collection, Writing review. Naser El-Sheimy: Con-ceptualization of this study, Methodology, Writing review, Project administration, Funding acquisition. 
+
+## Declaration of interests 
+
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper. 
+
+## References 
+
+Cao, B., Araujo, A., Sim, J., 2020. Unifying deep local and global features for image search, in: European conference on computer vision, Springer. pp. 726–743. Cho, Y., Kim, G., Lee, S., Ryu, J.H., 2022. Openstreetmap-based lidar global localization in urban environment without a prior lidar map. IEEE Robotics and Automation Letters 7, 4999–5006. Doersch, C., Gupta, A., Efros, A.A., 2015. Unsupervised visual repre-sentation learning by context prediction, in: Proceedings of the IEEE international conference on computer vision, pp. 1422–1430. Dube, R., Cramariuc, A., Dugas, D., Sommer, H., Dymczyk, M., Nieto, J., Siegwart, R., Cadena, C., 2020. Segmap: Segment-based mapping and localization using data-driven descriptors. The International Journal of Robotics Research 39, 339–355. El-Sheimy, N., Youssef, A., 2020. Inertial sensors technologies for naviga-tion applications: State of the art and future trends. Satellite navigation 1, 2. Gao, Z., Li, Q., Shen, L., 2025. Dap-mae: Domain-adaptive point cloud masked autoencoder for effective cross-domain learning, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 3488–3498. Goswami, R.G., Patel, N., Krishnamurthy, P., Khorrami, F., 2024. Salsa: Swift adaptive lightweight self-attention for enhanced lidar place recog-nition. IEEE Robotics and Automation Letters 9, 8242–8249. Griffiths, E., Haghighat, M., Denman, S., Fookes, C., Ramezani, M., 2025. Hotformerloc: Hierarchical octree transformer for versatile lidar place recognition across ground and aerial views, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 6648–6658. Guan, T., Muthuselvam, A., Hoover, M., Wang, X., Liang, J., Sathyamoor-thy, A.J., Conover, D., Manocha, D., 2023. Crossloc3d: Aerial-ground cross-source 3d place recognition, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 11335–11344. Hausler, S., Garg, S., Xu, M., Milford, M., Fischer, T., 2021. Patch-netvlad: Multi-scale fusion of locally-global descriptors for place recognition, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 14141–14152. He, K., Chen, X., Xie, S., Li, Y., Dollár, P., Girshick, R., 2022. Masked autoencoders are scalable vision learners, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 16000–16009. Jia, P., Park, S., Gao, S., Zhao, X., Li, S., 2026. Georanker: Distance-aware ranking for worldwide image geolocalization. Advances in Neural Information Processing Systems 38, 17673–17699. Jie, Y., Zhu, Y., Cheng, H., 2023. Heterogeneous deep metric learning for ground and aerial point cloud-based place recognition. IEEE Robotics and Automation Letters 8, 5092–5099. Kim, G., Kim, A., 2018. Scan context: Egocentric spatial descriptor for place recognition within 3d point cloud map, in: 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), IEEE. pp. 4802–4809. Komorowski, J., 2021. Minkloc3d: Point cloud based large-scale place recognition, in: Proceedings of the IEEE/CVF winter conference on applications of computer vision, pp. 1790–1799. Kong, X., Yang, X., Zhai, G., Zhao, X., Zeng, X., Wang, M., Liu, Y., Li, W., Wen, F., 2020. Semantic graph based place recognition for 3d point clouds, in: 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), IEEE. pp. 8216–8223. Lee, S., Choi, D., Ryu, J.H., 2026. Lsv-loc: Lidar to streetview image cross-modal localization. IEEE Robotics and Automation Letters 11, 2514– 2521. Lee, S., Seong, H., Lee, S., Kim, E., 2024. Correlation verification for image retrieval and its memory footprint optimization. IEEE transactions on pattern analysis and machine intelligence 47, 1514–1529. Li, J., Wu, W., Yang, B., Zou, X., Yang, Y., Zhao, X., Dong, Z., 2023. Whu-helmet: A helmet-based multisensor slam dataset for the evaluation of real-time 3-d mapping in large-scale gnss-denied environments. IEEE Transactions on Geoscience and Remote Sensing 61, 1–16. Li, J., Xu, X., Liu, Z., Yuan, S., Cao, M., Xie, L., 2026. Aeos: Active environment-aware optimal scanning control for uav lidar-inertial odom-etry in complex scenes. ISPRS Journal of Photogrammetry and Remote Sensing 232, 476–491. Li, L., Kong, X., Zhao, X., Huang, T., Li, W., Wen, F., Zhang, H., Liu, Y., 2021. Ssc: Semantic scan context for large-scale place recognition, in: 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), IEEE. pp. 2092–2099. Li, W., Yang, Y., Yu, S., Hu, G., Wen, C., Cheng, M., Wang, C., 2024. Diffloc: Diffusion model for outdoor lidar localization, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition, pp. 15045–15054. Lim, H., Kim, D., Shin, G., Shi, J., Vizzo, I., Myung, H., Park, J., Car-lone, L., 2025. Kiss-matcher: Fast and robust point cloud registration revisited, in: 2025 IEEE International Conference on Robotics and Automation (ICRA), IEEE. pp. 11104–11111. Liu, S., Zheng, C., Zhou, X., Feng, T., Liang, D., Bai, X., 2026. Pointtpa: Dynamic network parameter adaptation for 3d scene understanding, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 36571–36581. Liu, Z., Yang, X., Tang, H., Yang, S., Han, S., 2023. Flatformer: Flattened window attention for efficient point cloud transformer, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 1200–1211. Long, C., Zhang, W., Li, R., Wang, H., Dong, Z., Yang, B., 2022. Pc2-pu: Patch correlation and point correlation for effective point cloud upsampling, in: Proceedings of the 30th ACM International Conference on Multimedia, pp. 2191–2201. Luo, J., Cheng, J., Xiang, Q., Wu, J., Fan, R., Chen, X., Tang, X., 2025. Overlapmamba: A shift state space model for lidar-based place recogni-tion. IEEE Robotics and Automation Letters 10, 8380–8387. Misra, I., Maaten, L.v.d., 2020. Self-supervised learning of pretext-invariant representations, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 6707–6717. Nassar, S., El-Sheimy, N., 2006. A combined algorithm of improving ins error modeling and sensor measurements for accurate ins/gps navigation. GPS solutions 10, 29–39. Radenović, F., Tolias, G., Chum, O., 2018. Fine-tuning cnn image retrieval with no human annotation. IEEE transactions on pattern analysis and machine intelligence 41, 1655–1668. Sarfraz, M.S., Schumann, A., Eberle, A., Stiefelhagen, R., 2018. A pose-sensitive embedding for person re-identification with expanded cross neighborhood re-ranking, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 420–429. Schwarz, K.P., El-Sheimy, N., 2004. Mobile mapping systems–state of the art and future trends. International Archives of Photogrammetry, Remote Sensing and Spatial Information Sciences 35, 10. Shao, S., Chen, K., Karpur, A., Cui, Q., Araujo, A., Cao, B., 2023. Global features are all you need for image retrieval and reranking, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 11036–11046. Shi, Z., Zhang, X., Xu, W., Xia, Y., Zang, Y., Shen, S., Wang, C., 2026. L2rsi: Cross-view lidar-based place recognition for large-scale urban scenes via remote sensing imagery. Advances in Neural Information 
+
+: Preprint submitted to Elsevier Page 15 of 16 Processing Systems 38, 160681–160704. Siméoni, O., Vo, H.V., Seitzer, M., Baldassarre, F., Oquab, M., Jose, C., Khalidov, V., Szafraniec, M., Yi, S., Ramamonjisoa, M., et al., 2025. Dinov3. arXiv preprint arXiv:2508.10104 . Skuddis, D., Ress, V., Zhang, W., Nyako, V.O., Haala, N., 2026. Bev-sld: Self-supervised scene landmark detection for global localization with lidar bird’s-eye view images, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 31400– 31409. Tharwat, B., Kordopatis-Zilos, G., Suma, P., Reid, I., Tolias, G., 2026. Indexing multimodal language models for large-scale image retrieval, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 6737–6747. Tolstikhin, I.O., Houlsby, N., Kolesnikov, A., Beyer, L., Zhai, X., Un-terthiner, T., Yung, J., Steiner, A., Keysers, D., Uszkoreit, J., et al., 2021. Mlp-mixer: An all-mlp architecture for vision. Advances in neural information processing systems 34, 24261–24272. Vidanapathirana, K., Moghadam, P., Sridharan, S., Fookes, C., 2023. Spec-tral geometric verification: Re-ranking point cloud retrieval for metric localization. IEEE Robotics and Automation Letters 8, 2494–2501. Vidanapathirana, K., Ramezani, M., Moghadam, P., Sridharan, S., Fookes, C., 2022. Logg3d-net: Locally guided global descriptor learning for 3d place recognition, in: 2022 International Conference on Robotics and Automation (ICRA), IEEE. pp. 2215–2221. Wang, F., Galliani, S., Vogel, C., Speciale, P., Pollefeys, M., 2021. Patch-matchnet: Learned multi-view patchmatch stereo, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 14194–14203. Wang, J., Zhuang, Y., Yan, F., Zhang, X., 2025. Cross-source place recogni-tion for unmanned aerial-ground vehicles with low-overlap and varying-density point cloud. IEEE Transactions on Intelligent Transportation Systems 26, 15077–15086. Wang, P.S., 2023. Octformer: Octree-based transformers for 3d point clouds. ACM Transactions on Graphics (TOG) 42, 1–11. Wu, J., Zhu, M., Liu, D., Li, W., Ao, S., Shen, S., Wen, C., Wang, C., 2026. Leader: Learning reliable local-to-global correspondences for lidar relocalization, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 9932–9942. Wu, X., Jiang, L., Wang, P.S., Liu, Z., Liu, X., Qiao, Y., Ouyang, W., He, T., Zhao, H., 2024. Point transformer v3: Simpler faster stronger, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 4840–4851. Xiao, Z., Suma, P., Sachdeva, A., Wang, H.J., Kordopatis-Zilos, G., Tolias, G., Ordonez, V., 2025. Locore: Image re-ranking with long-context sequence modeling, in: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 9580–9590. Xu, R., Yang, S., Wang, X., Wang, T., Chen, Y., Pang, J., Lin, D., 2025. Pointllm-v2: Empowering large language models to better understand point clouds. IEEE Transactions on Pattern Analysis and Machine Intelligence , 1–15. Yang, B., Dong, Z., Liang, F., Mi, X., 2024. Ubiquitous Point Cloud: Theory, Model, and Applications. CRC Press. Yang, J., Li, H., Du, B., Ye, M., 2025. Cheb-gr: Rethinking k-nearest neighbor search in re-ranking for person re-identification, in: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 19261–19270. Yang, Y., Li, J., Liao, Y., Li, Y., Niu, R., Zhang, Y., Dong, Z., Yang, B., El-Sheimy, N., 2026. Agi2p: Benchmarking aerial–ground image-to-point cloud localization with a large-scale dataset. ISPRS Journal of Photogrammetry and Remote Sensing 236, 22–36. Yuan, C., Lin, J., Liu, Z., Wei, H., Hong, X., Zhang, F., 2024. Btc: A binary and triangle combined descriptor for 3-d place recognition. IEEE Transactions on Robotics 40, 1580–1599. Yun, S., Lee, H., Kim, J., Shin, J., 2022. Patch-level representation learning for self-supervised vision transformers, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 8354–8363. Zha, Y., Wang, Y., Guo, H., Wang, J., Dai, T., Chen, B., Ouyang, Z., Yuerong, X., Chen, K., Xia, S.T., 2025. Pma: Towards parameter-efficient point cloud understanding via point mamba adapter, in: Pro-ceedings of the Computer Vision and Pattern Recognition Conference, pp. 16976–16986. Zhang, W., Qi, J., Wan, P., Wang, H., Xie, D., Wang, X., Yan, G., 2016. An easy-to-use airborne lidar data filtering method based on cloth simulation. Remote sensing 8, 501. Zhang, Y., Qian, Q., Wang, H., Liu, C., Chen, W., Wang, F., 2023. Graph convolution based efficient re-ranking for visual retrieval. IEEE Trans-actions on Multimedia 26, 1089–1101. Zhong, Z., Zheng, L., Cao, D., Li, S., 2017. Re-ranking person re-identification with k-reciprocal encoding, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 1318–1327. Zhu, S., Yang, L., Chen, C., Shah, M., Shen, X., Wang, H., 2023. R2former: Unified retrieval and reranking transformer for place recognition, in: Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 19370–19380. Zou, X., Li, J., Chen, Z., Cao, Z., Dong, Z., Liu, Q., Yang, B., 2026. Life-longpr: Lifelong point cloud place recognition based on sample replay and prompt learning. IEEE Transactions on Intelligent Transportation Systems , 1–15. Zou, X., Li, J., Wang, Y., Liang, F., Wu, W., Wang, H., Yang, B., Dong, Z., 2023. Patchaugnet: Patch feature augmentation-based heterogeneous point cloud place recognition in large-scale street scenes. ISPRS Journal of Photogrammetry and Remote Sensing 206, 273–292. Zou, X., Li, J., Wu, W., Liang, F., Yang, B., Dong, Z., 2025. Reliable-loc: Robust sequential lidar global localization in large-scale street scenes based on verifiable cues. ISPRS Journal of Photogrammetry and Remote Sensing 224, 287–301. 
+
+: Preprint submitted to Elsevier Page 16 of 16

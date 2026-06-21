@@ -6,50 +6,61 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-20
-- 运行时间：2026-06-20 21:45:31 UTC
+- 最新运行日期：2026-06-21
+- 运行时间：2026-06-21 21:00:32 UTC
 - 运行状态：成功
-- 本次总论文数：10
-- 精读区：6
-- 速读区：4
+- 本次总论文数：13
+- 精读区：7
+- 速读区：6
 
 ### 今日简报（AI）
-今日精读两篇满分论文：自我监督语音表示学习S-JEPA与基于逆动力学的感知-行动世界模型。最值得关注的方向是软聚类锚点提升语音表示质量，以及世界模型将感知直接映射为动作。建议读者优先精读这两篇，深入理解其技术细节与实验设计。
-- 详情：[/202606/20/README](/202606/20/README)
+今日精读7篇，地面-空中激光雷达地点识别与表格自监督学习成焦点。  
+最值得关注：基于补丁级自监督学习的空地LiDAR位置识别（9.0），以及自适应分箱的表格自监督学习方法（9.0）。  
+建议读者留意这两个方向：跨模态三维场景匹配的新思路，以及针对结构化数据的自监督训练技巧。
+- 详情：[/202606/21/README](/202606/21/README)
 
 ### 精读区论文标签
-1. [S-JEPA : Soft Clustering Anchors for Self-Supervised Speech Representation Learning](/202606/20/2606.19398v1-s-jepa--soft-clustering-anchors-for-self-supervised-speech-representation-learning)  
-   标签：评分：10.0/10、query:ssl
-   evidence：基于软聚类的自监督语音表示学习
-2. [Sensorimotor World Models: Perception for Action via Inverse Dynamics](/202606/20/2606.20104v1-sensorimotor-world-models-perception-for-action-via-inverse-dynamics)  
-   标签：评分：10.0/10、query:world-models
-   evidence：使用逆动力学正则化的潜在世界模型
-3. [Nonlinear influence of reward volatility on arbitration between multiple learning strategies reflects cost-benefit optimization](/202606/20/biorxiv-10-64898-2026-06-15-732293-v1-nonlinear-influence-of-reward-volatility-on-arbitration-between-multiple-learning-strategies-reflects-cost-benefit-optimization)  
-   标签：评分：10.0/10、query:world-models
-   evidence：基于世界模型的强化学习
-4. [S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning](/202606/20/2606.14586v1-s2cope-self-supervised-concept-discovery-via-preference-learning)  
+1. [Aerial-ground LiDAR place recognition with patch-level self-supervised learning and expanded reciprocal re-ranking](/202606/21/2606.18583v1-aerial-ground-lidar-place-recognition-with-patch-level-self-supervised-learning-and-expanded-reciprocal-re-ranking)  
    标签：评分：9.0/10、query:ssl
-   evidence：通过偏好学习进行自监督概念发现
-5. [SL-S4Wave: Self-Supervised Learning of Physiological Waveforms with Structured State Space Models](/202606/20/2606.19888v1-sl-s4wave-self-supervised-learning-of-physiological-waveforms-with-structured-state-space-models)  
+   evidence：基于块级自监督学习的航空-地面LiDAR地点识别
+2. [When, Where, and How: Adaptive Binning for Tabular Self-Supervised Learning](/202606/21/2606.19827v1-when-where-and-how-adaptive-binning-for-tabular-self-supervised-learning)  
+   标签：评分：9.0/10、query:ssl
+   evidence：表格数据自适应分箱自监督学习
+3. [HilDA: Hierarchical Distillation with Diffusion for Advancing Self-Supervised LiDAR Pre-trainin](/202606/21/2606.20189v1-hilda-hierarchical-distillation-with-diffusion-for-advancing-self-supervised-lidar-pre-trainin)  
+   标签：评分：9.0/10、query:ssl
+   evidence：使用分层蒸馏和扩散的自监督LiDAR预训练框架
+4. [Selective Synergistic Learning for Video Object-Centric Learning](/202606/21/2606.15527v1-selective-synergistic-learning-for-video-object-centric-learning)  
    标签：评分：8.0/10、query:ssl
-   evidence：生理波形的自监督学习
-6. [Tox21mer, A transformer foundation model for Tox21 high-throughput concentration-response curves data](/202606/20/biorxiv-10-64898-2026-06-15-732308-v1-tox21mer-a-transformer-foundation-model-for-tox21-high-throughput-concentration-response-curves-data)  
+   evidence：使用对比学习对齐注意力图和目标图，改进自监督视频表示
+5. [3D Consistency Optimization for Self-Supervised Monocular Video Depth Estimation](/202606/21/2606.15681v1-3d-consistency-optimization-for-self-supervised-monocular-video-depth-estimation)  
    标签：评分：8.0/10、query:ssl
-   evidence：浓度响应曲线的掩码重建自监督学习
+   evidence：自监督视觉深度估计，利用3D一致性优化
+6. [Learning task-specific subspaces via interventional post-training of speech foundation models](/202606/21/2606.17967v1-learning-task-specific-subspaces-via-interventional-post-training-of-speech-foundation-models)  
+   标签：评分：8.0/10、query:ssl
+   evidence：使用干预性对比学习分离语音表示子空间
+7. [Interpreting Content and Speaker Characteristics in Factorised Self-Supervised Subspaces](/202606/21/2606.19974v1-interpreting-content-and-speaker-characteristics-in-factorised-self-supervised-subspaces)  
+   标签：评分：8.0/10、query:ssl
+   evidence：自监督语音特征分解为内容和说话人子空间
 
 ### 速读区论文标签
-1. [Exploring Multi-Modal Large Language Models and Two-Stage Fine-Tuning for Fashion Image Retrieval](/202606/20/2606.19684v1-exploring-multi-modal-large-language-models-and-two-stage-fine-tuning-for-fashion-image-retrieval)  
+1. [Hierarchical Fine-Grained Aerial Object Detection](/202606/21/2606.16448v1-hierarchical-fine-grained-aerial-object-detection)  
    标签：评分：7.0/10、query:ssl
-   evidence：使用对比学习和两阶段微调，类似于自监督对比学习技术
-2. [Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages](/202606/20/2606.19940v1-analyzing-language-and-geographical-variation-in-speech-representations-across-60-indic-languages)  
+   evidence：使用视觉感知掩码属性建模作为自监督辅助任务来学习判别性特征
+2. [Optimized Multi-Contrast Self-Supervised MRI Reconstruction using Learned k-space Partitioning](/202606/21/2606.19182v1-optimized-multi-contrast-self-supervised-mri-reconstruction-using-learned-k-space-partitioning)  
    标签：评分：7.0/10、query:ssl
-   evidence：使用自监督语音编码器进行语言和地区变体分析
-3. [DeltaQ: Value-Guided Hebbian Learning in Spiking Neuronal Networks for Multi-Goal Navigation](/202606/20/biorxiv-10-64898-2026-06-12-731882-v1-deltaq-value-guided-hebbian-learning-in-spiking-neuronal-networks-for-multi-goal-navigation)  
-   标签：评分：7.0/10、query:world-models
-   evidence：具有网格细胞空间表示的脉冲神经网络用于多目标导航，内部模型
-4. [Cascaded Sparse Autoencoders Learn Multi-Level Visual Concepts in Multimodal LLMs](/202606/20/2606.16193v1-cascaded-sparse-autoencoders-learn-multi-level-visual-concepts-in-multimodal-llms)  
+   evidence：用于MRI重建的自监督学习
+3. [ELVA: Exploring Ranking-Driven Universal Multimodal Retrieval](/202606/21/2606.20280v1-elva-exploring-ranking-driven-universal-multimodal-retrieval)  
+   标签：评分：7.0/10、query:ssl
+   evidence：对比学习用于多模态检索，通过排名驱动处理负样本
+4. [Boundary Embedding Shaping with Adaptive Contrastive Learning for Graph Structural Disentanglement](/202606/21/2606.20283v1-boundary-embedding-shaping-with-adaptive-contrastive-learning-for-graph-structural-disentanglement)  
+   标签：评分：7.0/10、query:ssl
+   evidence：使用自适应对比学习进行图结构解缠
+5. [Label Shift Aware Adaptation for Online Zero-shot Learning with Contrastive Language-Image Pre-Training (CLIP)](/202606/21/2606.15169v1-label-shift-aware-adaptation-for-online-zero-shot-learning-with-contrastive-language-image-pre-training-clip)  
    标签：评分：6.0/10、query:ssl
-   evidence：级联稀疏自编码器用于自监督表示学习
+   evidence：对比语言-图像预训练适应
+6. [Analyzing Language and Geographical Variation in Speech Representations Across 60 Indic Languages](/202606/21/2606.19940v1-analyzing-language-and-geographical-variation-in-speech-representations-across-60-indic-languages)  
+   标签：评分：6.0/10、query:ssl
+   evidence：自监督语音表示分析
 
 
 <div class="dpr-home-promo-card">

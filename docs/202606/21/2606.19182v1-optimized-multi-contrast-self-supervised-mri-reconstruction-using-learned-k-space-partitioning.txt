@@ -1,0 +1,2206 @@
+Title: 
+
+URL Source: https://arxiv.org/pdf/2606.19182v1
+
+Published Time: Thu, 18 Jun 2026 01:08:06 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  1
+
+Abstract — Objective: Deep Learning has shown promise in 
+
+accelerating MRI by reconstructing high -quality images from 
+
+under -sampled data. While recent work has leveraged multi -
+
+contrast information to improve reconstruction performance, 
+
+these methods rely on supervised learning , which requires fully 
+
+sampled k-space for training. One method, self -supervised 
+
+learning via data undersampling (SSDU) , enables direct training 
+
+on under -sampled k -space by partitioning it into two sets, with a 
+
+network mapping between the two. In this wor k, we improve MRI 
+
+self -supervised MRI reconstruction with two modifications. 
+
+Methods: We propose a multi -contrast self -supervised learning 
+
+framework that jointly trains on multiple under -sampled 
+
+contrasts without requiring fully sampled k-space data as a
+
+reference. Moreover, we learn an optimal self -supervised data 
+
+partitioning for each contrast in an end -to -end manner, further 
+
+enhancing reconstruction quality. Specifically, we learn an 
+
+optimal partitioning probability distribution , which is sampled to 
+
+generate a mask for partitioning. Results: Experiments on two 
+
+publicly available multi -contrast MRI datasets demonstrate the 
+
+improved reconstruction quality of our proposed self -supervised 
+
+multi -contrast learned partitioning method compared to the 
+
+current sin gle -contrast self -supervised learning methods . We also 
+
+demonstrate that learning the partitioning of k -space data further 
+
+enhances the fidelity of reconstructions . Conclusion: Multi -
+
+contrast reconstruction combined with learn ed partitioning 
+
+improves reconstruction fidelity over single -contrast self -
+
+supervised MRI reconstructions. Significance: Our method can 
+
+facilitate higher image fidelity and/ or accelerated MRI protocol 
+
+times compared to previous self -supervised methods, and without 
+
+requiring fully sample d k -space for training. 
+
+Index Terms — Image reconstruction , Magnetic Resonance 
+
+Imaging , Self supervised learning 
+
+I. INTRODUCTION 
+
+agnetic resonance imaging (MRI) clinical protocols 
+
+routinely acquire multiple contrasts from the same 
+
+anatomical region to provide complementary information for 
+
+clinicians. Contrasts such as T1 -weighted, T2 -weighted, and 
+
+fluid -attenuated inversion recovery (FLAIR) provide clinicians 
+
+with critical information for more effective patient 
+
+This paragraph of the first footnote will contain the date on which you 
+
+submitted your paper for review. It will also contain support information, 
+
+including sponsor and financial support acknowledgment. For example, “This 
+
+work was supported in part by the U.S. National Science Foundation under 
+
+Grant BS123456”. Brenden Kadota and Mark Chiew are with Department of 
+
+Medical Biophysics, University of Toronto, Toronto, On, Canada and Physical 
+
+management. However, the sequential acquisition of contrasts, 
+
+combined with the inherently slow process of acquiring the 
+
+Fourier representation of an image, known as k -space, results 
+
+in lengthy clinical MRI protocols. One common approach to 
+
+accelerating MRI scans is to acquire fewer k-space 
+
+measurements, a strategy typically applied to various extents 
+
+across all scans in a protocol. However, reconstructing sub -
+
+Nyquist Fourier data requires advan ced reconstruction 
+
+techniques. Parallel imaging uses the linear independence of 
+
+spatial receiver sensitivities to resolve missing values [1], [2] ,
+
+whereas compressed sensing exploits image compressibility 
+
+and incoherent sampling to reconstruct images from under -
+
+sampled data [3] .
+
+As multiple contrasts from the same anatomy often contain 
+
+highly correlated information, several studies have explored 
+
+combining multiple contrasts in reconstruction methods to 
+
+enhance reconstruction performance. Two approaches have 
+
+emerged for multi -contrast reconstruction: (1) using a fully 
+
+sampled contrast as auxiliary information in reconstruction [4], 
+
+[5], [6], [7], [8], [9] and (2) jointly reconstructing multiple 
+
+under -sampled contrasts. Given that clinical protocols often 
+
+under -sample all scans, we focus on the latter. Multi -contrast 
+
+parallel imaging methods have been explored that use multiple 
+
+contrasts as additional virtual coils [4] . Compressed sensing 
+
+methods , such as Bayesian compressed sensing [10] , joint 
+
+sparsity [11], [12] and patched based on sparsity [13], [14] ,
+
+have been explored to leverage the correlated sparsity between 
+
+contrasts. 
+
+With the success of deep learning (DL) in MRI 
+
+reconstruction [15], [16] DL multi -contrast reconstructions 
+
+have also gained popularity. These methods typically use a 
+
+single neural network to jointly reconstruct multiple contrasts 
+
+with the network implicitly learning inter -contrast 
+
+relationships. A common strategy of combining contrast 
+
+information for deep learning reconstruction is to concatenate 
+
+contrasts along the channel dimension [6], [17], [18], [19] and 
+
+passing to a convolutional neural network. Alternatively, some 
+
+approaches leverage the transformer attention mechanisms [20] 
+
+to transfer contrast information more effectively, [21], [22] .
+
+Sciences Research Platform, Sunnybrook Research Institute (e -mail: 
+
+Brenden.kadota@mail.utoronto.ca, mark.chiew@utoronto.ca ). 
+
+Charles Millard., was with Welcome Centre for Integrative Neuroimaging, 
+
+FMRIB, University of Oxford, Oxford (e -mail: charliemillard@live.co.uk). 
+
+# Optimized Multi -Contrast Self -Supervised MRI 
+
+# Reconstruction using Learned k -space 
+
+# Partitioning 
+
+Brenden Kadota, Member , IEEE , Charles Millard, and Mark Chiew , Member, IEEE 
+
+# M> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  2
+
+Multi -contrast networks can effectively utilize multiple 
+
+contrasts to outperform single -contrast networks of the same 
+
+architecture. 
+
+While multi -contrast methods focus on improving 
+
+reconstruction by exploiting inter -contrast relationships, 
+
+another critical factor in achieving high -quality results is the 
+
+under -sampled k -space acquisition locations. Optimizing the k -
+
+space acquisition patt ern has been explored in compressed 
+
+sensing reconstructions. Studies have used methods such as 
+
+hand -picked probability distributions [23], [24] , greedy 
+
+algorithms [25] , and Bayesian optimization [26] , to optimize k -
+
+space sampling locations for compressed sensing. Additionally, 
+
+learned sampling strategies for multi -contrast reconstruction 
+
+have been investigated in both compressed sensing and parallel 
+
+imaging, with studies finding that segregated sampli ng across 
+
+contrasts yields superior performance [27], [28] .
+
+Deep learning methods have also been used to learn the 
+
+optimal k -space sampling patterns in conjunction with the 
+
+reconstruction network. Two methods of deep learning k -space 
+
+sampling pattern optimization have been explored :
+
+parameterization of k -space locations and learned probabilistic 
+
+methods. 
+
+Parameterization of k -space converts k -space locations into 
+
+a learnable parameter that can be optimized through 
+
+backpropagation and gradient descent. Learning a
+
+parameterized k -space sampling pattern is an extremely non -
+
+convex problem and difficult to optimize. Additionally, 
+
+parameterizing k -space transforms the reconstruction problem 
+
+into non -cartesian because the k-space paramet ers are 
+
+continuous. Multiple parameterization methods have been 
+
+explored using maximum likelihood [29] , line constraints [30] ,
+
+neural ordinary differential equations [31] , and b-spline 
+
+parameterization [32] . Parameterizing k -space has also been 
+
+combined with multiple contrasts in [33] , where optimal k -
+
+space sampling over multiple contrasts was used to further 
+
+improve performance. 
+
+The second deep learning optimized sampling approach 
+
+involves learning a probability distribution from which k -space 
+
+samples are drawn [34], [35], [36] . Since sampling is a 
+
+stochastic operation that backpropagation gradients cannot pass 
+
+through, the reparameterization trick [37] is used to enable 
+
+gradient -based optimization of the probability distribution. As    
+
+> FIG .1.a.) Learned partitioning module for learning optimal partitioning distribution. The learned probability distribution is sampl ed by adding
+> noise and thresholding b.) Partitioning module that partitions under -sampled k -space into two sets based on M and ~M. c.) Training process.
+> Each contrast is passed through an independent partitioning module. Resulting multi -contrast sets are concatenated along the channel dimension
+> before passing to the reconstruction network. The bottom path with un -partitioned data do es not calculate gradients.
+
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  3
+
+relaxation techniques provide gradients only at the transition 
+
+zone, relaxations such as the straight -through method enables 
+
+the calculation of meaningful gradients [38] . Notably, the 
+
+“learning optimized under -sampling probability distribution” 
+
+(LOUPE) [34] strategy is an end -to -end learned under -sampling 
+
+pattern method that relax es sampling to a sigmoid function. 
+
+Studies building upon LOUPE have incorporated multi -contrast 
+
+information , which can help guide k -space sampling locations 
+
+across multiple contrasts [28], [33] .
+
+The majority of previously mentioned deep -learning studies 
+
+relied on supervised learning for training, which requires fully 
+
+sampled k -space for computing the loss function. However, in 
+
+many cases acquiring fully sampled k -space may not be feasible 
+
+due to e xtended scan times and motion. Additionally, in certain 
+
+scan types, such as single -shot echo -planar imaging, the T2* 
+
+signal decay limits the full acquisition of k -space. To address 
+
+this, self -supervised reconstruction methods have been 
+
+proposed to train di rectly on under -sampled k -space data. 
+
+Remarkably, at inference , self -supervised methods can perform 
+
+comparably to supervised training without ever accessing fully 
+
+sampled data. 
+
+One self -supervised method, self -supervised learning via 
+
+data under -sampling (SSDU) [39], [40] partitions under -
+
+sampled k -space into two sets using a neural network that maps 
+
+between the two. Improved performance in SSDU can be 
+
+achieved by using a dual -domain loss function, which computes 
+
+a loss in both image space and k -space. The dual domain loss 
+
+function has shown significant improvement on self -supervised 
+
+reconstructions [41] . Further work has improved performance 
+
+by partitioning k -space by the same distribution as the initial 
+
+under -sampling distribution [42] , and by explicitly learning the 
+
+partitioning probability distribution using deep learning. 
+
+However, to the best of our knowledge, there has been no prior 
+
+work on multi -contrast self -supervised reconstruction, nor on 
+
+integrating it with learned partitionin g, making our approach 
+
+the first to explore both. 
+
+Here, we introduce a novel training framework that integrates 
+
+multi -contrast information into self -supervised learning to 
+
+improve reconstruction fidelity. Additionally, we optimize the 
+
+partitioning distribution for each contrast in our multi -contrast 
+
+self -supervised learning network to further improve 
+
+reconstruction quality. 
+
+Our key contributions are as follows: 
+
+• We demonstrate that multi -contrast self -supervised 
+
+learning outperforms single -contrast self -supervised 
+
+learning, particularly at high acceleration factors. 
+
+• We propose a learned partitioning strategy for multi -
+
+contrast self -supervised learning, which surpasses heuristic -
+
+based partitioning approaches. 
+
+• We validate our method on a variety of under -sampling 
+
+patterns and on multiple datasets. 
+
+• We additionally characterize multi -contrast self -
+
+supervised performance when varying the number of jointly 
+
+reconstructed contrasts. 
+
+II. METHODS 
+
+A. Multi -Contrast Self -Supervised Learning 
+
+The multi -contrast MRI acquisition can be modeled as a 
+
+forward process: 
+
+𝑦 𝑙 = 𝑀 Ω,𝑙 𝐴 𝑥 𝑙 + 𝑛 𝑙 , (1)
+
+where  𝑥 𝑙 ∈ ℂ𝑛  is the  𝑙 𝑡 ℎ (0 < 𝑙 < 𝐿 ) contrast image, with  𝑦 𝑙 
+
+being the corresponding under -sampled k -space,  𝐴  is the 
+
+forward linear encoding model incorporating the Fourier 
+
+Transform and coil sensitivities, and  𝑛 𝑙  is Gaussian noise for 
+
+the  𝑙 𝑡 ℎ contrast. The undersampling mask  𝑀 Ω,𝑙  for the  𝑙 𝑡 ℎ
+
+contrast is independently drawn from a probability distribution 
+
+function  Ω, where  Ω~ ∏ ℬ(p[𝑖 ])𝑛  
+
+> 𝑖 =0
+
+. Ω re presents a Bernoulli 
+
+distribution , with each voxel is described by some independent 
+
+Bernoulli distribution with probability  p[i] of being sampled .
+
+SSDU trains directly on under -sampled k -space by 
+
+partitioning under -sampled data into two disjoint sets and 
+
+training a network to map between the two [39] . Here, we 
+
+extend SSDU for multi -contrast reconstruction by 
+
+independently splitting under -sampled k -space into disjoint 
+
+sets . Given a mask  𝑀 Λ,𝑙  for contrast  𝑙 , we partition multi -
+
+contrast k -space by the equation: 
+
+𝑦 ̃𝑙 = 𝑀 Λ,𝑙 𝑦 𝑙 (2.1)
+
+𝑦 ̃𝑐 ,𝑙 = ~𝑀 𝛬 ,𝑙 𝑦 𝑙 , (2.2)
+
+where  ~𝑀 𝛬 ,𝑙  is the complement mask of  𝑀 𝛬 ,𝑙 . Typically, the 
+
+partitioning distribution  Λ𝑙  which draws  𝑀 Λ,𝑙  is hand -picked 
+
+and chosen heuristically. The sets  𝑦 ̃𝑙  and  𝑦 ̃𝑐 ,𝑙  have disjoint k -
+
+space points and are referred to as the input set and data 
+
+consistency set respectively. 
+
+For simplicity, we have decided to use channel 
+
+concatenation to test our training framework. All contrasts are 
+
+concatenated along the channel dimension  {𝑦 ̃𝑖 }1 
+
+> 𝐿
+
+= 𝑌 ̃ before 
+
+passing through a single reconstruction network. The same k -
+
+space loss function in SSDU is calculated independently 
+
+across contrasts, resulting in L additional k -space loss terms: 
+
+ℒ𝑘 1 = 1
+
+𝐿 ∑ ‖𝑀 Ω,𝑙 ~𝑀 Λ,𝑙 𝑓 θ(𝑌 ̃ )𝑙 − 𝑦 ̃𝑐 ,𝑙 ‖1
+
+> 1𝐿
+> 𝑙 =1
+
+, (3)
+
+where  𝑓 θ is a multi -contrast neural network parameterized by 
+
+𝜃 . The subscript  𝑙  on  𝑓 θ(𝑌 ̃ )𝑙  represents indexing the 
+
+reconstructed k -space of the  𝑙 𝑡 ℎcontrast because  𝑓 θ(𝑌 ̃ ) jointly 
+
+reconstructs all contrasts . The masking terms 
+
+𝑀 Ω,𝑙 ~𝑀 Λ,𝑙  ensure the loss is only calculated where k -space 
+
+points exist in  𝑦 ̃𝑐 ,𝑙 . This loss function can be seen as learning a 
+
+mapping between the k -space set  𝑌 ̃ to  𝑌 ̃𝑐 .
+
+At inference, the neural network can reconstruct full multi -
+
+contrast k -space by passing the original under -sampled multi -
+
+contrast data concatenated along the channel dimension 
+
+{𝑦 𝑖 }1 
+
+> 𝐿
+
+= Y through the network  𝑓 θ(𝑌 ) to reconstruct fully 
+
+sampled multi -contrast k -space [39], [42] . We perform a final 
+
+data consistency gradient step at inference by replacing 
+
+estimated k -space lines with the acquired ones: 
+
+𝑌 𝑖𝑛𝑓𝑒𝑟𝑒𝑛𝑐𝑒 = ~𝑀 Ω𝑓 θ(𝑌 ) + 𝑌 , (4)
+
+where  ~𝑀 Ω is the complement of masks across all contrasts. 
+
+B. Learned Partitioning 
+
+Similar to our previous work, we learn the probability 
+
+distribution that draws the partitioning masks  𝑀 Λ. To achieve 
+
+this, we learn an optimal probability distribution for each > REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  4
+
+contrast. Let the partitioning probability distribution  Λ for a 
+
+single contrast  𝑙  be defined as: 
+
+𝜎 𝑡 (𝑊 𝑙 ) = Λ𝑙 , (5)
+
+where  𝑊 𝑙 ∈ ℝ𝑛  are learnable weights for contrast  𝑙 ; 𝜎 𝑡  is an 
+
+element -wise sigmoid with a slope controlled by the 
+
+hyperparameter  𝑡 : 𝜎 𝑡 (𝑊 𝑙 ) = 1
+
+> 1+𝑒 −𝑡 𝑊 𝑙
+
+. The resulting  Λ𝑙  is a 
+
+contrast specific learned partitioning distribution which is an 
+
+independent Bernoulli distribution per -voxel:  Λ𝑙 =
+
+∏ ℬ(𝑝 𝑖 [𝑖 ])𝑛  
+
+> 𝑖 =0
+
+. Because the gradients cannot easily be 
+
+calculated from the sampling probability distributions, the 
+
+distribution is modified to an equivalent representation using 
+
+the reparameterization trick [37] . The resulting sampling 
+
+equation becomes: 
+
+𝑀 Λ,𝑙 = (Λ𝑙 + 𝑈 ) > 0, (6)
+
+where  𝑈 ∈ ℝ𝑛  is the uniform distribution between [ -1,0] 
+
+independently drawn for each voxel, and  > 0 is an element 
+
+wise threshold. Equation 6 is an equivalent representation of 
+
+sampling from a Bernoulli distribution but allows gradients to 
+
+pass to our learned probability distribution  Λ𝑙  . However, as the 
+
+greater than zero threshold only contains non -zero gradients at 
+
+the transition zone, the straight -through method is used to 
+
+calculate the meaningful gradients [35], [38] . The straight -
+
+through method calculates Equation 6 in the forward pass 
+
+while approximating its gradient in the backward pass using 
+
+the derivative of a sigmoid function :
+
+∇𝑀 Λ,𝑙 = 𝜎 𝑠 (𝑍 𝑙 )𝜎 𝑠 (𝑍 𝑙 − 1), (7)
+
+where  𝜎 𝑠  is sigmoid with a slope of  𝑠  and  𝑍  is the forward 
+
+pass activation  𝑍 𝑙 = Λ𝑙 + 𝑈 (−1,0). The whole partitioning 
+
+process can be visualized in Figure s 1a and 1 b. 
+
+C. Dual Domain Loss Function 
+
+We additionally employ a dual domain loss function to 
+
+calculate the loss both in k -space and image space to improve 
+
+reconstruction performance. Similar to [41] , we independently 
+
+pass k -space sets  𝑌 , 𝑌 ̃ , and  𝑌 ̃𝑐  as input to the reconstruction 
+
+network to get three multi -contrast reconstructions (Figure 
+
+1c). We omit gradient calculations for  𝑓 𝜃 (𝑌 ) to speedup 
+
+training. Due to the additional reconstructions of  𝑓 𝜃 (𝑌 ), 𝑓 𝜃 (𝑌 ̃ ),
+
+and  𝑓 𝜃 (𝑌 ̃𝑐 ) additional k -space loss terms can be calculated. 
+
+The modified k -space loss term from equation 3 becomes: 
+
+ℒ𝑘 1 = 1
+
+𝐿 ∑ ‖𝑀 Ω,𝑙 ~𝑀 Λ,𝑙 𝑓 θ(𝑌 ̃ )𝑙 − 𝑦 ̃𝑐 ,𝑙 ‖1
+
+> 1𝐿
+> 𝑙 =1
+
+, (8𝑎 )
+
+ℒ𝑘 2 = 1
+
+𝐿 ∑ ‖𝑀 Ω,𝑙 𝑀 Λ,𝑙 𝑓 θ(𝑌 ̃𝑐 )𝑙 − 𝑦 ̃𝑙 ‖1
+
+> 1𝐿
+> 𝑙 =1
+
+, (8𝑏 )
+
+Equation 8a is the same as Equation 3 , which calculates a 
+
+mapping between  𝑌 ̃ and  𝑌 ̃𝑐 . The additional k -space loss term 
+
+in Equation 8b can be seen as the opposite. Equation 8b 
+
+calculates a mapping between  𝑌 ̃ and  𝑌 ̃ . 𝑓 𝜃 (𝑌 ) is omitted from 
+
+the k -space loss terms as it always will evaluate to zero due to 
+
+the final data consistency step at inference (Equation 4). 
+
+Additionally, to the k -space loss terms in Equation 8a+8b, 
+
+we compute a pair -wise image space loss between the three 
+
+reconstruction outputs, again independently across contrasts: 
+
+ℒ𝑖 1 = 1
+
+𝐿 ∑ ℒ𝑖𝑚𝑔 (𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ̃ )), 𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ))))
+
+> 𝐿
+> 𝑖 =1
+
+,
+
+ℒ𝑖 3 = 1
+
+𝐿 ∑ ℒ𝑖𝑚𝑔 (𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ̃ )), 𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ̃𝑐 ))))
+
+> 𝐿
+> 𝑖 =1
+
+,
+
+ℒ𝑖 3 = 1
+
+𝐿 ∑ ℒ𝑖𝑚𝑔 (𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ̃𝑐 )), 𝑟𝑠𝑠 (𝐹 −1𝑓 𝜃 (𝑌 ))))
+
+> 𝐿
+> 𝑖 =1
+
+, (9)
+
+where  𝐹 −1 is the inverse Fourier Transform;  𝑟𝑠𝑠  is the root sum 
+
+of squares operator. For  ℒ𝑖𝑚𝑔  we use the same loss as [22] 
+
+which is the L1 loss combined with the vertical and horizontal 
+
+image gradients. The equation is given below: 
+
+ℒ𝑖𝑚𝑔 (𝑢 , 𝑣 ) = ‖𝑢 − 𝑣 ‖1 
+
+> 1
+
++ ‖∇𝑥 𝑢 − ∇𝑥 𝑣 ‖1 
+
+> 1
+
++ ‖∇𝑦 𝑢 − ∇𝑦 𝑣 ‖1
+
+> 1
+
+where u, v are the two images in the loss function. 
+
+The final loss function, with 5L terms, is: 
+
+ℒ = λℒ 𝑘 1 + (1 − 𝜆 )ℒ𝑘 2 + 𝛽 1ℒ𝑖 1 + 𝛽 2ℒ𝑖 2 + 𝛽 3ℒ𝑖 3 (3.9)
+
+where  𝛽 1, 𝛽 2, and  𝛽 3 are image space loss scaling factors; and 
+
+𝜆  is a k -space loss scaling factor.  𝜆  is scaled between [0, 1] to 
+
+balance the importance of the  𝑓 𝜃 (𝑌 ̃ ) and the  𝑓 𝜃 (𝑌 ̃𝑐 )
+
+reconstruction output on the loss. The loss calculation is 
+
+depicted in Figure 2. 
+
+D. Multi -Contrast Reconstruction Network 
+
+As SSDU is compatible with any reconstruction network, 
+
+we choose an end -to -end VarNet which has demonstrated 
+
+FIG . 1. a.) Self -supervised k -space loss calculated independently across 
+
+contrasts. Both input and data consistency k -space estimates are used 
+
+to calculate a k-space loss b.) Image space loss calculated 
+
+independently across contrasts.  𝓛 𝒊 𝟏  is the image loss between the input 
+
+and DC recon.  𝓛 𝒊 𝟐  is the image loss between input and initial recon. 
+
+𝓛 𝒊 𝟑  is the image loss between DC and initial recon. > REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  5
+
+FIG . II . Example reconstructed slices from the 2D variable density pattern at R=8. Error maps magnified by 4 shown below. Quantitative metrics, 
+
+SSIM and NMSE, shown above. 
+
+TABLE 1. Quantitative Metrics for Equal Space Parallel Imaging at R=8 on the BraTS dataset .
+
+SC Self -
+
+Supervised 
+
+MC Self 
+
+Supervised 
+
+MC Learned 
+
+Partitioning  Supervised *
+
+T1  SSIM  0.954 ±0.006  0.958 ±0.005  0.962 ±0.005 † 0.969 ±0.003  0.980 ±0.005 
+
+NMSE  0.0048 ±0.0005  0.0043 ±0.0004  0.0041 ±0.003 † 0.0027 ±0.0003  0.0024 ±0.0004 
+
+T2  SSIM  0.958 ±0.006  0.960 ±0.008  0.965 ±0.007 † 0.972 ±0.006  0.978 ±0.007 
+
+NMSE  0.0093 ±0.0007  0.0093 ±0.0006  0.0091 ±0.004 † 0.0065 ±0.0004  0.0061 ±0.0005 
+
+FLAIR  SSIM  0.957 ±0.010  0.957 ±0.007  0.962 ±0.011 † 0.968 ±0.006  0. 968 ±0.005 
+
+NMSE  0.0072 ±0.0008  0.0067 ±0.0006  0.0060 ±0.004 † 0.0045 ±0.0003  0.0045 ±0.0004 
+
+T1CE  SSIM  0.953 ±0.008  0.958 ±0.008  0.962 ±0.010 † 0.977 ±0.006  0.978 ±0.004 
+
+NMSE  0.0083 ±0.0006  0.0079 ±0.0005  0.0075 ±0.004 † 0.0058 ±0.0003  0.0052 ±0.0005     
+
+> Runs marked with *are supervised and are trained with fully sampled k -space
+> Runs marked with †have a p value < 0.05 compared to other self -supervised methods.
+
+TABLE 2. Quantitative Metrics for 1D variable density at R= 6 on M4Raw dataset .
+
+SC Self -
+
+Supervised 
+
+MC Self 
+
+Supervised 
+
+Learned 
+
+Partitioning  Supervised * MC Supervised *
+
+T1  SSIM  0. 875 ±0.09  0. 882 ±0.07  0. 887 ±0.007 † 0. 879 ±0.009  0.8 94±0.009 
+
+NMSE  0.0 15 2±0.0 03 0.0 145 ±0.002  0.0 130 ±0.004 † 0.0 150 ±0.004  0.0 123 ±0.003 
+
+T2  SSIM  0. 848 ±0.09  0. 845 ±0.0 6 0. 84 8±0.012 † 0. 849 ±0.010  0. 85 9±0.011 
+
+NMSE  0.0 35 3±0.0 05 0.0 350±0.005  0.0 345 ±0.006 † 0.0 355 ±0.07  0.0 298 ±0.005 
+
+FLAIR  SSIM  0. 872 ±0.09  0. 879 ±0.008  0. 885 ±0.009 † 0. 875 ±0.009  0. 895 ±0.008 
+
+NMSE  0.0 137 ±0. 002  0. 0121 ±0.004  0.0 115 ±0.003 † 0.0 129 ±0.004  0.0 105 ±0.003     
+
+> Runs marked with *are supervised and are trained with fully sampled k -space
+> Runs marked with †have a p value < 0.05 compared to other self -supervised methods.
+
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  6
+
+competitive performance on the fastMRI challenge [15] . The 
+
+end -to -end VarNet estimates coil sensitivities while 
+
+recursively enforcing k -space data consistency and refining 
+
+the image space using a neural network. We modify both the 
+
+data consistency and image refinement steps to accommodate 
+
+for multi -contrast reconstruction. 
+
+The data consistency steps are modified to independently 
+
+enforce data consistency for each contrast. The image 
+
+refinement block is modified for multi -contrast images by 
+
+concatenating contrast images along the channel dimension 
+
+before passing into the U -Net based image refinement module. 
+
+Similar to the original VarNet paper [15] the real and 
+
+imaginary components of each contrast are split along the 
+
+channel dimension resulting in  2𝐿  input channels. For the 
+
+image refinement network, we use a U -Net with 64 
+
+initialfilters and 4 down -sampling layers [43] . The step size 
+
+parameter  η in the VarNet is modified to allow independent 
+
+scaling for each contrast. The multi -contrast VarNet is 
+
+unrolled for 12 cascades unless otherwise specified. Each 
+
+contrast in the multi -contrast VarNet architecture introduces 
+
+approximately ~15K additional parameters primarily from the 
+
+initial and final filters in the U -Net. 
+
+E. Data 
+
+The proposed method was evaluated on two public multi -
+
+contrast datasets: the BraTS 2019 and the low field M4Raw 
+
+dataset. 
+
+BraTS 2019 : As there are no public multi -contrast high field 
+
+k-space datasets, we simulate a k -space dataset using the 
+
+publicly available Brain Tumor Segmentation (BraTS) 
+
+challenge 2019 dataset [44] .
+
+The BraTS dataset is a multi -site , multi -field strength and 
+
+multi -contrast magnitude image dataset used for brain tumor 
+
+segmentation. The dataset contains 4 contrasts: T1 -weighted, 
+
+T2 -weighted, FLAIR, and T1 contrast enhanced from a 
+
+gadolinium -based contrast agent (T1CE). As the original task 
+
+was for segmentation, the data has b een post -processed with 
+
+skull stripping, zeroed background noise, co -registration, and 
+
+interpolation to a 1mm isotropic resolution of 240x240 and 
+
+176 slices. 
+
+To simulate realistic k -space, we first intensity normalizes 
+
+each axial slice to a maximum value of 1. We then apply an 
+
+acquired sensitivity map which was coil -compressed to 10 
+
+channels [45] . Next, we introduce phase information into each 
+
+contrast. To compute a phase map, we multiply complex white 
+
+gaussian noise by k -space gaussian smoothed ( σ = 10 𝑚𝑚 −1)
+
+magnitude k -space data. Multiplying random noise with a 
+
+smoothed k -space ensures a random phase with similar 
+
+structure to the image. The resulting noise is Fourier 
+
+transformed , and the resulting phase is used to generate our 
+
+image phase maps. Using this phase generation method, we 
+
+calculate one base phase map which is shared between all 
+
+contrasts, along with a contrast specific phase map for each 
+
+contrast. we weigh the base phase by 0.9 and the contrast s
+
+specific phase by 0.1 before adding the phase to the image. 
+
+The resulting complex contracts with phases are converted to 
+
+k-space where white, zero -mean gaussian noise with standard 
+
+deviation of  σ = 10 −2 is added for both real and imaginary 
+
+components. The original dataset contains ~2000 volumes ,
+
+from which we randomly select ed 200, 100 , 20 volumes for 
+
+training, testing, and validation respectively. We select every 
+
+3rd slice for simulation from slice index 50 onwards resulting 
+
+in 3200, 1600 , 320 slices for training, testing, and validation. 
+
+M4Raw : we additionally use the M4Raw dataset [46] which 
+
+is a real acquired k -space dataset from a 0.3T four -channel 
+
+full -body scanner. The acquired contrasts are FLAIR, T1 -
+
+weighted, and T2 -weighted. All scans have a resolution of 
+
+256x256 with 18 slices and 240mmx240mm field of view. 
+
+Unlike the BraTS2019 dataset, the M4Raw dataset is not co -
+
+registered between contrast of the same individual . We 
+
+decided not to co -register these contrasts as small inter -
+
+contrast voxel differences have found to only modestly inhibit 
+
+performance [17] . The data consists of 183 healthy volunteers 
+
+with 3 -5 repetitions per contrast. We split the volumes based 
+
+on the pre -defined dataset splits and extract the first repetition 
+
+for training. Only the first repetition was used, as phase 
+
+variations between repe titions made averaging in k -space 
+
+unreliable. The resulting dataset split is (2304/540/450) slices 
+
+for training, testing, and validation. 
+
+F. Implementation Details 
+
+We implement all models in PyTorch and train on a single 
+
+NVIDIA A100 GPU with 40GB of VRAM. All training data 
+
+was normalized by the mean value of the under -sampled root 
+
+sum -of -squares image. we use the Adam optimizer [47] with a 
+
+learning rate of  10 −3 and train for 50 epochs with a batch size 
+
+of 2. We set the k -space loss scaling factor  λ to 0.55 and  𝛽 1 to 
+
+8𝑥 10 −6, 𝛽 2 to  1𝑥 10 −6 and  𝛽 3 to  5𝑥 10 −6 based on a 
+
+hyperparameter grid search. The center 10x10 region of k -
+
+space is left sampled for both  𝑦 ̃ and  𝑦 ̃𝑐  for coil sensitivity 
+
+estimation using the VarNet. The VarNet is unrolled for 12 
+
+cascades for a reconstruction network with 372M parameters. 
+
+The learned partitioning model adds an additional ~65K 
+
+parameters per contrast. For data augmentation, we apply a 
+
+random shift of [ -5, 5] voxels in the coronal and sagittal 
+
+planes. 
+
+G. Evaluation Methods 
+
+All metrics are computed in image space after an inverse 
+
+Fourier transform and root sum of squares coil combination. 
+
+We additionally mask out the background before calculating 
+
+the quantitative metrics , to focus on image quality within 
+
+signal regions . We generate the background mask by gaussian 
+
+blurring the ground truth image with a  σ=11mm and taking a 
+
+threshold greater than 0.1. We use two quantitative metrics for 
+
+evaluating network performance, structural similarity index 
+
+and normalized mean squared error. The Structural Similarity 
+
+Index Measure (SSIM) is a metric between -1 and 1 with high 
+
+visual similarity at 1 and complete dissimilarity at -1. we use 
+
+the default parameters for SSIM with a kernel size of 7x7 
+
+based on the fastMRI benchmark [48] . We additionally use the 
+
+normalized mean squared error (NMSE) which measures the 
+
+relative voxel difference between images and is given by the 
+
+formula ‖𝑢 − 𝑣 ‖2
+
+> 2
+
+/‖𝑢 ‖2 
+
+> 2
+
+where  𝑢  is the reference image and  𝑣 
+
+is the reconstructed output. 
+
+We additionally explore sampling metrics from our learned 
+
+partitioning distributions. First, we define  𝑅 ̃𝑙 = 1 
+
+> 𝑛
+
+∑ Λ𝑙 [𝑖 ]𝑛  
+
+> 𝑖
+
+as 
+
+the average probability in the learned partitioning distribution. 
+
+This partitioning  𝑅 ̃𝑙  can be interpreted as the proportion of k -> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  7
+
+space in each partition, with the data consistency partition 
+
+containing more k -space points at higher  𝑅 ̃ 𝑙  values and fewer 
+
+points at low  𝑅 ̃ 𝑙  values. At  𝑅 ̃𝑙 = 2, k -space is evenly split 
+
+between sets. We additionally calculate segregated sampling 
+
+index between contrasts to determine segregated sampling . In 
+
+previous multi -contrast sampling work, segregated sampling, 
+
+between contrast has shown to improve performance [4], [27] .
+
+To determine segregated sampling, we calculate the overlap as 
+
+𝑂 = (∑ 𝑑𝑖𝑎𝑔 (𝑀 𝑙 )) > 1𝐿  
+
+> 𝑙
+
+which counts the number of k -space 
+
+locations sampled multiple times across contrasts. we 
+
+calculate the percentage of overlap as: 
+
+% 𝑜𝑣𝑒𝑟𝑙𝑎𝑝 = ∑ 1(𝑂 𝑖 )𝑛 
+
+> 𝑖
+
+𝑛 × 100 
+
+where  1(∙) is the indicator function which outputs 1 if the 
+
+condition of  𝑂 𝑖  is true and 0 otherwise. Segregated sampling 
+
+occurs at lower overlap percentages. At a lower overlap 
+
+percentage each contrast shares fewer sampled k -space 
+
+locations with other contrasts, resulting in a large aggregate k -
+
+space coverage. 
+
+H. Comparative Methods 
+
+Our first comparative self -supervised method is a single 
+
+contrast SSDU variant that is partitioned based by the same 
+
+initial under -sampling distribution as  𝑀 Ω which we call single 
+
+contrast (SC) self -supervised . We additionally explore the 
+
+effects of multiple contrasts on performance. We train a multi -
+
+contrast version of SSDU without learn ed partitioning which 
+
+we call multi -contrast (MC) self -supervised. Multi -contrast 
+
+self -supervised partitions k -space independently for each 
+
+contrast based on the same initial under -sampling distribution. 
+
+We additionally implement two fully supervised methods as 
+
+baseline s. Our two supervised methods are a single -contrast 
+
+(SC) supervised network, and a MC supervised network which 
+
+are both trained with an L1 k -space loss. All comparative 
+
+methods use a VarNet architecture for reconstruction with the 
+
+same number of cascades and U -Net channels. The inference 
+
+time is the same between all multi -contrast comparative 
+
+methods . However, the single -contrast networks are slightly 
+
+faster at inference due to having ~13K fewer parameters. 
+
+III. RESULTS 
+
+A. Performance on Different Initial Sampling Patterns 
+
+Our first set of experiments explore the effects of the initial 
+
+sampling distribution  Ω. We tested 3 types of sampling 
+
+distributions: 1D variable density, 2D variable density and 
+
+equal -spaced parallel imaging under -sampling patterns at R=8. 
+
+The variable density 2D and 1D distributions use a polynomial 
+
+order 8 sampling distribution. Both  𝑦 ̃ and  𝑦 ̃𝑐  k-space sets for 
+
+the 1D and equal -spaced undersampling patterns retain the 
+
+center 10 phase encode lines and 2D patterns retain a center 
+
+10x10 region for coil sensitivity estimation required by the 
+
+VarNet. 
+
+Example reconstructed contrasts from the BraTS dataset are 
+
+shown in Figure 3 with their error maps below their 
+
+reconstructed images. Here, we use the 1D variable density 
+
+under -sampling pattern at an acceleration factor of R=8. Our 
+
+proposed method, multi -contrast learned partitioning achieves 
+
+the highest SSIM and lowest NSME of all self -supervised 
+
+methods. Additionally, adding multi -contrast self -supervised 
+
+models has a noticeable improvement in performance over 
+
+single contrast self -supervised methods shown from the 
+
+quantitative metrics and error maps . Remarkably, multi -
+
+contrast self -supervised methods surpass the performance of 
+
+single -contrast supervised methods which have access to fully 
+
+sampled data . MC supervised perform with lowe st error and 
+
+highest fidelity images and are performance baselines .
+
+Table 1 show s the entire test metrics for all contrasts on the 
+
+equal -spaced parallel imaging undersampling pattern Again, 
+
+learned partitioning has the highest SSIM and lowest NMSE 
+
+for both initial undersampling patterns compared to 
+
+heuristically partitioned k -space . Additionally, multi -contrast 
+
+self -supervised reconstruction has a considerable improvement 
+
+in performance over single -contrast self -supervised methods .
+
+Notably, the performance gap between single - and multi -
+
+contrast methods is smaller for the 2D variable den sity 
+
+distribution compared to the other undersampling patterns. 
+
+Fully sampled methods perform the best with the muti -
+
+contrast methods showing the best performance in quantitative 
+
+metrics .
+
+Figure 4 presents the learned partitioning distributions for 
+
+each contrast. These distributions to some extent resemble the 
+
+initial under -sampling distribution which follows the 
+
+theoretical justification for SSDU . Interestingly, near the 
+
+center of k -space, a star like pattern emerges in partitioning 
+
+probability distributions when the initial undersampling 
+
+distribution is 2D and equal -spaced . Additionally, the 2D 
+
+distribution has low probability regions along the edges of k -
+
+space. The 1D distribution also ex hibits low -probability 
+
+regions around the quarter and three -quarter positions of the k -
+
+space phase -encoding lines. All partitioning distributions 
+
+converge to a partitioning acceleration factor of  𝑅 ̃ = 1.3  
+
+> FIG .1.Learned partitioning distributions for different
+> undersampling patterns and contrasts
+
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  8
+
+To test if partitioning distributions contain segregated 
+
+sampling, we calculate the percentage of k -space overlap 
+
+between contrasts across 1000 draws from our learned 
+
+partitioning probability distribution. We additionally 
+
+calculated the percentage of k -spa ce overlap using only the T1 
+
+partitioning distribution for all contrasts. We find there is 
+
+negligible difference between the learned multi -contrast 
+
+partitioning overlap at 68% and using the T1 partitioning for 
+
+all contrasts at 67%. These results suggest no segregated 
+
+sampling due to this minimal difference in partitioning 
+
+overlap. These results are supported visually, as the learned 
+
+partitioning distributions across different contrasts 
+
+demonstrate high similarity. 
+
+B. Effect of Acceleration Factor 
+
+To test our methods robustness of the reconstruction 
+
+methods against different acceleration factors, we train our 
+
+model at acceleration factors 4, 6, and 8 on the 1D variable 
+
+density under -sampling pattern . SSIM and NMSE values were 
+
+averaged across all contrasts and plotted (Figure 5) . At R=4, 
+
+all supervised and self -supervised learning methods perform 
+
+comparably, with the supervised learning methods showing a         
+
+> FIG .6. SSIM (top) and NMSE (bottom) compared to number of
+> contrasts. Metrics are averaged over all contrast permutations. The
+> dashed line represents supervised single -contrast reconstruction.
+> FIG .3.Reconstructed slices from the M4Raw dataset on variable density R=6 1D undersampling.
+> FIG .2.Different reconstruction performance on the 1D variable
+> density pattern at different acceleration factors.
+
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  9
+
+slight improvement. At higher acceleration factors (R=6, 8) 
+
+multi -contrast self -supervised learning outperforms single 
+
+contrast supervised which has access to fully sampled data 
+
+during training. Additionally, learned partitioning improves 
+
+upon multi -contrast self -supervised performance at the higher 
+
+acceleration factors. Multi -contrast self -supervised learning 
+
+acts as a performance ceiling for all acceleration factors. 
+
+C. Different Number of Contrasts 
+
+We next test the effects of the number of contrasts on 
+
+reconstruction performance. We train multi -contrast learned 
+
+partitioning networks for each combination of one, two, three, 
+
+and four contrasts on the BraTS dataset. We use the 1d 
+
+variable density undersampling pattern at an acceleration 
+
+factor of R=8. We subsequently report the quantitative metrics 
+
+averaged within each group of multi -contrast models, where 
+
+all 2 -contrast permutations are averaged together, all 3 -
+
+contrast permutations are averaged togeth er, and so on. Within 
+
+each model, the metrics are further averaged across its 
+
+constituent contrasts. 
+
+In Figure 6, we show SSIM and NMS E. The dashed line 
+
+represents supervised single -contrast reconstruction. At two 
+
+contrasts, performance of multi -contrast networks surpass 
+
+single -contrast supervised metrics. As additional contrasts are 
+
+added to the reconstruction network, SSIM performance 
+
+increases and NMSE improve monotonically. Each contrast 
+
+provides additional information to improve performance. 
+
+D. Performance on the M4Raw Dataset 
+
+Figure 7 shows R=6 1D variable density under -sampling 
+
+reconstructions on real acquired data on the M4Raw dataset ,
+
+with Table 2 displaying the total test set metrics . All three 
+
+contrasts in the dataset are plotted with the average test set 
+
+metrics on the top left . We chose to show magnified regions of 
+
+the reconstructed images because the error maps are noisy. All 
+
+reconstructions perform well, with minimal residual aliasing 
+
+artifacts. Multi -contrast learning partitioning with self -
+
+supervised learning is the b est self -supervised method with 
+
+sharper features. Single contrast supervised learning performs 
+
+worse than both of our methods, multi -contrast self -supervised 
+
+and multi -contrast self -supervised learned partitioning. Both 
+
+of our methods, multi -contrast self -supervised and multi -
+
+contrast learned partitioning outperform single -contrast 
+
+supervised learning which has access to fully sampled data. 
+
+Multi -contrast learned partitioning has sharper features than 
+
+multi -contrast self -supervised. The multi -contrast super vised 
+
+baseline has the sharpest features and lowest error. 
+
+E. Ablations 
+
+Finally, we empirically justify our method by performing 
+
+ablations on our method on an acceleration factor of R= 8 and 
+
+1D variable density sampling. We performed 3 separate 
+
+ablations. The first ablation removes the non -gradient 
+
+calculation for the initial data  𝑌  pathway, which we call MC 
+
+All Gradients. The next ablation removes the learned 
+
+partitioning model and trains a dual domain self -supervised 
+
+reconstruction network, which we call MC Dual Domain, 
+
+which is partitioned based on the original distribution of  𝑀 Ω.
+
+Finally, our last ablation trains a single contrast self -
+
+supervised learned partitioning method, name SC Partitioning. 
+
+Table 3 shows the SSIM and NMSE of all the ablations with 
+
+single contrast self -supervised and multi -contrast learned 
+
+partitioning as baselines. The best ablation model is MC all 
+
+gradients, but the training time is 1.5 times longer due to the 
+
+additional gradients through the reconstruction network for the 
+
+𝑦  pathway. Dual domain multi -contrast shows a notable 
+
+improvement in performance over single -contrast self -
+
+supervised methods. Single -contrast learned partitioning 
+
+improves over single -contrast self -superv ised by learning a 
+
+partitioning distribution. 
+
+F. Reconstruction Model Generalizability 
+
+To assess the generalizability of our self -supervised training 
+
+framework, we test on a different reconstruction network. 
+
+Specifically, we use the IWNeXt multi -contrast network used 
+
+to reconstruct one under -sampled contrast with a fully 
+
+sampled guide contrast [49] . We modify the IWNeXt to accept 
+
+multi -channel data by using the sensitivity estimation module 
+
+and adapt the convolution weights to simultaneously 
+
+reconstruct multiple contrasts. We compare fully supervised 
+
+IWNeXt, IWNeXt trained with the SSDU self -supervised 
+
+framework, and IWNeXt trained with the proposed dual -
+
+domain learned partitioning framework to evaluate whether                                 
+
+> TABLE 3. Ablation results and total training time
+> NMSE SSIM Training
+> Time
+> Inference
+> Time
+> Model
+> Parameter
+> SC Self -Supervised 0.0020 0.924 8h 82ms 37 2M
+> SC Learned
+> Partitioning 0.0019 0.924 10h 101ms 37 2M
+> MC Dual Domain 0.0018 0.927 12h 101ms 37 2M
+> MC All Gradients 0.0018 0.928 18h 101ms 37 2M
+> MC Learned
+> Partitioning 0.0018 0.928 12h 101ms 37 2M
+> FIG .8. Representative M4Raw slice (R= 6, equal spaced parallel imaging
+> pattern ) reconstructed with IWNeXt.
+
+> REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  10 
+
+the benefits of our training strategy generalize across 
+
+reconstruction architectures. 
+
+Figure 8 shows the representative slices with the IWNeXt 
+
+model. We use the same training set up for the M4Raw data 
+
+and use an initial under -sampling pattern of equal spaced 
+
+parallel imaging with R=6. Our method, MC -Learned 
+
+partitioning , reaches the most similar performance to multi -
+
+contrast supervised. 
+
+IV. DISCUSSION 
+
+We introduce a multi -contrast learned partitioning 
+
+framework to learn the optimal partitioning of data for SSDU 
+
+which improves self -supervised learning performance. We 
+
+additionally show that the multi -contrast self -supervised 
+
+training framework can signifi cantly improve performance 
+
+over single -contrast self -supervised learning training regimes. 
+
+Our multi -contrast self -supervised method performs better 
+
+than single -contrast self -supervised learning at all acceleration 
+
+factors and under -sampling patterns. This improved multi -
+
+contrast performance shows the benefit of different contrasts 
+
+providing com plementary information in reconstruction. This 
+
+multi -contrast performance benefit can be supplemented with 
+
+learned partitioning between contrasts, which further improves 
+
+performance for many acceleration factors and sampling 
+
+patterns. 
+
+At high acceleration factors (R=6, 8) for the 1D variable 
+
+sampling pattern, our multi -contrast self -supervised 
+
+framework performs better than single contrast supervised 
+
+which has access to fully sampled data. One possible reason 
+
+for improved performance ove r supervised training is that at 
+
+high acceleration factors for the 1D variable density, only a 
+
+small number of k -space lines are acquired. This small number 
+
+of lines does not form a representative set of k -space, which is 
+
+difficult for the model to fill i n missing k -space values. 
+
+However, in multi -contrast reconstruction the aggregate k -
+
+space coverage over contrasts is larger, albeit the larger k -
+
+space coverage comes from different contrasts. This greater 
+
+coverage of k -space may be why the network can make better 
+
+predictions, because the network may implicitly learn contrast 
+
+transfer mechanisms. Testing higher acceleration factors of 2D 
+
+variable density and equal -spaced may show the same trend, 
+
+because less k -space data would be acquired. 
+
+The learned partitioning maps somewhat resemble the 
+
+initial under -sampling distribution. T he center region of k-
+
+space, the learned partitioning pattern resembles a star shaped 
+
+pattern. One possible reason for this pattern is for improved 
+
+sharpness of edges in the reconstruction output. Additionally, 
+
+the 1D and 2D sampling pattern contains low probability 
+
+regions, which may be optimal regions to calculate the loss 
+
+over. We have also tested possible learned complementary 
+
+sampling between contrasts, because pr evious work has shown 
+
+that segregated sampling over multiple contrasts provides 
+
+better performance [4], [18], [27] . However, we did not find 
+
+any evidence of segregated sampling in our learned 
+
+partitioning distributions. One reason for the lack of 
+
+segregated sampling in our methods is that the model samples 
+
+from the learned distributions from all contrasts 
+
+independentl y. It is possible that improved performance can be 
+
+achieved by more explicitly enforcing more segregated 
+
+partitioning. This is left for future work. 
+
+We also show that there is improved performance as we 
+
+increase the number of contrasts in reconstruction. We 
+
+propose two possible reasons. First, by adding more contrasts, 
+
+we get more of an averaging effect as the number of scans in 
+
+our sequence increases. Because the network could act as a 
+
+contrast transfer mechanism, each contrast in our multi -
+
+contrast reconstruction framework could be de -noised by the 
+
+other contrasts. Second, as more contrasts are added, more k -
+
+space samples accumulate in the aggregate o ver contrasts. The 
+
+network can then use contrast transfer mechanisms to use the 
+
+aggregate multi -contrast k -space to better infer the missing 
+
+values. 
+
+We show that these multi -contrast results hold even in 
+
+retrospectively under -sampled real acquired k -space from the 
+
+M4Raw dataset. Of note, the M4Raw dataset is unregistered, 
+
+which [17] shows that a spatial shift of a few voxels between 
+
+contrasts may be negligible to performance. Improved 
+
+performance may be realized if we incorporate a spatial 
+
+alignment module as in [50] for larger differences between 
+
+contrasts. Using a spatial alignment module will be beneficial 
+
+in future studies, because real acquired data will inherently 
+
+contain motion between contrasts. 
+
+Our method comes with a few limitations. In [42] , the 
+
+authors theoretically justify SSDU by relating this process to a 
+
+similar self -supervised denoising task. However, their 
+
+justification did not require a disjoint partitioning of k -space, 
+
+which was typically done in SSDU. Learning a non -disjoint 
+
+partit ioning of k -space similar to early works in self -
+
+supervised learning [51] may further improve the learned 
+
+partitioning method , as more sampled k-space will be passed 
+
+through the network. 
+
+Another notable limitation is the performance benefit of the 
+
+learned partitioning method. In sequences where the optimal 
+
+theoretical portioning is known (2D and 1D variable density) 
+
+the benefit from the learned partitioning is limited. However, 
+
+in the equa l-spaced undersampling pattern, the benefit is 
+
+greater due to no theoretical optimal partitioning distribution. 
+
+The learned partitioning method may provide a grater 
+
+performance benefit when incorporating self -supervised and 
+
+multi -contrast denoising [52], [53], [54] .
+
+In Figure 8, we show our self -supervised partitioning 
+
+framework can be used for a more advanced reconstruction 
+
+network which includes attention. Multiple multi -contrast 
+
+networks have been proposed specifically for multi -contrast 
+
+reconstruction. Notably in [55] they find that a U -Net is a sub -
+
+optimal network choice for joint multi -contrast reconstruction. 
+
+Instead, they use a modified U -Net with separate encoders and 
+
+decoders for each contrast. Additional methods with 
+
+transformers and multi -head attention have al so been shown to 
+
+further improve multi -contrast reconstruction performance 
+
+[21], [22], [33] .
+
+V. CONCLUSION 
+
+Here we propose a method that improves self -supervised 
+
+performance by the introduction of multi -contrast information 
+
+coupled with learning the partitioning distribution. These 
+
+multi -contrast networks perform better to their single contrast > REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  11 
+
+counterparts, highlighting the complementary information 
+
+sharing between contrasts. Additionally, the learned 
+
+partitioning distribution resembles the initial under -sampling 
+
+distribution  𝑀 Ω with a star shaped pattern near the center of k -
+
+space .
+
+We show that these methods work for under -sampled 
+
+simulated or real acquired low -field data. These results may 
+
+not be indicative of true performance, because retrospectively 
+
+under -sampled k -space overinflates performance compared to 
+
+prospectively under -sampl ing [56] . Future work will directly 
+
+evaluate these methods on prospectively under -sampled multi -
+
+contrast protocols of the same resolution. 
+
+REFERENCES 
+
+[1] M. A. Griswold et al. , “Generalized autocalibrating 
+
+partially parallel acquisitions (GRAPPA),” Magn. Reson. 
+
+Med. , vol. 47, no. 6, pp. 1202 –1210, 2002, doi: 
+
+10.1002/mrm.10171. 
+
+[2] K. P. Pruessmann et al. , “SENSE: Sensitivity encoding 
+
+for fast MRI,” Magn. Reson. Med. , vol. 42, no. 5, pp. 
+
+952 –962, 1999, doi: 10.1002/(SICI)1522 -
+
+2594(199911)42:5<952::AID -MRM16>3.0.CO;2 -S. 
+
+[3] M. Lustig et al. , “Compressed Sensing MRI,” IEEE 
+
+Signal Process. Mag. , vol. 25, no. 2, pp. 72 –82, Mar. 
+
+2008, doi: 10.1109/MSP.2007.914728. 
+
+[4] B. Bilgic et al. , “Improving parallel imaging by jointly 
+
+reconstructing multi -contrast data,” Magn. Reson. Med. ,
+
+vol. 80, no. 2, pp. 619 –632, 2018, doi: 
+
+10.1002/mrm.27076. 
+
+[5] L. Xiang et al. , “Deep -Learning -Based Multi -Modal 
+
+Fusion for Fast MR Reconstruction,” IEEE Trans. 
+
+Biomed. Eng. , vol. 66, no. 7, pp. 2105 –2114, Jul. 2019, 
+
+doi: 10.1109/TBME.2018.2883958. 
+
+[6] S. U. H. Dar et al. , “Prior -Guided Image Reconstruction 
+
+for Accelerated Multi -Contrast MRI via Generative 
+
+Adversarial Networks,” IEEE J. Sel. Top. Signal 
+
+Process. , vol. 14, no. 6, pp. 1072 –1087, Oct. 2020, doi: 
+
+10.1109/JSTSP.2020.3001737. 
+
+[7] X. Liu et al. , “Deep unregistered multi -contrast MRI 
+
+reconstruction,” Magn. Reson. Imaging , vol. 81, pp. 33 –
+
+41, Sep. 2021, doi: 10.1016/j.mri.2021.05.005. 
+
+[8] J. Lyu et al. , “DuDoCAF: Dual -Domain Cross -Attention 
+
+Fusion with Recurrent Transformer for Fast Multi -
+
+contrast MR Imaging,” in Medical Image Computing and 
+
+Computer Assisted Intervention – MICCAI 2022 , L. 
+
+Wang, Q. Dou, P. T. Fletcher, S. Speidel, and S. Li, Eds., 
+
+Cham: Springer Nature Switzerland, 2022, pp. 474 –484. 
+
+doi: 10.1007/978 -3-031 -16446 -0_45. 
+
+[9] L. Xiang et al. , “Ultra -Fast T2 -Weighted MR 
+
+Reconstruction Using Complementary T1 -Weighted 
+
+Information,” Med. Image Comput. Comput. -Assist. 
+
+Interv. MICCAI Int. Conf. Med. Image Comput. Comput. -
+
+Assist. Interv. , vol. 11070, pp. 215 –223, Sep. 2018, doi: 
+
+10.1007/978 -3-030 -00928 -1_25. 
+
+[10] B. Bilgic et al. , “Multi -contrast reconstruction with 
+
+Bayesian compressed sensing,” Magn. Reson. Med. , vol. 
+
+66, no. 6, pp. 1601 –1615, 2011, doi: 
+
+10.1002/mrm.22956. 
+
+[11] I. Chatnuntawech et al. , “Vectorial total generalized 
+
+variation for accelerated multi -channel multi -contrast 
+
+MRI,” Magn. Reson. Imaging , vol. 34, no. 8, pp. 1161 –
+
+1170, 2016, doi: 10.1016/j.mri.2016.05.014. 
+
+[12] Z. Lai et al. , “Sparse MRI reconstruction using multi -
+
+contrast image guided graph representation,” Magn. 
+
+Reson. Imaging , vol. 43, pp. 95 –104, Nov. 2017, doi: 
+
+10.1016/j.mri.2017.07.009. 
+
+[13] A. Bustin et al. , “High -dimensionality undersampled 
+
+patch -based reconstruction (HD -PROST) for accelerated 
+
+multi -contrast MRI,” Magn. Reson. Med. , vol. 81, no. 6, 
+
+pp. 3705 –3719, 2019, doi: 10.1002/mrm.27694. 
+
+[14] X. Qu et al. , “Magnetic resonance image reconstruction 
+
+from undersampled measurements using a patch -based 
+
+nonlocal operator,” Med. Image Anal. , vol. 18, no. 6, pp. 
+
+843 –856, Aug. 2014, doi: 10.1016/j.media.2013.09.007. 
+
+[15] A. Sriram et al. , “End -to -End Variational Networks for 
+
+Accelerated MRI Reconstruction,” Apr. 15, 2020, arXiv :
+
+arXiv:2004.06688. Accessed: Jan. 09, 2023. [Online]. 
+
+Available: http://arxiv.org/abs/2004.06688 
+
+[16] H. K. Aggarwal et al. , “MoDL: Model Based Deep 
+
+Learning Architecture for Inverse Problems,” IEEE 
+
+Trans. Med. Imaging , vol. 38, no. 2, pp. 394 –405, Feb. 
+
+2019, doi: 10.1109/TMI.2018.2865356. 
+
+[17] L. Sun et al. , “A Deep Information Sharing Network for 
+
+Multi -Contrast Compressed Sensing MRI 
+
+Reconstruction,” IEEE Trans. Image Process. , vol. 28, 
+
+no. 12, pp. 6141 –6153, Dec. 2019, doi: 
+
+10.1109/TIP.2019.2925288. 
+
+[18] D. Polak et al. , “Joint multi -contrast variational network 
+
+reconstruction (jVN) with application to rapid 2D and 3D 
+
+imaging,” Magn. Reson. Med. , vol. 84, no. 3, pp. 1456 –
+
+1469, 2020, doi: 10.1002/mrm.28219. 
+
+[19] A. Heydari et al. , “Joint MAPLE: Accelerated joint T and 
+
+mapping with scan -specific self -supervised networks,” 
+
+Magn. Reson. Med. , vol. 91, no. 6, pp. 2294 –2309, 2024, 
+
+doi: 10.1002/mrm.29989. 
+
+[20] A. Dosovitskiy et al. , “An Image is Worth 16x16 Words: 
+
+Transformers for Image Recognition at Scale,” Jun. 03, 
+
+2021, arXiv : arXiv:2010.11929. Accessed: Jan. 04, 2023. 
+
+[Online]. Available: http://arxiv.org/abs/2010.11929 
+
+[21] C. -M. Feng et al. , “Multimodal Transformer for 
+
+Accelerated MR Imaging,” IEEE Trans. Med. Imaging ,
+
+vol. 42, no. 10, pp. 2804 –2816, Oct. 2023, doi: 
+
+10.1109/TMI.2022.3180228. 
+
+[22] B. Zhou et al. , “DSFormer: A Dual -domain Self -
+
+supervised Transformer for Accelerated Multi -contrast 
+
+MRI Reconstruction,” in 2023 IEEE/CVF Winter 
+
+Conference on Applications of Computer Vision 
+
+(WACV) , Waikoloa, HI, USA: IEEE, Jan. 2023, pp. 
+
+4955 –4964. doi: 10.1109/WACV56688.2023.00494. 
+
+[23] F. Knoll et al. , “Adapted random sampling patterns for 
+
+accelerated MRI,” Magn. Reson. Mater. Phys. Biol. 
+
+Med. , vol. 24, no. 1, pp. 43 –50, Feb. 2011, doi: 
+
+10.1007/s10334 -010 -0234 -7. 
+
+[24] J. Vellagoundar and R. R. Machireddy, “A robust 
+
+adaptive sampling method for faster acquisition of MR 
+
+images,” Magn. Reson. Imaging , vol. 33, no. 5, pp. 635 –
+
+643, Jun. 2015, doi: 10.1016/j.mri.2015.01.008. > REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  12 
+
+[25] B. Gözcü et al. , “Learning -Based Compressive MRI,” 
+
+May 03, 2018, arXiv : arXiv:1805.01266. Accessed: Jan. 
+
+15, 2024. [Online]. Available: 
+
+http://arxiv.org/abs/1805.01266 
+
+[26] M. Seeger et al. , “Optimization of k -space trajectories for 
+
+compressed sensing by Bayesian experimental design,” 
+
+Magn. Reson. Med. , vol. 63, no. 1, pp. 116 –126, 2010, 
+
+doi: 10.1002/mrm.22180. 
+
+[27] L. K. Senel et al. , “Statistically Segregated k -Space 
+
+Sampling for Accelerating Multiple -Acquisition MRI,” 
+
+IEEE Trans. Med. Imaging , vol. 38, no. 7, pp. 1701 –
+
+1714, Jul. 2019, doi: 10.1109/TMI.2019.2892378. 
+
+[28] J. Yang et al. , “Fast Multi -Contrast MRI Acquisition by 
+
+Optimal Sampling of Information Complementary to 
+
+Pre -Acquired MRI Contrast,” IEEE Trans. Med. 
+
+Imaging , vol. 42, no. 5, pp. 1363 –1373, May 2023, doi: 
+
+10.1109/TMI.2022.3227262. 
+
+[29] C. Alkan et al. , “AutoSamp: Autoencoding k-space 
+
+Sampling via Variational Information Maximization for 
+
+3D MRI,” IEEE Trans. Med. Imaging , pp. 1 –1, 2024, doi: 
+
+10.1109/TMI.2024.3443292. 
+
+[30] H. K. Aggarwal and M. Jacob, “J -MoDL: Joint Model -
+
+Based Deep Learning for Optimized Sampling and 
+
+Reconstruction,” IEEE J. Sel. Top. Signal Process. , vol. 
+
+14, no. 6, pp. 1151 –1162, Oct. 2020, doi: 
+
+10.1109/JSTSP.2020.3004094. 
+
+[31] W. Peng et al. , “Learning Optimal K -Space Acquisition 
+
+and Reconstruction Using Physics -Informed Neural 
+
+Networks”. 
+
+[32] G. Wang et al. , “B -Spline Parameterized Joint 
+
+Optimization of Reconstruction and K-Space 
+
+Trajectories (BJORK) for Accelerated 2D MRI,” IEEE 
+
+Trans. Med. Imaging , vol. 41, no. 9, pp. 2318 –2330, Sep. 
+
+2022, doi: 10.1109/TMI.2022.3161875. 
+
+[33] L. Zhao et al. , “JoJoNet: Joint -contrast and Joint -
+
+sampling -and -reconstruction Network for Multi -contrast 
+
+MRI,” Oct. 26, 2022, arXiv : arXiv:2210.12548. 
+
+Accessed: Feb. 17, 2023. [Online]. Available: 
+
+http://arxiv.org/abs/2210.12548 
+
+[34] C. D. Bahadir et al. , “Deep -Learning -Based 
+
+Optimization of the Under -Sampling Pattern in MRI,” 
+
+IEEE Trans. Comput. Imaging , vol. 6, pp. 1139 –1152, 
+
+2020, doi: 10.1109/TCI.2020.3006727. 
+
+[35] J. Zhang et al. , “Extending LOUPE for K -Space Under -
+
+Sampling Pattern Optimization in Multi -coil MRI,” in 
+
+Machine Learning for Medical Image Reconstruction , F. 
+
+Deeba, P. Johnson, T. Würfl, and J. C. Ye, Eds., Cham: 
+
+Springer International Publishing, 2020, pp. 91 –101. doi: 
+
+10.1007/978 -3-030 -61598 -7_9. 
+
+[36] G. Q. Hong et al. , “Dual -domain accelerated MRI 
+
+reconstruction using transformers with learning -based 
+
+undersampling,” Comput. Med. Imaging Graph. , vol. 
+
+106, p. 102206, Jun. 2023, doi: 
+
+10.1016/j.compmedimag.2023.102206. 
+
+[37] D. P. Kingma and M. Welling, “Auto -Encoding 
+
+Variational Bayes,” 2017. Accessed: Nov. 11, 2024. 
+
+[Online]. Available: http://arxiv.org/abs/1312.6114 
+
+[38] Y. Bengio et al. , “Estimating or Propagating Gradients 
+
+Through Stochastic Neurons for Conditional 
+
+Computation,” Aug. 15, 2013, arXiv : arXiv:1308.3432. 
+
+Accessed: Nov. 04, 2024. [Online]. Available: 
+
+http://arxiv.org/abs/1308.3432 
+
+[39] B. Yaman et al. , “Self -supervised learning of physics -
+
+guided reconstruction neural networks without fully 
+
+sampled reference data,” Magn. Reson. Med. , vol. 84, no. 
+
+6, pp. 3172 –3191, 2020, doi: 10.1002/mrm.28378. 
+
+[40] B. Yaman et al. , “Multi -mask self -supervised learning 
+
+for physics -guided neural networks in highly accelerated 
+
+magnetic resonance imaging,” NMR Biomed. , vol. 35, no. 
+
+12, p. e4798, 2022, doi: 10.1002/nbm.4798. 
+
+[41] B. Zhou et al. , “Dual -domain self -supervised learning for 
+
+accelerated non -Cartesian MRI reconstruction,” Med. 
+
+Image Anal. , vol. 81, p. 102538, Oct. 2022, doi: 
+
+10.1016/j.media.2022.102538. 
+
+[42] C. Millard and M. Chiew, “A Theoretical Framework for 
+
+Self -Supervised MR Image Reconstruction Using Sub -
+
+Sampling via Variable Density Noisier2Noise,” IEEE 
+
+Trans. Comput. Imaging , vol. 9, pp. 707 –720, 2023, doi: 
+
+10.1109/TCI.2023.3299212. 
+
+[43] O. Ronneberger et al. , “U -Net: Convolutional Networks 
+
+for Biomedical Image Segmentation,” May 18, 2015, 
+
+arXiv : arXiv:1505.04597. Accessed: Feb. 28, 2023. 
+
+[Online]. Available: http://arxiv.org/abs/1505.04597 
+
+[44] U. Baid et al. , “The RSNA -ASNR -MICCAI BraTS 2021 
+
+Benchmark on Brain Tumor Segmentation and 
+
+Radiogenomic Classification,” Sep. 12, 2021, arXiv :
+
+arXiv:2107.02314. Accessed: Feb. 28, 2023. [Online]. 
+
+Available: http://arxiv.org/abs/2107.02314 
+
+[45] T. Zhang et al. , “Coil compression for accelerated 
+
+imaging with Cartesian sampling,” Magn. Reson. Med. ,
+
+vol. 69, no. 2, pp. 571 –582, 2013, doi: 
+
+10.1002/mrm.24267. 
+
+[46] M. Lyu et al. , “M4Raw: A multi -contrast, multi -
+
+repetition, multi -channel MRI k -space dataset for low -
+
+field MRI research,” Sci. Data , vol. 10, no. 1, Art. no. 1, 
+
+May 2023, doi: 10.1038/s41597 -023 -02181 -4. 
+
+[47] D. P. Kingma and J. Ba, “Adam: A Method for Stochastic 
+
+Optimization,” Jan. 30, 2017, arXiv : arXiv:1412.6980. 
+
+Accessed: Nov. 05, 2024. [Online]. Available: 
+
+http://arxiv.org/abs/1412.6980 
+
+[48] J. Zbontar et al. , “fastMRI: An Open Dataset and 
+
+Benchmarks for Accelerated MRI,” Dec. 11, 2019, 
+
+arXiv : arXiv:1811.08839. Accessed: Feb. 28, 2023. 
+
+[Online]. Available: http://arxiv.org/abs/1811.08839 
+
+[49] Y. Yan et al. , “IWNeXt: an image -wavelet domain 
+
+ConvNeXt -based network for self -supervised multi -
+
+contrast MRI reconstruction,” Phys. Med. Biol. , vol. 69, 
+
+no. 8, p. 085005, Apr. 2024, doi: 10.1088/1361 -
+
+6560/ad33b4. 
+
+[50] K. Xuan et al. , “Multi -Modal MRI Reconstruction 
+
+Assisted with Spatial Alignment Network,” IEEE Trans. 
+
+Med. Imaging , vol. 41, no. 9, pp. 2499 –2509, Sep. 2022, 
+
+doi: 10.1109/TMI.2022.3164050. 
+
+[51] C. Hu et al. , “Self -supervised Learning for MRI 
+
+Reconstruction with a Parallel Network Training 
+
+Framework,” in Medical Image Computing and 
+
+Computer Assisted Intervention – MICCAI 2021 , M. de 
+
+Bruijne, P. C. Cattin, S. Cotin, N. Padoy, S. Speidel, Y. 
+
+Zheng, and C. Essert, Eds., Cham: Springer International > REPLACE THIS LINE WITH YOUR PAPER IDENTIFICATION NUMBER (DOUBLE -CLICK HERE TO EDIT) <  13 
+
+Publishing, 2021, pp. 382 –391. doi: 10.1007/978 -3-030 -
+
+87231 -1_37. 
+
+[52] C. Millard and M. Chiew, “Clean Self -Supervised MRI 
+
+Reconstruction from Noisy, Sub -Sampled Training Data 
+
+with Robust SSDU,” Bioengineering , vol. 11, no. 12, p. 
+
+1305, Dec. 2024, doi: 10.3390/bioengineering11121305. 
+
+[53] A. D. Desai et al. , “Noise2Recon: Enabling SNR -robust 
+
+MRI reconstruction with semi -supervised and self -
+
+supervised learning,” Magn. Reson. Med. , vol. 90, no. 5, 
+
+pp. 2052 –2070, 2023, doi: 10.1002/mrm.29759. 
+
+[54] F. Wagner et al. , “Noise2Contrast: Multi -Contrast 
+
+Fusion Enables Self -Supervised Tomographic Image 
+
+Denoising,” Dec. 09, 2022, arXiv : arXiv:2212.04832. 
+
+Accessed: Feb. 28, 2023. [Online]. Available: 
+
+http://arxiv.org/abs/2212.04832 
+
+[55] W. -J. Do et al. , “Reconstruction of multicontrast MR 
+
+images through deep learning,” Med. Phys. , vol. 47, no. 
+
+3, pp. 983 –997, 2020, doi: 10.1002/mp.14006. 
+
+[56] T. Yu et al. , “Validation and Generalizability of Self -
+
+Supervised Image Reconstruction Methods for 
+
+Undersampled MRI,” Mach. Learn. Biomed. Imaging ,
+
+vol. 1, no. September 2022, pp. 1 –31, Sep. 2022, doi: 
+
+10.59275/j.melba.2022 -6g33.

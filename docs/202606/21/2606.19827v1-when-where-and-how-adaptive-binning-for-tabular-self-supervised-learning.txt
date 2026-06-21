@@ -1,0 +1,452 @@
+Title: When, Where, and How: Adaptive Binning for Tabular Self-Supervised Learning
+
+URL Source: https://arxiv.org/pdf/2606.19827v1
+
+Published Time: Fri, 19 Jun 2026 00:30:10 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# When, Where, and How: Adaptive Binning for Tabular Self-Supervised Learning 
+
+Daehwan Kim 1[0009-0006-7856-7850] , Haejun Chung 1†[0000-0001-8959-237X] ,and Ikbeom Jang 2†[0000-0002-6901-983X]  
+
+> 1
+
+Hanyang University, Seoul, South Korea 
+
+{officialhwan, haejun}@hanyang.ac.kr  
+
+> 2
+
+Hankuk University of Foreign Studies, Yongin, South Korea 
+
+ijang@hufs.ac.kr 
+
+Abstract. Medical tabular data are ubiquitous in clinical research, but deep learning for tables remains underexplored because reliable labels often require costly expert adjudication, even though structured clinical variables are routinely available in tabular form. Self-supervised learn-ing can leverage these unlabeled tables, and recent binning-based pre-texts offer a promising inductive bias, but existing objectives fix a single global quantile discretization and apply feature-agnostic supervision. We propose Adaptive Binning, a training-adaptive discretization pretext for tabular SSL that couples discretization to learning through a feature-wise coarse-to-fine curriculum. Motivated by the spectral bias of neural networks and the principles of curriculum learning, our method pro-gressively refines discretization per feature upon plateau detection and selects representation-aware splits to jointly improve value-space con-centration and representation-space coherence. A heterogeneity-aware objective unifies categorical reconstruction with ordinal supervision for numerical features, and experiments on public medical tabular datasets under unified evaluation protocols show consistent gains for linear prob-ing and fine-tuning without dataset-specific discretization tuning. We further introduce a medical tabular SSL benchmark with standardized protocols to support reproducible progress in this underexplored domain. Our code is available at https://github.com/labhai/Adaptive-Binning. 
+
+Keywords: Medical Tabular Data · Self-Supervised Learning · Adaptive Binning · Tabular SSL 
+
+## 1 Introduction 
+
+Clinical trials, registries, and epidemiological studies routinely tabulate baseline characteristics, laboratory panels, graded findings, and outcomes; in a pilot re-view of comparative clinical trials, 99% of articles reported baseline or outcome  
+
+> †
+
+Corresponding authors.  
+
+> arXiv:2606.19827v1 [cs.LG] 18 Jun 2026 2D. Kim et al.
+
+measures in at least one table, and 85% reported both [12]. This reliance on ta-bles reflects a broader pattern where tabular data dominates structured decision systems but remains underexplored in deep learning [4]. Primary challenges are that tables mix categorical and numerical variables, exhibit non-smooth interac-tions, and lack spatial or sequential structure [10,11]. These properties favor tree ensembles such as XGBoost [6] and CatBoost [17], whose recursive partitioning yields piecewise-constant functions for mixed types [21,14]. While tabular neural architectures narrow this gap [10,2,24], deep models are most compelling when they exploit self-supervised representation learning from unlabeled data, a set-ting that aligns with healthcare, where labels require expert adjudication [8,25]. Nonetheless, medical self-supervision has focused on imaging and language, leav-ing clinical tabular data underserved. Recent tabular SSL progress recasts binning as a pretext task [13], discretiz-ing continuous features into quantile bins and reconstructing bin indices to in-ject a tree-like continuous-to-discrete inductive bias and harmonize supervision across heterogeneous features. However, discretization is fixed globally: a single bin count T with static quantile boundaries persists throughout training, and numerical targets are fit by pointwise squared-error regression on integer in-dices. This feature-agnostic design neither adapts resolution as features saturate nor uses representations to localize refinement, and it provides limited support for type-aware supervision that jointly models ordinal numerical targets and categorical reconstruction. These limitations call for an SSL pretext in which discretization is training-coupled and evolves during pretraining. Motivated by these gaps, we replace globally fixed discretization with a training-adaptive coarse-to-fine curriculum. This design mirrors the clinical pro-gression from broad stratification to finer severity grading encoded in diagnostic criteria [15,1] and aligns with neural network learning dynamics. We leverage the synergy between curriculum learning [3] and spectral bias [18]–the tendency of networks to fit coarse structures before fine details–to implement an adaptive binning strategy that gradually increases task complexity. To realize this cur-riculum, we develop an autoencoding-based tabular SSL framework that refines discretization feature-wise during pretraining, coupled with type-aware recon-struction. It specifies when/where/how to refine discretization via feature-wise saturation triggers, representation-aware split selection, and a type-aware re-construction objective for mixed categorical and ordinal numerical targets, so discretization targets evolve online during pretraining. Our contributions are: 1. We propose Adaptive Binning (Fig. 1), a training-adaptive discretization pretext task for tabular SSL that replaces fixed global binning with feature-wise, coarse-to-fine refinement and explicitly specifies when , where , and how 
+
+discretization evolves during pretraining. 2. We evaluate this pretext across medical tabular datasets spanning binary, nominal, and ordinal multiclass classification, and regression, using linear probing (Tab. 2) and fine-tuning with multiple tabular encoders (Tab. 4), with a single default configuration that avoids dataset-specific tuning (Fig. 2). Adaptive Binning for Tabular SSL 3Tabular Input 
+
+Decoder 
+
+𝑓 𝑑  
+
+> Learned Representation
+> (Latent Space,
+
+𝒛 )
+
+Adaptive Binning (When & Where) 
+
+FPT ( When : Monitor Plateau)  DIGS ( Where : Select Split)          
+
+> Plateau
+> Metric  𝑚 𝑛
+> Saturation
+> Trigger if no improvement for patience epochs
+> Representation
+> Dispersion ( Gain disp )
+> Value -space
+> Variance Reduction ( Gain var )
+> Score DIGS =Gain var ×Gain disp Split if >τ
+> 𝑆 𝐿 𝑆 R
+> Dispersion
+> Feedback
+> Numerical Loss
+> Feedback
+
+Dynamic Target 
+
+Curriculum       
+
+> Numerical Feature #1
+> (Coarse) (Fine)
+> Numerical Feature #2
+> (Coarse) (Coarse)
+> Numerical Feature #N
+> (Coarse) (Fine)
+> Feature -wise
+> Coarse -to -Fine
+> Binning Categorical
+> Loss
+> Trigger
+
+HORD 
+
+Loss 
+
+Adaptive Binning (How) 
+
+> Plateau
+
+How : Apply Type -Aware Loss      
+
+> Patience
+> Categorical Feature
+> Numerical Feature
+> Heterogeneity
+> Epoch eEpoch e+1Update
+> Split
+
+Encoder 
+
+𝑓 𝑒         
+
+> Numerical
+> Loss
+> Update
+> Target
+> PatientID Gender Age
+> 1Male 21
+> 2Female 17
+> 3Other 65
+
+Fig. 1. Overview of our proposed Adaptive Binning framework: HORD provides type-aware mixed-type reconstruction, while FPT and DIGS refine numerical binning via plateau-triggered, representation-aware splitting to form a feature-wise coarse-to-fine target curriculum; see Section 2.2 for details. 
+
+3. We establish a medical tabular SSL benchmark with unified evaluation pro-tocols (Tab. 1), providing a reproducible foundation for progress in self-supervised learning for clinical tabular data. 
+
+## 2 Method 
+
+We first formalize the masking–reconstruction framework for tabular SSL and the fixed quantile-binning objective [13] as our baseline. We then describe Adaptive Binning, which refines discretization during pretraining and couples it with type-aware ordinal supervision for mixed categorical–numerical schemas. 
+
+2.1 Preliminaries: Masking and Fixed Binning 
+
+We follow the autoencoding-based tabular SSL setup of [13] with inputs x =[xcat , xnum ]. During pretraining, we optionally apply feature-wise masking with probability pm and impute masked entries with a fixed constant ( Const ) [25] or an in-batch value ( Random ) [13]; setting pm = 0 corresponds to NoMask .An encoder–decoder maps the corrupted input to a representation and recon-structs pretext targets, subsuming denoising/value reconstruction [23] and mask detection [25]. For numerical feature n, the fixed-binning baseline maps xnum 
+
+n to a quantile index y(n) ∈ { 0, . . . , T − 1} using a single global bin count T with static boundaries, and learns BinRecon by squared-error regression on y(n) [13]. We consider three baseline objectives: ValueRecon (raw-value reconstruction), 
+
+MaskXent (mask prediction), and BinRecon (fixed-T quantile-index prediction). 4 D. Kim et al. 
+
+2.2 Proposed Method 
+
+For each numerical feature n, we maintain an adaptive discretizer B(n) with a feature-specific bin count Tn, initialized at Tinit and capped at Tmax . The bin-index target is y(n) = B(n)(xnum  
+
+> n
+
+) ∈ { 0, . . . , T n − 1}, and we refer to the per-feature schedule {Tn} as Feature-Wise Adaptation (FWA). 
+
+When: Feature-Wise Plateau Trigger (FPT). Numerical features vary in complexity and convergence speed, making a globally synchronized refinement schedule inefficient. We therefore propose Feature-Wise Plateau Trigger (FPT) to monitor each feature independently. At the end of each epoch, we compute a feature-specific plateau metric mn from the numerical reconstruction loss, de-fined as the normalized weighted sum of the components in Eq. (2) over the epoch; we then track the running best value best n and update a patience counter 
+
+cnt n. If mn < best n − δ, we set best n ← mn and reset cnt n; otherwise, we incre-ment cnt n. Feature n is eligible for splitting when cnt n ≥ patience (set to 5; see Fig. 2) and Tn < T max , triggering refinement upon saturation. 
+
+Where: Dispersion-Informed Gain-based Splitting (DIGS). When FPT marks feature n as ready to refine, we propose DIGS to choose which bin to split and where to place a new boundary by coupling variance reduction in the feature-value space with dispersion reduction in the encoder-induced representa-tion space. For each bin B(n) 
+
+> t
+
+of the flagged feature, we use the within-bin median as the candidate split point, yielding a near-balanced partition that preserves equal-frequency standardization and avoids sparsity-induced target instability. Let S denote the samples in B(n) 
+
+> t
+
+, split by the median into SL and SR with weights wL = |SL|/|S| and wR = |SR|/|S|. For any statistic g(·), define the split-induced reduction as ∆g (S → SL, S R) = g(S) − wLg(SL) − wRg(SR), and set the value-space gain to Gain var = ∆Var (S → SL, S R) [5]. Since variance reduc-tion alone is agnostic to the encoder-induced representation space, we addition-ally quantify within-subset coherence [20], which we propose to compute from embeddings of uncorrupted inputs, zi = fθ (xi) with ˆzi = zi/∥zi∥, and define 
+
+Disp( S) = log  ϵ + ∥ 1
+
+> |S|
+
+P 
+
+> i∈S
+
+ˆzi∥2 with ϵ > 0, yielding Gain disp = ∆Disp (S →
+
+SL, S R).We define the split score as 
+
+Score DIGS (S → SL, S R) = Gain var · Gain disp . (1) We split only if Gain var > 0, Gain disp > 0, and Score DIGS > τ (τ = 10 −4; see Fig. 2). At each refinement event for feature n, we score all bins and apply all qualifying splits in parallel, potentially inserting multiple boundaries per trigger. After refinement, we reset the FPT statistics for feature n.
+
+How: Heterogeneity-aware ORDinal Loss (HORD). We propose HORD, a type-aware reconstruction objective that unifies nominal supervision for cat-egorical features with ordinal, distribution-aware supervision for numerical fea-tures. Mapping a continuous value to an ordered bin index yields an ordinal surrogate that preserves ordering and local proximity; thus, numerical recon-struction should penalize errors by bin distance rather than treat bins as nom-inal classes [13]. We supervise categorical features with cross entropy, L(c)cat =Adaptive Binning for Tabular SSL 5
+
+Table 1. Dataset summary with full names, abbreviations, task type, number of classes, presence of missing values (Missing), instances (#Inst.), features (#Feat.), and dataset-specific evaluation configuration (batch size and MLP width/depth).                                                              
+
+> Dataset Task #Inst. #Feat. Missing Batch MLP (Abbr.) (#Classes) size Width Depth Indian Liver Patient Dataset (ILPD) BC (2) 579 10 Yes 64 512 1Heart Failure Clinical Records (HFC) BC (2) 299 12 No 64 512 5Cardiotocography (CTG) NMC (10) 2126 21 No 128 256 2Epileptic Seizure Recognition (ESR) NMC (5) 11500 178 No 256 512 4Estimation of Obesity Levels (EOL) OMC (7) 2111 16 No 128 128 2Maternal Health Risk (MHR) OMC (3) 1013 6No 64 1024 4Parkinsons Telemonitoring (PT) Reg (-) 5875 19 No 128 1024 2Body Fat Prediction (BFP) Reg (-) 252 13 No 64 512 5
+
+CE( ℓ(c), y (c)). For numerical feature n, we reconstruct a distribution over Tn
+
+ordered bins with logits ℓ(n) ∈ RTn and probabilities p(n) = softmax( ℓ(n)) for target index y(n). We use soft ordinal targets [7] qt = exp 
+
+ −(t−y(n))2
+
+ 
+
+> PTn −1
+> k=0 exp
+
+ −(k−y(n))2
+
+ and supervise numerical reconstruction with soft-target cross entropy (SORD). We augment SORD with mean–variance regularization [16] on p(n) using μ(n) =
+
+P 
+
+> t
+
+p(n) 
+
+> t
+
+t and σ2( n) = max  0, P 
+
+> t
+
+p(n) 
+
+> t
+
+t2 − (μ(n))2:
+
+L(n)num = wSORD 
+
+
+
+− X
+
+> t
+
+qt log p(n)
+
+> t
+
+
+
++ wmse 
+
+ μ(n) − y(n)2 + wvar σ2( n). (2) We fix wSORD = 10 , wmse = 0 .1, and wvar = 0 .001 in all experiments (see Fig. 2 for sensitivity). Finally, we average losses within each feature type and weight by feature counts, yielding uniform feature-wise weighting under varying compositions: 
+
+LHORD = CC + N
+
+1
+
+C
+
+> C
+
+X
+
+> c=1
+
+L(c)cat + NC + N
+
+1
+
+N
+
+> N
+
+X
+
+> n=1
+
+L(n)num . (3) 
+
+Adaptive Binning as a Pretext Task. Numerical bin-index targets y(n) =
+
+B(n)(xnum  
+
+> n
+
+) are refined online in a learning-driven, feature-wise coarse-to-fine curriculum. Each epoch minimizes LHORD (How ), whose per-feature numerical losses L(n)num define the plateau metric mn used by FPT to trigger refinement upon saturation ( When ); conditioned on a trigger, DIGS uses representations from uncorrupted inputs to split bins only when a candidate split improves both value-space variance reduction and representation-space coherence, yielding finer targets for subsequent epochs ( Where ). Adaptive Binning (see Figure 1) therefore replaces a single global T and fixed quantile boundaries with adaptive per-feature resolutions {Tn}, sharpening supervision without labels. 6 D. Kim et al. 
+
+Table 2. Linear evaluation with an MLP encoder across diverse datasets and tasks. We vary numerical binning (B: none (-), fixed binning (FIX), Ours), masking (M: none (-), constant replacement (C), random replacement (R)), and the pretext objective (O: ValueRecon (VR), MaskXent (MX), MaskXent+ValueRecon (MR), BinRecon (BR), Ours). We report Average Rank (Avg. Rank) aggregated from per-dataset rankings. Results are mean std ; metrics are denoted as Task metric ; best and second-best. 
+
+Datasets ILPD HFC CTG ESR EOL MHR PT BFP Avg. B M O BC AUC(%) ↑ NMC Acc.(%) ↑ OMC QWK(%) ↑ Reg RMSE ↓ Rank - - VR 75 .89 0.3 86 .08 2.4 85 .66 0.5 53 .70 0.2 86 .38 0.4 30 .57 1.2 15 .98 0.1 5.50 0.0 10.88 - C VR 76 .28 0.1 85 .09 2.2 86 .71 0.3 57 .00 0.2 91 .67 0.4 41 .97 1.4 17 .74 0.2 5.53 0.0 9.25 - C MX 76 .52 0.3 90 .11 0.5 83 .52 0.6 61 .81 0.2 87 .05 0.4 55 .35 0.8 19 .57 0.3 5.13 0.1 8.19 - C MR 76 .40 0.2 84 .85 2.0 86 .53 0.3 58 .72 0.1 89 .99 0.3 38 .91 2.9 17 .60 0.2 5.64 0.0 9.56 - R VR 76 .39 0.3 88 .08 2.1 86 .46 0.3 55 .54 0.2 91 .91 0.4 40 .67 2.1 17 .40 0.1 5.48 0.0 8.38 - R MX 76 .53 0.3 89 .19 0.4 84 .84 0.3 62 .67 0.1 86 .27 0.3 64 .06 1.0 15 .29 0.3 5.45 0.1 7.31 - R MR 76 .48 0.2 85 .82 2.1 86 .53 0.2 57 .39 0.2 90 .66 0.6 43 .47 1.7 15 .27 0.1 5.37 0.1 7.31 FIX - BR 75 .54 0.2 86 .76 0.3 84 .86 0.5 62 .00 0.1 86 .83 0.4 60 .45 0.5 16 .67 0.1 5.32 0.1 8.88 FIX C BR 76 .25 0.3 90 .11 0.4 86 .76 0.2 62 .94 0.2 90 .52 0.4 61 .03 0.5 17 .66 0.2 5.30 0.0 6.31 FIX R BR 76 .10 0.3 86 .34 0.5 85 .89 0.3 63 .83 0.2 88 .13 0.8 62 .41 0.4 15 .71 0.4 5.33 0.0 7.38 
+
+Ours - Ours 76 .53 0.1 93 .25 0.6 84 .91 0.2 64 .10 0.2 93.78 0.4 64 .13 0.9 14 .27 0.1 4.65 0.0 3.56 
+
+Ours C Ours 77.80 0.2 95 .00 0.3 87.70 0.5 66.86 0.1 89 .71 0.5 66 .91 0.8 14 .98 0.1 4.57 0.0 2.50 
+
+Ours R Ours 77 .25 0.2 96.88 0.3 87 .61 0.4 65 .60 0.1 93 .17 0.4 70.51 1.2 11.32 0.1 4.56 0.0 1.50 
+
+## 3 Experiments and Results 
+
+Datasets. We curate a benchmark of publicly available medical tabular datasets spanning binary classification (BC), multiclass classification (MC; NMC for nom-inal, OMC for ordinal), and regression (Reg), with diverse clinical tasks, hetero-geneous schemas, and varying categorical–numerical compositions (see Table 1). 
+
+Implementation Details. To ensure rigorous comparability, we adopt the 1000 epoch pretraining protocol of the fixed-binning baseline [13]. As architectural complexity yields diminishing returns on tabular data [10,11,9], we employ a standard MLP encoder fθ with a symmetric decoder fd. Dataset-specific depth 
+
+∈ { 1, 2, 3, 4, 5} and width ∈ { 128 , 256 , 512 , 1024 } are selected via supervised validation (see Table 1); all remaining configurations inherit from [13] 3.
+
+Evaluation. To isolate and quantify representation quality [13,19], we employ two 100 epoch protocols: linear probing of frozen embeddings and fine-tuning. The fine-tuning phase pairs our encoder with MLPs and tabular architectures (ResNet, TabNet [2], FT-Transformer [10], T2G-Former [24]), explicitly retaining their default configurations to minimize orthogonal influences from hyperparam-eter tuning. We report AUC for BC, Accuracy (Acc.) for NMC, QWK for OMC, and RMSE for Reg, all averaged over 10 seeds on a single NVIDIA RTX 4090. 
+
+Linear Evaluation. Table 2 supports a clear takeaway on medical tabular tasks: adaptive discretization achieves the best average rank across masking options and pretext objectives. Under masking, we tune pm ∈ { 0.1, 0.2, 0.3} and choose  
+
+> 3
+
+lr = 10 −4, 10 −2, 10 −3 for pretraining, linear probing, and fine-tuning, respectively. Adaptive Binning for Tabular SSL 7
+
+Table 3. Linear-evaluation ablations of our method across datasets. Each variant removes one component from the full model (w/o FWA/HORD: direct removal; w/o FPT: DIGS with fixed-epoch refinement; w/o DIGS: FPT with variance-only splitting); all other settings follow Table 2. Mean std ; metrics as Task metric ; best in bold .                                                        
+
+> Datasets ILPD HFC CTG ESR EOL MHR PT BFP Method BC AUC(%) ↑NMC Acc.(%) ↑OMC QWK(%) ↑Reg RMSE ↓
+> Ours 77.80 0.296.88 0.387.70 0.566.86 0.193.78 0.470.51 1.211 .32 0.14.56 0.0
+> w/o FWA 76 .73 0.296.88 0.385 .02 0.463 .97 0.189 .15 0.367 .07 0.611.23 0.14.97 0.0
+> w/o FPT 76 .48 0.396.88 0.386 .50 0.364 .31 0.284 .08 0.566 .23 1.314 .20 0.24.91 0.1
+> w/o DIGS 74 .07 0.396.88 0.386 .29 0.465 .97 0.185 .59 0.467 .29 0.813 .55 0.15.44 0.1
+> w/o HORD 76 .51 0.288 .41 0.386 .71 0.562 .80 0.191 .39 0.663 .31 1.115 .84 0.25.12 0.0
+
+the initial resolution (fixed T for BinRecon, Tinit for ours) from {2, 10 }. Notably, the margin over fixed-binning BinRecon [13] persists even at its best masked setting, and our no-mask variant still surpasses masked BinRecon. This pattern indicates that improvements are driven primarily by training-adaptive, feature-wise refinement rather than input corruption, with masking acting as a comple-mentary regularizer. Overall, the When–Where–How coupling turns discretiza-tion into a pretext that adaptively sharpens supervision and yields stronger representations for clinical tables. To assess the contribution of each proposed component, Table 3 reveals a compositional pattern. Ablating any single component degrades linear probing, indicating complementary effects that are not attributable to one module alone. The HF setting is especially instructive. Because FPT never triggers, supervision remains effectively fixed-binned, yet removing HORD still induces a marked drop, demonstrating the value of type-aware ordinal supervision even without refinement. Overall, the ablations indicate that performance is driven by the integrated refinement pipeline. Finally, Figure 2 demonstrates the method’s robustness to hyperparameter choice. A single default configuration provides a reliable starting point across tasks and datasets, reducing the need for per-dataset tuning, where extensive tuning can amplify the risk in clinical deployment [22]. Across broad sweeps of loss weights and refinement controls, deviations from the default consistently reduce performance, reinforcing it as a robust choice. 
+
+Fine-tuning Evaluation. Table 4 shows that the benefits of our pretraining per-sist under end-to-end fine-tuning, rather than being confined to linear probing. Among SSL objectives, adaptive discretization provides the most reliable initial-ization and typically improves over MR and fixed-binning BR after fine-tuning. While purely supervised training can be optimal for particular model–task pairs, the overall trend indicates a robustness advantage: our pretraining reaches com-petitive or superior optima with reduced sensitivity to the downstream model choice, which is valuable given diverse encoder choices in medical tabular mod-eling. Overall, these results suggest that learning-driven discretization acts as a 8 D. Kim et al. 1 3 5 7 10 
+
+(a) HORD SORD                   
+
+> AUC/Acc/QWK (  )
+> Ours
+> ()
+> ** ** ** **
+> **
+> *** **
+> ** ** ** **
+> ** ** **
+> ** ** **
+> **
+> **
+> **
+> ***
+> 0.1 0.3 0.5 0.7 1
+
+(b) HORD mse                    
+
+> Ours
+> ()
+> ** ** ** **
+> ** ** **
+> ** ** **
+> ** ** **
+> ** ** **
+> **
+> ** ** ** **
+> 01e-3 1e-2 1e-1 1
+
+(c) HORD var                   
+
+> Ours
+> ()
+> ** **
+> ** **
+> ** ** ** **
+> ** ** ** **
+> ** ** ** **
+> ** ** **
+> **
+> 3510 20 50
+
+(d) FPT Patience                   
+
+> Ours
+> ()
+> ** ** ** **
+> *** ** **
+> ** *** **
+> ** **
+> ** **
+> ** ** **
+> 1e-5 1e-4 1e-3 1e-2 1e-1
+
+(e) DIGS Threshold                                               
+
+> Ours
+> ()
+> ** ** ** **
+> ** ** ** **
+> ** ** ** **
+> **
+> ** ** **
+> ** ** ** **
+> **
+> ** **
+> **
+> ** ** ** *
+> **
+> **
+> ** **
+> **
+> ** ** **
+> ** **
+> **
+> **
+> ** ** ** **
+> **
+> **
+> **
+> **
+> ** ** ** **
+> RMSE (- -)
+> ** **
+> **
+> **
+> ** ** ** **
+> *p< . 05 * * p< . 01 ILPD HFC CTG ESR EOL MHR PT BFP
+
+Fig. 2. Linear-probing hyperparameter sweeps under the same setup as Table 2. We sweep (a) wSORD ∈ { 1, 3, 5, 7, 10 }, (b) wMSE ∈ { 0.1 , 0.3, 0.5, 0.7, 1}, (c) wVar ∈{0, 10 -3 , 10 −2, 10 −1, 1}, (d) FPT patience ∈ { 3, 5, 10 , 20 , 50 }, and (e) DIGS threshold 
+
+τ ∈ { 10 −5, 10 -4 , 10 −3, 10 −2, 10 −1}. The gray shaded line denotes the default configura-tion; statistical significance markers are shown above each point. 
+
+Table 4. Fine-tuning with tabular-specific encoders: supervised from scratch vs. SSL-pretrained initialization. MaskXent+ValueRecon (MR) and fixed-binning BinRecon (BR) serve as SSL baselines based on their strong linear-probe results (Table 2). Results are mean std across runs; metrics are denoted as Task metric ; best and second-best. 
+
+Encoder Datasets HFC ESR EOL BFP Method BC AUC(%) ↑ NMC Acc.(%) ↑ OMC QWK(%) ↑ Reg RMSE ↓
+
+MLP Supervised 90 .74 1.6 76 .24 0.5 94 .06 0.6 5.50 0.3
+
+SSL MR 89 .90 1.2 76 .66 0.6 94 .64 0.6 5.40 0.2
+
+SSL BR 90 .54 0.7 77.02 0.6 94.74 0.6 5.65 0.3
+
+SSL Ours 90.87 0.9 76 .87 0.6 93 .89 0.9 5.09 0.2
+
+ResNet Supervised 91.12 1.6 76 .33 0.7 88 .22 1.3 5.43 0.4
+
+SSL MR 90 .97 0.6 76 .27 0.3 88 .81 0.8 5.18 0.2
+
+SSL BR 90 .96 0.9 75 .95 0.5 88 .89 1.3 4.82 0.2
+
+SSL Ours 90 .52 1.6 76.70 0.3 89.17 1.0 4.77 0.1
+
+TabNet [2] Supervised 85 .07 7.3 47 .89 1.8 64 .51 6.8 10 .22 8.0
+
+SSL MR 87 .22 4.3 48 .82 2.4 62 .69 5.1 9.40 1.7
+
+SSL BR 87 .39 2.7 50 .88 1.8 74 .26 4.8 8.42 1.6
+
+SSL Ours 89.31 2.5 52.32 1.6 75.41 4.3 8.23 1.4
+
+FT-Transformer [10] Supervised 89 .43 3.5 67 .16 1.0 95.78 1.0 5.52 0.1
+
+SSL MR 92 .21 2.4 70 .39 0.6 94 .37 1.1 5.27 0.2
+
+SSL BR 92 .47 2.1 74 .14 0.3 93 .62 1.2 5.70 0.3
+
+SSL Ours 93.43 1.5 75.97 0.7 93 .53 1.4 5.05 0.3
+
+T2G-Former [24] Supervised 91 .77 3.7 67 .93 0.0 96 .67 1.4 5.01 0.1
+
+SSL MR 92 .90 1.5 72 .62 0.9 96 .75 0.9 5.32 0.2
+
+SSL BR 93 .17 2.0 71 .90 0.0 97.09 1.3 5.27 0.3
+
+SSL Ours 94.22 1.7 73.12 0.0 97.09 0.9 5.02 0.3
+
+transferable inductive bias that persists under downstream optimization, rather than a probe-specific artifact. Adaptive Binning for Tabular SSL 9
+
+## 4 Conclusion 
+
+We introduce Adaptive Binning, a tabular self-supervised pretext for medi-cal data that elevates discretization from a fixed design choice to a learning-coupled, feature-wise coarse-to-fine curriculum. By designing plateau-triggered refinement, representation-aware split selection, and heterogeneity-aware ordi-nal supervision, our approach yields stronger representations across tasks and datasets. We further establish a benchmark of medical tabular datasets with uni-fied evaluation protocols, enabling reproducible comparisons for self-supervised learning on clinical tables. Our study is limited to in-dataset transfer and a small set of downstream protocols; future work will extend evaluation to broader clin-ical endpoints and cross-dataset pretraining with adaptation to new targets. 
+
+Disclosure of Interests. The authors have no competing interests to declare. 
+
+## References 
+
+1. Amin, M.B., Greene, F.L., Edge, S.B., Compton, C.C., Gershenwald, J.E., Brook-land, R.K., Meyer, L., Gress, D.M., Byrd, D.R., Winchester, D.P.: The eighth edition ajcc cancer staging manual: continuing to build a bridge from a population-based to a more “personalized” approach to cancer staging. CA: a cancer journal for clinicians 67 (2), 93–99 (2017) 2. Arik, S.Ö., Pfister, T.: Tabnet: Attentive interpretable tabular learning. In: Pro-ceedings of the AAAI conference on artificial intelligence. vol. 35, pp. 6679–6687 (2021) 3. Bengio, Y., Louradour, J., Collobert, R., Weston, J.: Curriculum learning. In: Pro-ceedings of the 26th annual international conference on machine learning. pp. 41–48 (2009) 4. Borisov, V., Leemann, T., Seßler, K., Haug, J., Pawelczyk, M., Kasneci, G.: Deep neural networks and tabular data: A survey. IEEE transactions on neural networks and learning systems 35 (6), 7499–7519 (2022) 5. Breiman, L., Friedman, J., Olshen, R.A., Stone, C.J.: Classification and regression trees. Chapman and Hall/CRC (2017) 6. Chen, T., Guestrin, C.: Xgboost: A scalable tree boosting system. In: Proceedings of the 22nd acm sigkdd international conference on knowledge discovery and data mining. pp. 785–794 (2016) 7. Diaz, R., Marathe, A.: Soft labels for ordinal regression. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 4738–4747 (2019) 8. Esteva, A., Robicquet, A., Ramsundar, B., Kuleshov, V., DePristo, M., Chou, K., Cui, C., Corrado, G., Thrun, S., Dean, J.: A guide to deep learning in healthcare. Nature medicine 25 (1), 24–29 (2019) 9. Gorishniy, Y., Rubachev, I., Babenko, A.: On embeddings for numerical features in tabular deep learning. Advances in Neural Information Processing Systems 35 ,24991–25004 (2022) 10. Gorishniy, Y., Rubachev, I., Khrulkov, V., Babenko, A.: Revisiting deep learning models for tabular data. Advances in neural information processing systems 34 ,18932–18943 (2021) 10 D. Kim et al. 11. Grinsztajn, L., Oyallon, E., Varoquaux, G.: Why do tree-based models still outper-form deep learning on tabular data? (2022), https://arxiv.org/abs/2207.08815 
+
+12. Holub, K., Hardy, N., Kallmes, K.: Toward automated data extraction according to tabular data structure: Cross-sectional pilot survey of the comparative clinical literature. JMIR Formative Research 5(11), e33124 (2021) 13. Lee, K., Sim, Y., Cho, H.S., Eo, M., Yoon, S., Yoon, S., Lim, W.: Binning as a pre-text task: Improving self-supervised learning in tabular domains. In: International Conference on Machine Learning. PMLR (2024) 14. McElfresh, D., Khandagale, S., Valverde, J., Prasad C, V., Ramakrishnan, G., Goldblum, M., White, C.: When do neural nets outperform boosted trees on tab-ular data? Advances in Neural Information Processing Systems 36 , 76336–76369 (2023) 15. McGorry, P.D., Hickie, I.B., Yung, A.R., Pantelis, C., Jackson, H.J.: Clinical stag-ing of psychiatric disorders: a heuristic framework for choosing earlier, safer and more effective interventions. Australian & New Zealand Journal of Psychiatry 
+
+40 (8), 616–622 (2006) 16. Pan, H., Han, H., Shan, S., Chen, X.: Mean-variance loss for deep age estimation from a face. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 5285–5294 (2018) 17. Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A.V., Gulin, A.: Catboost: unbiased boosting with categorical features. Advances in neural information pro-cessing systems 31 (2018) 18. Rahaman, N., Baratin, A., Arpit, D., Draxler, F., Lin, M., Hamprecht, F., Ben-gio, Y., Courville, A.: On the spectral bias of neural networks. In: International conference on machine learning. pp. 5301–5310. PMLR (2019) 19. Rubachev, I., Alekberov, A., Gorishniy, Y., Babenko, A.: Revisiting pretraining objectives for tabular deep learning. arXiv preprint arXiv:2207.03208 (2022) 20. de Sá, C.R., Soares, C., Knobbe, A.: Entropy-based discretization methods for ranking data. Information Sciences 329 , 921–936 (2016) 21. Shwartz-Ziv, R., Armon, A.: Tabular data: Deep learning is not all you need. Information fusion 81 , 84–90 (2022) 22. Varoquaux, G., Cheplygina, V.: Machine learning for medical imaging: method-ological failures and recommendations for the future. NPJ digital medicine 5(1), 48 (2022) 23. Vincent, P., Larochelle, H., Bengio, Y., Manzagol, P.A.: Extracting and composing robust features with denoising autoencoders. In: Proceedings of the 25th interna-tional conference on Machine learning. pp. 1096–1103 (2008) 24. Yan, J., Chen, J., Wu, Y., Chen, D.Z., Wu, J.: T2g-former: organizing tabular features into relation graphs promotes heterogeneous feature interaction. In: Pro-ceedings of the AAAI Conference on Artificial Intelligence. vol. 37, pp. 10720–10728 (2023) 25. Yoon, J., Zhang, Y., Jordon, J., van der Schaar, M.: VIME: Extending the success of self- and semi-supervised learning to tabular domain. In: Advances in Neural Information Processing Systems. vol. 33, pp. 11033–11043 (2020)

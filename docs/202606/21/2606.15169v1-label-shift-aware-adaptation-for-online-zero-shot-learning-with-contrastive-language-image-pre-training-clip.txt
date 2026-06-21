@@ -1,0 +1,428 @@
+Title: Label Shift Aware Adaptation for Online Zero-shot Learning with Contrastive Language-Image Pre-Training (CLIP)
+
+URL Source: https://arxiv.org/pdf/2606.15169v1
+
+Published Time: Tue, 16 Jun 2026 00:31:37 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Label Shift Aware Adaptation for Online Zero-shot Learning with Contrastive Language-Image Pre-Training (CLIP) ⋆
+
+## Pengxiao Han a,1 , Changkun Ye b,1 , Yanshuo Wang c, Jinguang Tong a,d , Miaohua Zhang c,Xuesong Li d,a ,∗, Jie Hong e,∗ and Lars Petersson d
+
+> a
+
+Australian National University, Canberra, ACT, Australia 
+
+> b
+
+China North Vehicle Research Institute, Beijing, China 
+
+> c
+
+The Hong Kong Polytechnic University, Hong Kong SAR, China 
+
+> c
+
+Griffith University, Brisbane, QLD, Australia 
+
+> d
+
+CSIRO, Canberra, ACT, Australia 
+
+> e
+
+The University of Hong Kong, Hong Kong SAR, China 
+
+A R T I C L E I N F O 
+
+Keywords :zero-shot learning continual learning online zero-shot learning with CLIP label shift 
+
+A B S T R A C T 
+
+Vision-language models like Contrastive Language-Image Pre-Training (CLIP) have been extensively studied in data-scarce scenarios. A particularly challenging and realistic task in this area is online zero-shot learning with CLIP , where unknown test samples are predicted sequentially in random order by CLIP while keeping the feature extraction and model parameters fixed during the sequential inference phase. Most existing approaches in this setting address the problem by adapting representations online using incoming test samples, while neglecting the distribution of the data on which CLIP was initially trained. This mismatch can lead to degraded performance when the label distribution in the test data differs from that of the training domain. To address this gap, we propose Label Shift Aware (LSA), which formulates the online zero-shot classification task as a domain adaptation problem. Specifically, LSA adapts the predictions computed by CLIP, which was trained on an unknown source distribution, to a target distribution using only unlabeled test data, and applies label shift correction to mitigate the mismatch between the source and target domains. The extensive experiments across multiple datasets demonstrate that the proposed LSA consistently outperforms state-of-the-art online zero-shot learning methods based on CLIP. 
+
+## 1. Introduction 
+
+The rise of foundation models, including large lan-guage models (LLMs) (OpenAI, 2024a), large vision models (LVMs) (Kirillov, Mintun, Ravi, Mao, Rolland, Gustafson, Xiao, Whitehead, Berg, Lo et al., 2023; Caron, Touvron, Misra, Jégou, Mairal, Bojanowski and Joulin, 2021), and Vision-language models (VLMs) (OpenAI, 2024b; Rom-bach, Blattmann, Lorenz, Esser and Ommer, 2022), has significantly advanced performance across a wide range of computer vision and machine learning tasks (Poole, Jain, Barron and Mildenhall, 2023; Gal, Alaluf, Atzmon, Patashnik, Bermano, Chechik and Cohen-Or, 2023; Brooks, Holynski and Efros, 2023; Hu, Chang, Shan and Chen, 2025). Among these, CLIP (Contrastive Language–Image Pretraining) has attracted particular attention for its strong generalization across unseen visual concepts. This open-vocabulary recognition capability enables CLIP to perform well without further fine-tuning in two challenging set-tings: Zero-Shot Learning (ZSL) and Test-Time Adaptation (TTA), which are increasingly studied as complementary approaches for addressing different types of generalization challenges, particularly those arising from distribution or domain shift. 
+
+> ∗
+
+Corresponding author 
+
+xuesong.li@csiro.au (X. Li); jiehong@hku.hk (J. Hong) 
+
+> ORCID
+
+(s): 0009-0000-3855-535X (J. Hong) 
+
+> 1
+
+Equal contributions 
+
+In ZSL with CLIP, as shown in Figure 1 (a), CLIP classifies images from previously unseen categories without accessing any labeled examples of these unseen classes. This is typically achieved by converting class names into textual prompts ( e.g. , "a photo of a dog") and computing the similarity between the image and text embeddings. Owing to its large-scale pretraining on massive image-text pairs, CLIP generalizes efficiently to novel categories. While CLIP demonstrates impressive zero-shot performance, its predic-tions can be sensitive to the phrasing of textual prompts and the quality of image representations. Therefore, many approaches aim to improve prompt quality, either by tun-ing textual prompts during inference (Shu, Nie, Huang, Yu, Goldstein, Anandkumar and Xiao, 2022), enriching descriptions with external knowledge (Saha, Van Horn and Maji, 2024), or aligning the token-level distribution between modalities (Abdul Samadh, Gani, Hussein, Khattak, Naseer, Shahbaz Khan and Khan, 2023). Complementary to this, other methods focus on enhancing visual representations, for example, by clustering image features to construct better visual proxies (Qian, Xu and Hu, 2023), or by introducing lightweight parameter adaptation modules to guide predic-tion confidence (Imam, Gani, Huzaifa and Nandakumar, 2025a). Unlike ZSL, which improves CLIP’s robustness by enhancing prompt quality or visual representation under aligned distribution, TTA with CLIP aims to extend this robustness when the test distribution differs from the dis-tribution seen during pretraining (see Figure 1 (b)). TTA 
+
+: Preprint submitted to Elsevier Page 1 of 8 
+
+> arXiv:2606.15169v1 [cs.CV] 13 Jun 2026
+
+LSA for Online ZSL with CLIP (b) Test -time Adaptation with CLIP      
+
+> A photo of fish
+> A photo of bird
+> A photo of car
+> Image
+> Encoder
+> Text
+> Encoder
+> fish
+> bird
+> car
+> ......
+> t
+> t
+> Data at
+> domain t
+> (a) Zero -shot Learning with CLIP
+> A photo of fish
+> A photo of bird
+> A photo of car
+> Image
+> Encoder
+> Text
+> Encoder
+> fish
+> bird
+> car
+> ......
+> Unknown
+> data
+> (c) Online Zero -shot Learning with CLIP
+> A photo of fish
+> A photo of bird
+> A photo of car
+> Image
+> Encoder
+> Text
+> Encoder
+> fish
+> bird
+> car
+> ...
+> ......
+> t
+> t+1
+> t-1
+> ...
+> t
+> t+1
+> t-1
+> Unknown
+> data at t
+
+Figure 1: Comparison of three CLIP-based inference settings. (a) ZSL with CLIP: The model makes predictions on unseen data using pre-trained text and image encoders, without any adaptation. (b) TTA with CLIP: The model adapts using access to multiple test samples from the target domain. (c) Online ZSL with CLIP: Images arrive sequentially in a streaming manner, and each image is predicted immediately without storage. 
+
+leverages unlabeled test data during inference to refine rep-resentations or fine-tune models, enabling adaptation with-out access to training labels. Representative works include test-time prompt optimization (Liu, Sun, Peng and Zhou, 2024; MA, ZHANG, Guo and Xu, 2023), augmentation-driven feature refinement (Zanella and Ben Ayed, 2024), lightweight adaptation modules (Imam, Gani, Huzaifa and Nandakumar, 2025b), and filtering or denoising test sam-ples (Cao, Zhong, Liu, Liu, Zhang, Han et al., 2025). Building on the progress of ZSL and TTA, a more challenging and realistic setting has recently emerged: on-line ZSL with CLIP Qian and Hu (2024), which is illus-trated in Figure 1 (c). This setting not only addresses the classification of previously unseen classes but also oper-ates under a streaming scenario where data arrives sequen-tially. Specifically, online learning in this context refers to a sequential, single-pass setup: each instance in the data stream is predicted and then used to update the model, without storing past data. This constraint reflects real-world limitations such as data privacy, memory constraints, and computational efficiency, making it especially relevant for deployment on edge devices, robotics, or mobile platforms. The key characteristics of this online setting are that each instance is seen only once in a single pass, no data can be stored for future use, the model must make real-time predictions, and it must do so without consuming excessive computational resources. Prior works, such as OnZeta (Qian and Hu, 2024) and TPT (Shu et al., 2022), have primarily focused on improving multi-modal alignment at test time and refining prompt-based semantic representations. Despite the effectiveness of prior approaches, they often overlook the label distribution shift between the training data used to pretrain CLIP and the target data encountered in real-world online streams. This mismatch can lead to biased predictions and degraded performance in online zero-shot settings. To address this challenge, we propose Label Shift Aware, a novel approach that integrates dynamic label distribution estimation into the online zero-shot pipeline. Specifically, LSA continuously estimates the evolving label distribution from the incoming test stream using model predictions and adjusts the classifier’s decision scores via label prior reweighting. This approach allows LSA to correct bias induced by the mismatched label between the source and target domains. By adapting to the test-time label dis-tribution without storing past data or retraining CLIP, LSA offers a lightweight, memory-efficient solution that is well-suited for streaming scenarios. We validate the effectiveness of our method across 14 datasets, demonstrating consistent performance improvement. The contributions of this work can be summarized as follows: 
+
+• We formulate online ZSL with CLIP as a label shift problem, highlighting that the evolving label distribu-tion in the test stream is a major cause of performance degradation in online settings. This formulation offers a new perspective on the task and underscores the need for dynamic adaptation. 
+
+• We propose a non-parametric, memory-efficient es-timator that dynamically tracks the test-time label distribution using model predictions, without storing past data or requiring ground-truth labels. 
+
+• We introduce a posterior adjustment mechanism that reweights CLIP’s predicted class probabilities based on the estimated label priors, enabling adaptation without modifying the backbone model. 
+
+• The proposed method is lightweight, modular, and model-agnostic, allowing easy integration with any CLIP-based zero-shot classifier for real-time deploy-ment in streaming environments. 
+
+## 2. Related Works 
+
+2.1. Zero-shot Learning with CLIP 
+
+Recently, several works have leveraged vision-language models such as CLIP Radford, Kim, Hallacy, Ramesh, Goh, Agarwal, Sastry, Askell, Mishkin, Clark et al. (2021) to tackle ZSL (Saha et al., 2024; Qian et al., 2023; Ab-dul Samadh et al., 2023; Shu et al., 2022; Imam et al., 2025a). Test-Time Prompt Tuning (TPT) (Shu et al., 2022) improves zero-shot generalization of CLIP by tuning the text prompts during inference, without modifying the model backbone or using labeled training data. PromptAlign (Abdul Samadh et al., 2023) addresses the task by introducing a loss function that combines entropy minimization with a token-level distribution alignment loss, which encourages images and text prompt tokens to follow a similar distribution. Both TPT and PromptAlign augment the test sample to ensure stability and semantic consistency. AdaptCLIP (Saha et al., 2024) 
+
+: Preprint submitted to Elsevier Page 2 of 8 LSA for Online ZSL with CLIP 
+
+enriches class representations by retrieving natural language descriptions from external sources ( e.g. , Wikipedia), which are then used as input prompts. Based on the class names, each test image is then randomly paired with a textual description generated by an LLM. InMap (Qian et al., 2023) improves zero-shot classification by improving alignment within the visual modality of CLIP. It learns visual proxies for each class by clustering image features from unlabelled test data, which provides a better representation of class semantics in the visual feature space. TTL (Imam et al., 2025a) injects trainable low-rank matrices (LoRA-style) into the text encoder and adapts them only at test time, guided by a confidence maximization objective. The method encourages the model to make more confident predictions on unlabeled test data without modifying the pre-trained model weights. 
+
+2.2. Test-time Adaptation with CLIP 
+
+CLIP has shown remarkable improvements in ZSL. At the same time, recent works have explored its performance under test-time adaptation (TTA) settings (Liu et al., 2024; Zanella and Ben Ayed, 2024; Wang, Zhou, Lin, Chen, Zhang, Zhu, Hong and Li, 2025; Wang, Li, Tong, Hong, Lan, Wang, Zhu and Chen, 2024b; Wang, Cheraghian, Hayder, Hong, Ramasinghe, Rahman, Ahmedt-Aristizabal, Li, Petersson and Harandi, 2024a; Han, Ye, Zhou, Zhang, Hong and Li, 2024). TTA predicts test data on multiple new target domains. Prior to testing, the model has been pre-trained on source-domain data. During testing, the model predicts data in the target domain and adjusts its parame-ters using data from the next domain. DART (Liu et al., 2024) introduces a dual-modal prompting mechanism where learnable prompts are optimized online using unlabeled test data. This reduces predictive uncertainty and enhances alignment between image and text modalities. Maxime et al. (Zanella and Ben Ayed, 2024) propose MeanShift Test-Time Augmentation (MTA) that applies mode seeking di-rectly in the visual embedding space. By leveraging multiple augmented views of the same image, MTA achieves strong performance without requiring access to gradients, training, or hyperparameter tuning. RLCF (Zhao, Wang, Zhu and Yang, 2024) criticizes the overconfidence issue introduced by entropy-based methods like TPT, treating CLIP as a reward model, and applying reinforcement learning at test time to guide the VLM toward a better predictive distri-bution. Traditional TTA methods assume that test samples belong to in-distribution classes. However, in open-world settings, test data often includes noisy or unknown samples. To address this, Cao et al. Cao et al. (2025) design a lightweight linear detector on top of frozen CLIP image features to distinguish noisy samples, and inject pure Gaus-sian noise to improve robustness. SwapPrompt (MA et al., 2023) employs a dual-prompt strategy, where an online prompt is updated at each step, and an exponential moving average (EMA) prompt retains historical knowledge. The method uses Prompt Swapped Prediction to introduce a cross-prompt loss, thereby effectively enhancing zero-shot generalization across unseen domains. 
+
+2.3. Online Zero-shot Learning with CLIP 
+
+Online ZSL with CLIP provides a practical setting for real-world scenarios, such as mobile devices and robotics, where models are deployed in resource-constrained environ-ments. In this setting, test samples arrive sequentially as a data stream, cannot be stored, and must be classified imme-diately without any offline refinement. This makes the classi-fication task more challenging than conventional ZSL with CLIP and TTA with CLIP. To address this, OnZeta (Qian and Hu, 2024) proposes a tailored approach: it first fixes both the vision and text proxies and estimates the label distribution of the target stream. Then, the method aligns the CLIP text proxy to the visual proxy, thereby reducing the modality gap. Experimental results show that OnZeta is highly effective for online ZSL with CLIP, achieving strong performance under this challenging setting. In this work, we focus on addressing online ZSL with CLIP by modeling the evolving label distribution in the test stream and correcting the mismatch between the training and deployment domains through dynamic label-shift adaptation. 
+
+## 3. Methodology 
+
+In this section, we propose the Label Shift Aware frame-work to address the challenge of online ZSL with CLIP under distributional shift. LSA dynamically adapts the clas-sifier by modeling the evolving test-time label distribution, without requiring labeled data or retraining the backbone. The overall framework consists of three key components: LSA Weight Generation, Active Prior Adaptation, and LSA Classifier Correction. These modules work together to es-timate the test-time label prior and adjust predictions ac-cordingly, enabling robust and efficient online zero-shot classification. 
+
+3.1. Preliminaries 
+
+Problem Definition. In this work, we consider the problem of online zero-shot classification with CLIP. Given a CLIP-based image classifier 𝑓 (𝑥 ), we aim to adapt the classifier 
+
+𝑓 (𝑥 ) to the test data distribution based on unlabeled test samples coming in a stream. 
+
+Notations. We denote  ∈ ℝ𝑑 as the data space,  ∈{1 , 2, ..., 𝐾 } as the label space of 𝐾 classes, 𝑓 ∶  → Δ𝐾 −1 
+
+as the CLIP-based classifier that output SoftMax predictions and 𝑡𝑎𝑟𝑔𝑒𝑡 = { 𝑥 𝑡 }𝑁 𝑡 =1 as the unlabeled test dataset where each sample 𝑥 𝑡 appearing at order or time 𝑡 .
+
+3.2. Motivation Overview 
+
+In this work, as shown in Figure 2, we view the online zero-shot classification with CLIP problem as a special type of domain adaptation task. In this sense, the task can be interpreted as adapting the classifier 𝑓 trained on an unknown source domain or train distribution 𝑝 𝑠𝑜𝑢𝑟𝑐𝑒 (𝑥, 𝑦 =
+
+⋅) to the target domain or test distribution 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑥, 𝑦 =
+
+⋅), given on-the-fly target unlabeled data from 𝑡𝑎𝑟𝑔𝑒𝑡 =  
+
+> :Preprint submitted to Elsevier Page 3 of 8
+
+LSA for Online ZSL with CLIP 
+
+Figure 2: The framework of the proposed LSA. Test samples arrive sequentially in a streaming manner. A frozen CLIP zero-shot classifier produces prediction scores without any parameter updates. LSA estimates the evolving target label distribution using an EM-based label shift estimator with an adaptive prior, and corrects the classifier output via posterior reweighting. The entire framework is training-free, memory-efficient, and suitable for online deployment. 
+
+{𝑥 𝑡 }𝑁 𝑡 =1 with 𝑥 𝑡 ∼𝑖.𝑖.𝑑. 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑥 ). In domain adaptation tasks, covariate shift and label shift are two main types of distribution shift Azizzadenesheli, Liu, Yang and Anand-kumar (2018); Alexandari, Kundaje and Shrikumar (2020); Ye, Tsuchida, Petersson and Barnes (2025). When deploying a model trained on the source domain to a target domain, covariate shift occurs when the data distribution 𝑝 (𝑥 ) shifts while 𝑝 (𝑦 |𝑥 ) remains invariant. Label shift happens when the label distribution 𝑝 (𝑦 ) is shifted while 𝑝 (𝑥 |𝑦 ) is invariant. Both the covariate and label shifts between the two domains can lead to sub-optimal model performance in the target domain Garg, Wu, Balakrishnan and Lipton (2020). Tackling covariate and label shift together can be chal-lenging. In this work, we focus on tackling label shift in online ZSL using CLIP. Since large models ( e.g. , CLIP) are usually trained with samples from a variety of data sources, the source data distribution 𝑝 𝑠𝑜𝑢𝑟𝑐𝑒 (𝑥 ) could effectively cover the target data distribution 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑥 ), thereby mitigating the problem of covariate shift. In this sense, label shift could be the main factor that impacts the performance of the CLIP-based classifier in our active-ZSL task. 
+
+3.3. Label Shift Aware Weight Generation 
+
+We use 𝑝 source (𝑥, 𝑦 = ⋅) and 𝑝 target (𝑥, 𝑦 = ⋅) to denote the train and test data distributions, respectively. Without loss of generality, the train and test labels follow categorical distributions: 
+
+𝑌 source ∼ Cat (𝐾, 𝐜 ), 𝑌 target ∼ Cat (𝐾, 𝝅 ), (1) and 
+
+𝑝 source (𝑦 = ⋅) = 𝐜 ∈ Δ 𝐾 −1 , (2) 
+
+𝑝 target (𝑦 = ⋅) = 𝝅 ∈ Δ 𝐾 −1 , (3) where Δ𝐾 −1 denotes the 𝐾 -dimensional probability sim-plex. In the online zero-shot classification tasks, we are given 
+
+Algorithm 1 LSA Weight Generation Input: 
+
+• Test prediction buffer 𝑏 = {𝑓 (𝑥 𝑡 )} 𝑁 𝑡 =1 at time 
+
+𝑡 = 1 , 2, ..., 𝑁 ;
+
+• CLIP-based classifier 𝑓 (𝑥 );
+
+• Prior information 𝜶 ∈ ℝ𝐾 >1.
+
+Initialize: 𝝅 (0) ∈ Δ 𝐾 −1  
+
+> >0
+
+.
+
+for 𝑚 = 0 to 𝑀 do E-step Evaluate 𝑔 (𝑚 ) 
+
+> 𝑡,𝑗
+
+:
+
+𝑔 (𝑚 ) 
+
+> 𝑡,𝑗
+
+= 𝜋 (𝑚 ) 
+
+> 𝑗
+
+⋅ 𝑓 (𝑥 𝑡 )𝑗 
+
+∑𝐾 𝑙 =1 𝜋 (𝑚 ) 
+
+> 𝑙
+
+⋅ 𝑓 (𝑥 𝑡 )𝑙 
+
+, (4) 
+
+M-step Obtain 𝝅 (𝑚 +1) with: 
+
+𝜋 (𝑚 +1)  
+
+> 𝑗
+
+= 𝜆 𝑡 ⋅
+
+∑𝑡 𝑖 =1 𝑔 (𝑚 )
+
+> 𝑖,𝑗
+
+𝑁 +(1− 𝜆 𝑡 )⋅ 𝛼 𝑗 − 1 
+
+∑𝐾 𝑙 =1 (𝛼 𝑙 − 1) , (5) 
+
+end for Output: 𝝅 = 𝝅 (𝑀 +1) 
+
+with a source domain classifier 𝑓 ∶  → Δ𝐾 −1 and a target domain unlabeled dataset 𝑡𝑎𝑟𝑔𝑒𝑡 = { 𝑥 𝑡 }𝑁 𝑡 =1 with each sample 𝑥 𝑡 ∼𝑖.𝑖.𝑑. 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑥 ) coming in stream. We propose using a label-shift estimation method to address the online zero-shot classification task. The label shift assumption can be written as: 
+
+: Preprint submitted to Elsevier Page 4 of 8 LSA for Online ZSL with CLIP 
+
+Assumption 1. (Label Shift Assumption Lipton, Wang and Smola (2018)) 
+
+𝑝 𝑠𝑜𝑢𝑟𝑐𝑒 (𝑥 |𝑦 = 𝑗 ) = 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑥 |𝑦 = 𝑗 ) for all 𝑗 ∈ .
+
+If we can estimate 𝝅 and 𝐜 , Given the streaming test dataset 𝑡𝑎𝑟𝑔𝑒𝑡 and the classifier 𝑓 , we have: Under Assump-tion 1, the negative log likelihood of 𝝅 and 𝐜 can be written as follows: 
+
+− log 𝐿 (𝝅 , 𝐜 ; 𝑡𝑎𝑟𝑔𝑒𝑡 ) = − 
+
+> 𝑁
+
+∑
+
+> 𝑡 =1
+
+log 
+
+> 𝐾
+
+∑
+
+> 𝑗 =1
+
+𝜋 𝑗 
+
+𝑐 𝑗 
+
+𝑓 (𝑥 𝑡 )𝑗 − 𝐶, (6) where 𝐶 does not depend on 𝝅 or 𝐜 . Moreover, with Bayesian inference methods, we can employ a Dirichlet prior 
+
+𝑝 (𝝅 ∣ 𝜶 ) ∼ Dir (𝐾, 𝜶 ) over the target label distribution 𝝅 ,we can construct the posterior of 𝝅 given prior and dataset 
+
+𝑡𝑎𝑟𝑔𝑒𝑡 based on the negative log likelihood Ye, Tsuchida, Petersson and Barnes (2024). The posterior can thus be written as: 
+
+𝑝 (𝝅 ∣ 𝑡𝑎𝑟𝑔𝑒𝑡 , 𝜶 ) = 1
+
+𝐶 ⋅
+
+> 𝐾
+
+∏
+
+> 𝑙 =1
+
+𝜋 𝛼 𝑙 −1  
+
+> 𝑙
+
+⋅
+
+> 𝑁
+
+∏
+
+> 𝑡 =1
+> 𝐾
+
+∑
+
+> 𝑗 =1
+
+𝜋 𝑗 
+
+𝑐 𝑗 
+
+𝑓 (𝑥 𝑡 )𝑗 , (7) where 𝛼 𝑙 > 1 for 𝑙 = 1 , 2, .., 𝐾 is the element of the 𝐾 -dimensional parameter 𝜶 of the Dirichlet prior and 𝐶 is a parameter irrelevant to 𝝅 or 𝐜 .Under the label shift problem setup, the MAPLS al-gorithm proposed in Ye et al. (2024) estimates the target label distribution 𝑝 𝑡𝑎𝑟𝑔𝑒𝑡 (𝑦 = ⋅) = 𝝅 through optimizing the negative log likelihood Equation (6) with respect to the parameter 𝝅 . However, this model cannot be directly applied in our task due to the unknown parameter 𝐜 and the on-the-fly test samples under the active ZSL setup. In this work, we utilize the MAPLS algorithm to propose the EM algorithm in Algorithm 1 to estimate the target label distribution 𝝅 . As shown in Algorithm 1, we postulate a uniform source label distribution 𝐜 ∶= 𝟏 ∕𝐾 , expecting that the large model is roughly the same for different classes. In Algorithm 1, the E-step and the M-step are evaluated alternately to obtain the final estimate. In the M-step, the 
+
+𝝅 (𝑚 +1) is calculated by a linear combination of the data term with 𝑔 𝑖𝑗 and the Dirichlet prior term with 𝜶 . The hyperpa-rameter 𝜆 0 balances the trade-off between the contribution of the two information to the final estimation, which is defined as: 
+
+𝜆 0 = 𝑁 𝑁 + ∑𝐾 𝑙 =1 (𝛼 𝑙 − 1) , (8) where 𝜆 0, ∈ (0 , 1] , is decided by the prior information 𝜶 .A higher value of 𝜆 0 gives greater weight to the test-time label distribution during LSA weight generation, making the model more adaptive to the test stream. Conversely, a lower 
+
+𝜆 0 retains more influence from the pre-defined training prior. The ablation study of 𝜆 0 is conducted in the experimental part of the supplementary material. 
+
+Algorithm 2 Overall LSA Model Input: 
+
+• Test data stream 𝑥 𝑡 at time 𝑡 = 1 , 2, ..., 𝑁 ;
+
+• CLIP-based classifier 𝑓 (𝑥 );
+
+• Prior hyper-parameter 𝜆 0.
+
+Initialize: Prediction buffer 𝑏 = {} .
+
+for 𝑡 = 1 to 𝑁 do 
+
+Append prediction 𝑓 (𝑥 𝑡 ) in buffer 𝑏 = { 𝑓 (𝑥 𝑡 )} 𝑁 𝑡 =1 ;Update 𝜆 𝑡 with Equation (9); Obtain 𝝅 through Algorithm 1; Correct the updated prediction through Equation (10); 
+
+end for Output: Overall classification accuracy comparing 𝑏 
+
+and the ground truth. 
+
+3.4. Active Prior Adaptation 
+
+In the active learning setting, the target-domain samples arrive in a stream. Therefore, our estimation of the weight could suffer from high estimation error. To mitigate this problem, we propose an adaptive scheme to adjust the prior weight 𝜆 in the LSA weight estimation algorithm (Algo-rithm 1), with the equation as follows: 
+
+𝜆 𝑡 = 𝑡 𝑁 ⋅ 𝜆 0, (9) where 𝜆 0 is the initial value of 𝜆 in Equation 8 and 𝑡 is current time. Early in the stream (small 𝑡 ), we rely more on prior knowledge since we have limited samples. As 𝑡 
+
+approaches 𝑁 , we trust the empirical distribution more, hence 𝜆 increases linearly. In this way, the contribution of data to the final estimate of 𝝅 will gradually increase, thus enabling prior information to provide more regularization at the early stage. 
+
+3.5. Label Shift Aware Classifier Correction 
+
+Getting the estimated weight 𝝅 from Algorithm 1, we propose to adjust the prediction of the model at time 𝑡 with the following equation: ̃𝑓 (𝑥 𝑡 )𝑗 = 𝑓 (𝑥 𝑡 )∕ 𝜋 𝑗 
+
+∑𝐾 𝑙 =1 𝑓 (𝑥 𝑡 )∕ 𝜋 𝑙 
+
+, (10) where the estimated 𝝅 corrects the prediction output Xu, Chai and Yuan (2021). Intuitively, the estimated 𝝅 attempts to compensate for the discrepancies between the distribu-tions of training data of CLIP and the online test data. 
+
+3.6. Overall Framework 
+
+After correcting the CLIP-based classifier 𝑓 , the overall framework of the LSA model for the online ZSL with CLIP can be summarized in Algorithm 2. The core of the algorithm is to generate the weight vector 𝝅 using label shift to adjust the classifier’s predictions over time. During test time, 𝜆 , which balances the influence of the test data and the   
+
+> :Preprint submitted to Elsevier Page 5 of 8
+
+LSA for Online ZSL with CLIP                                                                                                                                                                                                                   
+
+> Dataset Aircraft Caltech Cars Cifar10 Cifar100 CUB DTD EuroSAT Flowers Food Pets SUN UCF101 Avg. ResNet-50 CLIP baseline 16.92 79.14 54.27 71.58 41.91 42.29 42.39 31.60 65.69 80.59 84.23 52.59 59.81 55.62
+> TPT 17.58 87.02 58.46 –––42.33 28.83 63.12 74.89 81.34 61.46 56.60 –
+> OnZeta 17.26 79.39 54.55 71.57 46.36 42.46 41.73 29.94 64.90 80.85 83.96 53.27 60.81 55.93
+> LSA (ours) 18.12 78.82 56.56 77.54 46.53 46.01 44.41 40.30 66.86 81.58 85.70 52.88 60.60 58.15 Improvements ↑1.20 ↓0.32 ↑2.29 ↑5.96 ↑4.62 ↑3.72 ↑2.02 ↑8.70 ↑1.17 ↑0.99 ↑1.47 ↑0.29 ↑0.79 ↑2.53
+> LSA+OnZeta (ours) 18.88 79.63 58.89 77.64 48.36 46.63 44.81 41.10 66.22 82.01 84.84 53.62 61.54 58.78
+> Improvements ↑1.96 ↑0.49 ↑4.62 ↑6.06 ↑6.45 ↑4.34 ↑2.42 ↑9.50 ↑0.53 ↑1.42 ↑0.61 ↑1.03 ↑1.73 ↑3.16
+> ViT-B/16 CLIP baseline 24.36 83.91 64.66 90.77 68.27 52.66 45.27 41.38 71.08 88.86 87.84 62.97 72.43 65.96
+> TPT 24.78 94.96 68.46 –––46.35 33.60 69.26 86.97 89.00 67.21 58.91 –
+> OnZeta 24.81 83.86 64.97 90.97 70.78 52.97 45.02 40.32 70.49 89.07 87.97 63.65 73.31 66.21
+> LSA (ours) 26.28 84.46 66.43 91.54 70.63 56.33 45.85 45.64 73.82 89.51 88.02 63.12 72.97 67.28 Improvements ↑1.92 ↑0.55 ↑1.77 ↑0.77 ↑2.36 ↑3.67 ↑0.58 ↑4.26 ↑2.74 ↑0.65 ↑0.18 ↑0.15 ↑0.54 ↑1.32
+> LSA+OnZeta (ours) 26.67 84.72 68.26 91.85 71.70 57.11 46.88 46.18 73.31 89.85 88.20 63.93 74.02 67.90
+> Improvements ↑2.31 ↑0.81 ↑3.60 ↑1.08 ↑3.43 ↑4.45 ↑1.61 ↑4.80 ↑2.23 ↑0.99 ↑0.36 ↑0.96 ↑1.59 ↑1.94
+
+Table 1 
+
+Performance comparison among the CLIP baseline, TPT Shu et al. (2022), OnZeta Qian and Hu (2024), and our proposed LSA method across different datasets. Classification accuracy (in %) is reported for two backbones: ResNet-50 and ViT-B/16. The best-performing results are highlighted in bold. 
+
+Backbone CLIP baseline OnZeta LSA (ours) ResNet-50 60.30 62.29 62.86 (↑ 2.56) 
+
+ViT-B/32 63.80 65.67 66.18 (↑ 2.38) 
+
+ViT-B/16 68.81 70.81 71.30 (↑ 2.49) 
+
+ViT-L/14 75.93 77.72 78.11 (↑ 2.18) 
+
+ViT-L/14 336 77.00 78.73 79.12 (↑ 2.12) 
+
+Table 2 
+
+Performance comparison of CLIP baseline, onZeta Qian and Hu (2024), and LSA using different backbones on ImageNet (Russakovsky, Deng, Su, Krause, Satheesh, Ma, Huang, Karpathy, Khosla, Bernstein et al., 2015). 
+
+training prior, is made adaptive. The LSA model does not update its weights. In addition to its training-free property, it can be compatible with any baselines. In the experimental section, we apply LSA using the CLIP and OnZeta as the baselines. 
+
+## 4. Experiments 
+
+In this section, we evaluate the effectiveness of the proposed LSA in the online ZSL setting with CLIP. Ex-periments are conducted on 14 diverse datasets covering general classification, fine-grained recognition, and domain-shifted scenarios, enabling a comprehensive assessment of LSA’s generalization capabilities. We compare our method against state-of-the-art baselines. To better understand the contributions of our framework, we conduct ablation studies in two parts: the first evaluates the individual contributions of each core component; the second examines the sensitivity of LSA to the hyperparameter that controls the influence of label shift correction during inference. All results are reported using top-1 accuracy and follow the evaluation protocol introduced in Qian and Hu (2024) to ensure fair comparison. More experimental settings are provided in the supplementary material. 
+
+4.1. Main Results 
+
+To evaluate the generalization capability of our method, we conduct experiments on standard zero-shot classification benchmarks like CLIP baseline and OnZeta. Table 2 presents the top-1 accuracy of our proposed LSA method on the ImageNet (Russakovsky et al., 2015) dataset using five CLIP backbones of varying complexity mentioned in the imple-mentation section (Radford et al., 2021; He, Zhang, Ren and Sun, 2016). We categorize the results into three groups based on model scale and architecture: (1) convolution-based mod-els (ResNet-50), (2) lightweight vision transformers (ViT-B/32 and ViT-B/16), and (3) large-scale transformers (ViT-L/14 and ViT-L/14@336px). To reduce variance caused by the stochastic arrival order of streaming data, each experi-ment across all datasets is repeated 5 times with different random permutations of the input stream. The final accuracy is reported as the average over the five runs. For ResNet-50, LSA achieves a notable gain over the CLIP baseline, showing that our posterior adjustment sig-nificantly improves robustness even for weaker visual en-coders. Among the mid-sized transformer models, ViT-B/16 achieves the highest absolute accuracy of 71 .30% and a relative gain of 2.49% , outperforming the CLIP baseline by 
+
+2.49% and OnZeta by 0.49% , demonstrating strong align-ment between LSA and models with moderate capacity. This also suggests that ViT-B/16 offers a favorable trade-off between performance and efficiency under online zero-shot settings. For larger architectures like ViT-L/14 and ViT-L/14@336px, the improvement margin narrows. These models already benefit from stronger generalization due to extensive pretraining and larger capacity, leaving less room for adaptation. Nevertheless, LSA still yields con-sistent gains, indicating its effectiveness even when the base model already exhibits strong generalization. These results demonstrate the robustness and architecture-agnostic compatibility of LSA. Moreover, unlike methods that re-quire fine-tuning, LSA’s lightweight posterior adjustment 
+
+: Preprint submitted to Elsevier Page 6 of 8 LSA for Online ZSL with CLIP 
+
+easily incorporates into various backbones, enhancing per-formance without increasing computational burden. To further evaluate the generalization capability of LSA, we present results on the remaining 13 datasets in Table 1, spanning diverse tasks such as fine-grained recognition, scene understanding, texture classification, and satellite im-agery. Experiments are conducted using both ResNet-50 and ViT-B/16 backbones. On average, our method surpasses OnZeta by 2.91% with ResNet-50 and 2.02% with ViT-B/16, demonstrating consistent improvements across architectures and domains. The ablation studies are provided in the supplementary material, including the influence of each component and the effect of varying the hyperparameter 𝜆 0.
+
+## 5. Conclusion 
+
+In this work, we addressed the challenging task of on-line ZSL with CLIP. This setting combines the semantic difficulty of ZSL with the practical constraints of online learning, where data arrive sequentially in a single pass and are not stored. Although prior methods focused on multimodal alignment and prompt engineering, they largely neglected the distribution mismatch between training and test data inherent to foundation models. To bridge this gap, we propose LSA, a novel framework that models online prediction as a domain adaptation problem under label shift. By dynamically estimating the evolving label distribution at test time, our method adjusts predictions without modifying CLIP’s pre-trained weights or requiring access to labeled data. We evaluate the effectiveness of our method on multi-ple benchmark datasets. LSA achieves overall performance improvements across various settings and outperforms both OnZeta and CLIP baselines. The method achieves a new state of the art in online zero-shot classification with CLIP. 
+
+## References 
+
+Abdul Samadh, J., Gani, M.H., Hussein, N., Khattak, M.U., Naseer, M.M., Shahbaz Khan, F., Khan, S.H., 2023. Align your prompts: Test-time prompting with distribution alignment for zero-shot generalization. Advances in Neural Information Processing Systems 36, 80396–80413. Alexandari, A., Kundaje, A., Shrikumar, A., 2020. Maximum likelihood with bias-corrected calibration is hard-to-beat at label shift adaptation, in: International Conference on Machine Learning, PMLR. pp. 222–232. Azizzadenesheli, K., Liu, A., Yang, F., Anandkumar, A., 2018. Regularized learning for domain adaptation under label shifts, in: International Conference on Learning Representations. Brooks, T., Holynski, A., Efros, A.A., 2023. Instructpix2pix: Learning to follow image editing instructions, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 18392– 18402. Cao, C., Zhong, Z., Liu, T., Liu, Y., Zhang, K., Han, B., et al., 2025. Noisy test-time adaptation in vision-language models, in: International Conference on Learning Representations, pp. 59008–59039. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin, A., 2021. Emerging properties in self-supervised vision transformers, in: Proceedings of the IEEE/CVF international conference on computer vision, pp. 9650–9660. Gal, R., Alaluf, Y., Atzmon, Y., Patashnik, O., Bermano, A.H., Chechik, G., Cohen-Or, D., 2023. An image is worth one word: Personalizing text-to-image generation using textual inversion, in: The Eleventh International Conference on Learning Representations. Garg, S., Wu, Y., Balakrishnan, S., Lipton, Z., 2020. A unified view of label shift estimation. Advances in Neural Information Processing Systems 33, 3290–3300. Han, P., Ye, C., Zhou, J., Zhang, J., Hong, J., Li, X., 2024. Latent-based diffusion model for long-tailed recognition, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 2639–2648. He, K., Zhang, X., Ren, S., Sun, J., 2016. Deep residual learning for image recognition, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 770–778. Hu, M., Chang, H., Shan, S., Chen, X., 2025. Inference calibration of vision-language foundation models for zero-shot and few-shot learning. Pattern Recognition Letters 192, 15–21. Imam, R., Gani, H., Huzaifa, M., Nandakumar, K., 2025a. Test-time low rank adaptation via confidence maximization for zero-shot generaliza-tion of vision-language models, in: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), IEEE. pp. 5449–5459. Imam, R., Gani, H., Huzaifa, M., Nandakumar, K., 2025b. Test-time low rank adaptation via confidence maximization for zero-shot generaliza-tion of vision-language models, in: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), IEEE. pp. 5449–5459. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., et al., 2023. Segment anything, in: Proceedings of the IEEE/CVF international conference on computer vision, pp. 4015–4026. Lipton, Z., Wang, Y.X., Smola, A., 2018. Detecting and correcting for label shift with black box predictors, in: International conference on machine learning, PMLR. pp. 3122–3130. Liu, Z., Sun, H., Peng, Y., Zhou, J., 2024. Dart: Dual-modal adaptive online prompting and knowledge retention for test-time adaptation, in: Proceedings of the AAAI Conference on Artificial Intelligence, pp. 14106–14114. MA, X., ZHANG, J., Guo, S., Xu, W., 2023. Swapprompt: Test-time prompt adaptation for vision-language models, in: Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., Levine, S. (Eds.), Advances in Neural Information Processing Systems, Curran Associates, Inc.. pp. 65252–65264. OpenAI, 2024a. ChatGPT (GPT-4). https://openai.com/ chatgpt . Accessed: 2025-07-21. OpenAI, 2024b. Sora: A text-to-video model. https://openai.com/ sora . Accessed: 2025-07-21. Poole, B., Jain, A., Barron, J.T., Mildenhall, B., 2023. Dreamfusion: Text-to-3d using 2d diffusion, in: The Eleventh International Conference on Learning Representations. Qian, Q., Hu, J., 2024. Online zero-shot classification with clip, in: European Conference on Computer Vision, Springer. pp. 462–477. Qian, Q., Xu, Y., Hu, J., 2023. Intra-modal proxy learning for zero-shot visual categorization with clip. Advances in Neural Information Processing Systems 36, 25461–25474. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al., 2021. Learning transferable visual models from natural language supervision, in: Inter-national conference on machine learning, PmLR. pp. 8748–8763. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B., 2022. High-resolution image synthesis with latent diffusion models, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recogni-tion, pp. 10684–10695. Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z., Karpathy, A., Khosla, A., Bernstein, M., et al., 2015. Imagenet large scale visual recognition challenge. International journal of computer vision 115, 211–252. Saha, O., Van Horn, G., Maji, S., 2024. Improved zero-shot classification by adapting vlms with text descriptions, in: Proceedings of the IEEE/CVF 
+
+: Preprint submitted to Elsevier Page 7 of 8 LSA for Online ZSL with CLIP 
+
+conference on computer vision and pattern recognition, pp. 17542– 17552. Shu, M., Nie, W., Huang, D.A., Yu, Z., Goldstein, T., Anandkumar, A., Xiao, C., 2022. Test-time prompt tuning for zero-shot generalization in vision-language models. Advances in Neural Information Processing Systems 35, 14274–14289. Wang, Y., Cheraghian, A., Hayder, Z., Hong, J., Ramasinghe, S., Rahman, S., Ahmedt-Aristizabal, D., Li, X., Petersson, L., Harandi, M., 2024a. Backpropagation-free network for 3d test-time adaptation, in: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 23231–23241. Wang, Y., Li, X., Tong, J., Hong, J., Lan, J., Wang, W., Zhu, H., Chen, H., 2024b. Maintain plasticity in long-timescale continual test-time adaptation. arXiv preprint arXiv:2412.20034 . Wang, Y., Zhou, Y., Lin, Y., Chen, H., Zhang, J., Zhu, W., Hong, J., Li, X., 2025. Dynamic model-bank test-time adaptation for automatic speech recognition, in: Proceedings of the 2025 Conference on Empirical Meth-ods in Natural Language Processing, pp. 21842–21852. Xu, Z., Chai, Z., Yuan, C., 2021. Towards calibrated model for long-tailed visual recognition from prior perspective. Advances in Neural Information Processing Systems 34. Ye, C., Tsuchida, R., Petersson, L., Barnes, N., 2024. Label shift estimation for class-imbalance problem: A bayesian approach, in: Proceedings of the IEEE/CVF winter conference on applications of computer vision, pp. 1073–1082. Ye, C., Tsuchida, R., Petersson, L., Barnes, N., 2025. Open set label shift with test time out-of-distribution reference, in: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 30619– 30629. Zanella, M., Ben Ayed, I., 2024. On the test-time zero-shot generalization of vision-language models: Do we really need prompt learning?, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 23783–23793. Zhao, S., Wang, X., Zhu, L., Yang, Y., 2024. Test-time adaptation with clip reward for zero-shot generalization in vision-language models, in: International Conference on Learning Representations, pp. 3597–3613. 
+
+: Preprint submitted to Elsevier Page 8 of 8

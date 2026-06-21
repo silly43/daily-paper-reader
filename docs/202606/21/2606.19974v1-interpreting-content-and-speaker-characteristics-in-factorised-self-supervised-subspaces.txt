@@ -1,0 +1,353 @@
+Title: Interpreting Content and Speaker Characteristics in Factorised Self-Supervised Subspaces
+
+URL Source: https://arxiv.org/pdf/2606.19974v1
+
+Published Time: Fri, 19 Jun 2026 00:40:15 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Interpreting Content and Speaker Characteristics in Factorised Self-Supervised Subspaces 
+
+Kyle Janse van Rensburg and Herman Kamper 
+
+Electrical and Electronic Engineering , Stellenbosch University , South Africa kylejvr767@gmail.com, kamperh@sun.ac.za 
+
+Abstract —Self-supervised speech features encode both content and speaker information. Recent work introduced an SVD-based factorisation that decomposes these features into a shared content matrix capturing temporal variation and speaker-specific trans-formations capturing static speaker characteristics. However, how information is organised within these components remains unclear. In this paper, we investigate how the dimensions of WavLM-factorised content and speaker subspaces correlate with speech characteristics such as pitch, intensity, and voicing. We find that leading dimensions in the content space primarily capture intensity, higher-order formants, and voicing, while pitch is encoded in a later dimension. In contrast, the highest-variance speaker dimension is strongly associated with pitch and gender, with later dimensions capturing high-frequency variation. Intervention experiments show that manipulating these dimensions enables targeted control of speech characteristics for speech synthesis. Furthermore, modifying the content and speaker representations jointly provides fine-grained control over characteristics such as pitch and intensity. 
+
+Index Terms —Interpretability, disentanglement, self-supervised learning, speech representations, voice manipulation 
+
+I. I NTRODUCTION 
+
+Representations obtained through self-supervised learning (SSL) have become standard in speech processing. Thorough analyses of these features [1], [2] have shown that both content and speaker information are encoded, enabling a range of downstream tasks: from content-focused tasks such as speech recognition [3] to speaker-focused tasks such as speaker verifi-cation [4] to tasks requiring both, such as voice conversion [5]. Although content and speaker information are accessible, these sources are also clearly entangled in SSL representations. Recently, an approach has been proposed to linearly fac-torise SSL features into content and speaker subspaces [6]. Using singular value decomposition (SVD), the method iden-tifies a shared, low-dimensional content matrix that captures temporal variation common across speakers, alongside a set of speaker-specific linear transformations encoding static speaker identity. The method is simple in that it does not require any additional training beyond solving a least-squares problem. Although the approach has been successfully applied to voice conversion [6] and subsequently extended [7], the inter-nal structure of the resulting subspaces remains poorly under-stood. Specifically, it is unclear how information is organised 
+
+This work was supported in part by the National Research Foundation of South Africa. 
+
+within the content and speaker matrices, and whether indi-vidual dimensions carry meaningful, interpretable information. Addressing these questions is important both for understanding what SSL representations encode and for enabling controllable speech processing. To answer these questions, we extract SSL features from WavLM [8] and factorise them into content and speaker subspaces. The content matrix can be analysed directly, as its columns are ordered by singular value. The speaker ma-trices, however, cannot be interpreted as straightforwardly; we therefore flatten them and apply principal component analysis (PCA) to identify the directions of greatest variation across speakers. We then perform correlation analysis between specific speech characteristics (e.g., pitch, gender, intensity, and voicing) and the dimensions of the individual subspaces. We find that leading dimensions in the content space pri-marily capture intensity, higher-order formants, and voicing, while pitch is encoded only in a later dimension. In the speaker space, by contrast, the highest-variance dimension is strongly associated with both average pitch and gender, while later dimensions capture high-frequency spectral variation, tied to static channel characteristics. Generally, characteristics that vary temporally, such as intensity and the formants, are captured primarily by content dimensions, while static char-acteristics, such as gender, are captured primarily by speaker dimensions. Characteristics tied to both temporal voicing and static channel properties, such as spectral rolloff and zero-crossing rate, correlate with dimensions in both subspaces. We finally perform intervention experiments to assess the degree of control that individual dimensions exert over speech characteristics. Concretely, we modify a dimension’s value, resynthesise the audio by vocoding the altered SSL features, and measure the resulting change in the target characteristic. We also perform joint interventions across both subspaces to examine how the content and speaker dimensions interact. We find that manipulating individual dimensions enables targeted control for characteristics like pitch and intensity, and that modifying the subspaces together gives even more control, especially for a characteristic like pitch. This opens up the possibility of simple, training-free voice control. II. C ONTENT FACTORISATION 
+
+In this section, we start by reviewing the content factori-sation approach from [6], which separates temporal content information from global speaker information in SSL speech 
+
+> arXiv:2606.19974v1 [eess.AS] 18 Jun 2026
+
+representations. This approach is applied to a set of training speakers. An extension proposed by [7] is necessary to apply the learned factorisation to unseen speech and speakers. 
+
+A. Content factorisation on a training set 
+
+Content factorisation attempts to separate the temporal information from static speaker information by placing them in two subspaces: the content ( C) subspace and the speaker (S) subspace. Formally, we want to find these matrices so that: 
+
+X ≈ CS (1) where X ∈ RN ×D are D-dimensional SSL frame representa-tions, C ∈ RN ×r is the shared content matrix, and S ∈ Rr×D
+
+is the speaker-specific transformation. The idea here is that C represents content, regardless of who said it. Therefore, to extract C, all of our speakers must be saying the same lexical content. But typically, we do not have parallel training data. To get around this problem, [6] uses a set of K training speakers. We then select one of the speakers at random as a pivot speaker. From this pivot speaker, we select a set number of frame representations, N , to act as our common base. For every other speaker, we align their frames to those of the pivot speaker using nearest neighbour lookup. We denote Xk as the content-aligned SSL frames of speaker k: this now matches the content said by the pivot, but is produced by frames from speaker k. To find the common content matrix C, we optimise the following objective: 
+
+min 
+
+> C,Sk
+> K
+
+X
+
+> k=1
+
+|| Xk − CS k|| 2 
+
+> F
+
+(2) subject to rank (CS k) ≤ r, where Sk is speaker k’s unique speaker matrix and r is a defined rank value. For our purposes, we use N = 8192 pivot frames and r = 64 as the rank. This optimisation problem can be solved using SVD, which then gives an optimal C and a set of speaker-specific transformation matrices {Sk} over the K training speakers. In [6], voice conversion is performed from one training speaker to another. For a source utterance with new frames, we have Xinf ≈ CS src . This allows us to estimate the new source matrix C by taking the pseudo-inverse: C ≈ Xinf S+
+
+> src
+
+.And finally this allows us to produce converted speech: 
+
+Xnew = Xinf S+
+
+> src
+
+Stgt .Although this works when dealing with speakers in the training set, we need to deal with unseen speakers. We have two problems: how do we obtain S for an unseen speaker, and how do we obtain C for unseen speech from an unseen speaker? 
+
+B. Finding S for unseen speakers 
+
+We start by considering how to find the S matrix of a new, unseen speaker. It would be inefficient to add this new speaker to our dataset and redo the entire SVD factorisation. We therefore do the following: we start by using nearest neighbours to align speech from the new speaker to the original pivot speaker’s frames. Now the content from the new speaker is the same as the content used during factorisation, i.e., we now have two known variables, Xnew and C. The problem reduces to a linear regression problem, treating Snew 
+
+as the model’s unknown weights: Snew ≈ C+Xnew , where C+
+
+is the pseudo-inverse of C. The optimal Snew for an unseen speaker is therefore found through standard least squares. 
+
+C. Finding C for unseen utterances 
+
+If we are to analyse an utterance at the frame-level, i.e. its temporal dependent characteristics, we next need to be able to find the C for a new inference utterance from an unseen speaker. We take inspiration from the approach proposed by Xinyuan et al. [7]. In our approach, we fit a transformation matrix W and a bias b such that it will transform utterance 
+
+Xinf into its corresponding Cinf :
+
+Cinf ≈ Xinf W + b (3) where Xinf ∈ RN ×D , W ∈ RD×r, and b ∈ R1×r (added row-wise to Xinf W). We learn the W and b on our training data: 
+
+min 
+
+> W,b
+> K
+
+X
+
+> k=1
+
+|| XkW + b − Calign || 2 
+
+> F
+
+(4) where {Xk} are the pivot-aligned frame representations of the K speakers in our training data and Calign is the known C
+
+matrix from the original factorisation. After obtaining W and 
+
+b from our training data, it can be directly applied as in (3) to unseen utterances from unseen speakers. III. M ETHODOLOGY AND SETUP 
+
+Our goal is to analyse how speech characteristics are struc-tured in the factorised SSL representations. We are specifically interested in whether individual characteristics are encoded in specific dimensions. For the content subspace ( C), correlation analysis is directly applied between the rank features of C
+
+and the frame-level speech characteristics. For the speaker subspace ( S), PCA is applied on flattened matrices to obtain the principal dimensions; correlation analysis is performed between these principal dimensions and the speaker-level averaged speech characteristics. 
+
+A. Speaker characteristics 
+
+We consider the following speaker-specific characteristics: pitch (F0, Hz); F1, F2 and F3 formant values for each frame (Hz); intensity (dB); the spectroll rollof point (Hz); zero-crossing rate (ZCR); and the speaker’s gender. ZCR gives an indication of both voicing and noisiness. The spectral rolloff point gives a measure of the relative energy found in high vs low frequencies [9], [10]. It is, in our case, the frequency below which 50% of the signal’s energy resides, i.e. higher values indicate more content in higher frequencies. For S we also include timbre characteristics: local jitter (%), local shimmer (%), and harmonic-to-noise ratio (HNR, dB). Jitter gives an indication of the stability of pitch over an utterance, while shimmer indicates variation in intensity [11]. HNR can be seen as a measure of noise levels [12]. Both HNR and ZCR are also affected by the channel’s properties [10]. Pitch, formants, intensity, jitter, shimmer and HNR are calculated using Parselmouth’s Praat functions [13], [14]. ZCR and spectral rolloff are calculated using Librosa [15]. For the C-subspace analysis, the speech characteristics are measured per frame. For the S-subspace analysis, the speech characteristic values are averaged over all utterances that a specific speaker says. 
+
+B. Representations 
+
+In all our experiments, we use 1024-dimensional SSL features extracted from layer six of WavLM, based on [2], [5]. For content factorisation, each Sk captures the full 1024 dimensionality of the WavLM representations, complicating the correlation analysis. To simplify this, we flatten all the Sk
+
+matrices and stack them. We then apply PCA to the combined matrices to find the principal dimensions that capture the most important information in this flattened S-subspace. Because PCA finds linear projections, it is interpretable. For training the PCA model, we use Scikit-learn’s PCA implementation [16], with 50 principal components. 
+
+C. Data 
+
+To fit the PCA model, we need sufficient data for stable component estimation for the S matrix analysis, i.e., we need a dataset with many unique speakers. We therefore use 
+
+S matrices extracted from the 1596 speakers of the Libri-Light dataset’s medium partition [17]. For the correlation and intervention analyses of S and C, we use the 331 speakers in LibriSpeech’s combined train-clean-100, dev-clean and test-clean sets [18]. For correlation experiments involving S, inaccuracies in characteristic extraction would have a minimal effect since speech characteristics are averaged at speaker-level. For C,however, we need to be careful for any inaccuracies in the characteristic extraction as it would have a major impact at a frame-level. During data preprocessing of the LibriSpeech datasets, we noticed qualitatively that the noise in some audio affected the accuracy of the extraction of the speaker characteristics. We therefore develop smaller, curated datasets of utterances to ensure accurate feature extraction to be used as ground-truth measurements for the correlation analysis of 
+
+C. Concretely, we manually selected 10 utterances from 10 speakers (5 male and 5 female) from each of the dev-clean and test-clean sets by viewing the speaker characteristics (like pitch) on the audio spectrograms and manually verifying accurate estimation. The result is curated validation and test sets of 100 utterances each. 
+
+D. Correlation analysis 
+
+To determine whether a particular dimension tells us some-thing about a particular speech characteristic, we use corre-lation analysis. All our speaker characteristics are continuous except for gender, which is treated as a categorical variable. To measure correlation for continuous characteristics, we use the coefficient of determination, R2, a score in the range of (−∞ , 1] [19]. A score of 1 indicates a perfect linear rela-tionship between the speaker characteristic and the dimension under investigation. A score of 0 indicates that the prediction from the dimension is as bad as consistently predicting the data mean. A negative score indicates the correlation is worse than predicting the mean. For the categorical gender label, we use Cohen’s kappa ( κ), a score in the range of [−1, 1] [20]. A 1 indicates perfect agreement between the gender label and a binary classification using the dimension value. A 0 is equivalent to the model predicting a random gender label, while a negative score indicates the model’s performance is worse than random. IV. D IMENSION ANALYSIS 
+
+In this section, we analyse the correlations between both the rank dimensions of C (called content dimensions) and the principal dimensions of S (called speaker dimensions), respectively, and the different speech characteristics. The goal is to determine if a particular dimension captures one (or more) of the speech characteristics. Here, we consider the results for each subspace independently, leaving joint effects for the next section. 
+
+A. Content subspace analysis 
+
+For the content subspace analysis, all characteristics are measured frame-wise, i.e., we measure the correlation between temporal characteristic changes over the frames with the content dimensions of C. Fig. 1a shows the R2 and κ scores for the frame-level correlation analysis for each temporal-dependant speech characteristic and gender on the develop-ment dataset. For conciseness, only the first 15 dimensions (out of r = 64 ) are shown. The dimension that scores the highest correlation for each characteristic is indicated with a red outline. Dimension 1 shows a weak correlation with intensity. The strongest correlation is intensity with dimension 2 ( R2 =0.72 ). The F1, F2, and F3 formants correlate with dimensions 5, 3, and 2, respectively, but only with R2 scores in the range of 0.136 to 0.285. The spectral energies and voicing are both captured together, with spectral rolloff and ZCR correlated with dimension 5. Finally, the pitch is captured mainly in dimension 12 with an R2 score of 0.375. Interestingly, gender does not correlate with any of the dimensions. This makes sense given that gender can be considered a global speech characteristic that does not vary temporally. 
+
+B. Speaker subspace analysis 
+
+For analysis of the speaker subspace, all characteristics are average measurements per speaker, thereby measuring correla-tion between global characteristic values for each speaker and the speaker dimensions of S (given by the PCA directions). Fig. 1b shows the R2 and κ scores for the speaker-level correlation analysis for each speech characteristic and gender. For conciseness, only a few dimensions (out of 50) are shown. In contrast to the analysis for C, we see that speaker dimension 1 correlates with several characteristics: average jitter, pitch, and gender have high correlations with dimension 1, giving R2 values of 0.58 or above. The formants and 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+Content dimension 
+
+Pitch (F0) 
+
+F1 
+
+F2 
+
+F3 
+
+Intensity 
+
+Gender 
+
+Spectral rolloff 
+
+ZCR                                                                                                                 
+
+> 0.049 0.013 -0.000 0.000 0.009 0.012 0.007 0.005 0.005 0.002 0.064 0.375 0.023 0.070 0.004
+> 0.035 0.120 0.020 0.008 0.285 0.000 0.003 0.009 0.001 0.019 -0.001 0.001 0.001 0.001 0.009
+> 0.057 0.058 0.278 0.037 0.082 0.036 0.003 0.009 0.024 0.004 0.003 0.004 0.002 0.002 0.001
+> 0.040 0.136 0.130 0.005 0.109 0.003 0.039 0.004 0.000 0.003 0.000 0.003 0.002 0.003 0.000
+> 0.176 0.721 0.004 0.001 0.025 0.013 0.027 0.043 0.000 0.045 0.006 0.007 0.026 0.002 0.004
+> 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.002 0.000 0.000 0.000
+> 0.037 0.028 0.239 0.018 0.317 -0.000 0.000 0.122 0.015 0.009 0.002 0.008 0.001 0.001 0.008
+> 0.057 0.019 0.236 0.030 0.354 0.001 0.000 0.122 0.002 0.007 0.001 0.004 0.004 0.007 -0.000
+
+(a) C-space correlations between content dimensions and temporal speech characteristics. 1 2 3 4 5 6 7 8 9 10 16 17 18 
+
+Speaker dimension 
+
+Pitch (F0) 
+
+F1 
+
+F2 
+
+F3 
+
+Intensity 
+
+HNR 
+
+Jitter 
+
+Gender 
+
+Shimmer 
+
+Spectral rolloff 
+
+ZCR                                                                                                                                     
+
+> 0.883 -0.001 -0.029 -0.044 -0.024 -0.028 -0.032 0.003 -0.064 0.005 -0.043 0.002 -0.021
+> -0.251 -0.188 -0.201 -0.339 -0.413 -0.547 -0.149 -0.395 -0.316 -0.228 -0.239 -0.129 -0.285
+> -0.118 -0.082 -0.251 -0.354 -0.383 -0.268 -0.076 -0.382 -0.258 -0.200 -0.213 -0.208 -0.242
+> 0.046 0.028 -0.075 -0.073 -0.057 -0.065 0.045 -0.134 -0.054 -0.028 -0.016 -0.045 -0.023
+> -0.013 0.086 0.064 -0.025 0.015 -0.041 -0.025 -0.019 0.069 -0.036 -0.005 -0.026 -0.017
+> 0.182 0.012 -0.003 0.040 0.197 0.006 0.171 0.065 -0.001 -0.046 0.025 0.029 -0.006
+> 0.580 0.017 0.015 0.047 -0.004 -0.017 -0.029 0.003 -0.038 0.054 -0.036 -0.006 0.015
+> 0.900 0.350 0.100 0.100 0.150 -0.150 0.100 0.150 0.100 0.400 -0.100 0.200 -0.100
+> 0.059 0.118 -0.043 0.081 0.155 -0.031 0.125 -0.028 0.011 -0.025 -0.055 -0.015 -0.025
+> 0.144 -0.073 -0.140 0.015 0.120 -0.045 0.317 -0.226 -0.045 -0.042 -0.067 -0.015 -0.061
+> 0.180 -0.032 -0.048 0.061 0.118 -0.043 0.371 -0.113 0.045 -0.003 -0.017 0.007 -0.005
+
+(b) S-space correlations between speaker dimensions and global speaker characteristics. 
+
+Fig. 1: Heat maps showing correlation scores between speaker-specific characteristics and the dimensions of the factorised subspaces, using WavLM-Large layer six on development data. intensity are either weakly correlated or not correlated at all (negative R2) with any of the dimensions. Dimension 5 correlates somewhat with HNR and shimmer, while dimension 7 has R2 correlation scores of 0.32 and 0.37, respectively, with spectral rolloff and ZCR, both associated with the presence of higher frequencies. When we compare the correlations of C (Fig 1a) and S
+
+(Fig 1b), several observations can be made. We see that, for intensity, there is only a weak correlation with a speaker dimension but a very strong correlation with a content dimen-sion. Similarly, while the formants do not correlate with any of the speaker dimensions, they have strong content correlations. This makes sense given that formants change temporally and should not be expected to be static over utterances. In contrast, a characteristic like gender has a strong speaker dimension but no content dimension. Again, this makes sense given the static nature of gender. There are some characteristics that are mixed, with correlations both in the C and S spaces. Spectral rolloff and ZCR have strongly correlated dimensions in both spaces, but this again makes sense given that these characteristics are both associated with voicing (temporal) and with high frequencies from channel conditions (static). Finally, pitch is interesting since it has a very strong correlation with a speaker dimension, and then a weaker correlation with a much later content dimension. This makes sense given that relative temporal changes in pitch would be captured in C, while the average pitch of a speaker would be captured in S.V. I NTERVENTION ANALYSIS 
+
+Turning from correlation measurements to targeted interven-tions, we present synthesis experiments to measure how the 
+
+C and S subspaces influence the downstream characteristics, both independently and in tandem. Specifically, we explicitly modify a dimension’s value and track the causal effect on the resulting audio after vocoding the modified SSL feature se-quence. For this section, we use the average pitch and intensity as running examples, but the experiments were performed for all speech characteristics. 
+
+A. Experimental setup 
+
+We take an inference utterance and determine its Cinf and 
+
+Sinf matrices, as explained in Sec. II. We modify one of the content dimension values of Cinf , one of the speaker dimension values of Sinf , or a combination of the two. We then resynthesise the audio and measure the speaker characteristics. We analyse how the characteristics change as the dimensions are modified. Formally, for modifying dimension i of Cinf , we simply add a constant ασ i to each value in the ith column of Cinf ,producing Cmod inf . Here, σi is the standard deviation over the dataset of the ith dimension in C. For Sinf , we add a scalar multiple α of the unflattened unit length principal direction 
+
+Vi to Sinf , such that Smod inf = Sinf + ασ iVi. Here, σi is the standard deviation for principal dimension i.We then find our modified SSL frame representations, Xmod inf ,by using Cmod inf and Smod inf in (1). We synthesise the speech from 
+
+Xmod inf using a pretrained WavLM-to-waveform HiFi-GAN [5], [21] and measure the resulting speech characteristics. 
+
+B. Content subspace analysis 
+
+We start by performing the interventions on the C space in isolation in order to determine the degree of influence that one dimension can exert on a correlated characteristic. Fig. 2 shows how both pitch and intensity can be manipulated by varying their content dimension value, with the blue line indicating the average characteristic from all test utterances after modifica-tion. When we qualitatively listen to the manipulated audio, we hear that it also maintains good audio quality when the modification is within reasonable limits. 1 To test manipulation of individual utterances, we also selected individual high- and low-pitched/intensity test utterances, represented by the green and orange lines, respectively. Looking at pitch, it has a much weaker correlation than intensity for the C subspace (Fig. 1a), but we still achieve a level of control over it, as seen in Fig. 2a; we are able to 
+
+1Audio samples: https://sltanonymous707.github.io/slt demo page 2026/ 6 4 2 0 2 4 6
+
+> Content dimension 12
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> Pitch (Hz)
+> Low pitch utterance
+> High pitch utterance
+
+(a) Varying pitch via content dimension 12. 6 4 2 0 2 4 6 
+
+> Content dimension 2
+> 20
+> 40
+> 60
+> 80
+> Intensity (dB)  Low intensity utterance
+> High intensity utterance
+
+(b) Varying intensity via content dimension 2. 
+
+Fig. 2: The effect on a particular characteristic as its correlated content dimension is varied on test data. The blue line shows the average characteristic value as the dimension is changed by a factor of the standard deviations across all utterances in the test set. The shaded area indicates one standard deviation in characteristic value. The dotted-green and dashed-orange lines show changes for specific utterances that have, respectively, high and low characteristic values before modification. 6 4 2 0 2 4 6
+
+> Speaker dimension 1
+> 100
+> 150
+> 200
+> 250
+> 300
+> Pitch (Hz)
+> Low pitch utterance
+> High pitch utterance
+
+(a) Varying pitch via speaker dimension 1. 6 4 2 0 2 4 6 
+
+> Speaker dimension 2
+> 30
+> 40
+> 50
+> 60
+> 70
+> Intensity (dB)
+> Low intensity utterance
+> High intensity utterance
+
+(b) Varying intensity via speaker dimension 2. 
+
+Fig. 3: The effect on a particular characteristic as its correlated speaker dimension is varied on test data. The blue line shows the average characteristic value as the dimension is changed by a factor of the standard deviations across all utterances in the test set. The shaded area indicates one standard deviation in characteristic value. The dotted-green and dashed-orange lines show changes for specific utterances that have, respectively, high and low characteristic values before modification. manipulate a speaker to have a pitch anywhere between 100 and 300 Hz. Listening to these modified utterances, the pitch is being changed because the speaking style is being changed at a frame-level. But there are limits: pitch values start to plateau as content dimension 12 is moved excessively far from the data distribution. For the low-pitch example (orange), we see that when dimension 12 is reduced below a factor of −5 of the standard deviations, the pitch suddenly increases. This is due to significant noise being added by the vocoder, since the modified SSL sequence is so far out of distribution. When we consider the average intensity, on the other hand, it has a very strong correlation with dimension 2 in the C
+
+subspace (Fig. 1a). Looking at Fig. 2b, we see that we can manipulate intensity to be between 20 and 85 dB. The standard deviation around the average trend for the intensity values is much tighter than that of Fig. 2a, showing, on average, much greater precision and generalisation of control. We once again see the plateauing trend: the effectiveness of our manipulation diminishes the greater the change is. We also considered the other speech characteristics (not shown here). We find that in all cases, the plateauing trend is present and that manipulation is possible for each characteristic by altering the corresponding dimension in C. When we push the manipulation to extremes, we find that the vocoder starts to add significant noise to the synthesised output, similar to the observations for pitch in Fig. 2a. 
+
+C. Speaker subspace analysis 
+
+Next, we manipulate the characteristics using the S sub-space. Fig. 3 shows how both pitch and intensity can be manipulated. We also once again test the manipulation of extreme individual utterances. We first consider average pitch, as seen in Fig. 3a. Pitch has the stronger correlation when compared to intensity for the S space (Fig. 1b). We see here that dimension 1 is able to manipulate the pitch to be between 100 and 250 Hz, on average. We can see that the trend is again plateauing. In addition to pitch being strongly correlated to dimension 1, so is the gender of the speaker, where previously, at a frame-level in C it was not. This also shows that when the pitch becomes sufficiently modified, it can affect the gender of the speaker, which is also what we hear when listening to the 5 0 5    
+
+> 6
+> 4
+> 2
+> 0
+> 2
+> 4
+> 6
+> Content dimension 12  Low Pitch
+> 505
+> Speaker dimension 1
+> Mean Pitch
+> 505
+> High Pitch
+> 72.9
+> 102.6
+> 132.4
+> 162.2
+> 192.0
+> 221.8
+> 251.5
+> 281.3
+> 311.1
+> 340.9
+> Pitch (Hz)
+> Influence over Pitch
+
+(a) Varying pitch via content dimension 12 and speaker dimension 1. 5 0 5     
+
+> 6
+> 4
+> 2
+> 0
+> 2
+> 4
+> 6
+> Content dimension 2
+> Low Intensity
+> 505
+> Speaker dimension 2
+> Mean Intensity
+> 505
+> High Intensity
+> 2.85
+> 11.97
+> 21.08
+> 30.19
+> 39.31
+> 48.42
+> 57.53
+> 66.64
+> 75.76
+> 84.87
+> Intensity (dB)
+> Influence over Intensity
+
+(b) Varying intensity via content and speaker dimensions 2. 
+
+Fig. 4: The effect on a specific characteristic as its correlated content and speaker dimensions are varied. The middle contours show the average characteristic value as the dimensions are varied across all test utterances. The other two contour plots show the characteristic change for speakers with naturally high or low characteristic values. synthesised audio (see demo page). Over the same standard deviation range, [−6, 6] , there is not enough noise added to skew measurements or break the vocoder. This is in contrast to the manipulation of pitch through the C space, where the vocoder failed at the extremes (Fig. 2a). When we look at the average intensity control in Fig. 3b, the first thing we see is that the trend is no longer plateauing but linear (within this range of α = [ −6, 6] that we consider for all our intervention experiments). Intensity is very weakly correlated with a dimension in S (Fig. 1b), which suggests why the average intensity range that it can be modified here, over the same standard deviation range, is only between 50 and 65 dB, compared to C, where it was 20 to 85 dB (Fig. 2b). We again also tested all the other characteristics and found that most can also be modified using S to some degree, but with lesser effect and more noise. This is especially the case for spectral rolloff and ZCR, even though both are correlated to the same extent in both subspaces. Average pitch was the only characteristic to have a plateauing trend over these ranges, though; all others were linear. The formants could not be controlled through the S space. 
+
+D. Simultaneous modification of content and speaker spaces 
+
+Finally, we modify C and S at the same time to determine if they still have an effect on the characteristics when cou-pled together. Fig. 4 shows the results of these simultaneous interventions using heatmap contour plots. We first consider the effect on pitch (Fig. 4a). We can clearly see that, on average (middle plot), there is a distinct separation between two areas: a light and a dark area. Lighter colours indicate high pitch values, while darker colours show low pitch. The total range that can be achieved is between 70 and 340 Hz, a much wider range than any of our previous modifications (Figs. 2a and 3a). We also see that neither dimension overpowers the other for control. However, it is evident that the speaker dimension has primary influence, since if we keep the content dimension at a certain value and vary only the speaker dimension, we get a larger range of change than if the speaker dimension were kept constant. This means that we gain relative control over pitch. There are, however, limits, as shown when trying to alter the extreme low-or high-pitched utterances (left and right in figure). Again, through combined control, the vocoder can be pushed out of its operating region; this is seen in the low-pitched utterance when the content dimension 12 is lower than α = −0.4, causing a sudden increase in pitch. When considering the average intensity in Fig. 4b, we again see there are two intense areas. This time, however, the content dimension takes the lead over the speaker dimension, which aligns with the correlation analysis in Fig. 1 and the individual control interventions in Figs. 2b and 3b. Nevertheless, using the two subspaces in tandem, we can achieve intensities between 2 and 85 dB, which is wider than when the C-space is modified in isolation (Figs. 2b). We also tested the remaining speech characteristics, and they all show two extreme areas that we can move between with varying influence balance between the two subspaces, giving relative control over the characteristic. These results show that control over speech characteristics is possible over a wide characteristic value range. VI. C ONCLUSION 
+
+In this study, we investigated how speech characteristics are structured within content and speaker subspaces of SSL representations, specifically utilising an SVD-based factorisa-tion approach on WavLM features. Our correlation analysis revealed that both the content and speaker subspaces captured distinct speaker characteristics within isolated, individual di-mensions. Intervention experiments demonstrated that these dimensions can be manipulated independently and in combina-tion to control specific speech characteristics without disrupt-ing the lexical content. Our goal here was to characterise the respective content and speaker subspaces, but our work opens up the possibility of voice manipulation through a simple, training-free approach. Formalising this will be the focus of future work. REFERENCES [1] A. Pasad, J.-C. Chou, and K. Livescu, “Layer-wise analysis of a self-supervised speech representation model,” in Proc. IEEE ASRU , 2021. [2] A. Pasad, B. Shi, and K. Livescu, “Comparative layer-wise analysis of self-supervised speech models,” in Proc. IEEE ICASSP , 2023. [3] C.-C. Chiu, J. Qin, Y. Zhang, J. Yu, and Y. Wu, “Self-supervised learning with random-projection quantizer for speech recognition,” in 
+
+Proc. ICML , 2022. [4] T. Lepage and R. Dehak, “Self-supervised learning for speaker recog-nition: A study and review,” Speech Communication , 2025. [5] M. Baas, B. van Niekerk, and H. Kamper, “Voice conversion with just nearest neighbors,” in Proc. Interspeech , 2023. [6] H. Kamper, B. van Niekerk, J. Za¨ ıdi, and M.-A. Carbonneau, “LinearVC: Linear transformations of self-supervised features through the lens of voice conversion,” in Proc. Interspeech , 2025. [7] H. L. Xinyuan, Z. Cai, L. Zhang, L. P. Garc´ ıa-Perera, B. Sisman, S. Khudanpur, N. Andrews, and M. Wiesner, “Universal speech content factorization,” arXiv preprint arXiv:2603.08977 , 2026. [8] S. Chen, C. Wang, Z. Chen, Y. Wu, S. Liu, Z. Chen, J. Li, N. Kanda, T. Yoshioka, X. Xiao, J. Wu, L. Zhou, S. Ren, Y. Qian, Y. Qian, J. Wu, M. Zeng, X. Yu, and F. Wei, “WavLM: Large-scale self-supervised pre-training for full stack speech processing,” IEEE Journal of Selected Topics in Signal Processing , 2022. [9] E. Schreirer and M. Slaney, “Construction and evaluation of a robust multifeature speech/music discriminator,” in Proc. IEEE ICASSP , 1997. [10] Y. Soeta and H. Kagawa, “Subjective preferences for birdsong and insect song in equal sound pressure level,” Applied Sciences , 2020. [11] M. Farr´ us, J. Hernando, and P. Ejarque, “Jitter and shimmer measure-ments for speaker recognition,” in Proc. Interspeech , 2007. [12] F. Jalali-najafabadi, C. Gadepalli, D. Jarchi, and B. M. G. Cheetham, “Acoustic analysis and digital signal processing for the assessment of voice quality,” Biomedical Signal Processing and Control , 2021. [13] P. Boersma and D. Weenink, “PRAAT, a system for doing phonetics by computer,” Glot International , 2001. [14] Y. Jadoul, B. Thompson, and B. de Boer, “Introducing Parselmouth: A Python interface to Praat,” Journal of Phonetics , 2018. [15] B. McFee, C. Raffel, D. Liang, D. Ellis, M. Mcvicar, E. Battenberg, and O. Nieto, “librosa: Audio and music signal analysis in Python,” in 
+
+Proc. SciPy , 2015. [16] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel, B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer, R. Weiss, V. Dubourg, J. Vander-plas, A. Passos, D. Cournapeau, M. Brucher, M. Perrot, and ´ E. Duch-esnay, “Scikit-learn: Machine learning in Python,” Journal of Machine Learning Research , 2011. [17] J. Kahn, M. Rivi` ere, W. Zheng, E. Kharitonov, Q. Xu, P.-E. Mazar´ e, J. Karadayi, V. Liptchinsky, R. Collobert, C. Fuegen, T. Likhomanenko, G. Synnaeve, A. Joulin, A. Mohamed, and E. Dupoux, “Libri-light: A benchmark for ASR with limited or no supervision,” in Proc. IEEE ICASSP , 2020. [18] V. Panayotov, G. Chen, D. Povey, and S. Khudanpur, “Librispeech: An ASR corpus based on public domain audio books,” in Proc. IEEE ICASSP , 2015. [19] G. James, D. Witten, T. Hastie, R. Tibshirani, and J. Taylor, An Introduction to Statistical Learning with Applications in Python , 1st ed. Springer, 2023. [20] J. Cohen, “A coefficient of agreement for nominal scales,” Educational and Psychological Measurement , 1960. [21] J. Kong, J. Kim, and J. Bae, “HiFi-GAN: Generative adversarial net-works for efficient and high fidelity speech synthesis,” in Proc. NeurIPS ,2020.
