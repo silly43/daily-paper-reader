@@ -1,0 +1,1159 @@
+Title: MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning
+
+URL Source: https://arxiv.org/pdf/2606.22220v2
+
+Published Time: Wed, 24 Jun 2026 01:14:52 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning 
+
+## Wenhao Wang, Franziska Boenisch, Michael Backes, Adam Dziedzic 
+
+{wenhao.wang, boenisch, backes, adam.dziedzic }@cispa.de 
+
+## CISPA Helmholtz Center for Information Security 
+
+## Abstract 
+
+Memorization in machine learning models enables high per-formance on rare in-distribution samples by capturing their atypical patterns. However, it also causes harmful retention of noise and outliers, degrading generalization. While mem-orization has been extensively studied in both supervised and self-supervised learning in the vision domain, it remains unexplored in multi-modal contrastive learning. We address this gap by introducing MultiMem, the first metric designed to quantify memorization in multi-modal contrastive learn-ing. Through our systematic analysis, we demonstrate that cross-modal semantic misalignment has the strongest influ-ence on memorization, with text being the dominant modality driving memorization, followed by video, image, and au-dio. We show that targeted augmentations applied across all modalities effectively reduce memorization as measured by our MultiMem metric and improve model performance. Overall, this work establishes the first framework for measur-ing and mitigating memorization in multi-modal contrastive learning, preventing harmful data retention and contributing to higher-performing models. 
+
+## 1. Introduction 
+
+Multi-modal contrastive learning aims to jointly process and align data from diverse modalities such as images, text, audio, and video. This paradigm has demonstrated high per-formance across a wide range of tasks, including image cap-tioning [ 11 , 17 , 37 ], visual question answering [ 25 , 29 , 33 ], zero-shot classification [ 19 , 22 , 36 ], and cross-modal re-trieval [ 1, 2, 30 ]. These successes underscore the benefits of integrating heterogeneous modalities, which lead to im-proved generalization and more robust semantic represen-tations. However, it remains unclear to what extent memo-rization contributes to the observed improvements, motivat-ing the need to better understand the role of memorization 
+
+> Accepted at the 19th European Conference on Computer Vision (ECCV), 2026.
+
+in multi-modal contrastive learning. Previous studies have shown that in both supervised learning (SL) [ 5, 6 ] and self-supervised learning (SSL) [ 26 ], model’s memorization of training data points is essential for generalization. In the vision domain, it has been observed that models tend to memorize outliers in the training set, which correspond to mislabeled samples in SL [ 3, 5 ] and atypical examples in SSL [ 27 ]. A similar study of memorization in multi-modal contrastive learning is lacking. Multi-modal learning introduces unique challenges not seen in uni-modal settings [ 13 –15 ], such as inconsistencies between modalities, varying noise levels, and the lack of explicit modality-alignment. These factors limit the direct transfer of insights from uni-modal studies to multi-modal learning. Importantly, most existing definitions of memo-rization are designed for specific modalities and tasks, for example, based on label prediction in SL [ 5] or augmen-tation matching in SSL [ 27 ] for the vision domain. Such definitions do not generalize well to the multi-modal set-ting: Measuring memorization within individual modalities or among a limited subset of all the modalities used to train a given multi-modal model, fails to capture multi-modal mem-orization faithfully . Therefore, a new definition tailored to multi-modal contrastive learning is needed. There are only two studies on measuring memorization for the bi-modal image-text models like CLIP [ 22 ], namely 
+
+d ´ej `a vu memorization [ 12 ] and CLIPMem [28 ]. The d ´ej `a vu 
+
+method measures memorization by masking one modality and testing whether the model can recover the other, while CLIPMem measures memorization by comparing alignment between model pairs trained with or without a given sample (i.e., an image-text pair). However, these methods are not directly applicable to multi-modal contrastive learning which involves additional modalities, such as video and audio. To address these limitations, we propose MultiMem : ageneral-purpose metric for measuring memorization in multi-modal contrastive learning , which is designed for any number and type of modalities involved. Specifically, MultiMem builds on the leave-one-out framework [ 5, 27 , 34 ]for measuring memorization and compares the outputs of a 1
+
+> arXiv:2606.22220v2 [cs.CV] 23 Jun 2026
+
+pair of multi-modal models trained with and without a given multi-modal sample on this particular sample. Through our extensive empirical study on multiple contrastively trained multi-modal models such as Audio-CLIP [10 ] (including Audio, Image, and Text modalities), 
+
+AVT-CLIP (a custom-built tri-modal model with Audio, 
+
+Video, and Text modalities, introduced in Section 4.1), and AVIT-CLIP (a custom-built quad-modal model with 
+
+Audio, Video, Image, and Text modalities, introduced in Section 4.1), we observe that: (1) Global memorization, mea-sured across all modalities, behaves differently from mem-orization observed within any subset of modalities and to capture the full extent of a model’s memorization, we need to assess memorization jointly across all its modalities. (2) The most memorized samples are not simply mis-captioned, as reported for the most memorized samples in text-image mod-els [ 28 ], but semantically misaligned across all modalities: the information provided by different modalities not only contradict each other but is mostly semantically not related .(3) Multi-modal models increasingly memorize cross-modal patterns, rather than primarily text as observed in bi-modal models [ 28 ]. This suggests that multi-modal models’ mem-orization behavior is closer aligned with the one of SSL models [ 27 ] which were shown to memorize pattern, rather than SL models which memorize labels [5]. Based on the above observations, we explore different strategies to mitigate memorization and improve general-ization in multi-modal models. In-training: we actively measure memorization during multi-modal training to iden-tify the top-memorized samples. At a given stage of training, we re-group the top-memorized samples into new batches and continuously apply noise-based augmentations (only) to them in subsequent training steps. Post-training: we 
+
+identify highly memorized samples post-training and then fine-tune the model on the remaining training samples. Our experiments show that both approaches substantially reduce memorization by up to 20% , while increasing model perfor-mance up to 8% for retrieval, 10% for zero-shot, and 4% 
+
+for downstream classification tasks. In summary: • We propose MultiMem , a metric that measures memoriza-tion by comparing the outputs of a pair of multi-modal models trained with and without a given multi-modal sam-ple on this particular sample • Our analysis with MultiMem demonstrates the key differ-ences between multi-modal models with more than two modalities and previously studied bi-modal or uni-modal models , including distinct memorization patterns, a shift from label-driven to pattern-driven memorization behavior, and a stronger influence of cross-modal semantic inconsis-tency on memorization. • Based on our findings, we propose two approaches to mit-igate memorization and improve generalization in multi-modal models : either during training or after training. Our extensive experiments show that both methods effectively reduce the model’s memorization level and lead to sub-stantial improvements in performance. 
+
+## 2. Background and Related Work 
+
+Multi-Modal Contrastive Learning. Contrastive Language-Image Pretraining (CLIP ) [22 ] proposed ajoint training framework for image and text modalities, where text and image representations are aligned using the InfoNCE loss [ 20 ]. CLIP enables strong zero-shot image classification by using language prompts as class representations, and supports accurate image-text retrieval through a shared representation space. VideoCLIP [ 31 ]extends CLIP to the video domain by substituting the original image encoder with a transformer-based video encoder. The video is first uniformly sampled into a fixed number of frames, which are individually processed by a frozen convolutional neural network (CNN) with a trainable multi-layer perceptron (MLP) to obtain frame-level representations. These frame-level representations are then encoded as tokens by a transformer and aggregated by applying average pooling to obtain the representation for the entire video. This modification enables the model to process temporal-visual information while retaining a contrastive training framework. VideoCLIP shows strong performance in zero-shot video understanding tasks, such as action recognition and video-text retrieval, without task-specific supervision. AudioCLIP [ 10 ] extends CLIP to the audio domain by introducing an additional audio encoder based on an ESResNeXt convolutional network [ 9 ]. The audio input is first converted into a log-mel spectrogram and then projected into a shared representation space, where it is aligned with image and text representations. The model is trained using the same contrastive objective as CLIP, encouraging alignment between semantically related audio, image, and text samples, while pushing apart mismatched pairs. As the model incorporates one more modality than CLIP, the training loss is computed as the sum of the pairwise InfoNCE losses ( i.e., Audio-Image, 
+
+Audio-Text, and Image-Text). AudioCLIP performs well in zero-shot audio classification and cross-modal retrieval tasks, outperforming previous methods that rely on task-specific supervision. 
+
+Memorization in SL & SSL. Although memorization has been associated with potential risks of sensitive information leakage, multiple studies [ 5 , 23 , 27 ] in supervised learning (SL) and self-supervised learning (SSL) suggest that mem-orization also plays an important role in the generalization of models. They also show that both SL and SSL models tend to memorize atypical samples during training, while the nature of these atypical samples varies. For example, in 2SL, memorization often correlates with mislabeled or noisy samples, while in SSL, it tends to occur on images with rare or distinctive visual patterns [18, 26]. A common definition of label memorization in SL is the leave-one-out style definition by [6]: 
+
+Mem (A, S, i ) = Pr   
+
+> f←A (S)
+
+[f (xi) = yi]
+
+− Pr 
+
+> g←A (S\i)
+
+[g (xi) = yi] , (1) where A is a training algorithm (here for models f and g)and S\i represents train set S without the data point (xi, y i).In this definition, a data point is considered memorized if the model’s prediction of the point’s ground truth training label changes significantly based on whether the point was or was not used to train the model. For SSL, where no labels are available, [ 27 ] proposed a new metric: 
+
+SSLMem (S, Aug, i ) = E
+
+> g∼A (S\i)
+> xi′,x i′′ ∼Aug (xi)
+
+[d (g (xi′) , g (xi′′ ))] 
+
+− E 
+
+> f∼A (S)
+> xi′,x i′′ ∼Aug (xi)
+
+[d (f (xi′) , f (xi′′ ))] ,(2) where d(·, ·) represents a distance function, commonly the 
+
+ℓ2 distance, and Aug (·) is the augmentation sets used during training. Here, the expectation captures the alignment of the respective models as the expected Euclidean distance between their representations of two augmentations of the same sample. Then, SSLMem is computed as the alignment difference between the model pairs trained with and without that sample. Both metrics are limited to uni-modal models, making them unsuitable for evaluating memorization effects in multi-modal settings. 
+
+Memorization in Bi-modal Contrastive Models. [ 12 ]proposed a retrieval-based evaluation protocol to detect 
+
+d ´ej `a vu memorization in vision-language models. Their method assesses whether a model trained on one data sub-set can retrieve objects that appeared only in a different, held-out subset, thereby indicating unintended memoriza-tion across disjoint training sets. However, these approaches only offer qualitative evaluations of whether memorization occurs, without providing a quantitative measurement of how strongly a model memorizes specific data points across all modalities. The only existing method for quantifying memorization across the text and vision modalities is CLIPMem [ 28 ]. It computes the difference in alignment scores between a pair of CLIP-style models, trained with and without this data point. Formally, CLIPMem is defined as: 
+
+CLIPMem (I, T ) = Aalign (f, I, T ) − A align (g, I, T ),(3) where f and g are CLIP models trained on datasets with and without a data point (I, T ), consisting of an Image and 
+
+Text (caption). The alignment score Aalign is computed as the cosine similarity between image and text representations, corrected by subtracting similarities to unrelated text and image samples (i, t ) that were not used in training f or g.
+
+Aalign (f, I, T ) = E   
+
+> (I′,T ′)∼Aug (I,T )
+
+[sim (fimg (I′), f txt (T ′))] 
+
+−E 
+
+> t
+
+[sim (fimg (I), f txt (t))] − E 
+
+> i
+
+[sim (fimg (i), f txt (T ))] ,(4) where (i, t ) is a set of randomly chosen image and text test-ing samples that were not used in training f or g. CLIPMem indicates that samples where caption and corresponding im-age do not align well (so-called mis-captioned samples) are most memorized. While CLIPMem is limited to measuring bi-modal memorization between Image and Text modalities, our MultiMem metric generalizes it to capture memorization among many more diverse modalities .
+
+## 3. Our MultiMem Metric 
+
+The memorization metrics discussed in the previous section are tailored to uni-modal or bi-modal models and do not account for global interactions among all modalities in a multi-modal setting. We demonstrate empirically in Figure 1 that these approaches are insufficient for faithfully capturing memorization in multi-modal models. Therefore, we intro-duce our MultiMem metric, which is specifically designed to quantify global memorization across all modalities. We build MultiMem on the leave-one-out framework [ 5 ,27 , 28 ] to measure memorization with respect to a pair of models, f and g. Here, model f is trained on the full training set S, while model g is trained on the subset S\i where the multi-modal sample xi was removed. Given the complex interactions among modalities in multi-modal contrastive learning, we first require a proxy that quantifies the quality of the model’s representations of an input data point xi which can be compared between models. Since the learning objective in multi-modal con-trastive learning is to make the representations returned by the model on the different modalities of the same sample as consistent as possible, and the representations of unrelated examples as far as possible, we consider cross -modal consis-tency ( CM C ) on the sample itself vs. on unrelated samples as a proxy. We calculate the cross-modal consistency as fol-lows: Given a model with n different modalities, we define the representation space Φ as: 
+
+Φxi =
+
+
+
+ˆϕ1
+
+ˆϕ2
+
+...
+
+ˆϕn
+
+ ∈ Rn×d, (5) 3where ϕj ∈ Rd is the representation of xi in the j-th modal-ity, and ˆϕj denotes its ℓ2-normalized version. Then we define cross-modal consistency CM C (i, H ) on data point xi (with respect to a held-out set H) as: 
+
+CM C (i, H ) = 12 E
+
+> (·)′∼Aug
+
+1⊤
+
+> n
+
+
+
+Φx′
+
+> i
+
+Φ⊤
+
+> x′
+> i
+
+
+
+1n
+
+− 12 E
+
+> h∈H
+> (·)′∼Aug
+
+1⊤
+
+> n
+
+
+
+Φx′
+
+> i
+
+Φ⊤
+
+> h′
+
+
+
+1n,(6) where 1n denotes an all-ones vector of length n and (·)′ ∼
+
+Aug indicates that we compute an expectation over repre-sentations computed on different random augmentations of the samples, increasing stability of the metric. The held-out set are randomly picked from non-trained samples in the validation set of training datasets. The first term of the score captures the similarities across all modality pairs within the representation space of xi. The second term measures the distribution differences across all modality pairs between the representation space of xi and held-out samples h ∈ H. Subtracting these terms yields a score that is high when the modalities of xi are strongly aligned with each other, and weakly aligned with unrelated examples, modeling the model’s intended objective. Finally, we define the MultiMem of data point xi as the 
+
+CM C difference between model f and model g:
+
+MultiMem (i, H, f ) = CM C   
+
+> f∼S
+
+(i, H ) − CM C 
+
+> g∼S\i
+
+(i, H ). (7) Unlike prior approaches that focus on pairwise similari-ties between modalities, this resulting metric leverages the entire distribution of representations across all modalities. This provides a principled way to evaluate global memoriza-tion in multi-modal models, capturing interactions beyond single modality pairs. 
+
+## 4. Evaluating Multi-Modal Memorization 
+
+We first describe the setup for our experiments and then analyze memorization in multi-modal contrastive learning using our MultiMem. 
+
+4.1. Experimental Setup 
+
+Models and Datasets. We run our experiments on the following models: OpenCLIP [ 4], AudioCLIP [ 10 ], Video-CLIP [ 31 ], and our custom-built AVT-CLIP ( Audio + Video + Text) and AVIT-CLIP ( Audio + Video + Image + Text). The detailed encoder architectures and training datasets used are shown in Table 1 while other training details and hyper-parameters are presented in Table 8 in Section A.2. 
+
+Dataset Splitting. Following [ 27 ], we divide each training dataset into three subsets: (1) a candidate set SC , which is used only for training model f and whose memorization we want to measure; (2) an independent set SI , which is used only for training model g; and (3) a shared set SS , which is used for training both f and g. SC and SI have an equal number of training samples to ensure that f and g are trained with the same number of data points. Detailed splits are provided in Table 7 in Section A.2. We report the average MultiMem score on SC as the memorization for model f .Next, we discuss evaluation metrics. 
+
+Evaluation Metrics. In prior work, retrieval tasks typi-cally refer to settings where one modality is used to retrieve another, which we refer to as the uni-to-uni retrieval setting. To enable the measurement of models’ performance on more than two modalities, we introduce a multi-to-uni retrieval task for evaluation. In this task, representations from mul-tiple source modalities are combined to retrieve data points from a target modality. Specifically, we compute a retrieval score by summing the pairwise cosine similarities between the target modality representation and each source modality representation. A higher retrieval score shows better seman-tic alignment between target and input modalities. A retrieval is considered successful if the ground-truth target sample appears among the top N retrieved samples with the highest retrieval scores; otherwise, it is considered a failure. The overall retrieval success rate on the test set is used to evalu-ate the model’s performance. In the following experiments, we set N = 5 for both uni-to-uni and multi-to-uni retrieval tasks. The final retrieval accuracy is reported using TOP @5(T @5 ). Note that retrieval tasks are deterministic with no randomness in inference, so we only report the results once instead of an average with standard deviation. We further rely on linear probing and zero-shot classification tasks to assess model performance under our mitigations. For the zero-shot classification, we follow the settings introduced in the CLIP paper [ 22 ], where classification is performed by computing the similarity between label embeddings and the representations of the target modality. 
+
+4.2. Measuring Multi-modal Memorization 
+
+Memorization Distribution. We study the memorization distribution of training samples on three multi-modal mod-els: AudioCLIP, AVT-CLIP, and AVIT-CLIP. For Audio-CLIP, we quantify the memorization level with three metrics: (1) tri-modal MultiMem with all three modalities, (2) the CLIPMem (based on Image-Text pair), and (3) bi-modal MultiMem restricted to the remaining modality pairs (Audio-Image and Audio-Text). We present our results in Figure 1. Overall, MultiMem in Figure 1a is able to measure the high-est level of memorization on SC when compared with the baselines on the same AudioCLIP model. Additionally, it separates the scores for SC and SS significantly better, in-dicating a more sensitive measurement of memorization. 4Model Modality Encoder Training Set CLIP Image + Text ViT + Transformer COCO [16] VideoCLIP Video + Text (CNN + Transformer) + Transformer MSR-VTT [32] AudioCLIP Audio + Image + Text ESResNeXt + ViT + Transformer UrbanSound8K [24]+ Spectrogram AVT-CLIP Audio + Video + Text ESResNeXt + (CNN + Transformer) + Transformer MSR-VTT AVIT-CLIP Audio + Video + Image + Text ESResNeXt + (CNN + Transformer) + ViT + Transformer MSR-VTT + Frame-image ImageBind-AVIT Audio + Video + Image + Text ESResNeXt + (CNN + Transformer) + ViT + Transformer MSR-VTT + Frame-image 
+
+Table 1. The encoder architecture and datasets used by the models in this paper. 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00    
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.= 0.332
+> SIAvg.=-0.318
+> SSAvg.= -0.005
+
+(a) MultiMem (AIT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00     
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.214
+> SIAvg.=-0.203
+> SSAvg.=0.004
+
+(b) MultiMem (AI). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00     
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.227
+> SIAvg.=-0.218
+> SSAvg.=-0.001
+
+(c) MultiMem (AT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00     
+
+> CLIPMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.222
+> SIAvg.=-0.219
+> SSAvg.=0.001
+
+(d) CLIPMem (IT). 
+
+Figure 1. Memorization should be measured on all modalities instead of only on modality pairs . (a) Our MultiMem scores across all three modalities (AIT: Audio, Image, and Text) for AudioCLIP. We quantify pairwise memorization on all modality pairs: (b) Audio-Image and (c) Audio-Text (with MultiMem), and (d) Image-Text (with CLIPMem). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00 
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> Random Avg.= 0.332
+> Balanced Avg.= 0.334
+> OoD Avg.= 0.327
+
+(a) 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00  
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> 64 Avg.= 0.332
+> 128 Avg.= 0.332
+> 256 Avg.= 0.333
+
+(b) 
+
+Figure 2. Our MultiMem is robust to hyperparameters H.
+
+(a) We varied the composition of H from 128 randomly chosen samples (used in metric) to 128 samples with class balance and 128 OoD samples from the AudioSet dataset [ 7]. (b) We varied the number of samples in H.
+
+We observe the same trends for AVT-CLIP and AVIT-CLIP, as we show in Figure 7, Figure 8, and Figure 10 in Sec-tion A.3. These findings suggest that in multi-modal models with more than two modalities, a memorization metric that jointly considers all modalities is necessary for a more accu-rate assessment of memorization. 
+
+Robustness to Held-out Set. To examine the sensitivity of our MultiMem metric to the choice of held-out set H, we evaluate the metric using several selection strategies for H:(1) randomly sampled data points, (2) data points chosen to achieve balanced class representation, and (3) samples drawn from an entirely different dataset within the same domain. Furthermore, we investigate the robustness of the metric to the size of H by varying the number of data points included in the set. The results in Figure 2 show that our MultiMem is robust to the choice of H in both size and composition. 
+
+Size of |SC | 500 1000 1500 2000 Avg. MultiMem 0.405 0.408 0.409 0.408 
+
+Table 2. Our MultiMem is robust to dataset splitting ratio. 
+
+Robustness to Dataset Splitting Ratio To validate whether our Multimem is robust to dataset splitting ratio (i.e. 
+
+SS /S C ratio), we added additional experiments on AVT-CLIP with different dataset splitting ratios on the MSRVTT dataset. We use SC = SI ∈ { 500 , 1500 , 2000 } in addition to the baseline setting of SC = SI = 1000 reported in the main paper, while keeping SS fixed at 6000 throughout. Our results in Table 2 highlight that reported memorization remains the same over all setups. 
+
+Highly Memorized Samples. We examine the highly memorized samples in VideoCLIP and AVT-CLIP to gain deeper insights into the underlying causes of strong memo-rization. For VideoCLIP, we find that, similar to the results reported in the work of [ 28 ], videos with misaligned cap-tions and visual content ( i.e., mis-captioned videos) tend to experience a higher level of memorization. However, in AVT-CLIP, we find that highly memorized samples are typically those with semantic misalignment across multiple modali-ties. These findings highlight the importance of evaluating cross-modal consistency rather than focusing only on text quality. Examples of the most memorized samples for Video-CLIP and AVT-CLIP are shown in Figure 11 in Section A.3 and a complete list of the top 10 most memorized samples (including their audio and video content and full captions) is 5provided in the supplementary material. 
+
+Memorization and Generalization. To investigate the relationship between generalization and memorization in multi-modal models, we introduce Gaussian noise with different strengths into the representations of all modal-ities during training as augmentations to control the model’s memorization level, as proven successful by previous works [ 21 , 28 , 35 ]. The models’ generaliza-tion is evaluated by the T @5 retrieval task introduced in Section 4.1. More specifically, we implement the experiments on VideoCLIP (bi-modal), AudioCLIP (tri-modal) and AVIT-CLIP (quad-modal) by injecting Gaus-sian noise with mean μ = 0 and standard deviations σ =[0 .025 , 0.050 , 0.075 , 0.100 , 0.125 , 0.150 , 0.175 , 0.200] .In Figure 3a, when the noise strength is lower than 0.1, we observe that a higher Video-Text MultiMem results in a worse downstream performance, and vice versa. This aligns with the results reported by [ 28 ] for bi-modal memorization in CLIP models. Moreover, our results in Figure 3b and Figure 3c show that AudioCLIP’s generalization (trained on three modalities) is negatively correlated with the tri-modal 
+
+MultiMem. In contrast, there is no consistent correlation between generalization and memorization when applying CLIPMem or the bi-modal version of MultiMem, highlight-ing again the need to take all modalities into account when assessing multi-modal memorization. We also observe simi-lar trends in AVIT-CLIP for Figure 3d. Together, these re-sults suggest that partial-modal memorization is insufficient to explain how memorization contributes to generalization in multi-modal models and highlight again the benefits of a truly multi-modal metric. Finally, when the noise strength exceeds 0.1, the perfor-mance of both AudioCLIP and VideoCLIP begins to decline, while global memorization increases. This occurs because excessive noise destroy the semantic consistency between modalities. As a result, learning across modalities becomes more difficult, leading to increased global memorization and weakening the model’s generalization. 
+
+Impact of Augmentations. We further study how ap-plying augmentations (injecting noise) to different modality configurations ( e.g., single modality, a subset of all modali-ties, and all modalities) during training influences the gener-alization of multi-modal models. We adopt SSLMem from [ 27 ] to measure memorization for single modality and use MultiMem for multi-modal memorization. The results in Table 3 on AudioCLIP suggest that applying augmentations to a single modality slightly increases the SSLMem of all modalities and enhances the model’s global generalization. However, it also leads to increased memorization in modality pairs that do not involve the augmented modality, which in turn degrades the performance of retrieval tasks based on that modality pair (as indicated by the underlined values in the tables). Moreover, applying augmentations to a subset of the modalities reduces both global and pairwise memorization, resulting in improved performance over all retrieval tasks. Notably, applying augmentations to all modalities always yields the best performance and the lowest memorization (as reflected by the bolded values in the tables), which pro-vides a foundation for the MultiMem-based memorization mitigation strategies that we introduce in Section 5. 
+
+Memorization with ImageBind. We train an additional AVIT model using the ImageBind-loss [ 8]. Unlike our setup, which performs pairwise alignment of all modalities, the ImageBind-loss takes the image representation from a pre-trained image encoder as a reference and aligns all other modalities exclusively to this representation. During train-ing, the image encoder remains frozen. Our results show that training with the ImageBind loss leads to increased global memorization (0.571 versus 0.488 achieved with our origi-nal AVIT) and reduced performance in retrieval task (36.5% versus 48.2% our AVIT model). These results suggest that training with a pairwise alignment across all modalities is beneficial as it reduces memorization and improves gener-alization. In Section A.4, we present further details and an additional results on how the integration of more modalities during training improves generalization. 
+
+Balancing Per-Modality Memorization. Given the dif-ferences in how each modality contributes to the overall memorization (see for example Table 3 for AudioCLIP), we further show that enforcing a balanced memorization dis-tribution among modalities during training leads to a lower overall memorization and improved model performance. We apply ℓ1-normalized weights of [0 .332 , 0.324 , 0.344] , which are negatively correlated to their memorization contribu-tion [0 .222 , 0.227 , 0.214] , to the three modality pairs (I-T, A–T, A–I) for AudioCLIP training. The new trained model achieves a lower MultiMem of 0.290 (compare to 0.332 of baseline model), a 3.2% improvement in retrieval task per-formance and a more balanced bi-modal MultiMem level of [0 .192 , 0.195 , 0.193] for three modality pairs (I-T, A–T, A–I). We present the full setup in Section A.4. 
+
+Memorization Behavior in Multi-modal, SSL and SL. 
+
+We apply UnitMem [ 26 ] to analyze where inside the models memorization happens. We compare AudioCLIP (tri-modal), and compare it with CLIP (bi-modal), SL, and SSL mod-els (uni-modal). All these models are trained with Urban-Sound8K dataset + spectrogram images. A higher average UnitMem at a given layer indicates a greater contribution of that layer to the model’s global memorization. We observe that, compared to CLIP, the vision encoder in AudioCLIP aligns more with SSL, rather than falling 60.000 
+
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> 0.200
+
+Strength of Noise 
+
+0.32 
+
+0.33 
+
+0.34 
+
+0.35 
+
+0.36 
+
+> Memorization
+
+0.31 
+
+0.32 
+
+0.33 
+
+0.34 
+
+0.35 
+
+0.36 
+
+> T@5 Acc.
+
+(a) 0.000 
+
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> 0.200
+
+Strength of Noise 
+
+0.26 
+
+0.27 
+
+0.28 
+
+0.29 
+
+0.30 
+
+0.31 
+
+0.32 
+
+0.33 
+
+> Memorization
+
+0.37 
+
+0.38 
+
+0.39 
+
+0.40 
+
+0.41 
+
+0.42 
+
+0.43  
+
+> T@5 Acc.
+
+(b) 0.000 
+
+0.025 
+
+0.050 
+
+0.075 
+
+0.100 
+
+0.125 
+
+0.150 
+
+0.175 
+
+0.200 
+
+Strength of Noise 
+
+0.16 
+
+0.17 
+
+0.18 
+
+0.19 
+
+0.20 
+
+0.21 
+
+0.22 
+
+0.23  
+
+> Memorization
+> AI
+> AT
+> IT
+
+0.37 
+
+0.38 
+
+0.39 
+
+0.40 
+
+0.41 
+
+0.42 
+
+0.43 
+
+> T@5 Acc.
+
+(c) 0.000 
+
+0.025 
+
+0.050 
+
+0.075 
+
+0.100 
+
+0.125 
+
+0.150 
+
+0.175 
+
+0.200 
+
+Strength of Noise 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+0.55 
+
+> Memorization
+> AVIT
+> AVT
+> AIT
+
+0.44 
+
+0.46 
+
+0.48 
+
+0.50 
+
+0.52  
+
+> T@5 Acc.
+
+(d) 
+
+Figure 3. Generalization of multi-modal models is negatively correlated with the models’ global memorization. (a) MultiMem (VT) vs. generalization in VideoCLIP. (b) tri-modal MultiMem (AIT) vs. generalization in AudioCLIP. (c) bi-modal MultiMem (AI, AT, IT) vs. generalization in AudioCLIP. (d) Quad-modal MultiMem (AVIT) and tri-modal MultiMem (AVT, AIT) vs. generalization in AVIT-CLIP. Augmented modality IT MultiMem AT MultiMem AI MultiMem AIT MultiMem ASSLMem ISSLMem TSSLMem T@5(%) I-T T@5(%) A-T T@5(%) A-I T@5(%) AI-T None 0.222 0.227 0.214 0.332 0.188 0.191 0.210 33.1 30.8 26.5 36.9 Audio 0.235 0.201 0.204 0.320 0.199 0.196 0.214 32.2 31.3 27.1 38.2 Image 0.201 0.235 0.188 0.312 0.194 0.210 0.217 33.8 30.0 28.3 39.0 Text 0.181 0.191 0.216 0.294 0.196 0.201 0.235 34.4 32.1 26.3 39.8 Audio + Image 0.200 0.199 0.199 0.299 0.207 0.219 0.233 33.9 31.8 27.5 39.4 Audio + Text 0.187 0.187 0.192 0.283 0.228 0.211 0.244 34.9 32.6 28.0 40.7 Image + Text 0.180 0.189 0.174 0.271 0.211 0.240 0.251 35.4 32.3 29.1 42.1 Audio + Image + Text 0.177 0.184 0.169 0.264 0.236 0.262 0.269 35.7 33.0 29.5 43.1 
+
+Table 3. Adding augmentations to different modalities in AudioCLIP. We add random Gaussian noise with μ = 0 , σ = 0 .1 to the representations as augmentations. A: Audio, I: Image, and T: Text. 1 2 3 4 5 6 7 8 9 10 11 12 
+
+Layer 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Avg. UnitMem  CLIP LP. Acc. = 55.79%
+> AudioCLIP LP. Acc. = 64.01%
+> SSL LP. Acc. = 62.73%
+> Supervised LP. Acc. = 81.05%
+
+Figure 4. UnitMem: AudioCLIP is more aligned with SSL. 
+
+between SSL and SL as CLIP. This suggests that the intro-duction of the audio modality partially reduces the dom-inance of the text modality ( e.g., with labels or captions) during training. Thereby, the memorization behaviors of the vision encoder shifts from being label-driven (in SL) or caption-driven (in CLIP), to pattern-driven as in SSL [ 27 ]. We hypothesize that this is because the learning signals in multi-modal models no longer come from a single super-vision source ( e.g., labels or captions). Instead, the model focuses more on the shared or similar semantic patterns 
+
+across modalities such as audio, vision, and text. There-fore, the pattern underlying this shift is the strong semantic interdependence across modalities in multi-modal models. 
+
+## 5. Our Mitigation Strategies 
+
+Our findings from the previous section highlight that mit-igating cross-modal memorization over all modalities can improve the generalization of multi-modal models. Based on 7this motivation, we design two methods built on MultiMem to mitigate high memorization, either during or post training. 
+
+In-Training Mitigation. Instead of applying noise to the entire dataset, which harms overall performance and incurs additional computational overhead, we selectively add Gaus-sian noise ( μ = 0 , σ = 0 .1) as augmentation only to the representations of the most memorized samples during train-ing to mitigate memorization. Specifically, at every 10-epoch interval ( i.e., epochs 10, 20, ..., 90), we use MultiMem to measure memorization for all training samples and select the top 5% most memorized samples. The 5% ratio is se-lected based on our experiments in Figure 13 in Section A.4, which show that this ratio yields the highest model perfor-mance and the lowest memorization level. We then aggregate these samples into new mini-batches and apply noise-based augmentations to their representations during the following training steps while keeping training unaltered for all other mini-batches. In our experiment, we train AudioCLIP on the Urban-Sound8K + Spectrogram dataset for 100 epochs with our mitigation in place and report performance on the retrieval task in Figure 5a, the classification task on UrbanSound8K in Figure 5b, and the zero-shot classification task on Au-dioSet [7] in Figure 5c. The results yield two main findings. First, applying our mitigation strategy at any training stage effectively reduces global memorization and improves overall performance across all three tasks. Second, model performance in all three tasks follows a trend of initial improvement, followed by a plateau, then further improvement, with a slight decline observed at epoch 90. We attribute this pattern to the timing of memorization mitigation. Applying mitigation too early in training may fail to accurately capture the most memo-rized samples, as the model is far from convergence. As a result, highly memorized examples that are not identified in the early stages may continue to increase the model’s memorization in later epochs, thereby harming generaliza-tion. Applying memorization mitigation too close to the end of training may lead to insufficient decoupling of modality correlation for highly memorized samples. This is the reason why the performance drop is observed at epoch 90 compared to epoch 80. These results indicate that applying noise-based augmentation near the end of training ( e.g., at 80%) to a selected ratio of most memorized samples according to Mul-tiMem can effectively reduce memorization and enhance generalization. In Section A.4, we provide further insights into this strategy. (1) We compare the mitigation effects be-tween using noise-based augmentation and gradient clipping (which is widely used in Differential Privacy area) for most memorized samples. (2) We compare it with an alternative approach that directly removes a fixed proportion of the most memorized samples during training. The results show that our strategy yields better performance improvements. (1) We also examine the effect of repeatedly applying this strat-egy at multiple stages of training. The findings indicate that repeated application leads to additional gains compared to single use. However, the improvement becomes marginal when applied more than twice. 
+
+Post-Training Mitigation. Post-training, we first train the model and then use MultiMem to identify the most memo-rized samples. Then, we remove these samples from training and fine-tune the model for some additional steps on the remaining data. In our experiments, we train an AudioCLIP model on the UrbanSound8K dataset for 100 epochs, then, we use MultiMem to identify the most memorized samples and remove the top [50, 100, 150, 200, 300, 500, 700] of them. Finally, we fine-tune the model with the remaining dataset for an additional 25 epochs. For comparison, we additionally employ three alternative strategies for selecting samples to remove as baselines: using CLIPMem , comput-ing the sum of cosine similarities across modality pairs, and 
+
+randomly selecting samples. We show the results in Figure 5 (lower row) for retrieval, classification on UrbanSound8K, and zero-shot tasks accu-racy on AudioSet. We observe that regardless of the method used to mitigate the model’s memorization (apart from ran-dom ), the model’s performance improves to varying degrees when fewer than 500 samples are removed on all three tasks. Among them, MultiMem yields the best performance im-provement, followed by the cosine similarity and CLIPMem .In contrast, the baseline of removing random samples does not show a clear trend of performance improvement. This highlights the effectiveness of MultiMem in post-training memorization mitigation and improving generalization. 
+
+Regularization vs Memorization Mitigation. Prior work has shown that Gaussian noise may act as a regularizer that independently improves performance rather than genuinely mitigating memorization [ 5, 6, 35 ]. To verify that the ob-served performance improvements and memorization mit-igation are actually from our proposed mitigation strategy rather than the generic regularization effect of noise, we con-ducted new experiments where we add the same amount of noise to different types of samples. 1) most memorized sam-ples and least memorized samples identified by MultiMem, 2) samples with highest gradients or loss, 3) randomly se-lected samples. We report the performance gains on retrieval, linear probing, and zero-shot tasks, and MultiMem. If the improvements were only due to generic regularization rather than memorization mitigation, we would observe similar results over all setups. However, the results in the Table 4 show discrepancies: 1) adding noise to random samples does not change performance significantly. 2) Adding noise to least memorized samples slightly degrades performance. 3) 80 10 20 30 40 50 60 70 80 90 
+
+Regrouping Epoch 
+
+> 0.26
+> 0.27
+> 0.28
+> 0.29
+> 0.30
+> 0.31
+> 0.32
+> 0.33
+> Memorization
+> 37
+> 38
+> 39
+> 40
+> 41
+> 42
+> 43
+
+(a) Retrieval (T@5%) 0 10 20 30 40 50 60 70 80 90 
+
+Regrouping Epoch  
+
+> 0.26
+> 0.27
+> 0.28
+> 0.29
+> 0.30
+> 0.31
+> 0.32
+> 0.33
+> 76.5
+> 77.0
+> 77.5
+> 78.0
+> 78.5
+> 79.0
+> 79.5
+> 80.0
+> 80.5
+> 81.0
+
+(b) Linear Probing (%) 0 10 20 30 40 50 60 70 80 90 
+
+Regrouping Epoch  
+
+> 0.26
+> 0.27
+> 0.28
+> 0.29
+> 0.30
+> 0.31
+> 0.32
+> 0.33
+> 26
+> 28
+> 30
+> 32
+> 34
+> Acc.
+
+(c) Zero-shot (%) 0
+
+> 50
+> 100
+> 150
+> 200
+> 300
+> 500
+> 700
+
+# of Sample removed 
+
+> 35.5
+> 36.0
+> 36.5
+> 37.0
+> 37.5
+> 38.0
+> 38.5
+> 39.0
+> Acc. (%)
+> MultiMem
+> Cos. Simi.
+> ClipMem
+> Random
+
+(d) Retrieval (T@5%) 0
+
+> 50
+> 100
+> 150
+> 200
+> 300
+> 500
+> 700
+
+# of Sample removed   
+
+> 75.0
+> 75.5
+> 76.0
+> 76.5
+> 77.0
+> 77.5
+> 78.0
+> 78.5 MultiMem
+> Cos. Simi.
+> ClipMem
+> Random
+
+(e) Linear Probing (%) 0
+
+> 50
+> 100
+> 150
+> 200
+> 300
+> 500
+> 700
+
+# of Sample removed   
+
+> 24
+> 25
+> 26
+> 27
+> 28
+> 29
+> 30 MultiMem
+> Cos. Simi.
+> ClipMem
+> Random
+
+(f) Zero-shot (%) 
+
+Figure 5. Mitigation Strategies. The first row shows the impact of in-training memorization mitigation at different training epochs, evaluated on (a) retrieval, (b) linear probing, and (c) zero-shot classification tasks. The second row presents the effect of post-training mitigation with increasing number of most memorized samples removed, analogously for (d) retrieval, (e) linear probing, and (f) zero-shot classification tasks. 0 10 20 30 40 50 60 70 80 90 
+
+Regrouping Epoch 
+
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> Modality Distance
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> Modality Gap
+
+(a) In-training Mitigation 0
+
+> 50
+> 100
+> 150
+> 200
+> 300
+> 500
+> 700
+
+# of Sample removed  
+
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> Modality Distance
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> Modality Gap
+
+(b) Post-training Mitigation 
+
+Figure 6. Average modality representation distance for 1% most memorized samples versus averagae modality gap for all training samples before and after mitigation 
+
+Our MultiMem approach has much higher performance gains compared to loss-based and gradient-based meth-ods and also achieves the best memorization mitigation. 
+
+This shows that our reported improvements indeed stem from memorization removal and not general regularization. 
+
+Insights into Mitigation. We further compared the aver-age modality distance between the representations of each modality for the most memorized samples, as well as the average modality gap [ 15 ] across all samples in the training set, before and after mitigation. Results in Figure 6 show that: (1) The model struggles to align semantic misaligned samples through generalization, thereby memorizes those datapoints so that results in an extremely low average sample modality distance. This shows that semantic misalignment is the key driver of memorization in multi-modal models. (2) Both of our mitigation methods increase the average modality distance of the most memorized samples thereby reducing the memorization level of the model. However, in-training mitigation performs better than post-training mit-igation, and therefore yields a greater improvement in the generalization of the model. At the same time, in-training mitigation preserves the original average modality gap better. This is consistent with the conclusion in [ 15 ], that preserving the original modality gap tends to yield better model per-formance. These results show that our mitigation methods address the fundamental cause of memorization in multi-modal models, i.e., controlling the average modality distance for semantic misaligned samples. 
+
+Impact of Noise Injection vs. Augmentation. Prior work [ 21 , 28 , 35 ] has shown that Gaussian noise can indeed 9Post-training In-training Mitigation Retrieval ↑ Linear Prob. ↑ Zero-Shot ↑ Mem. ↓ Retrieval ↑ Linear Prob. ↑ Zero-Shot ↑ Mem. ↓
+
+None 36.9% 76.7% 25.4% 0.332 36.9% 76.7% 25.4% 0.332 Random 37.1% 76.8% 25.5% 0.330 37.2% 76.9% 25.5% 0.329 MultiMem (least) 36.6% 76.6% 25.2% 0.336 36.1% 76.1% 25.0% 0.338 Gradient 38.1% 77.8% 29.4% 0.307 40.4% 78.8% 31.1% 0.281 Loss 38.4% 77.9% 29.6% 0.308 39.9% 78.9% 30.9% 0.280 
+
+MultiMem (most) 39.3% 78.6% 30.5% 0.282 43.3% 80.8% 35.1% 0.262  
+
+> Table 4. Regulation verification by comparing MultiMem with other mitigation strategy.
+
+Post-training In-training Mitigation Retrieval ↑ Linear Prob. ↑ Zero-Shot ↑ Mem. ↓ Retrieval ↑ Linear Prob. ↑ Zero-Shot ↑ Mem. ↓
+
+None 36.9% 76.7% 25.4% 0.332 36.9% 76.7% 25.4% 0.332 
+
+Noise 39.3% 78.6% 30.5% 0.282 43.3% 80.8% 35.1% 0.262 
+
+Augmentation 38.8% 78.4% 30.0% 0.288 42.5% 80.1% 34.0% 0.269  
+
+> Table 5. Modality-specific augmentation vs. noise injection.
+
+serve as a generic augmentation strategy across modalities. This, however, raises the concern of whether such noise genuinely achieves an effect comparable to that of modality-specific augmentations, and whether it yields a similar level of memorization mitigation. To address this concern, we con-duct an additional control experiment on AudioCLIP. Specif-ically, we replace noise injection with modality-specific aug-mentations: Gaussian blur (sigma=(0.1, 2.0)) combined with random color jitter (transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)) for the image modality, synonym substitution (p=0.2) for captions, and time shifting (+10%) for audio. As shown in Table 5, mitigation guided by these modality-specific aug-mentations remains effective, achieving performance com-parable to that of noise injection. This indicates that the mitigation effect arises from the underlying mechanism it-self rather than from the generic regularization properties of noise. 
+
+## 6. Conclusions 
+
+We propose MultiMem, a novel metric for measuring and characterizing memorization in multi-modal contrastive learning with arbitrary modality configurations. Our results show clear differences compared to commonly studied bi-modal models like CLIP. We find that training with multiple modalities not only mitigates the single-modality dominance in global memorization observed in bi-modal models, but also makes the contrastive models’ memorization behavior more similar to that of self-supervised learning. Specif-ically, text modality, which has been viewed in previous work [ 28 ] as similar to labels, is no longer the only reason for high memorization when it does not align with other modalities. Inconsistency in semantic information between multiple modality pairs is instead the leading cause of high memorization. Finally, we show that our proposed Mul-tiMem metric can be used to inform mitigations against memorization, either during training or after training, that improve generalization more efficiently than other metrics. 
+
+## Acknowledgments 
+
+This research was funded by the Deutsche Forschungsge-meinschaft (DFG, German Research Foundation), Project number 550224287. Franziska Boenisch received funding from the European Research Council (ERC) under the Eu-ropean Union’s Horizon Europe research and innovation programme (grant agreement No 101220235). We would like to acknowledge our sponsors, who support our research with financial and in-kind contributions: OpenAI and G-Research. We also thank members of the SprintML group for their feedback. 
+
+## References       
+
+> [1] Alberto Baldrati, Marco Bertini, Tiberio Uricchio, and Al-berto Del Bimbo. Conditioned and composed image retrieval combining and partially fine-tuning clip-based features. In
+> Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 4959–4968, 2022. 1 [2] Alberto Baldrati, Marco Bertini, Tiberio Uricchio, and Al-berto Del Bimbo. Effective conditioned and composed image retrieval combining clip-based features. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 21466–21474, 2022. 1 [3] Peter L Bartlett, Philip M Long, G ´abor Lugosi, and Alexander Tsigler. Benign overfitting in linear regression. Proceedings
+
+10 of the National Academy of Sciences , 117(48):30063–30070, 2020. 1 [4] Mehdi Cherti, Romain Beaumont, Ross Wightman, Mitchell Wortsman, Gabriel Ilharco, Cade Gordon, Christoph Schuh-mann, Ludwig Schmidt, and Jenia Jitsev. Reproducible scal-ing laws for contrastive language-image learning. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 2818–2829, 2023. 4 [5] Vitaly Feldman. Does learning require memorization? a short tale about a long tail. In Proceedings of the 52nd Annual ACM SIGACT Symposium on Theory of Computing , pages 954–959, 2020. 1, 2, 3, 8 [6] Vitaly Feldman and Chiyuan Zhang. What neural networks memorize and why: Discovering the long tail via influence estimation. Advances in Neural Information Processing Sys-tems , 33:2881–2891, 2020. 1, 3, 8 [7] Jort F. Gemmeke, Daniel P. W. Ellis, Dylan Freedman, Aren Jansen, Wade Lawrence, R. Channing Moore, Manoj Plakal, and Marvin Ritter. Audio set: An ontology and human-labeled dataset for audio events. In Proc. IEEE ICASSP 2017 , New Orleans, LA, 2017. 5, 8 [8] Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. Imagebind: One embedding space to bind them all. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15180–15190, 2023. 6 [9] Andrey Guzhov, Federico Raue, J ¨orn Hees, and Andreas Den-gel. Esresnet: Environmental sound classification based on visual domain models. In 2020 25th international conference on pattern recognition (ICPR) , pages 4933–4940. IEEE, 2021. 2[10] Andrey Guzhov, Federico Raue, J ¨orn Hees, and Andreas Dengel. Audioclip: Extending clip to image, text and audio. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 976–980. IEEE, 2022. 2, 4 [11] Xiaowei Hu, Zhe Gan, Jianfeng Wang, Zhengyuan Yang, Zicheng Liu, Yumao Lu, and Lijuan Wang. Scaling up vision-language pre-training for image captioning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 17980–17989, 2022. 1 [12] Bargav Jayaraman, Chuan Guo, and Kamalika Chaudhuri. D ´ej `a vu memorization in vision-language models. In Pro-ceedings of the 38th International Conference on Neural In-formation Processing Systems , pages 50722–50749, 2024. 1, 3[13] Songtao Li and Hao Tang. Multimodal alignment and fusion: A survey. arXiv preprint arXiv:2411.17040 , 2024. 1 [14] Paul Pu Liang, Amir Zadeh, and Louis-Philippe Morency. Foundations & trends in multimodal machine learning: Prin-ciples, challenges, and open questions. ACM Computing Surveys , 56(10):1–42, 2024. [15] Victor Weixin Liang, Yuhui Zhang, Yongchan Kwon, Serena Yeung, and James Y Zou. Mind the gap: Understanding the modality gap in multi-modal contrastive representation learning. Advances in Neural Information Processing Systems ,35:17612–17625, 2022. 1, 9 [16] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll ´ar, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In 
+
+Computer vision–ECCV 2014: 13th European conference, zurich, Switzerland, September 6-12, 2014, proceedings, part v 13 , pages 740–755. Springer, 2014. 5 [17] Wei Liu, Sihan Chen, Longteng Guo, Xinxin Zhu, and Jing Liu. Cptr: Full transformer network for image captioning. 
+
+arXiv preprint arXiv:2101.10804 , 2021. 1 [18] Casey Meehan, Florian Bordes, Pascal Vincent, Kamalika Chaudhuri, and Chuan Guo. Do ssl models have d ´ej `a vu? a case of unintended memorization in self-supervised learn-ing. Advances in Neural Information Processing Systems , 36: 42775–42798, 2023. 3 [19] Norman Mu, Alexander Kirillov, David Wagner, and Sain-ing Xie. Slip: Self-supervision meets language-image pre-training. In European conference on computer vision , pages 529–544. Springer, 2022. 1 [20] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Repre-sentation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748 , 2018. 2 [21] Xiaokang Peng, Yake Wei, Andong Deng, Dong Wang, and Di Hu. Balanced multimodal learning via on-the-fly gradient modulation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8238–8247, 2022. 6, 9 [22] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PmLR, 2021. 1, 2, 4 [23] Ildus Sadrtdinov, Nadezhda Chirkova, and Ekaterina Lobacheva. On the memorization properties of contrastive learning. arXiv preprint arXiv:2107.10143 , 2021. 2 [24] Justin Salamon, Christopher Jacoby, and Juan Pablo Bello. A dataset and taxonomy for urban sound research. In Proceed-ings of the 22nd ACM international conference on Multimedia ,pages 1041–1044, 2014. 5 [25] Haoyu Song, Li Dong, Weinan Zhang, Ting Liu, and Furu Wei. Clip models are few-shot learners: Empirical studies on vqa and visual entailment. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 6088–6100, 2022. 1 [26] Wenhao Wang, Adam Dziedzic, Michael Backes, and Franziska Boenisch. Localizing memorization in ssl vision encoders. In Proceedings of the 38th International Con-ference on Neural Information Processing Systems , pages 60475–60516, 2024. 1, 3, 6 [27] Wenhao Wang, Muhammad Ahmad Kaleem, Adam Dziedzic, Michael Backes, Nicolas Papernot, and Franziska Boenisch. Memorization in self-supervised learning improves down-stream generalization. In ICLR , 2024. 1, 2, 3, 4, 6, 7 [28] Wenhao Wang, Adam Dziedzic, Grace C Kim, Michael Backes, and Franziska Boenisch. Captured by captions: On memorization and its mitigation in clip models. In The Thir-teenth International Conference on Learning Representations ,2025. 1, 2, 3, 5, 6, 9, 10 
+
+11 [29] Yanan Wang, Michihiro Yasunaga, Hongyu Ren, Shinya Wada, and Jure Leskovec. Vqa-gnn: Reasoning with multi-modal knowledge via graph neural networks for visual ques-tion answering. In Proceedings of the IEEE/CVF Interna-tional Conference on Computer Vision , pages 21582–21592, 2023. 1 [30] Keyu Wen, Jin Xia, Yuanyuan Huang, Linyang Li, Jiayan Xu, and Jie Shao. Cookie: Contrastive cross-modal knowledge sharing pre-training for vision-language representation. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 2208–2217, 2021. 1 [31] Hu Xu, Gargi Ghosh, Po-Yao Huang, Dmytro Okhonko, Armen Aghajanyan, Florian Metze, Luke Zettlemoyer, and Christoph Feichtenhofer. Videoclip: Contrastive pre-training for zero-shot video-text understanding. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing , pages 6787–6800, 2021. 2, 4 [32] Jun Xu, Tao Mei, Ting Yao, and Yong Rui. Msr-vtt: A large video description dataset for bridging video and language. In 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , pages 5288–5296, 2016. 5 [33] Antoine Yang, Antoine Miech, Josef Sivic, Ivan Laptev, and Cordelia Schmid. Zero-shot video question answering via frozen bidirectional language models. Advances in Neural Information Processing Systems , 35:124–141, 2022. 1 [34] Jiayuan Ye, Anastasia Borovykh, Soufiane Hayou, and Reza Shokri. Leave-one-out distinguishability in machine learn-ing. In The Twelfth International Conference on Learning Representations , 2023. 1 [35] Ziqi Yuan, Baozheng Zhang, Hua Xu, Zhiyun Liang, and Kai Gao. Openvna: A framework for analyzing the behavior of multimodal language understanding system under noisy scenarios. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations) , pages 9–18, 2024. 6, 8, 9 [36] Renrui Zhang, Wei Zhang, Rongyao Fang, Peng Gao, Kun-chang Li, Jifeng Dai, Yu Qiao, and Hongsheng Li. Tip-adapter: Training-free adaption of clip for few-shot classifi-cation. In European conference on computer vision , pages 493–510. Springer, 2022. 1 [37] Y Zhou and G Long. Style-aware contrastive learning for multi-style image captioning. In EACL 2023-17th Conference of the European Chapter of the Association for Computational Linguistics, Findings of EACL 2023 , 2023. 1 
+
+12 A. Appendix 
+
+A.1. Hardware Usage & Calculation Overhead 
+
+Two devices are used for all experiments mentioned in this paper: a cloud server with four A100 GPUs and a local workstation with Intel 13700k CPU, Nvidia 4090 graphics card, a total of 10Tb storage space and 64GB of RAM. Applying In-training mitigation strategy once during train-ing will bring 0.70% (2.6 min out of 372 min) overhead in total time usage, without requiring any additional mem-ory. Applying Post-training mitigation strategy will bring 0.55% (2.1 min out of 372 min) overhead in total time us-age for memorization measurement, without requiring any additional memory. Measuring MultiMem for all samples in candidate set SC
+
+averagely brings 0.48% overhead in total time usage, without requiring any additional memory. Since the computational complexities of our MultiMem on both the number of modal-ities and the number of training samples are O(n2), which matching the complexity of multi-modal contrastive learn-ing. Therefore, the relative overhead remains essentially unchanged as modalities or data scale up. 
+
+A.2. Extended Experiment Setup 
+
+Glossary. For the reader’s convenience, we provide a glos-sary with all important notation used in the main paper in Table 6. 
+
+Dataset Split. Table 7 provides a detailed summary of the splitting SC , SI , and SS discussed in main paper. 
+
+Training Setup. Table 8 provide a detailed summary of the training configurations for all models used in our experi-ments. As stated in the main paper, all settings for existing models follow the default configurations of their respective original implementations. 
+
+AVT-CLIP and AVIT-CLIP. For AVT-CLIP, the video and text modalities are first pre-trained for 20 epochs, after which the audio modality is introduced. The model is then trained jointly on all three modalities for an additional 100 epochs. For AVIT-CLIP, the image and text modalities are first pre-trained for 20 epochs, after which the video and audio modalities are introduced and trained jointly on all four modalities for an additional 200 epochs. 
+
+Experimental Setup for UnitMem. In this experiment, we use the original UrbanSound8K dataset as the source of both audio inputs and text labels. Following the evaluation setup of AudioCLIP, we also use spectrograms of the audio signals as image inputs. In the SL setting, we employ a ViT encoder followed by a two-layer MLP classifier, trained with spectrogram images as inputs and text labels as supervision. For SSL settings, we employ the ViT-based DINO frame-work and train the ViT encoder on only spectrogram images. Both the image augmentation sets and hyperparameters fol-low the default configurations of their respective original implementations. 
+
+A.3. Extended Experiment Results 
+
+Measuring Memorization in AVT-CLIP and AVIT-CLIP. 
+
+For AVT-CLIP, we measure the memorization with two met-rics: 1) tri-modal MultiMem with all three modalities and 2) bi-modal MultiMem of all modality pairs (A-V, A-T, and V-T). The results are shown in Figure 7, which aligns with the results for AudioCLIP in the main paper. For AVIT-CLIP, we also measure the memorization with two metrics: 1) quad-modal MultiMem with all four modalities and 2) tri-modal MultiMem for VideoCLIP and AVT-CLIP ( i.e., AVT MultiMem and AIT MultiMem). The results are shown in Figure 8. We can find that when AVT-CLIP or AudioCLIP is extended to a quad-modal setting, the previously used tri-modal MultiMem becomes insufficient in capturing both the distribution of memorized samples and the accurate mea-surement of memorization levels. This again highlights the necessity of using all modalities to measure memorization. 
+
+Measuring Memorization AVIT-CLIP with synthesized images. We use Stable Diffusion v1.5 to generate images from the captions of the MSRVTT dataset to construct a dataset with true four modalities: (1) audio, (2) video, (3) image, and (4) text. We adopt this setup based on the assump-tion that using newly generated images with styles different from the video frames can mitigate the potential unnecessary memorization caused by overly similar visual styles between images and video frames. Note that we synthesize the im-ages for the MSRVTT dataset because there are no natural 4-modality datasets. A few examples of generated images are presented in Figure 9. The results are shown in Figure 10, we find the memo-rization distribution fully follow the same trend observed in Figure 8. 
+
+Top 10 most memorized samples for VideoCLIP and AVT-CLIP. Unlike images, videos contain dynamic visual and audio signals, which cannot be effectively displayed in the paper. To address this, We provide two examples here and others are shown in supplementary materials. As shown in Figure 11a, video3405 is a completely dark-screen video, providing almost no visual semantic information relevant to its caption: “a man talking about hydroponic fluid pres-sure.” As a result, it ranks first in VideoCLIP with a high MultiMem of 0.529. However, its audio clearly mentions “hydroponic fluid pressure”, which aligns well with the cap-tion. Therefore, its MultiMem score in AVT-CLIP is only 13 Symbol Explanation A Audio modality V Video modality I Image modality T Text modality AVT-CLIP Variant of CLIP with Audio + Video + Text modalities AVIT-CLIP Variant of CLIP with Audio + Video + Image + Text modalities H Held-out test set used for MultiMem Aug Augmentation set for data points Table 6. We provide an overview on the important notation in main paper. 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00 
+
+MultiMem    
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.408
+> SIAvg.=-0.008
+> SSAvg.=-0.377
+
+(a) MultiMem (AVT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00 
+
+MultiMem     
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.261
+> SIAvg.= -0.249
+> SSAvg.=0.006
+
+(b) MultiMem (AV). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00 
+
+MultiMem    
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.280
+> SIAvg.=-0.271
+> SSAvg.=0.003
+
+(c) MultiMem (AT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00 
+
+MultiMem     
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.=0.275
+> SIAvg.=-0.283
+> SSAvg.=0.004
+
+(d) MultiMem (VT). 
+
+Figure 7. Measuring memorization only on modality pair is insufficient for AVT-CLIP trained on MSRVTT. (a) Measure memorization across all three modalities (Audio, Video, and Text) of AudioCLIP. (b)-(d) Measure pairwise memorization on all modality pairs (Audio-Video, Audio-Text, and Video-Text)of AVT-CLIP. 
+
+Dataset Total SS SI SC
+
+COCO 123287 65000 5000 5000 MSR-VTT 10000 7000 1000 1000 UrbanSound8K 8732 6000 1000 1000 
+
+Table 7. Detailed dataset split used in this paper. 
+
+0.561, ranking 36th. Another example is video6659 shown in Figure 11b, where the visual content features two ani-mated characters, while the audio contains a conversation between two male-like voices. The title, “a character hunting for love”, is poorly related to both the video and audio. All three modalities are semantically misaligned. As a result, this sample receives a high MultiMem score of 0.712 in AVT-CLIP, ranking second among all samples. 
+
+A.4. Additional Experiments 
+
+ImageBind Experiment Setup We follow the original de-sign of ImageBind that leverage the image embedding as the unified anchor space. All other modalities are aligned to this 14 SL-ViT DINO CLIP VideoCLIP AudioCLIP AVT-CLIP AVIT-CLIP Training Epochs 100 300 100 100 100 100 200 Warm-up Epochs 5 20 10 10 10 10 20 Batch Size 1024 1024 512 256 64 64 64 Optimizer AdamW AdamW AdamW Adam Adam Adam Adam Learning rate 1e-3 2e-3 1e-3 1e-4 1e-4 1e-4 1e-4 Learning rate Schedule Cos. Decay Cos. Decay Cos. Decay Cos. Decay Cos. Decay Cos. Decay Cos. Decay 
+
+Table 8. Training Setup and Hyperparameter for all models used in this work. 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00                            
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Frequency
+> SCAvg.= 0.520
+> SIAvg.= -0.509
+> SSAvg.= -0.012
+> (a) MultiMem (AVIT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Frequency
+> SCAvg.= 0.387
+> SIAvg.= -0.382
+> SSAvg.= 0.001 (b) MultiMem (AVT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Frequency
+> SCAvg.= 0.340
+> SIAvg.= -0.338
+> SSAvg.= -0.004 (c) MultiMem (AIT).
+
+Figure 8. Measuring memorization only on partial modality is insufficient for AVIT-CLIP. (a) Measure memorization across all four modalities (Audio, Video, Image, and Text) of AudioCLIP. (b) Measure memorization with AVT MultiMem. (c) Measure memorization with AIT MultiMem. 
+
+space through image-to-modality contrastive supervision. We keep the audio, video, and text encoders unchanged as random initialization, but replace the image encoder with our own pretrained image encoder. The encoder produces a normalized image representation that serves as the refer-ence for all contrastive objectives. This design removes all non-image pairwise losses (e.g., audio–video, audio–text, and video-text), ensuring that the image modality forms the central representation space. We use Adam optimizer with a learning rate of 1e-4 and train for 200 epochs. The batch size and dataset split follow the implementation of AVIT-CLIP. 
+
+Enhancing Generalization by Introducing new Modal-ities. Our results in Table 9 show that, when extending VideoCLIP to AVT-CLIP, the accuracy of V-T retrieval task increases. This is because adding a new modality to Video-CLIP reduces the text modality’s dominance in memoriza-tion, yielding a more balanced memorization distribution across modalities. So that increasing model’s generalization. This is consistent with our claims in Section 4.2. Similar trend could be observed in extending AVT-CLIP or Audio-CLIP to AVIT-CLIP. Note that the AVIT-CLIP always has the best performance in all retrieval tasks (as reflected by the boldface values in the Table 9). 
+
+Effects of Augmenting Different Ratios of Most Memo-rized Samples. In Figure 13, we test the effect of applying noise-based augmentation to different proportions of the most memorized samples during training. The results show that when noise-based augmentation is applied to less than 5% of the most memorized samples, global memorization decreases rapidly, and overall performance improves signif-icantly. However, once the proportion exceeds 5%, both memorization and performance begin to stabilize as more samples are augmented. This indicates that decoupling the cross-modal associations of non-highly memorized samples is not effective in mitigating global memorization or improv-ing performance. In contrast, applying augmentation only to the most memorized samples identified by MultiMem achieves the best results with significantly lower computa-tional cost. 
+
+UnitMem results on COCO. In this experiment, we use the original COCO dataset as the source of both image inputs and text captions. Speeches generated from COCO captions by open-source Tortoise TTS are used as audio modality. For SL, the model is trained using a multi-label classification setting with the cross-entropy loss with COCO dataset. All other settings for SSL, CLIP and AudioCLIP are similar to those in the experiments with UrbanSound8K dataset. We adopt this setup based on the assumption that captions and the audio generated from them share higher cross-modal semantic alignment. This helps mitigate the potential impact 15 a cat and a monkey 
+
+> are playing
+
+Video Frame  Caption  Diffusion Image 
+
+> elephants are lying down on grassland and relaxing
+> a few horses are riding down a track
+
+Figure 9. Samples of images generated by Stable Diffusion v1.5. 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00    
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Frequency
+> SCAvg.= 0.488
+> SIAvg.= -0.479
+> SSAvg.= -0.004
+
+(a) MultiMem (AVIT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00     
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Frequency
+> SCAvg.= 0.366
+> SIAvg.= -0.350
+> SSAvg.= 0.001
+
+(b) MultiMem (AVT). 1.00 0.75 0.50 0.25 0.00 0.25 0.50 0.75 1.00     
+
+> MultiMem
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Frequency
+> SCAvg.= 0.321
+> SIAvg.= -0.308
+> SSAvg.= -0.004
+
+(c) MultiMem (AIT). 
+
+Figure 10. AVIT-CLIP trained with synthesized images follows the same trend with results trained with video-frame images. (a) Measure memorization across all four modalities (Audio, Video, Image, and Text) of AudioCLIP. (b) Measure memorization with AVT MultiMem. (c) Measure memorization with AIT MultiMem. 
+
+of weak semantic alignment among spectrograms, audio, and textual labels in the UrbanSound8K dataset. Note that the synthesized audio for COCO only used as extended evidence to verify the trend observed on the UrbanSound8K dataset in main paper. The results are shown in Figure 12. Despite semantic alignment across modalities being strengthened, we observe that the behavior of AudioCLIP’s vision encoder remains more similar to SSL than to SL. This fully aligns with the result of that implemented on UrbanSound8K dataset in main paper. 
+
+Mitigating Memorization During Training. In addition to the experiments presented in Section “ In-training Mitiga-tion ”, we implement three additional experiments to further validate the effectiveness of this approach. In the first experiment, we compared the different effects of noise-based augmentation and gradient clipping during the in-training mitigation process. The results in Figure 14 shows that gradient clipping needs a much larger learning rate than noise-injection to mitigate the memorization level of the model. Besides, the best performance of gradient clipping (41.7% +4.8% to 36.9% baseline) is worse than noise-injection(43.3% +6.7% to 36.9% baseline) In the second experiment, we still use MultiMem to mea-sure the memorization of all training samples at every 10-epoch interval. However, instead of regrouping the top 5% most memorized samples into new batches with noise-based augmentation, we directly remove them from the training set. As shown in Figure 15, the performance of in-training removal first increases and then drops. This performance drop may be due to similar reasons observed in in-training regrouping ,i.e., the learning rate becomes too low in the later stages of training, and the remaining number of epochs is insufficient to fully eliminate the negative impact intro-duced by previously highly memorized samples. Moreover, we observe that the maximum performance gain achieved by in-training removal is smaller than that of in-training regrouping , further demonstrating the effectiveness of our proposed strategy. In the third experiment, we further examine that whether applying the in-training regrouping strategy multiple times will provide additional memorization mitigation and per-formance improvement or not. Specifically, we apply the 16 Caption:  a man describing a hydraulic tube 
+
+Audio:  ……There is hydro fluid pressure push…… (a) Video3405 Caption:  a character hunting for love 
+
+Audio:  Two male-like voices are speaking.  (b) Video6659 
+
+Figure 11. The most memorized samples for VideoCLIP and AVT-CLIP.                                                              
+
+> Model VT MultiMem AVT MultiMem AIT MultiMem AVIT MultiMem ASSLMcm VSSLMcm ISSLMcm TSSLMcm T@5(%) V-T T@5(%) AV-T T@5(%) AI-T T@5(%) AVI-T VideoCLIP 0.347 ----0.179 -0.206 32.7 ---AVT-CLIP 0.275 0.408 --0.238 0.251 -0.266 33.9 40.4 --AudioCLIP --0.332 -0.188 -0.191 0.210 --36.9 -Imagebind-AVIT 0.289 0.414 0.339 0.571 0.220 0.231 0.238 0.242 33.0 35.1 32.9 36.5 AVIT-CLIP 0.254 0.366 0.321 0.488 0.244 0.255 0.260 0.267 36.6 41.3 37.0 48.2
+
+Table 9. Introducing a new modality helps reduce the global memorization, and in turn, improves the model’s generalization. 
+
+in-training regrouping strategy twice: once at the end of the warm-up phase (epoch 10) and once near the end of training (epoch 80). The results in Table 10 show that applying the 
+
+in-training regrouping strategy multiple times can further mitigate model memorization and yield better generalization. However, using it three times can hardly achieve a significant performance improvement compared to using it twice, so using it twice at the beginning and end of the training is the best choice considering that it does not bring many extra calculations. 
+
+Model Size and Dataset Size. We added additional exper-iments on CLIP models of varying sizes trained on the same data, as well as models of the same size trained on different amount of the training data. The results in Table 11 show that larger models exhibit higher memorization levels when trained on the same data, and also reducing the amount of training data leads to increased memorization for models of the same size. Both trends are consistent with prior work (e.g., [Carlini et al., ICLR 2022], [Tirumala et al., NeurIPS 2022], [27]), as larger model capacity provides more room to retain instance-level details, while sparser data coverage reduces generalization opportunities and increases reliance on memorizing individual samples. 17 1 2 3 4 5 6 7 8 9 10 11 12 
+
+# Layer 
+
+# 0.25 
+
+# 0.30 
+
+# 0.35 
+
+# 0.40 
+
+# 0.45 
+
+> Avg. UnitMem
+
+CLIP R@5 = 31.2% 
+
+AudioCLIP R@5 = 34.0% 
+
+SSL 
+
+Supervised Figure 12. UnitMem: AudioCLIP is more aligned with SSL. We implement an extra experiment on COCO with audios generated from the captions. 0 1 3 5 7
+
+10 13 15 
+
+# Top-k% memorized samples 
+
+> 0.26
+> 0.27
+> 0.28
+> 0.29
+> 0.30
+> 0.31
+> 0.32
+> 0.33
+> Memorization
+> 0.37
+> 0.38
+> 0.39
+> 0.40
+> 0.41
+> 0.42
+> 0.43
+> T@5 Acc.
+
+Figure 13. Effects of noise-based augmentation to the top k% most memorized samples (ranked by MultiMem) during training. 
+
+Regrouping epoch MultiMem AI-T retrieval T@5 None 0.332 36.9 10 0.321 38.2 80 0.262 43.3 10 + 80 0.256 43.7 20 + 80 0.252 44.1 10 + 90 0.254 43.8 40 + 50 0.266 42.8 20 + 50 + 80 0.250 44.2 10 + 40 + 70 0.253 43.8 
+
+Table 10. Applying the in-training regrouping strategy multiple times further mitigate memorization and improves performance. 
+
+Baseline ViT-S + EsResNet-34 ViT-L + EsResNet-101 75% dataset usage 50% dataset usage 25% dataset usage Avg. MultiMem 0.332 0.308 0.382 0.341 0.360 0.389 
+
+Table 11. Memorization v.s. model size and training datapoint usage. 
+
+18 0
+
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+
+# Regrouping Epoch 
+
+# 0.37 
+
+# 0.38 
+
+# 0.39 
+
+# 0.40 
+
+# 0.41 
+
+# 0.42 
+
+# 0.43 
+
+> T@5 Acc.
+
+Gradient Clipping 
+
+Noise Injection Figure 14. Performance for AudioCLIP under in-training regrouping when using noise-based augmentation and gradient clipping. 0
+
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+
+# Regrouping Epoch 
+
+# 0.37 
+
+# 0.38 
+
+# 0.39 
+
+# 0.40 
+
+# 0.41 
+
+# 0.42 
+
+# 0.43 
+
+> T@5 Acc.
+
+Removing 
+
+Regrouping 
+
+Figure 15. Performance for AudioCLIP under in-training regrouping vs. in-training removal. 
+
+19

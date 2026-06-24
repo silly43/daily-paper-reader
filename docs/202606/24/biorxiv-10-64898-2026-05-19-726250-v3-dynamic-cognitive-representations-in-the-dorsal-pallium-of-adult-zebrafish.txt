@@ -1,0 +1,2000 @@
+Title: 2026.05.19.726250v3.full.pdf
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.05.19.726250v3.full.pdf
+
+Number of Pages: 43
+
+Markdown Content:
+1
+
+# Dynamic cognitive representations in the dorsal 1
+
+# pallium of adult zebrafish 2
+
+3
+
+Kim Palacios-Flores 1*, Jan Eckhardt 1 , Kuo-Hua Huang 1,2 , Sriram Narayanan 1 , Rainer W. 4
+
+Friedrich 1,3 *5
+
+6 
+
+> 1
+
+Friedrich Miescher Institute for Biomedical Research, Basel, Switzerland. 7 2 Present address: Institute of Molecular Biology, Academia Sinica, Taipei, Taiwan. 8 3 University of Basel, Basel, Switzerland 9
+
+* Corresponding authors: Kim Palacios-Flores ( kim.palacios@fmi.ch ); Rainer W. Friedrich 10 
+
+(rainer.friedrich@fmi.ch )11 
+
+12 
+
+13 
+
+14 
+
+15 
+
+16 
+
+17 
+
+18 
+
+19 
+
+20 
+
+21 
+
+Author contributions . K.P.F. conceived the project, designed and performed all experiments, 22 
+
+developed software, analyzed the data, and wrote the manuscript. J.E. developed software, 23 
+
+hardware and provided critical technical support. K.H.H. developed the original methodology 24 
+
+and provided critical technical input. S.N. analyzed data. R.W.F. conceived and supervised the 25 
+
+project and wrote the manuscript. 26 
+
+27 
+
+28 
+
+Acknowledgements . We thank E. Arn, P. Argast, and P. Buchmann for technical support, A. 29 
+
+Bharioke for helpful discussions, A. Lüthi for comments on the manuscript, and the Friedrich lab 30 
+
+members for insightful discussions. This work was supported by the Novartis Research 31 
+
+Foundation, by a Novartis Institutes for Biomedical Research Presidential Postdoctoral 32 
+
+Fellowship (K.H.H.), by the European Research Council (ERC) under the European Union’s 33 
+
+Horizon 2020 research and innovation program (grant agreements no. 742576, 101167289), by 34 
+
+the Swiss National Science Foundation (SNSF; grant number 310030_212236) and an EMBO 35 
+
+fellowship (S.N.; ALTF 1060-2024). 36 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+2
+
+Summary 37 
+
+Brains rely on internal models of the world to interpret sensory input and to simulate the 38 
+
+future. In the mammalian hippocampal-entorhinal network, environments are represented by 39 
+
+cognitive maps that contain spatially selective neurons such as place, grid, head direction and 40 
+
+object-vector cells 1-6 . Neurons with allocentric spatial tuning have recently been discovered also 41 
+
+in non-mammalian organisms including larval zebrafish 7 but it remains unclear to what extent 42 
+
+these neurons establish internal cognitive representations. We measured neuronal activity in 43 
+
+telencephalic area Dc of head-fixed adult zebrafish exploring a novel, richly structured virtual 44 
+
+reality. Neurons were sharply tuned to one or multiple locations and collectively represented 45 
+
+environmental space. Activity fields exhibited neuron-specific associations to visual landmarks, 46 
+
+indicating a prominent vectorial component in spatial representations. Population activity 47 
+
+evolved and became increasingly informative as fish explored the environment. When landmarks 48 
+
+were removed after familiarization, landmark-associated activity partially persisted and subsets 49 
+
+of neurons reported prediction errors, implying that activity was in part driven by an internal 50 
+
+representation. Strong functional coupling among neuronal ensembles and winner-take-all 51 
+
+dynamics suggest that representations evolve by refinements of pre-structured networks. The 52 
+
+teleost brain therefore generates internal models of structured environments that are optimized by 53 
+
+experience and enable cognitive inference and prediction. 54 
+
+55 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+3
+
+Introduction 56 
+
+Cognition relies on internal models of the world that are established by evolution and by 57 
+
+an individual’s experience. Concepts of such “cognitive maps” have been strongly influenced by 58 
+
+representations of physical space in hippocampal-entorhinal networks of mammals 8-10 . These 59 
+
+networks contain neurons such as place cells 1 , grid cells 2,3 , head direction cells 4 , object-vector 60 
+
+cells 5,6 and other functional neuron types 11-14 that collectively represent an environment and the 61 
+
+location of an animal within it. During navigation, network activity is updated on a moment-to-62 
+
+moment basis by integrating multisensory inputs from internal (e.g., proprioceptive input evoked 63 
+
+by body movements) and external sources (e.g., visual input evoked by movements relative to 64 
+
+landmarks), tracking the animal’s trajectory over time. Depending on brain state, the same 65 
+
+networks can also generate population activity that is not directly driven by sensory input and 66 
+
+encodes information about past trajectories 15 , future trajectories 16 or objects that have been 67 
+
+removed from an environment 11 . Hence, hippocampal-entorhinal networks represent relations 68 
+
+between an animal and its environment also during memory recall, prediction, or planning, 69 
+
+implying retrieval of information from internal models during cognitive brain functions. 70 
+
+Moreover, hippocampal-entorhinal networks can establish cognitive maps of non-spatial 71 
+
+information 17 and mediate episodic memory 18,19 . Studies using more complex environments and 72 
+
+tasks indicate that neurons frequently exhibit mixed selectivity and conjunctive responses to 73 
+
+different types of inputs 20-24 . Spatial cognitive maps in the hippocampal-entorhinal loop have 74 
+
+thus become a leading model to study biological neuronal networks underlying memory and 75 
+
+cognition. 76 
+
+Computational models show that latent representations of physical space with place cell-77 
+
+like units may, in principle, be generated by different mechanisms and network architectures 25-31 .78 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+4
+
+In biological networks, cognitive maps of spatial environments have been described primarily in 79 
+
+mammals. Recently, however, neurons with allocentric spatial tuning – referred to as place cells 80 
+
+– were discovered also in the forebrain of food-caching birds 32 . Moreover, representations of 81 
+
+boundaries, head direction, and locomotion variables were found in the goldfish 82 
+
+telencephalon 33,34 , and an abundance of place cells was found in the telencephalon of larval 83 
+
+zebrafish 7 . Zebrafish diverged from the mammalian lineage approximately 450 million years 84 
+
+ago, yet place cells in larval zebrafish integrate spatial information from visual cues and self-85 
+
+motion, and their place fields remap in different environments 7 , as observed in mammalian 86 
+
+hippocampus. In addition, neurons encoding heading direction, which is critical for updating 87 
+
+positional information during navigation, have been found in the anterior hindbrain of zebrafish 88 
+
+larvae 35-37 . The larval zebrafish telencephalon therefore records an animal’s position as it 89 
+
+navigates an environment using functional neuron types related to those found in mammals. 90 
+
+However, further information is needed to examine whether spatial representations in mammals 91 
+
+and teleosts share common algorithms and mechanisms. Importantly, it remains to be determined 92 
+
+to what extent the teleost brain establishes internal, memory-based representations of 93 
+
+environments that can be accessed in the absence of sensory input to support prediction and other 94 
+
+cognitive computations. 95 
+
+We studied spatial maps of visual environments in the telencephalon of adult zebrafish 96 
+
+using a high-resolution closed-loop virtual reality (VR). We focused on a distinct subregion of 97 
+
+pallial area Dc, which is thought to be phylogenetically related to mammalian cortex 38,39 . To 98 
+
+determine how representations of environments are shaped by experience we examined neuronal 99 
+
+population activity as animals repeatedly explored an initially novel, naturalistic corridor with 100 
+
+visual landmarks. We discovered internal representations of environments that evolved with 101 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+5
+
+experience. These representations were characterized by a continuum of place fields covering 102 
+
+environmental space, by the systematic organization of spatially selective fields as a function of 103 
+
+landmarks’ positions in the VR, and by the generation of complex responses upon landmark 104 
+
+deletion. The latter comprised landmark-related memory traces and prediction error signals, 105 
+
+sometimes conjunctively represented within individual neurons. Highly correlated and 106 
+
+anticorrelated activity fluctuations in different subsets of spatially selective neurons point to an 107 
+
+underlying mechanism that involves nonlinear mapping of visual and self-motion information by 108 
+
+a structured, possibly pre-configured network. 109 
+
+110 
+
+Spatially selective neurons in cDc 111 
+
+We analyzed representations of spatial environments in the telencephalon of adult 112 
+
+zebrafish, which have ~100 times more neurons than larvae and exhibit a broader repertoire of 113 
+
+cognitive behaviors 40 . Head-fixed adult zebrafish were swimming through a linear virtual 114 
+
+corridor made of naturalistic textures (rocks, pebbles) with symmetrical, visually complex 115 
+
+landmarks (2D images of aquatic creatures) on the walls (Fig. 1a). Four variations of this 116 
+
+corridor were used that differed in the number and spatial arrangement of visual landmarks: 117 
+
+7Reg (seven regularly spaced landmarks), 5Reg (five regularly spaced landmarks), 5Irr (five 118 
+
+irregularly spaced landmarks), and 0Lm (no landmarks). Navigation was restricted to the forward 119 
+
+direction, and fish were teleported back to the beginning of the corridor after each traversal (trial; 120 
+
+Supplementary Video 1; 48 ± 31 s/trial [mean ± s.d.]; median: 43 s; inter-quartile range: 57 s – 121 
+
+29 s). Fish had no prior experience with these or similar environments and no rewards or 122 
+
+punishments were delivered. 123 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+6
+
+Neuronal activity was measured by 2-photon calcium imaging through the intact skull 124 
+
+using a transgenic line that expressed the calcium indicator GCaMP6f throughout the dorsal 125 
+
+telencephalon (Methods). Measurements were targeted to a distinct subregion in the caudal part 126 
+
+of telencephalic area Dc, referred to as cDc, that was identified reliably across individuals based 127 
+
+on salient anatomical landmarks 41,42 (Fig. 1c,d, Methods). The field of view contained, on 128 
+
+average, 320 ± 53 somata per fish (mean ± s.d., n = 14 fish) (Fig. 1d). Activity ( ∆F/F 0 ) was 129 
+
+recorded during 15 – 30 min long sessions (Fig. 1g). In a subset of fish (n = 4), activity was 130 
+
+recorded in two sessions separated by 40 – 147 min (see below). In two additional fish used for 131 
+
+landmark deletion experiments (see below), activity was recorded in 4 or 5 sessions. The closed-132 
+
+loop configuration of the VR was maintained throughout experiments (Fig. 1a,b,f). Each fish was 133 
+
+exposed to one virtual environment (7Reg: 2fish; 5Reg: 4 fish; 5Irr: 6 fish, 0Lm: 2 fish). Activity 134 
+
+measurements therefore captured early stages in the formation of representations of novel 135 
+
+environments. 136 
+
+Subsets of neurons showed pronounced activity at specific locations in the virtual 137 
+
+corridor (Fig. 1h). To systematically identify spatially modulated neurons, we spatially binned 138 
+
+activity in each trial to obtain spatial activity maps and identified peaks that were statistically 139 
+
+significant across trials (Methods). The spatial information content of neurons with at least one 140 
+
+significant peak was then quantified using a well-established measure of spatial specificity 141 
+
+(Methods). Only neurons whose spatial specificity exceeded the expectation based on shuffle 142 
+
+controls by at least three standard deviations were further analyzed for statistical significance of 143 
+
+activity peaks on a trial-by-trial basis (Methods). We defined activity fields as the spatial extent 144 
+
+exceeding half-height around each significant peak. Neurons with at least one activity field were 145 
+
+defined as spatially selective (Fig. 1h). 146 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+7
+
+Out of 3311 analyzed neurons of fish exposed to VR configurations with landmarks (n = 147 
+
+10 fish), 461 (14%) were spatially selective (Fig. 2a, Extended Data Fig. 1a,b), with either one 148 
+
+(246 neurons, 53%) or multiple (215 neurons, 47%) activity fields (Fig. 1h, 2e,f; Extended Data 149 
+
+Figs. 1c, 2a). In the 0Lm environment, the fraction of neurons with fields was substantially lower 150 
+
+(3%) and fields appeared broader (Fig. 2h; Extended Data Fig. 2b). To assess whether cDc 151 
+
+neurons primarily represent spatial location or time, we analyzed activity also as a function of 152 
+
+time relative to trial onset. Temporal activity maps were less well aligned across trials than 153 
+
+spatial activity maps (Fig. 2f,g) and temporal specificity was significantly lower than spatial 154 
+
+specificity of the same neurons ( P = 2.08 x 10 -73 , Wilcoxon Signed-Rank test) (Fig. 2a, inset). 155 
+
+We therefore conclude that cDc neurons represent primarily spatial rather than temporal 156 
+
+information. 157 
+
+We next trained a neural network to decode spatial position from neural activity on a 158 
+
+trial-by-trial basis in environments with landmarks (Methods). For each fish, we used the full set 159 
+
+of spatially selective neurons, as well as subsampled sets of neurons (n = 16) to equalize counts 160 
+
+across fish. In both cases, decoding performance was significantly higher than expectations 161 
+
+derived from shuffled activity traces (Fig. 2b, Extended Data Fig. 1d), confirming that population 162 
+
+activity enables positional decoding in individual fish. We further observed that fish with a 163 
+
+higher number of spatially selective neurons had, on average, fewer fields per neuron (Pearson 164 
+
+correlation coefficient = -0.84, P = 0.0024) (Fig. 2c). This translated into a positive correlation 165 
+
+between the number of spatially selective neurons and decoder performance (Pearson correlation 166 
+
+coefficient = 0.76, P = 0.0103) (Fig. 2d) and a negative correlation between decoder performance 167 
+
+and the average number of fields per neuron (Pearson correlation coefficient = -0.66, P = 0.04) 168 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+8
+
+(Extended Data Fig. 1e). These results indicate that cDc networks exhibit predispositions for 169 
+
+representations of novel environments with variations between individuals. 170 
+
+171 
+
+Representations of structured environments 172 
+
+Our observations from VR environments with and without landmarks indicate that 173 
+
+landmark-driven inputs contribute significantly, although not exclusively, to the spatial 174 
+
+selectivity of cDc neurons, consistent with the contribution of both visual and self-motion 175 
+
+information to spatial selectivity in the mammalian hippocampus and neocortex 43,44 . To further 176 
+
+examine the influence of landmarks we first analyzed the autocorrelation function of spatial 177 
+
+activity maps in two environments with different landmark configurations, 7Reg and 5Irr. If 178 
+
+activity is driven by landmarks, the average autocorrelation should exhibit a modulation 179 
+
+corresponding to the autocorrelation of the landmark pattern. Consistent with these expectations, 180 
+
+autocorrelation functions of spatial activity maps had multiple peaks at locations predicted by the 181 
+
+landmark autocorrelations (Fig. 3a,b). 182 
+
+The autocorrelation indicates that activity fields of individual neurons are linked to 183 
+
+landmarks, but it does not reveal the precise spatial relationship between fields and landmarks. 184 
+
+To address this question, we divided each corridor into non-overlapping sectors that were 185 
+
+delimited by the end of each landmark. Each activity field was then assigned a “landmark 186 
+
+distance” defined as the distance between the activity peak and the end of the corresponding 187 
+
+sector (Fig. 3c). The majority of neurons had at most one activity field per sector. In some cases, 188 
+
+two fields were observed in the same sector, in particular in the 5Irr environment in sector 3, 189 
+
+where the distance between landmarks was large. In this environment, the maximum landmark 190 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+9
+
+distance analyzed was limited to the length of the smallest sector. For each neuron with multiple 191 
+
+fields, we subtracted landmark distances of different fields from each other (Methods), resulting 192 
+
+in a narrow distribution of differences that was centered on zero by design (Fig. 3d). This 193 
+
+experimentally observed difference distribution was compared to two null distributions. The first 194 
+
+null distribution was constructed by computing differences between randomly drawn distance 195 
+
+values within the permitted sector length. The null distribution was significantly broader than the 196 
+
+experimentally observed distribution ( P =1.19 x 10 -5 , two-sample Kolmogorov-Smirnov test). 197 
+
+These results imply that landmark distances were consistent within neurons, in accordance with 198 
+
+results of the autocorrelation analysis. The second null distribution was constructed as described 199 
+
+after shuffling of neuron labels across fields within corresponding sectors. This null distribution 200 
+
+was also significantly broader than the experimentally observed difference distribution ( P =201 
+
+3.92 x 10 -5 , two-sample Kolmogorov-Smirnov test) (Fig. 3d), demonstrating that landmark 202 
+
+distances differ between neurons. 203 
+
+To further examine whether activity fields represent absolute distances or the relative 204 
+
+position (“phase”) between landmarks we computed difference distributions using both metrics 205 
+
+in the 5Irr environment where landmarks are spaced irregularly. Difference distributions were 206 
+
+significantly narrower when distances were quantified using the absolute metric ( P = 1.27x10 -31 ,207 
+
+two-sample Kolmogorov-Smirnov test) (Fig. 3e), indicating that activity fields of cDc neurons 208 
+
+represent characteristic absolute distances to landmarks. Similar distance-dependent firing fields 209 
+
+have been observed in the medial entorhinal cortex of mice navigating a linear VR 13 in neurons 210 
+
+that are likely to correspond to object-vector cells in 2-dimensional environments 5 . Our results 211 
+
+therefore indicate that vectorial information contributes strongly to representations of spatial 212 
+
+environments in cDc. 213 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+10 
+
+To examine how activity fields covered space within sectors we analyzed the distribution 214 
+
+of characteristic landmark distances across neurons and sectors. The distribution was broad 215 
+
+without an obvious pattern (Fig. 3f), indicating that cDc neurons collectively cover a wide range 216 
+
+of landmark distances, spanning the entire sector space. To examine spatial coverage of the full 217 
+
+environment we sorted spatial activity maps by their maximum amplitude field and found that 218 
+
+activity fields across the neural population covered the entire corridor (Fig. 3g). To further 219 
+
+characterize spatial coverage, we generated a binarized representation of space by thresholding 220 
+
+each neuron’s highest-amplitude field at half maximum (Fig. 3h and i). Hence, each spatially 221 
+
+selective neuron contributed one segment with a defined location and width to the binarized 222 
+
+representation of the corridor. We then randomly subsampled neurons and analyzed space 223 
+
+coverage as a function of neuron number (Methods). The increase in space coverage with neuron 224 
+
+number was not changed substantially after randomizing the positions of binary segments (Fig. 225 
+
+3j,k). Hence, the distribution of activity fields along the corridor was almost indistinguishable 226 
+
+from a random distribution, indicating that activity fields collectively covered the environment 227 
+
+without obvious patterning by landmarks or other discontinuities. 228 
+
+229 
+
+Evolution of spatial representations 230 
+
+Activity fields of cDc neurons changed in intensity and, in some cases, appeared or 231 
+
+disappeared within individual imaging sessions, implying that the representation of the virtual 232 
+
+environment evolved over time. To analyze this evolution over more extended periods of time we 233 
+
+measured activity from the same neurons during two imaging sessions separated by 32 – 174 234 
+
+trials (40 - 147 min; n = 4 fish; fish A, 7Reg, 174 trials; fish B, 5Reg, 81 trials; fish C and D, 5Irr, 235 
+
+54 and 32 trials, respectively). Between sessions, fish continued to swim through the VR but no 236 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+11 
+
+activity data were recorded. Activity fields of each neuron were identified independently in 237 
+
+sessions 1 and 2 and assigned a common identifier (field ID) when they overlapped in space 238 
+
+(Methods). 265 neurons had at least one field in at least one of the sessions. In the majority of 239 
+
+these neurons (n = 222; 84%) the number of fields changed between imaging sessions (Fig. 4a). 240 
+
+72 neurons (27%) had fields only in session 1 while 99 neurons (37%) had fields only in session 241 
+
+2 (Fig. 4a). From a total of 500 fields, 180 fields (36%) were lost after session 1, 170 fields 242 
+
+(34%) appeared de novo in session 2, and 150 fields (30%) were detected in both sessions. The 243 
+
+number of neurons with one or two fields increased while the number of neurons with 3 or more 244 
+
+fields decreased (Fig. 4b). Consequently, the fraction of single-field neurons increased (Fig. 4c) 245 
+
+while the mean number of fields per neuron decreased ( P = 0.0133, Wilcoxon rank sum test) 246 
+
+(Fig. 4d), even among neurons with fields in both sessions ( P = 1.88 x 10 -4 , Wilcoxon Signed-247 
+
+Rank test) (Fig. 4e). Examples of activity profiles evolving with time are provided in Fig. 4f–l 248 
+
+and Extended Data Figure 3a. In some cases, we were able to capture the emergence of activity 249 
+
+fields from a background devoid of spatial selectivity within one continuous imaging session. 250 
+
+Examples of these transformations occurring as abrupt transitions are presented in Fig. 4k and l 251 
+
+and Extended Data Fig. 3 (top row, fourth spatial activity map, S1). These observations 252 
+
+underscore the dynamic nature of the internal representation. 253 
+
+To determine how the evolution of population activity affected decoding of spatial 254 
+
+information we trained artificial neural networks to decode position based on different sets of 255 
+
+spatially selective neurons (Methods): neurons that lost their fields after session 1 (S 1NOT2 ), 256 
+
+neurons that had fields only in session 2 (S 2NOT1 ), neurons with fields in both sessions (S 1AND2 ), 257 
+
+and all neurons with fields in one of the two sessions (S1: union of S 1NOT2 and S 1AND2 ; S2: union 258 
+
+of S 2NOT1 and S 1AND2 ). Neuron numbers were equalized across sets by subsampling to the largest 259 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+12 
+
+possible number (size of the smallest set; minimum of 8 neurons) in each fish (n = 3 fish; 14, 14, 260 
+
+and 8 neurons, respectively) and decoding accuracy was quantified by the Pearson correlation 261 
+
+between decoded and true positions (Fig. 4m; Extended Data Fig. 3b–d). Overall, decoding 262 
+
+accuracy increased significantly from session 1 to session 2. Accuracy was lowest based on 263 
+
+neurons that lost their fields after session 1 (S 1NOT2 ), significantly higher based on neurons that 264 
+
+gained fields in session 2 (S 2NOT1 ), and highest based on neurons with fields in both sessions 265 
+
+(S 1AND2 ). The reorganization of population representations therefore enhanced positional 266 
+
+information on timescales of minutes to hours, consistent with an increasingly more uniform 267 
+
+coverage of a physical environment by place cells observed in freely swimming zebrafish 268 
+
+larvae 7 . The observed dynamics of activity patterns supports the hypothesis that the brain 269 
+
+establishes a cognitive map of the environment that is optimized by experience. 270 
+
+271 
+
+Cognitive inference and error signals in cDc 272 
+
+We next asked whether cDc generates internal representations of environments that 273 
+
+enable cognitive inference and prediction. To address this question, we examined whether spatial 274 
+
+representations organized as a function of landmarks can remain accessible in the absence of 275 
+
+landmark-driven sensory input. We obtained neural activity data of the same neurons over 276 
+
+multiple imaging sessions (Fig. 5a–e). In the first session, fish were familiarized with the virtual 277 
+
+environment for 20 min (~20 trials). During subsequent sessions we deleted all landmarks for 278 
+
+five consecutive trials after trial 8 (n = 7 deletions in 2 fish). We refer to each deletion/neuron 279 
+
+pair as a “deletion event”. For each deletion event we compared activity immediately prior to (8 280 
+
+trials) and during deletion of landmarks (5 trials). As a control, we analyzed size-matched blocks 281 
+
+of consecutive trials from experiments without landmark deletions (“mock deletions”, 7 fish, one 282 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+13 
+
+mock deletion per fish). In a small subset of deletion events, landmark removal resulted in 283 
+
+intense activity that was typically more broadly distributed than activity fields related to 284 
+
+landmarks. Deletion events showing this type of activity were identified by thresholding of the 285 
+
+mean activity and analyzed separately (see below). Among the remaining deletion events, 286 
+
+landmark deletion abolished spatially modulated activity in the majority of cases. In a subset of 287 
+
+cases, however, we detected activity during landmark deletion that was spatially aligned with 288 
+
+locations corresponding to activity fields in the presence of landmarks, indicating that landmark-289 
+
+related activity partially persisted. 290 
+
+To quantify the persistence of landmark-related activity we defined activity fields using a 291 
+
+slightly different procedure (mean activity over trials significantly exceeding baseline in ≥ 5292 
+
+consecutive spatial bins; Methods) to account for the low number of trials before and during 293 
+
+landmark deletion. We refer to spatially defined significant activity detected using this procedure 294 
+
+as activity segments . An activity segment detected prior to landmark deletion was classified as 295 
+
+“persistent” (Fig. 5f) when it overlapped with an activity segment during landmark deletion and 296 
+
+“sensitive” otherwise (Fig. 5g). The probability of observing persistent activity segments by 297 
+
+chance was quantified by the same procedure after circularly permuting activity in trials without 298 
+
+landmarks (“spatial randomization”, Methods). 299 
+
+Eighteen percent of activity segments (n = 160/866 from 643 analyzed neurons in 2 fish) 300 
+
+were classified as persistent after landmark deletion whereas 61% of activity segments (n = 301 
+
+523/859 from 2438 analyzed neurons in 7 fish, P = 1.69x10 -72 , Chi-square test of independence) 302 
+
+persisted in the presence of landmarks (mock deletions) (Fig. 5h). Hence, landmark deletion 303 
+
+confirmed that landmark-driven sensory input contributes significantly to spatially selective 304 
+
+activity in cDc. Moreover, spatial randomization significantly decreased the fraction of activity 305 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+14 
+
+segments classified as persistent from 18% to 8% (mean ± s.d. over 200 randomizations; P =306 
+
+0.005) (Fig. 5i). Activity during landmark deletion therefore contained traces of prior activity 307 
+
+segments and, thus, information about landmark-related activity. These results indicate that the 308 
+
+activity of cDc neurons contains spatial information that is inferred from an internal, memory-309 
+
+based model of the environment. 310 
+
+We next examined high-intensity responses to landmark deletion in more detail. To detect 311 
+
+overall changes in activity during landmark deletion (Fig. 5j and k), we normalized the mean 312 
+
+activity during each deletion event to the mean activity during the 8 trials prior to landmark 313 
+
+deletion. As expected, decreases in activity were frequent and more prominent than in mock 314 
+
+deletions because a significant subset of activity segments were sensitive (Fig. 5l). In a subset of 315 
+
+deletion events, however, landmark deletion increased activity beyond the largest increases 316 
+
+observed in mock deletions (Fig. 5l). We identified such high-intensity responses using a 317 
+
+threshold of twice the mean activity before landmark removal, corresponding approximately to 318 
+
+the largest activity change observed in mock deletions. Activity exceeded this threshold in 2.7 % 319 
+
+of deletion events (35/1294) during landmark deletion but only in 0.1 % of mock deletions 320 
+
+(1/697) (Fig. 5l), implying that high-intensity activity was triggered by the removal of 321 
+
+landmarks. We therefore interpret high-intensity responses as error signals encoding a mismatch 322 
+
+between the predicted and the experienced appearance of the environment. Since the 323 
+
+computation of a prediction requires an internal model, the observation of error signals further 324 
+
+supports the conclusion that cDc neurons retrieve information from internal representations of 325 
+
+the environment. 326 
+
+Error-related activity was often broad but not uniformly distributed throughout the 327 
+
+corridor (Fig. 5c,d,e). Error signals were observed in neurons that were largely inactive prior to 328 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+15 
+
+landmark deletion (Fig. 5c,d), but also in neurons showing spatially selective activity (Fig. 5e). 329 
+
+Hence, at least some cDc neurons may conjunctively encode information about prediction error 330 
+
+and location. Additional activity profiles illustrating the variety of responses elicited upon 331 
+
+landmark deletion are shown in Extended Data Fig. 4. In summary, landmark deletions revealed 332 
+
+inference of landmark-based spatial relationships and prediction error computations in cDc. As 333 
+
+these computations require access to an internal representation of the environment, our 334 
+
+observations imply that cDc performs memory-based cognitive inference. 335 
+
+336 
+
+Functional neuronal ensembles in cDc 337 
+
+Spatial selectivity may emerge in a broad spectrum of networks with different 338 
+
+architectures including generic, initially unstructured recurrent networks and networks with 339 
+
+specific pre-configured connectivity 25-31,45 . In highly structured networks, subsets of neurons 340 
+
+may be expected to form functional ensembles because they receive similar feed-forward and/or 341 
+
+recurrent inputs. To explore this possibility we examined correlated variability of neuronal 342 
+
+activity. Spatially selective activity of many cDc neurons varied substantially across trials, 343 
+
+sometimes switching abruptly between high activity and silence in successive trials (Fig. 6f–n). 344 
+
+To examine whether these variations were coordinated across the population we quantified 345 
+
+pairwise trial-to-trial (noise) correlations between the signal magnitude of all fields in each of the 346 
+
+10 fish exposed to VRs with landmarks (96 ± 28 fields per fish, mean ± s.d.). As a control, we 347 
+
+performed the same analysis after shuffling trial order independently for each field. Shuffling 348 
+
+significantly reduced the probability of observing large positive or large negative noise 349 
+
+correlations and resulted in a narrower overall distribution of correlation coefficients ( P =350 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+16 
+
+1.51 x 10 -290 , two-sample Kolmogorov-Smirnov test; n = 100 shuffles; Fig. 6a), demonstrating 351 
+
+that high trial-to-trial activity correlations occurred more frequently than expected by chance. 352 
+
+We next compared the covariation of activity between different fields of the same 353 
+
+neurons (intra-neuron correlations; 1008 field pairs) and between fields of different neurons 354 
+
+(inter-neuron correlations; 48’406 field pairs). Inter- and intra-neuron correlations both spanned 355 
+
+a broad range and were, on average, significantly higher than correlations between shuffled 356 
+
+controls ( P =1.55 x 10 -51 and P =1.64 x 10 -118 , respectively, Wilcoxon rank sum test) (Fig. 6b). 357 
+
+On average, intra-neuron correlations were higher than inter-neuron noise correlations. However, 358 
+
+highest positive and negative correlation coefficients were found between fields of different 359 
+
+neurons (Fig. 6b). 360 
+
+To examine how noise correlations depend on the spatial separation of fields we assigned 361 
+
+each field to its corresponding sector in the corridor and expressed inter-field distances as the 362 
+
+difference in sector number (“sector distance”). Intra-neuron noise correlations decreased 363 
+
+significantly with sector distance (Pearson correlation = -0.22, P < 10 -16 ), approaching zero at 364 
+
+large distances (Fig. 6c, left). In shuffled controls, mean correlations remained near zero for all 365 
+
+sector distances. Hence, trial-by-trial covariation of activity in the same neurons was most 366 
+
+pronounced between nearby fields. Inter-neuron noise correlations also decreased significantly 367 
+
+with sector distance (Pearson correlation = -0.05, P < 10 -16 ; Fig. 6c, right). Moreover, extreme 368 
+
+inter-neuron noise correlations occurred primarily between fields of the same or nearby sectors 369 
+
+(Fig. 6c, right). To quantify this observation, we measured the variance of correlation 370 
+
+coefficients, which was highest among same-sector correlation coefficients and decreased as a 371 
+
+function of sector distance. Compared to shuffle controls, the observed variance was 372 
+
+significantly higher in the same sector ( P = 3.21x10 -136 , two-sample F-test) and significantly 373 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+17 
+
+lower across sectors (sector distance = 1: P < 0.05; sector distances > 1: P < 0.001 ; two-sample 374 
+
+F-test; Fig. 6d). These results indicate that subsets of cDc neurons with spatially related activity 375 
+
+fields are organized into functional ensembles. 376 
+
+To systematically locate functionally related sets of neurons we searched for core groups 377 
+
+of 3 neurons with same-sector noise correlations ≥ 0.6 and added further neurons that were 378 
+
+linked to at least one core group member through high absolute noise correlations (|r| ≥ 0.6) 379 
+
+(Methods). As illustrated by the example in Fig. 6e–o, groups consisted of distinct ensembles of 380 
+
+neurons that were defined by their correlation structure (e.g., neurons [287, 225] and [38, 160, 381 
+
+184]). Within ensembles, spatially selective activity co-fluctuated across trials (Fig. 6f–i) 382 
+
+whereas across ensembles, trial-to-trial variations were anti-correlated, resulting in almost 383 
+
+mutually exclusive activity on different trials (Fig. 6j–n). Additional examples of functional 384 
+
+ensembles are shown in Extended Data Fig. 5. In all cases, functionally coupled neurons were 385 
+
+distributed throughout cDc without an obvious topography. Spatially selective population 386 
+
+activity in cDc is therefore organized, at least in part, into distributed functional ensembles that 387 
+
+are activated in a winner-take-all fashion. These observations are consistent with inhibitory 388 
+
+interactions between neuronal ensembles 46 and possibly excitatory coupling within ensembles, 389 
+
+suggesting highly structured connectivity. It appears unlikely – albeit not impossible – that such 390 
+
+connectivity emerged de novo from a random network during the earliest explorations of the 391 
+
+environment, when activity could not be systematically analyzed. We therefore hypothesize that 392 
+
+sensory and self-motion inputs are initially integrated by pre-configured networks and that these 393 
+
+networks are then refined by experience-dependent plasticity to establish increasingly more 394 
+
+specific internal representations. 395 
+
+396 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+18 
+
+Discussion 397 
+
+Our results revealed cognitive spatial maps of structured environments in an anatomically 398 
+
+well-defined subregion of telencephalic area Dc in adult zebrafish. cDc neurons had one or 399 
+
+multiple sharply delineated activity fields that may be referred to as place fields and collectively 400 
+
+tracked an individual’s position. Spatially selective activity was strongly reduced but not 401 
+
+abolished in the absence of landmarks, indicating that positional information is computed 402 
+
+primarily from relations to landmarks with some contribution from path integration. Consistent 403 
+
+with this conclusion, individual neurons represented specific distances to landmarks. In mice, 404 
+
+similar distance coding in linear virtual environments is characteristic for neurons such as object-405 
+
+vector cells in medial entorhinal cortex 5,13 . In two-dimensional environments, these and related 406 
+
+neuron types represent distances and directions towards objects, giving rise to a vectorial code of 407 
+
+space that is thought to be critical for navigation 6,12,14,47 . Our results thus provide evidence for 408 
+
+vectorial representations of spatial environments in teleosts, although further experiments are 409 
+
+required to examine spatial selectivity of cDc neurons in two-dimensional environments. 410 
+
+Previous experiments in zebrafish revealed neurons with place fields in the telencephalon 411 
+
+of freely swimming 7 but not head-fixed zebrafish larvae. Potentially important distinctions of our 412 
+
+approach from previous studies using head-fixation include (1) the use of adult zebrafish, (2) the 413 
+
+use of a high-resolution VR with naturalistic textures and objects, and (3) an efficient algorithm 414 
+
+for closed-loop VR updates that supports naturalistic swimming 42 .415 
+
+Under these conditions, spatially selective activity was reliably observed in Dc, which 416 
+
+has been loosely linked to isocortex 38,39 . Functional properties of cDc neurons are reminiscent of 417 
+
+cue-locking, object-vector and object-trace cells in the medial and lateral entorhinal cortex 5,11,13 ,418 
+
+suggesting that cDc may be related to entorhinal cortex. However, cDc neurons also share 419 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+19 
+
+functional features with neurons in other brain areas including landmark vector and place cells in 420 
+
+hippocampus 1,12,14,43 . Further studies are therefore needed to explore phylogenetic and functional 421 
+
+relationships between cDc and mammalian brain areas. 422 
+
+Few previous studies examined the emergence of spatial cognitive maps during the initial 423 
+
+exploration of a novel environment. Consistent with observations in rodents 48-50 we found 424 
+
+prominent spatially selective activity covering the entire environment already at early stages of 425 
+
+exploration. Subsequently, representations were reorganized on a timescale of minutes to hours, 426 
+
+resulting in increased selectivity of individual neurons and more informative population activity. 427 
+
+While the spatial position of activity fields remained stable, their signal magnitude changed over 428 
+
+time. Individual fields could appear de novo, as observed in hippocampal neurons after current 429 
+
+injection 51 , or disappear abruptly between trials. These observations are consistent with models 430 
+
+of pre-configured circuits that mediate initial spatial representations and a subsequent refinement 431 
+
+of functional connectivity by experience, possibly by a self-organizing process that optimizes 432 
+
+coding efficiency 45,52,53 .433 
+
+We found small functional ensembles of co-tuned cDc neurons that were identified by a 434 
+
+striking covariability of activity fluctuations. Instances of highly correlated activity within 435 
+
+ensembles, but anti-correlated across ensembles, indicate that population activity exhibited 436 
+
+winner-take-all dynamics consistent with cross-ensemble inhibition 46 , further supporting the 437 
+
+notion of pre-configured circuit structure. In theory, such an organization is consistent with 438 
+
+computational models that explicitly assume inhibition between small and distinct computational 439 
+
+modules 30 . The small size of the zebrafish brain offers the opportunity to address structural 440 
+
+predictions of such models by combining activity measurements with connectomics 54 .441 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+20 
+
+Manipulations of the virtual environment allowed us to directly examine whether the 442 
+
+zebrafish brain establishes internal representations of an environment that enable computations 443 
+
+underlying cognitive processes such as inference and prediction. Consistent with this hypothesis, 444 
+
+we found traces of previous spatially selective activity after landmark deletion, implying that 445 
+
+landmark-based spatial relationships were inferred from an internal model. Moreover, landmark 446 
+
+deletion triggered prominent error signals, which requires the comparison of sensory input to an 447 
+
+internally generated expectation 55-57 . Furthermore, conjunctive responses of individual neurons 448 
+
+are consistent with the notion that internal representation and prediction error computations are 449 
+
+closely inter-related, as one requires the other. Taken together, our results show that the zebrafish 450 
+
+brain generates internal models of structured environments that are accessed for cognitive 451 
+
+computations, consistent with a conservation of higher brain functions and the underlying 452 
+
+mechanisms across vertebrates. 453 
+
+454 
+
+455 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+21 
+
+Methods 456 
+
+Animal models. Experiments were performed in adult (6 – 18 months old) 457 
+
+Tg(neuroD:GCaMP6f) zebrafish 58 (Danio rerio) of either sex in a nacre background. Animals 458 
+
+were raised and kept under standard laboratory conditions (26 – 27 °C, 13 h/11 h light/dark 459 
+
+cycle). All animal procedures were approved by the Veterinary Department of the Canton Basel-460 
+
+Stadt, Switzerland. 461 
+
+462 
+
+Head-fixation. Head fixation was performed as described in Huang et al. 42 . Briefly, adult 463 
+
+zebrafish were anesthetized by immersion in tricain methanesulfonate (MS-222; 0.03%) and held 464 
+
+in a custom-build gyroscopic device. Anesthesia was maintained throughout the surgical 465 
+
+procedure by perfusion with fish water containing MS-222 (0.01%) through a cannula inserted 466 
+
+into the mouth. After removing the skin over the telencephalon and adjacent bones, light-weight, 467 
+
+stainless-steel head bars made from syringe needles were attached to specific bones of the skull 468 
+
+using tissue glue and dental cement. Fish were mounted by gluing the pins to a pair of vertical 469 
+
+posts integrated into the floor of a transparent semi-hexagonal tank for submersion in the VR. 470 
+
+After mounting, the anesthetic was washed out and fish recovered from anesthesia within ~1 471 
+
+min. 472 
+
+473 
+
+Virtual reality . VR experiments were performed as described 42 with some modifications (see 474 
+
+below). The tank with the mounted fish was placed under a custom-built multiphoton microscope 475 
+
+with resonant scanners controlled by custom-written software based on Scanimage 58,59 . Infrared 476 
+
+LEDs were placed outside the tank to acquire images of the tail with a video camera from below 477 
+
+at a resolution of 90 x 70 pixels (medio-lateral x rostro-caudal) and a frame rate of 50 Hz. The 478 
+
+VR scene was projected onto the three planar walls of the fish tank using three projectors. 479 
+
+480 
+
+The shape of the tail was tracked continuously (50 Hz) using custom LabVIEW code based on 481 
+
+Huang et al. 42 . Forward movement was inferred from image frames based on the curvature and 482 
+
+undulation of the caudal part of the tail as described 42 . Using custom software written in Python, 483 
+
+the inferred forward movements were used to update the projection of the VR scene and to 484 
+
+deploys user-defined protocols such as transient landmark deletions (see below). 485 
+
+The Python-based game engine Panda3D was used to update the location of the virtual cameras 486 
+
+in the VR. A set of three virtual cameras was implemented to capture three adjacent 45° x 60° 487 
+
+(height by width) fields of view side by side (total of 45° x 180°, height by width). The geometry 488 
+
+of the virtual world was constructed using the 3D modelling software Blender. 489 
+
+Some modifications were made compared to the VR codebase described previously in Huang et 490 
+
+al. 42 . The basic control of virtual cameras as a function of behaviour (tail images) was 491 
+
+implemented as described 42 but the underlying Python codebase was redesigned for modular, 492 
+
+combinatorial, and scalable control of all aspects of the VR geometry. This was achieved through 493 
+
+the implementation of a Finite State Machine architecture which deploys VR protocols within an 494 
+
+experimental data acquisition and trial structure framework ( https://github.com/fmi-495 
+
+basel/DynCogRep-VR ). Additionally, the new codebase incorporates functionality for recording 496 
+
+all relevant VR events that occur during an experiment, generating a detailed log for subsequent 497 
+
+data analysis. 498 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+22 
+
+After initiating the closed loop VR, the first ~15 minutes were used to fine-adjust the gain of 499 
+
+forward movement for each individual fish as in Huang et al. 42 and to locate the region of interest 500 
+
+in the dorsal telencephalon (see below). The closed-loop VR was maintained throughout this 501 
+
+period and the remainder of the experiment. 502 
+
+All VRs were variations of a linear corridor with naturalistic textures and images on the walls. 503 
+
+Fish movement was restricted to the forward direction within the corridor without allowing for 504 
+
+turns. 505 
+
+Calcium imaging . Calcium imaging was performed using a modified 2-photon microscope 506 
+
+(Sutter MOM scope) equipped with a x16 Nikon objective as described 42 . Images were acquired 507 
+
+using 8 kHz resonant scanners at a frame rate of 30 Hz. To prevent contamination of the calcium 508 
+
+imaging data by photons from the VR, the LEDs of the projectors and the fluorescence-detecting 509 
+
+PMT were temporally gated to alternate between illumination and data acquisition during 510 
+
+successive lines (line frequency, 8 kHz), yielding an effective resolution of 512 x 256 pixels. 511 
+
+GCaMP6f fluorescence was imaged through the intact skull using an excitation wavelength of 512 
+
+920 nm, a 510/50 nm band-pass emission filter, and 35 mW - 57 mW of power at the sample. 513 
+
+Activity data were acquired in imaging sessions of 15 – 30 min. Data consisted of either a single 514 
+
+imaging session per fish, two imaging sessions per fish (evolution of responses from S1 to S2 515 
+
+experiments), or 4 - 5 imaging sessions per fish (landmark deletion experiments). Between 516 
+
+imaging sessions, the closed-loop VR was maintained but no fluorescence data were acquired. 517 
+
+Frames from each continuous two-photon imaging session were registered using cross-518 
+
+correlation based on the discrete Fourier transform and adaptive templating. Occasionally, small 519 
+
+consecutive sets of frames could not be aligned accurately due to small, transient frame shifts, 520 
+
+presumably caused by mechanical perturbations, e.g., during strong tail beats. Frames affected by 521 
+
+such events were detected based on the image shifts during alignment and excluded from 522 
+
+analysis (blanked). Thresholds to detect transient image shifts for blanking were adjusted to not 523 
+
+detect slow image drifts 42 that could be corrected by alignment. Corresponding activity 524 
+
+measurements were blanked in displays of activity data. Data from continuous imaging sessions 525 
+
+were then divided into trials corresponding to corridor traversals. 526 
+
+Location of cDc. Calcium imaging data were acquired from an optical plane containing 320 ± 53 527 
+
+somata (mean ± s.d.) in the caudal subregion of the central zone of the dorsal telencephalon 528 
+
+(cDc, as identified in Huang et al. 42 ). This distinct region was identified reliably across animals 529 
+
+based on two anatomical landmarks: (1) the sulcus ypsilonformis, which delineates the border 530 
+
+between the medial zone of the dorsal telencephalon (Dm) and other telencephalic brain areas 531 
+
+including cDc, and (2) an obvious anatomical boundary visible in the neuroD:GCaMP6f 532 
+
+expression pattern that separates cDc from the rostral subregion of Dc and the lateral zone of the 533 
+
+dorsal telencephalon (Dl). This boundary appears to correspond to a boundary in parvalbumin 534 
+
+expression 41 . The optical plane was located between 10 μm and 60 μm below the dorsal surface 535 
+
+of cDc (mean, 34 μm) in either hemisphere. 536 
+
+Prediction and verification of neuronal regions of interest (ROIs). To identify regions of 537 
+
+interest (ROIs) corresponding to individual somata, we first generated anatomy maps by 538 
+
+computing the pixel-wise mean over aligned frames (excluding blanked frames) of imaging 539 
+
+sessions from cDc of different fish. Additionally, we computed maximum 𝚫𝚫 F/F 0 projection and 540 
+
+local cross-correlation maps. Next, we generated a set of ground truth data by manually 541 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+23 
+
+delineating cell bodies using such maps. The ground truth data set was then used to train a 542 
+
+STARDIST 60 model. For ROI prediction in STARDIST, we set the prob_thresh and nms_thresh 543 
+
+parameters to 0.7 and 0.2, respectively. ROIs predicted by the model were manually verified and 544 
+
+adjusted if necessary, and small overlaps between ROIs were programmatically eliminated. 545 
+
+Mapping of corresponding neurons across imaging sessions. For neural data analyses 546 
+
+spanning more than one calcium imaging session we mapped ROIs from one imaging session to 547 
+
+data from all other imaging sessions of the same anatomical plane. This mapping included an 548 
+
+adjustment of ROI shapes based on elastic alignments of the mean raw fluorescence images from 549 
+
+different imaging sessions, which was performed using bUnwarpJ 61,62 . Transformed ROIs were 550 
+
+manually verified and adjusted if necessary. 551 
+
+Activity traces, spatial activity traces, and spatial activity maps. Measurements of 552 
+
+fluorescence intensity as a function of time, averaged over all pixels of each ROI, were 553 
+
+converted to 𝚫𝚫 F / F 0 time traces. F 0 was defined as the average of the 25% lowest percentile of 554 
+
+the fluorescence trace. We refer to these traces as activity traces .555 
+
+Activity traces of each imaging session were averaged in spatial bins along the corridor (10 VR 556 
+
+units/bin) to generate spatial activity traces . Activity traces were also separated into trials 557 
+
+(corridor traversals) prior to spatial binning to visualize activity on a trial-by-trial basis. We refer 558 
+
+to these trial-separated, spatially binned matrices as spatial activity maps .559 
+
+In addition, trial-separated activity traces were binned in time windows of 0.33s (10 frames), 560 
+
+discarding the first trial in each imaging session because it was usually incomplete. Trial-561 
+
+separated, temporally binned matrices are referred to as temporal activity maps .562 
+
+Some analysis procedures depended on the detection of peaks in spatial activity traces, which 563 
+
+may be complicated by noisy fluctuations. To reduce such fluctuations, spatial activity traces 564 
+
+were smoothed in some analyses using a low-pass filter (2 nd order Butterworth filter; cutoff 565 
+
+frequency: 0.25 x Nyquist frequency) and procedures that did not induce phase shifts 566 
+
+(MATLAB’s filtfilt command). 567 
+
+For some statistical analyses, 𝚫𝚫 F/F 0 measurements were transformed into standardized activity 568 
+
+values by subtracting the mean of the 20% lowest 𝚫𝚫 F/F 0 values and dividing by their standard 569 
+
+deviation. Standardized values therefore represent activity in units of standard deviations (z-570 
+
+scores) relative to an estimate of baseline activity. 571 
+
+Spatial information. We used the spatial activity traces of neurons with at least one spatial 572 
+
+activity field (see below) to quantify spatial information using a well-established measure 63 :573 
+
+𝐼𝐼 = � 𝜆𝜆 (𝑥𝑥 ) log 2𝜆𝜆 (𝑥𝑥 )
+
+𝜆𝜆 
+
+> 𝑥𝑥
+
+𝑃𝑃 (𝑥𝑥 )574 
+
+where I is the neuron’s spatial information, x is the spatial bin, P(x) is the probability that the fish 575 
+
+is in spatial bin x, 𝜆𝜆 (𝑥𝑥 ) is the mean 𝚫𝚫 F/F 0 value when the fish is in spatial bin x, and 𝜆𝜆 is the 576 
+
+mean activity of the neuron calculated as 𝜆𝜆 = ∑ 𝜆𝜆 (𝑥𝑥 )𝑃𝑃 (𝑥𝑥 )𝑥𝑥 .577 
+
+The spatial specificity of a neuron has been defined as the spatial information normalized by the 578 
+
+neuron’s mean activity 63 :579 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+24 
+
+𝑠𝑠 = 𝐼𝐼 𝜆𝜆 
+
+580 
+
+To determine whether a neuron’s activity conveyed significant spatial information we generated 581 
+
+a null distribution of spatial specificity values based on 100 shuffled controls. Each shuffled 582 
+
+control was generated by circularly permuting activity traces independently in each trial prior to 583 
+
+generating the spatial activity trace. A neuron was considered for further analysis (see below) 584 
+
+when its spatial specificity exceeded the mean of the null distribution by at least three standard 585 
+
+deviations. 586 
+
+Spatial activity fields . To define spatial activity fields of cDc neurons it is important to take into 587 
+
+account the following observations: (1) individual neurons often have multiple fields, (2) trial-to-588 
+
+trial variability of activity can be high, (3) activity within fields may change in intensity during 589 
+
+an imaging session, (4) individual fields may appear de novo or disappear during a session. Since 590 
+
+commonly used procedures may not robustly detect activity fields under these conditions, we 591 
+
+used a multi-step procedure which includes some aspects of previously used methods 7,63 .592 
+
+Spatial activity traces of each neuron were low-pass filtered as described above, generating a 593 
+
+smoothed trace used for detecting all peaks and valleys. The magnitude of each peak was 594 
+
+quantified by averaging values within a neighborhood of two space bins in each direction. Peak 595 
+
+magnitudes were then standardized relative to the distribution of values in the entire spatial 596 
+
+activity map, as described above. Magnitudes therefore represented the activity associated with 597 
+
+each peak relative to an estimate of baseline activity in units of standard deviations. Peaks with a 598 
+
+magnitude ≥5 were considered as candidates for fields and subjected to further analysis. Neurons 599 
+
+without candidate fields were excluded from further analyses. 600 
+
+We then quantified the spatial information of neurons with at least one candidate field. As 601 
+
+described above, neurons whose spatial specificity did not exceed the mean of the corresponding 602 
+
+null distribution by at least three standard deviations were discarded from any further analyses. 603 
+
+In the next step, we quantified the amplitude and width of each candidate field. Amplitude was 604 
+
+defined as the value of the smoothed spatial activity trace at the peak after subtracting the mean 605 
+
+value of all valleys. Field width was measured as the width at half height around a peak. The 606 
+
+spatial extent of a field was defined as the section of the corridor where the smoothed spatial 607 
+
+activity trace around a peak exceeded half height, which could be asymmetric. When spatial 608 
+
+extents of different candidate fields overlapped, only the candidate field with the maximum 609 
+
+amplitude was kept. Fields were required to have positive amplitudes and half-heights within the 610 
+
+location of the corridor. The latter was not always the case when fields were located close to the 611 
+
+beginning or end of the corridor. Candidate fields that did not fulfill these criteria were excluded 612 
+
+from further analysis. 613 
+
+Statistical significance of candidate fields was further assessed using low-pass zero-phase 614 
+
+filtered spatial activity map values of each trial. For each candidate field, we searched for peaks 615 
+
+within the candidate field’s spatial extent on a trial-by-trial basis. Thus, for each trial, we 616 
+
+determined whether the candidate field contained a peak. If so, we quantified its standardized 617 
+
+magnitude relative to the distribution of spatial activity map values of the corresponding trial, as 618 
+
+well as its amplitude, as described. For each candidate field, we then determined the proportion 619 
+
+of trials that fulfilled the following criteria: (1) the spatial extent of the candidate field contained 620 
+
+a peak with a magnitude ≥ 7, and (2) the peak had a positive amplitude and decayed to half 621 
+
+height on both sides within the corridor. Candidate fields that met these criteria in ≥ 20% of trials 622 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+25 
+
+were considered spatial activity fields; other candidate fields were discarded from further 623 
+
+analyses. Neurons with at least one spatial activity field were considered spatially selective 624 
+
+neurons. Visual inspection of data indicates that this procedure selects fields conservatively, i.e., 625 
+
+priority is given to minimizing false-positives at the expense of incurring false-negatives. 626 
+
+Identification of activity fields across imaging sessions. For each neuron, all activity fields 627 
+
+detected in session S1 were assigned a unique field ID. Fields detected independently at S2 628 
+
+inherited the ID of a S1 field if their peaks were within a small spatial distance (4 space bins). If 629 
+
+necessary, the spatial extent of the field was adjusted to reflect the leftmost and rightmost 630 
+
+positions in the union of S1 and S2 fields. When a S2 field overlapped with more than one S1 631 
+
+field it was associated with the S1 field of greatest overlap. If an S2 field had no overlap with 632 
+
+any S1 field it was assigned a new field ID. Fields sharing the same ID at S1 and S2 were 633 
+
+assumed to be the same field that persisted from S1 to S2. 634 
+
+Decoding of fish position from neural activity. Decoding was performed using a 4-layer 635 
+
+feedforward artificial neural network (ANN) set up and trained using PyTorch. The ANN 636 
+
+consisted of an input layer with number of nodes equal to the number of spatially tuned neurons, 637 
+
+two hidden layers with 64 and 24 nodes, respectively, and a single output node. Activity traces 638 
+
+and fish position from 60% of trials were used to train the neural network and the performance 639 
+
+was evaluated on the unseen data. Training was performed over 200 epochs, within which 640 
+
+performance was tracked using a subset of held-out trials (10%). This configuration of the neural 641 
+
+network was determined empirically; minor changes to the architecture had only minor effects on 642 
+
+performance and the overall trends were maintained. 643 
+
+Decoding was performed either by including all spatially tuned neurons or by randomly 644 
+
+subsampling neurons to equalize their numbers across fish to match the fish with the lowest 645 
+
+count (16 neurons). Frames in which the fish were stationary (velocity <0.01 VR units/s) were 646 
+
+excluded from decoding. Performance of the decoder was assessed by computing the average 647 
+
+correlation coefficient between the decoded and true positions for a trial and by the average 648 
+
+absolute error in decoded and true positions, expressed in units of VR space bins. The 649 
+
+performance of the decoder was compared against decoders set up using shuffled activity traces, 650 
+
+where the traces were independently shuffled in time for each neuron over a window spanning 651 
+
+the length of the recording. 652 
+
+To track how the neural representation of position evolved over time we performed the decoding 653 
+
+analysis for experiments in which two recording sessions (S1 and S2) were performed in the 654 
+
+same fish. Spatial tuning was determined independently for S1 and S2 and the set of tuned cells 655 
+
+was split into the following categories: a) spatially tuned in S1 but not S2, b) tuned in both S1 656 
+
+and S2 and c) tuned in S2 but not S1. The decoding analysis was performed as described above. 657 
+
+To make meaningful comparisons between subsets with different neuron numbers, random 658 
+
+subsampling was performed to match neuron numbers to the smallest set. Subsampling and 659 
+
+decoding were repeated 100 times for each comparison. When comparing the decoding 660 
+
+performance of each subset with the pooled population of neurons, the pooled population was 661 
+
+subsampled 100 times, keeping the proportion of subsampled neurons the same between each 662 
+
+subset in the subsampled set. 663 
+
+Spatial relationships between activity fields and landmarks. For VRs with landmarks, we 664 
+
+divided the VR corridor into non-overlapping sectors. The first sector encompassed the space 665 
+
+between the beginning of the corridor and the end of the first landmark. The last sector covered 666 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+26 
+
+the space between the end of the last landmark and the end of the corridor. The remaining sectors 667 
+
+extended from the end of one landmark to the end of the next landmark. The last sector was 668 
+
+excluded, as it is bounded by an element different in kind (the end of the corridor). 669 
+
+Each activity field was assigned to a sector based on the location of its peak. The landmark 670 
+
+distance of each field was measured as the distance between the peak and the end of the sector. 671 
+
+When landmarks were spaced irregularly, landmark distance was limited to a maximum given by 672 
+
+the size of the smallest sector. Fields with peaks outside this limit were excluded from analysis. 673 
+
+Spatial relationships between fields and landmarks were therefore analyzed using a metric of 674 
+
+absolute distance (in VR units) rather than relative distance between landmarks (phase). This 675 
+
+metric was chosen because absolute landmark distances were more consistent across multiple 676 
+
+fields of the same neurons than phase relationships. 677 
+
+To analyze landmark distances across fields within multi-field neurons we computed the 678 
+
+difference between landmark distances for all pairwise combinations of activity fields per 679 
+
+neuron. For each subtraction operation, the decision to subtract the smaller from the bigger 680 
+
+distance, or vice versa, was performed at random. We then pooled the results across neurons to 681 
+
+generate the double-difference distribution. 682 
+
+Two double-difference null distributions were generated for comparison. The first null 683 
+
+distribution was generated after replacing the measured landmark distance of each field with a 684 
+
+random value between zero and the maximum sector length. The second null distribution was 685 
+
+generated after randomly reassigning neuron IDs across fields within corresponding sectors. In 686 
+
+both cases, null distributions were based on 100 independent shuffles. 687 
+
+Given the observed consistency of landmarks distances from fields of the same neuron we 688 
+
+assigned a characteristic landmark distance to each neuron by computing the mean of the 689 
+
+landmark distances of all of its fields. 690 
+
+Spatial coverage. Spatial activity traces of neurons with at least one field were low-pass filtered 691 
+
+as described above, normalized to their maxima, and ranked according to the location of their 692 
+
+maxima. For analysis of coverage, we considered only the field with the highest amplitude of 693 
+
+each neuron. Spatial activity traces were binarized by setting activity values within the spatial 694 
+
+extent of the highest-amplitude field to 1 and all other activity values to 0. Space coverage was 695 
+
+then calculated as the percentage of space bins that contained at least one non-zero entry across 696 
+
+the population of neurons. Coverage as a function of neuron number was determined by drawing 697 
+
+100 random subsets of neurons for each sample size. As a control, coverage was computed after 698 
+
+assigning random spatial locations to each binarized field. This procedure was repeated 100 699 
+
+times for each sample size. 700 
+
+Landmark deletion. To detect persistent neuronal activity after landmark deletion we compared 701 
+
+activity during deletion (5 trials, DelLand window) to activity immediately preceding deletion (8 702 
+
+trials, pre-DelLand window). The analysis was restricted to a small number of trials to minimize 703 
+
+the potential influence of activity-dependent refinement processes independent of landmark 704 
+
+deletion. Analysis procedures were adapted to conservatively detect activity fields given low trial 705 
+
+numbers. 706 
+
+For each deletion event, we computed the spatial activity traces prior to and during deletion by 707 
+
+spatial binning of activity traces corresponding to the pre-DelLand and DelLand windows, 708 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+27 
+
+respectively. Pre-DelLand and DelLand spatial activity traces were then low-pass zero-phase 709 
+
+filtered, further smoothed using a running average with a sliding window of five spatial bins, and 710 
+
+standardized as described above. We then independently searched the pre-DelLand and the 711 
+
+DelLand traces for segments of at least 5 contiguous space bins where standardized activity was 712 
+
+≥12. 713 
+
+Statistical significance of segments was further assessed using low-pass zero-phase filtered 714 
+
+spatial activity map values of each trial in the corresponding pre-DelLand or DelLand window. 715 
+
+For each segment, we searched for peaks within the segments’ spatial extent on a trial-by-trial 716 
+
+basis. Thus, for each trial, we determined whether the segment contained a peak. If so, we 717 
+
+quantified its magnitude by averaging values within a neighborhood of two space bins in each 718 
+
+direction and standardized it relative to the distribution of spatial activity map values of the 719 
+
+corresponding trial, as described. Only segments containing a peak with a standardized 720 
+
+magnitude ≥7 within their spatial extent in at least one individual trial were considered for 721 
+
+further analysis. We refer to these segments as activity segments instead of activity fields because 722 
+
+their quantitative characterization is based on a low number of trials. 723 
+
+An activity segment detected in the pre-DelLand window was classified as “persistent” if an 724 
+
+overlapping activity segment was detected in the DelLand window. If this requirement was not 725 
+
+fulfilled, activity segments were classified as “sensitive” to landmark deletion. Visual inspection 726 
+
+of data indicates that this procedure is conservative, i.e., false-positive detections of persistent 727 
+
+activity segments appeared to be rare. 728 
+
+To assess whether the fraction of persistent activity segments was statistically different from 729 
+
+chance we generated a null distribution based on 100 shuffled controls. Each control was 730 
+
+generated by circular permutation of the original activity traces corresponding to each DelLand 731 
+
+window trial. Trial-wise circular permutation of DelLand windows was performed for deletion 732 
+
+events where the pre-DelLand window contained at least one activity segment. 733 
+
+For some deletion events, we observed that activity during landmark deletion was not spatially 734 
+
+localized, as typically observed in the presence of landmarks, but broad and intense (high-735 
+
+intensity activity). To detect such responses, we identified deletion events with at least one 736 
+
+activity segment before or during landmark deletion and quantified the ratio of the mean activity 737 
+
+trace values during and before deletion. Activity was classified as “high-intensity” in the absence 738 
+
+of landmarks relative to the presence of landmarks if the ratio was ≥2 . Such responses were 739 
+
+considered to be prediction error signals and were analyzed separately. 740 
+
+Identification of neuronal ensembles. To locate examples of functionally related sets of 741 
+
+neurons, we first identified all inter-neuron field pairs complying with two criteria: 1) their trial-742 
+
+wise noise correlation exceeded an absolute threshold (r ≥ 0.6 ), and 2) fields within each pair 743 
+
+belonged to the same VR corridor sector. We refer to these field pairs as “high-pass field pairs”. 744 
+
+We then searched for neuron sets of size 3 where each neuron was related to the other two 745 
+
+neurons via high-pass field pairs. By identifying and merging trios with at least one shared 746 
+
+neuron, we generated a list of unique non-overlapping sets of neurons (“super trios”). Finally, 747 
+
+super trios were expanded by adding neurons directly related to any of their members via high-748 
+
+pass field pairs. Such extended super trios correspond to identified functional ensembles. 749 
+
+To locate neurons anticorrelated with functional ensembles, we first identified all inter-neuron 750 
+
+field pairs complying with two criteria: 1) their trial-wise noise correlation was ≤ - 0.6, and 2) 751 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+28 
+
+fields within each pair belonged to the same VR corridor sector. We refer to these field pairs as 752 
+
+“low-pass field pairs”. For each ensemble, we identified neurons related to any of its members 753 
+
+via low-pass field pairs. Neurons anticorrelated to one ensemble sometimes were strongly 754 
+
+correlated among them, forming themselves an ensemble. Additionally, we searched for high-755 
+
+pass field pairs between neurons anticorrelated to the same ensembles to detect associations that 756 
+
+did not amount to trio structures. 757 
+
+The above procedure yields sets of neurons related to each other via strong positive or negative 758 
+
+correlations. Neurons identified as part of these structures were then subjected to a step of 759 
+
+manual curation to exclude potential artifacts such as optical crosstalk. This step involved direct 760 
+
+manual inspection of identified neurons and their corresponding ROIs in anatomy and activity 761 
+
+maps (maximum 𝚫𝚫 F/F 0 projection and local cross-correlation) calculated from image time series. 762 
+
+Neurons with potential ambiguities were identified. Next, both high-pass and low-pass field pairs 763 
+
+including such neurons were eliminated. These curated lists of field pairs were used as input to 764 
+
+the entire neuronal ensemble detection pipeline described above, yielding manually verified 765 
+
+functional ensembles. 766 
+
+Data analysis . Neuronal activity cross-referenced with logged behaviour and VR data was 767 
+
+analyzed using custom software written in MATLAB ( https://github.com/fmi-basel/DynCogRep-768 
+
+2PVR ). 769 
+
+770 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+29 
+
+References 771 
+
+1 O’Keefe, J. & Dostrovsky, J. The hippocampus as a spatial map. Preliminary evidence 772 from unit activity in the freely-moving rat. Brain Research 34 , 171-175 (1971). 773 
+
+2 Fyhn, M., Molden, S., Witter, M. P., Moser, E. I. & Moser, M. B. Spatial Representation 774 in the Entorhinal Cortex. Science 305 , 1258-1264 (2004). 775 
+
+3 Hafting, T., Fyhn, M., Molden, S., Moser, M. B. & Moser, E. I. Microstructure of a 776 spatial map in the entorhinal cortex. Nature 436 , 801-806 (2005). 777 
+
+https://doi.org/10.1038/nature03721 778 
+
+4 Taube, J. S., Muller, R. U. & Ranck, J. B. J. Head-Direction Cells Recorded from the 779 Postsubiculum in Freely Moving Rats. I. Description and Quantitative Analysis. The 780 
+
+Journal of Neuroscience 10 , 420-435 (1990). 781 
+
+5 Hoydal, O. A., Skytoen, E. R., Andersson, S. O., Moser, M. B. & Moser, E. I. Object-782 vector coding in the medial entorhinal cortex. Nature 568 , 400-404 (2019). 783 
+
+https://doi.org/10.1038/s41586-019-1077-7 784 
+
+6 Nagelhus, A., Andersson, S. O., Cogno, S. G., Moser, E. I. & Moser, M. B. Object-785 centered population coding in CA1 of the hippocampus. Neuron 111 , 2091-2104 786 e2014 (2023).  https://doi.org/10.1016/j.neuron.2023.04.008 787 
+
+7 Yang, C. et al. A population code for spatial representation in the zebrafish 788 telencephalon. Nature 634 , 397-406 (2024).  https://doi.org/10.1038/s41586-024-789 
+
+07867-2 790 
+
+8 O'keefe, J. & Nadel, L. The hippocampus as a cognitive map . (Oxford university 791 press, 1978). 792 
+
+9 Moser, E. I., Moser, M. B. & McNaughton, B. L. Spatial representation in the 793 hippocampal formation: a history. Nat Neurosci 20 , 1448-1464 (2017). 794 
+
+https://doi.org/10.1038/nn.4653 795 
+
+10 Tolman, E. C. Cognitive Maps in Rats and Men. Psychological Review 55 , 189-208 796 (1948). 797 
+
+11 Tsao, A., Moser, M. B. & Moser, E. I. Traces of experience in the lateral entorhinal 798 cortex. Curr Biol 23 , 399-405 (2013).  https://doi.org/10.1016/j.cub.2013.01.036 799 
+
+12 Deshmukh, S. S. & Knierim, J. J. Influence of local objects on hippocampal 800 representations: Landmark vectors and memory. Hippocampus 23 , 253-267 (2013). 801 
+
+https://doi.org/10.1002/hipo.22101 802 
+
+13 Casali, G., Shipley, S., Dowell, C., Hayman, R. & Barry, C. Entorhinal Neurons Exhibit 803 Cue Locking in Rodent VR. Front Cell Neurosci 12 , 512 (2018). 804 
+
+https://doi.org/10.3389/fncel.2018.00512 805 
+
+14 GoodSmith, D. et al. Flexible encoding of objects and space in single cells of the 806 dentate gyrus. Curr Biol 32 , 1088-1101 e1085 (2022). 807 
+
+https://doi.org/10.1016/j.cub.2022.01.023 808 
+
+15 Lee, A. K. & Wilson, M. A. Memory of Sequential Experience in the Hippocampus 809 during Slow Wave Sleep. Neuron 36 , 1183-1194 (2002). 810 
+
+16 Dragoi, G. & Tonegawa, S. Preplay of future place cell sequences by hippocampal 811 cellular assemblies. Nature 469 , 397-401 (2011). 812 
+
+https://doi.org/10.1038/nature09633 813 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+30 
+
+17 Aronov, D., Nevers, R. & Tank, D. W. Mapping of a non-spatial dimension by the 814 hippocampal-entorhinal circuit. Nature 543 , 719-722 (2017). 815 
+
+https://doi.org/10.1038/nature21692 816 
+
+18 Chettih, S. N., Mackevicius, E. L., Hale, S. & Aronov, D. Barcoding of episodic 817 memories in the hippocampus of a food-caching bird. Cell 187 , 1922-1935 e1920 818 (2024).  https://doi.org/10.1016/j.cell.2024.02.032 819 
+
+19 Eichenbaum, H. & Cohen, N. J. Can we reconcile the declarative memory and 820 spatial navigation views on hippocampal function? Neuron 83 , 764-770 (2014). 821 
+
+https://doi.org/10.1016/j.neuron.2014.07.032 822 
+
+20 Nieh, E. H. et al. Geometry of abstract learned knowledge in the hippocampus. 823 
+
+Nature 595 , 80-84 (2021).  https://doi.org/10.1038/s41586-021-03652-7 824 
+
+21 Ray, S. et al. Hippocampal coding of identity, sex, hierarchy, and affiliation in a 825 social group of wild fruit bats. Science 387 , eadk9385 (2025). 826 
+
+https://doi.org/10.1126/science.adk9385 827 
+
+22 Bittner, K. C. et al. Conjunctive input processing drives feature selectivity in 828 hippocampal CA1 neurons. Nat Neurosci 18 , 1133-1142 (2015). 829 
+
+https://doi.org/10.1038/nn.4062 830 
+
+23 Forli, A. & Yartsev, M. M. Hippocampal representation during collective spatial 831 behaviour in bats. Nature 621 , 796-803 (2023).  https://doi.org/10.1038/s41586-023-832 
+
+06478-7 833 
+
+24 Snyder, M. C., Qi, K. K. & Yartsev, M. M. Neural representation of human 834 experimenters in the bat hippocampus. Nat Neurosci 27 , 1675-1679 (2024). 835 
+
+https://doi.org/10.1038/s41593-024-01690-8 836 
+
+25 Samsonovich, A. & McNaughton, B. L. Path Integration and Cognitive Mapping in a 837 Continuous Attractor Neural Network Model. The Journal of Neuroscience 17 , 5900-838 5920 (1997). 839 
+
+26 McNaughton, B. L., Battaglia, F. P., Jensen, O., Moser, E. I. & Moser, M. B. Path 840 integration and the neural basis of the 'cognitive map'. Nat Rev Neurosci 7, 663-678 841 (2006).  https://doi.org/10.1038/nrn1932 842 
+
+27 Khona, M. & Fiete, I. R. Attractor and integrator networks in the brain. Nat Rev 843 
+
+Neurosci 23 , 744-766 (2022).  https://doi.org/10.1038/s41583-022-00642-0 844 
+
+28 Stachenfeld, K. L., Botvinick, M. M. & Gershman, S. J. The hippocampus as a 845 predictive map. Nat Neurosci 20 , 1643-1653 (2017). 846 
+
+https://doi.org/10.1038/nn.4650 847 
+
+29 Whittington, J. C. R. et al. The Tolman-Eichenbaum Machine: Unifying Space and 848 Relational Memory through Generalization in the Hippocampal Formation. Cell 183 ,849 1249-1263 e1223 (2020).  https://doi.org/10.1016/j.cell.2020.10.024 850 
+
+30 George, D. et al. Clone-structured graph representations enable flexible learning 851 and vicarious evaluation of cognitive maps. Nat Commun 12 , 2392 (2021). 852 
+
+https://doi.org/10.1038/s41467-021-22559-5 853 
+
+31 Recanatesi, S. et al. Predictive learning as a network mechanism for extracting low-854 dimensional latent space representations. Nat Commun 12 , 1417 (2021). 855 
+
+https://doi.org/10.1038/s41467-021-21696-1 856 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+31 
+
+32 Payne, H. L., Lynch, G. F. & Aronov, D. Neural representations of space in the 857 hippocampus of a food-caching bird. Science 373 , 343-348 (2021). 858 
+
+33 Vinepinsky, E. et al. Representation of edges, head direction, and swimming 859 kinematics in the brain of freely-navigating fish. Sci Rep 10 , 14762 (2020). 860 
+
+https://doi.org/10.1038/s41598-020-71217-1 861 
+
+34 Cohen, L., Vinepinsky, E., Donchin, O. & Segev, R. Boundary vector cells in the 862 
+
+goldfish central telencephalon encode spatial information. PLoS Biol 21 , e3001747 863 (2023).  https://doi.org/10.1371/journal.pbio.3001747 864 
+
+35 Petrucco, L. et al. Neural dynamics and architecture of the heading direction circuit 865 
+
+in zebrafish. Nat Neurosci 26 , 765-773 (2023).  https://doi.org/10.1038/s41593-023-866 
+
+01308-5 867 
+
+36 Lavian, H., Prat, O., Petrucco, L., Stih, V. & Portugues, R. Visual motion and 868 
+
+landmark position align with heading direction in the zebrafish interpeduncular 869 nucleus. Nat Commun 16 , 9924 (2025).  https://doi.org/10.1038/s41467-025-66084-870 
+
+1871 
+
+37 Tanaka, R. & Portugues, R. Plastic landmark anchoring in zebrafish compass 872 neurons. Nature 650 , 673-680 (2026).  https://doi.org/10.1038/s41586-025-09888-x 873 
+
+38 Mueller, T., Dong, Z., Berberoglu, M. A. & Guo, S. The dorsal pallium in zebrafish, 874 Danio rerio (Cyprinidae, Teleostei). Brain Res 1381 , 95-105 (2011). 875 
+
+https://doi.org/10.1016/j.brainres.2010.12.089 876 
+
+39 Anneser, L., Satou, C., Hotz, H. R. & Friedrich, R. W. Molecular organization of 877 
+
+neuronal cell types and neuromodulatory systems in the zebrafish telencephalon. 878 
+
+Curr Biol 34 , 298-312 e294 (2024).  https://doi.org/10.1016/j.cub.2023.12.003 879 
+
+40 Friedrich, R. W., Jacobson, G. A. & Zhu, P. Circuit neuroscience in zebrafish. Curr 880 
+
+Biol 20 , R371-381 (2010).  https://doi.org/10.1016/j.cub.2010.02.039 881 
+
+41 Aoki, T. et al. Imaging of neural ensemble for the retrieval of a learned behavioral 882 program. Neuron 78 , 881-894 (2013).  https://doi.org/10.1016/j.neuron.2013.04.009 883 
+
+42 Huang, K. H. et al. A virtual reality system to analyze neural activity and behavior in 884 
+
+adult zebrafish. Nat Methods 17 , 343-351 (2020).  https://doi.org/10.1038/s41592-885 
+
+020-0759-2 886 
+
+43 Chen, G., King, J. A., Burgess, N. & O’Keefe, J. How vision and movement combine in 887 the hippocampal place code. Proc. Natl. Acad. Sci. 110 , 378 - 383 (2013). 888 
+
+https://doi.org/https://doi:10.1073/pnas.1215834110 889 
+
+44 Saleem, A. B., Diamanti, E. M., Fournier, J., Harris, K. D. & Carandini, M. Coherent 890 encoding of subjective spatial position in visual cortex and hippocampus. Nature 891 
+
+562 , 124-127 (2018).  https://doi.org/10.1038/s41586-018-0516-1 892 
+
+45 Khona, M., Chandra, S. & Fiete, I. Global modules robustly emerge from local 893 interactions and smooth gradients. Nature 640 , 155-164 (2025). 894 
+
+https://doi.org/10.1038/s41586-024-08541-3 895 
+
+46 Geiller, T. et al. Local circuit amplification of spatial selectivity in the hippocampus. 896 
+
+Nature 601 , 105-109 (2022).  https://doi.org/10.1038/s41586-021-04169-9 897 
+
+47 Bicanski, A. & Burgess, N. Neuronal vector coding in spatial cognition. Nat Rev 898 
+
+Neurosci 21 , 453-470 (2020).  https://doi.org/10.1038/s41583-020-0336-9 899 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+32 
+
+48 Hill, A. J. First occurrence of hippocampal spatial firing in a new environment. Exp 900 
+
+Neurol 62 , 282-297 (1978).  https://doi.org/10.1016/0014-4886(78)90058-4 901 
+
+49 Wilson, M. A. & McNaughton, B. L. Dynamics of the hippocampal ensemble code for 902 space. Science 261 , 1055-1058 (1993). 903 
+
+50 Frank, L. M., Stanley, G. B. & Brown, E. N. Hippocampal plasticity across multiple 904 days of exposure to novel environments. J Neurosci 24 , 7681-7689 (2004). 905 
+
+https://doi.org/10.1523/JNEUROSCI.1958-04.2004 906 
+
+51 Lee, D., Lin, B. J. & Lee, A. K. Hippocampal place fields emerge upon single -cell 907 manipulation of excitability during behavior. Science 337 , 849-853 (2012). 908 
+
+52 Turing, A. M. The chemical basis of morphogenesis. Philosophical Transactions of 909 
+
+the Royal Society of London. B, Biological Sciences 237 , 37-72 (1952). 910 
+
+https://doi.org/10.1098/rstb.1952.0012 911 
+
+53 Kohonen, T. Self-organized formation of topologically correct feature maps. Biol. 912 
+
+Cybern. 43 , 59-69 (1982). 913 
+
+54 Friedrich, R. W. & Wanner, A. A. Dense Circuit Reconstruction to Understand 914 
+
+Neuronal Computation: Focus on Zebrafish. Annu Rev Neurosci 44 , 275-293 (2021). 915 
+
+https://doi.org/10.1146/annurev-neuro-110220-013050 916 
+
+55 Rao, R. P. N. & Ballard, D. H. Predictive coding in the visual cortex a functional 917 interpretation of some extra-classical receptive-field effects. Nature Neuroscience 918 
+
+2, 79-87 (1999). 919 
+
+56 Fiser, A. et al. Experience-dependent spatial expectations in mouse visual cortex. 920 
+
+Nat Neurosci 19 , 1658-1664 (2016).  https://doi.org/10.1038/nn.4385 921 
+
+57 Rao, R. P. N. A sensory-motor theory of the neocortex. Nat Neurosci 27 , 1221-1235 922 (2024).  https://doi.org/10.1038/s41593-024-01673-9 923 
+
+58 Rupprecht, P., Prendergast, A., Wyart, C. & Friedrich, R. W. Remote z-scanning with 924 a macroscopic voice coil motor for fast 3D multiphoton laser scanning microscopy. 925 
+
+Biomed Opt Express 7, 1656-1671 (2016).  https://doi.org/10.1364/BOE.7.001656 926 
+
+59 Pologruto, T. A., Sabatini, B. L. & Svoboda, K. ScanImage: Flexible software for 927 operating laser scanning microscopes.  Biomed. Eng. Online 2 (2003). 928 
+
+60 Schmidt, U., Weigert, M., Broaddus, C. & Myers, G.  265-273 (Springer International 929 Publishing). 930 
+
+61 Arganda-Carreras, I. et al.  85-95 (Springer Berlin Heidelberg). 931 
+
+62 Schindelin, J. et al.  Fiji: an open-source platform for biological-image analysis. Nat 932 
+
+Methods 9, 676-682 (2012).  https://doi.org/10.1038/nmeth.2019 933 
+
+63 Skaggs, W. E., McNaughton, B. L. & Gothard, K. M. An Information Theoretic 934 Approach to Deciphering the Hippocampal Code. Adv. Neural Inf. Process. Syst. 5,935 1030-1037 (1993). 936 
+
+937 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+33 
+
+938 
+
+Fig. 1 | Experimental design for the detection of structured neuronal activity in cDc. a, Fish perspective of a 939 VR environment with landmarks. b, Schematic of a head-fixed adult zebrafish in a semi-hexagonal tank for VR 940 projection. Light green areas correspond to the walls where the VR is projected. Green arrows represent closed loop 941 VR update based on tail movements. c, Head-fixed adult zebrafish. Right: schematic dorsal view of the right 942 telencephalic hemisphere. Dl, lateral zone; Dm, medial zone; rDc, cDc, rostral and caudal regions of the central 943 zone. d, Time-averaged raw fluorescence (left) and maximum projection of 𝚫𝚫 F/F 0 time series (right) in the same 944  view. Scale bar, 50 μm (left). e, f, g, Schematic: data acquisition and analysis workflow. h, Top: spatial activity 945 maps of successive trials of two neurons circled in d. Blanked bins (dark gray) correspond to periods outside the 946 time of data acquisition (first and last rows) or to periods of mechanical instability that were excluded from analysis. 947 White rectangles below the color map indicate positions of landmarks (L1-L5). Bottom: Trial-averaged neuronal 948 activity. Black: unfiltered; red: low-pass filtered. Black vertical lines depict peaks of activity fields; colored bars 949 depict ±2 space bins around peaks. Same conventions are used in related plots throughout all figures. 950 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+34 
+
+951 
+
+Fig. 2 | Spatial selectivity of neuronal activity across VR environments. a, Histogram of spatial specificity for all 952 neurons with at least one field across all 10 fish exposed to VRs with landmarks. Inset compares specificity of 953 activity binned spatially or temporally. In this and subsequent plots, dots and error bars show mean and s.d., box 954 plots show median and surrounding quartiles. b, Pearson correlation between decoded and true fish positions along 955 the VR. Left: decoding based on the activity of all neurons with fields in each fish; center, decoding after 956 subsampling spatially selective neurons to equalize neuron counts across fish; right, decoding based on shuffled 957 activity traces. Colored lines show data from individual fish. c, Number of neurons with activity fields as a function 958 of fields per neuron across fish. Color code as in b; line shows linear fit. d, Number of neurons with activity fields as 959 a function of decoder performance (mean correlation). Color code as in b and c; line shows linear fit. e, f, Spatial 960 activity maps of neurons imaged simultaneously in the 7Reg and 5Irr environment, respectively. Top: single-field 961 neurons; bottom: multi-field neurons. g, Same neural activity data as in f but binned along the temporal dimension. 962 h, Spatial activity maps of two neurons from fish in the 0Lm environment. Conventions as in Fig. 1h. 963 
+
+964 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+35 
+
+965 
+
+Fig. 3 | Space coverage at the neural population level across VR environments. a, Neural activity 966 autocorrelogram averaged across neurons of one fish behaving in the 7Reg VR (black curve) and expected 967 autocorrelogram based on landmark positions only (magenta curve). Vertical black and magenta lines depict peaks 968 of corresponding autocorrelograms. b, Same as a for neurons pooled across all 5 fish behaving in the 5Irr VR. c, 969 Spatial activity map (top) and field detection (bottom) of one neuron in the 7Reg environment. Conventions as in 970 Fig.1 h. The vertical line without a surrounding colored bar depicts a detected peak that did not pass the statistical 971 significance threshold for field detection. Dashed black lines on the spatial activity map indicate sectors defined by 972 landmarks (S1 – S7). Red arrows indicate landmark distance. Conventions as in Fig. 1h. d, Histogram of pairwise 973 differences in landmark distances, calculated for all fields of each multi-field neuron from one fish in the 7Reg 974 environment (blue). Red: shuffled controls (null distributions; filled red bars: randomly drawn distance values; red 975 outline: randomized neuron labels in each sector). e, Histograms of pairwise differences of landmark distance values 976 expressed as absolute distances (blue) or as fractions of sector length (red) for all 5 fish behaving in the 5Irr VR. f, 977 Histogram of landmark distances, expressed as a fraction of sector length, for single-field (black) and multi-field 978 (gray) neurons from one fish in the 7Reg environment. g, Normalized activity of all spatially selective neurons from 979 one fish in the 7Reg environment, normalized per neuron and sorted by peak location. h, Binarized fields extracted 980 from data in g. i, Binarized fields of neurons from 5 fish in the 5Irr environment, one color per fish as in Fig. 2b. j, 981 Space coverage by binarized fields from one fish in the 7Reg environment as a function of neuron number (red) and 982 shuffle control (gray). Error bars show s.d.. k, Same as in j for all 5 fish in the 5Irr environment (black) and shuffle 983 control (gray). 984 
+
+985 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+36 
+
+986 
+
+Fig. 4 | Dynamics of the internal representation. a, Number of fields per neuron in sessions 1 and 2 (S1, S2; circle 987 area is proportional to neuron number; n = 4 fish). Colors highlight complete loss of fields (orange), partial loss of 988 field number (red), and gain of fields (purple; pale: de novo gain of fields). Light gray area covers neurons with 989 fields in S1 or S2, dark gray area covers neurons with fields in S1 and S2. b, Histogram showing the absolute 990 number of neurons with different numbers of fields in S1 and S2. c, Percentage of single-field neurons in S1 and S2. 991 Lines connect individual fish. d,e, Number of fields per neuron in the subset of neurons with fields in S1 or S2 ( d)992 and S1 and S2 ( e). Lines connect means of individual fish. f - j, Spatial activity maps of individual neurons in S1 993 and S2 illustrating different types of changes. S1 and S2 are separated by a white gap; number of trials between 994 sessions is indicated. Conventions as in Fig. 1h. k, l, Spatial activity maps showing the abrupt emergence of spatial 995 selectivity within an imaging session in different environments. m, Normalized decoding accuracy in S1 and S2 996 using different subsets of spatially selective neurons (100 instances of the decoding network, each trained on a 997 different subset). To account for differences in neuron numbers across fish, decoding accuracy (Pearson correlation 998 between decoded and real positions) was normalized to the mean decoding accuracy across all subsets in each fish 999 (n = 3; one fish was excluded because neuron number in one category, S2not1, was too low). In c, d, e, and m, dots 1000 and error bars show mean and s.d., respectively; box plots show median and surrounding quartiles. 1001 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+37 
+
+1002 
+
+Fig. 5 | Consequences of landmark deletion on neuronal activity. a - e, Spatial activity maps of individual 1003 neurons across multiple imaging sessions including landmark deletions (DelLand). Sessions are separated by white 1004 spacing, numbers indicate trials between sessions. Red bars and stronger colors highlight trials when landmarks 1005 were deleted. Conventions as in Fig. 1h. f, g, Top: spatial activity maps of trials before and during landmark deletion 1006 containing activity segments classified as persistent (P; f) or sensitive (S; g). Conventions as in Fig. 1h. Bottom: 1007 mean z-scored activity. Shaded areas depict activity segments; dashed line shows threshold for detection. h, 1008 Percentage of sensitive and persistent activity segments in real and mock deletions, pooled across all deletions and 1009 fish. i, Distribution of the percentage of persistent activity segments observed in shuffle controls (gray, red dashed 1010 line shows mean) compared to the observed percentage of persistent activity segments (blue line, z-score indicated). 1011 j, k , Spatial activity maps before and during landmark deletion of two neurons showing activity classified as error 1012 signals. l, Cumulative distribution of activity ratios (mean activity during/before landmark deletion) and 1013 corresponding distribution for mock deletions. Distribution is clipped at ratios ≥ 3 in the main graph; inset shows 1014 enlargement of the full upper range. Black vertical line depicts threshold used to identify error signals. Percentage of 1015 error signals among all deletion events is given by the areas under the curves (colored). 1016 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+38 
+
+1017 
+
+Fig. 6 | Coordinated “noise” correlations in the neural population. a, Histograms of pairwise trial-by-trial 1018 (noise) correlations between all possible field pairs (n = 10 fish in environments with landmarks; blue) and shuffle 1019 controls (red). b, Inter- and intra-neuron noise correlations (blue) and shuffle controls (red). c, Intra- (left) and inter-1020 neuron (right) noise correlations as a function of sector distance. Blue and red lines show linear regressions to data 1021 and shuffle controls, respectively. d, Variance of inter-neuron noise correlations as a function of sector distance. e, 1022 Intra- and inter-neuron noise correlations in one fish in the 7Reg environment. Colored circles depict high positive 1023 and negative correlations corresponding to the examples shown in f – n. f – n, Subregions of spatial activity maps 1024 centered on fields from different pairs of neurons with high positive or negative noise correlations highlighted in e.1025 Conventions as in Fig. 1h. IDs of neurons are given by numbers above each activity map. Correlation coefficients 1026 and z-scores are indicated above (positive correlations) or below (negative correlations) each plot. o, Raw 1027 fluorescence image (time-averaged) and regions of interest (ROIs) corresponding to highlighted neurons. Solid lines 1028 depict high positive correlations, dashed purple lines depict high negative correlations; different colors represent 1029  different ensembles. Left hem., left hemisphere; R, rostral; C, caudal; scale bar, 50 μm. Inset shows maximum 1030 projection of the 𝚫𝚫 F/F 0 time series in the same field of view and depicts locations of ROIs. In b and e, dots and error 1031 bars show mean and s.d., respectively; box plots show median and surrounding quartiles. 1032 
+
+1033 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+39 
+
+1034 
+
+Extended Data Fig. 1 | Spatial selectivity of neuronal activity in cDc. a , Histogram of spatial specificity z-scores 1035 for all spatially selective neurons. The red dashed line represents the imposed significance threshold (z-score ≥ 3) 1036 relative to shuffle controls. b, Pie chart showing the proportion of neurons contributed by each fish (color coded as 1037 in Fig. 2b) to the total of neurons analyzed across all fish. For each fish, the exploded slice (darker shade) and the 1038 indicated percentage represent the proportion of neurons with at least one activity field (spatially selective neurons). 1039 c, Pie chart showing the proportion of neurons contributed by each fish (color coded as in Fig. 2b) to the total of 1040 neurons with activity fields across fish. For each fish, the proportion of single field neurons (exploded slice), and of 1041 multiple field neurons is indicated. d, Absolute error in space bins between decoded and true fish positions along the 1042 VR. Left, decoding performed using all neurons with fields for each fish; center, decoding after subsampling 1043 spatially selective neurons to equalize neuron counts across fish; right, decoding of shuffled neuronal activity traces. 1044 Colors as in Fig. 2b. Dots and error bars show mean and s.d., respectively; box plots show median and surrounding 1045 quartiles. e, Decoder performance as a function of average number of fields per neuron; line shows linear fit. Colors 1046 as in Fig. 2b. 1047 
+
+1048 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+40 
+
+1049 
+
+Extended Data Fig. 2 | Additional examples of spatially selective neurons. a, Spatial activity maps of individual 1050 neurons from 10 fish (squares color coded as in Fig. 2b) behaving in different environments containing landmarks. 1051 b, Spatial activity maps of individual neurons in the 0Lm environment (no landmarks). 1052 
+
+.CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint 41 
+
+1053 
+
+Extended Data Fig. 3 | Evolution of the internal representation from S1 to S2. a, Additional examples of spatial 1054 activity maps of individual neurons in S1 and S2. Conventions as in Fig. 1h. Sessions are separated by white 1055 spacing, numbers indicate trials between sessions. b - d, Decoding accuracy using neuronal subsets of different size 1056 for each of three fish imaged in S1 and S2. Subset sizes are indicated and given by the smallest number of spatially 1057 selective neurons in any of the categories in each fish. Dots and error bars show mean and s.d., respectively; box 1058 plots show median and surrounding quartiles. 1059 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+42 
+
+1060 
+
+Extended Data Fig. 4 | Additional examples of effects of landmark deletion on neuronal activity. Additional 1061 examples of spatial activity maps of different neurons across all imaging sessions in experiments including landmark 1062 deletions. Sessions are separated by white spacing, numbers indicate trials between sessions. Red bars and stronger 1063 colors highlight trials when landmarks were deleted. Conventions as in Fig. 1h. 1064 
+
+1065 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted June 23, 2026. ;https://doi.org/10.64898/2026.05.19.726250 doi: bioRxiv preprint
+
+43 
+
+1066 
+
+Extended Data Fig. 5 | Additional examples of functional neuronal ensembles in cDc. a, Raw fluorescence 1067 image (time-averaged) of neurons in cDc with regions of interest (ROIs) corresponding to neurons of identified 1068 ensembles in a fish in the 5Irr environment. Right hem., right hemisphere; R, rostral; C, caudal; numbers show 1069  neuron IDs; scale bar, 50 μm. b, Maximum projection of 𝚫𝚫 F/F 0 image time-series. Annotations show neurons of 1070 identified ensembles. c, Spatial activity maps of ensemble neurons highlighted in a and b. Colored boxes and lines 1071 highlight inter-neuron field pairs with high positive noise correlations. Correlation coefficients are indicated. Colors 1072 correspond to different VR sectors. d, e, Neurons associated with multiple ensembles in another fish in the 7Reg 1073 environment, overlaid on raw fluorescence image and maximum 𝚫𝚫 F/F 0 projection. f, Schematic of identified 1074 functional neuronal ensembles. Solid lines show high positive correlations within three neuronal ensembles (yellow, 1075 blue, and magenta) between neurons (white dots); dashed purple lines show high negative correlations. Boxed 1076 numbers indicate VR sectors associated with the corresponding fields. 1077
