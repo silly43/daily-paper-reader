@@ -1,0 +1,605 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-25T22:13:25.931997+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 8,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 7,
+    "quick_skim_target": 12,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2606.24597v1",
+      "source": "arxiv",
+      "title": "Qwen-AgentWorld: Language World Models for General Agents",
+      "abstract": "A world model predicts environment dynamics based on current observations and actions, serving as a core cognitive mechanism for reasoning and planning. In this work, we investigate how world modeling based on language models can further push the boundaries of general agents. (i) We first focus on building foundation models for agentic environment simulation. We introduce Qwen-AgentWorld-35B-A3B and Qwen-AgentWorld-397B-A17B, the first language world models capable of simulating agentic environments covering 7 domains via long chain-of-thought reasoning. Leveraging more than 10M environment interaction trajectories of 7 domains in real-world environments, we develop Qwen-AgentWorld through a three-stage training pipeline: CPT injects general-purpose world modeling capabilities from the state transition dynamics and augmented professional corpora, SFT activates next-state-prediction reasoning, and RL sharpens simulation fidelity through a tailored framework with hybrid rubric-and-rule rewards. To evaluate language world models, we present AgentWorldBench, a comprehensive benchmark constructed from real-world interactions of 5 frontier models on 9 established benchmarks. Empirical results demonstrate that Qwen-AgentWorld significantly outperforms existing frontier models. (ii) Beyond foundation models, we further investigate two complementary paradigms through which world modeling enhances general agents. First, as a decoupled environment simulator, Qwen-AgentWorld supports scalable and controllable simulation of thousands of real-world environments for agentic RL, yielding gains that surpass real-environment training alone. Second, as a unified agent foundation model, world-model training acts as a highly effective warm-up that improves downstream performance across 7 agentic benchmarks. Code: https://github.com/QwenLM/Qwen-AgentWorld",
+      "authors": [
+        "Yuxin Zuo",
+        "Zikai Xiao",
+        "Li Sheng",
+        "Fei Huang",
+        "Jianhong Tu",
+        "Yuxuan Liu",
+        "Tianyi Tang",
+        "Xiaomeng Hu",
+        "Yang Su",
+        "Qingfeng Lan",
+        "Yantao Liu",
+        "Qin Zhu",
+        "Yinger Zhang",
+        "Bowen Yu",
+        "Haiquan Zhao",
+        "Haiyang Xu",
+        "Jianxin Yang",
+        "Jiayang Cheng",
+        "Junyang Wang",
+        "Lianghao Deng",
+        "Mingfeng Xue",
+        "Tianyi Bai",
+        "Yang Fan",
+        "Yubo Ma",
+        "Yucheng Li",
+        "Zeyu Cui",
+        "Zhihai Wang",
+        "Zhihui Xie",
+        "Zhuorui Ye",
+        "An Yang",
+        "Dayiheng Liu",
+        "Jingren Zhou",
+        "Ning Ding"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-23T13:53:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.24597v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "language world models for general agents, predicting environment dynamics",
+      "llm_evidence_cn": "面向通用智能体的语言世界模型，预测环境动态",
+      "llm_evidence": "面向通用智能体的语言世界模型，预测环境动态",
+      "canonical_evidence": "面向通用智能体的语言世界模型，预测环境动态",
+      "llm_tldr_en": "Introduces Qwen-AgentWorld, large language world models that simulate agentic environments across 7 domains via chain-of-thought reasoning.",
+      "llm_tldr_cn": "世界模型是智能体推理与规划的核心。本文提出Qwen-AgentWorld系列语言世界模型，基于超过1000万条真实环境交互轨迹，通过三阶段训练（CPT、指令微调、强化学习）获得能模拟7个领域智能体环境的模型。这些模型利用长链思维推理预测环境动态，为通用智能体提供了强大的内部世界模型。该工作是语言模型作为世界建模基础模型的重要探索。",
+      "llm_tldr": "世界模型是智能体推理与规划的核心。本文提出Qwen-AgentWorld系列语言世界模型，基于超过1000万条真实环境交互轨迹，通过三阶段训练（CPT、指令微调、强化学习）获得能模拟7个领域智能体环境的模型。这些模型利用长链思维推理预测环境动态，为通用智能体提供了强大的内部世界模型。该工作是语言模型作为世界建模基础模型的重要探索。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25421v1",
+      "source": "arxiv",
+      "title": "Beyond Next-Observation Prediction: Agent-Authored World Modeling for Sequential Decision Making",
+      "abstract": "Recent studies on world modeling for Large Language Model (LLM) agents typically formulate the learning objective as next-observation prediction. However, this objective ties supervision to what a transition happens to reveal, which may omit the dynamics most relevant to the agent's current decision. To bridge this gap, we propose Agent-Authored World Modeling (AAWM), a training procedure that constructs supervision from the policy's own decision needs. Specifically, at each state, the agent identifies what it needs to understand about the environment before acting. These needs drive the retrieval of relevant transition evidence across trajectories, which is then synthesized into training targets that capture decision-oriented dynamics instead of reconstructing the next observation. This aligns the training objective with the dynamics the policy needs before acting, not with the contents of the next observation. Experimental results validate the effectiveness of AAWM across multiple environments and training settings. These results show that decision-aware world-model targets provide a more effective learning signal than next-observation prediction.",
+      "authors": [
+        "Guangfeng Cai",
+        "Kaibing Yang",
+        "Shuo He",
+        "Yu Li",
+        "Shengtian Yang",
+        "Jiaqi Lv",
+        "Lei Feng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-24T05:31:00+00:00",
+      "link": "https://arxiv.org/pdf/2606.25421v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "agent-authored world modeling for sequential decision making",
+      "llm_evidence_cn": "智能体自主构建世界模型用于序贯决策",
+      "llm_evidence": "智能体自主构建世界模型用于序贯决策",
+      "canonical_evidence": "智能体自主构建世界模型用于序贯决策",
+      "llm_tldr_en": "Proposes Agent-Authored World Modeling (AAWM) which constructs supervision from policy's decision needs, enabling decision-oriented world models beyond next-observation prediction.",
+      "llm_tldr_cn": "针对LLM智能体世界建模中下一观测预测目标忽略决策相关动态的问题，提出智能体自主世界建模（AAWM）。该方法从策略的决策需求中构建监督，检索相关过渡证据并合成训练目标，使世界模型聚焦于决策相关环境动态。",
+      "llm_tldr": "针对LLM智能体世界建模中下一观测预测目标忽略决策相关动态的问题，提出智能体自主世界建模（AAWM）。该方法从策略的决策需求中构建监督，检索相关过渡证据并合成训练目标，使世界模型聚焦于决策相关环境动态。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.20977v1",
+      "source": "arxiv",
+      "title": "The Mathematics of Modeling the Future",
+      "abstract": "Modeling the future requires specifying conditional laws relative to an evolving information flow and describing their movement across time. This paper provides a unified mathematical synthesis of this problem along a single spine. Filtrations encode known data; conditional expectation and regular conditional probabilities yield point and distributional forecasts; Markov kernels and semigroups propagate observables and laws; and infinitesimal generators encode local dynamics, producing Kolmogorov equations and stochastic differential equations. Along this spine, martingales isolate surprise, filtering handles partial observation, finance prices futures, stochastic control optimizes choices, and ergodic theory describes the far future.   The contribution is architectural. We explicitly connect derivations that turn classical objects into a unified forecasting calculus: the tower property becomes the semigroup law; Ito's formula yields the backward equation after conditioning; integration by parts provides the forward operator; and generator perturbations become model-risk distortions. Forecasting is shown not as mere data extrapolation, but the construction of dynamically coherent conditional distributions constrained by information, geometry, and admissible models.   These concepts are illustrated via Gaussian Ornstein--Uhlenbeck and non-Gaussian Cox--Ingersoll--Ross processes, demonstrating how abstract machinery produces explicit transition laws, spectral decompositions, term-structure formulae, and asymptotics in diverse geometries. We recast density evolution as a Wasserstein gradient flow, place forecasting within Hilbert, Fisher--Rao, and Wasserstein geometries, provide a discrete-time empirical dictionary, and address model-risk. The result is a compact mathematical map from information to prediction, local dynamics to global laws, and idealized models to empirical forecasting.",
+      "authors": [
+        "Miquel Noguer i Alonso"
+      ],
+      "primary_category": "q-fin.MF",
+      "categories": [
+        "q-fin.MF"
+      ],
+      "published": "2026-06-18T22:56:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.20977v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mathematical framework for modeling future states",
+      "llm_evidence_cn": "预测未来状态的数学框架",
+      "llm_evidence": "预测未来状态的数学框架",
+      "canonical_evidence": "预测未来状态的数学框架",
+      "llm_tldr_en": "This paper provides a unified mathematical synthesis for modeling the future using filtrations, conditional expectations, Markov kernels, and infinitesimal generators, directly addressing predictive world models.",
+      "llm_tldr_cn": "该论文提出了一个统一的数学框架来建模未来，利用滤过、条件期望、马尔可夫核和无穷小生成器等工具。它系统地描述了如何从当前信息流中推断未来状态，为预测世界模型提供了理论基石。该工作不仅是数学综合，也明确了滤波、随机控制和遍历理论在建模未来中的作用。",
+      "llm_tldr": "该论文提出了一个统一的数学框架来建模未来，利用滤过、条件期望、马尔可夫核和无穷小生成器等工具。它系统地描述了如何从当前信息流中推断未来状态，为预测世界模型提供了理论基石。该工作不仅是数学综合，也明确了滤波、随机控制和遍历理论在建模未来中的作用。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.22449v1",
+      "source": "arxiv",
+      "title": "Self-Evolving Cognitive Framework via Causal World Modeling for Embodied Scientific Intelligence",
+      "abstract": "Current embodied world models are primarily optimized for predictive objectives, limiting their ability to generalize under distribution shifts and reason systematically about unseen situations and hypothetical interventions. We argue that embodied intelligence should move beyond predictive world modeling toward self-evolving cognitive systems that continually construct and refine internal causal representations through interaction with the environment. To this end, we propose a self-evolving cognitive framework via causal world modeling for embodied scientific intelligence, which integrates three complementary components: causal world modeling, intervention-driven causal reasoning, and continual cognitive refinement. The proposed framework continuously revises and expands its internal causal world model through causal discovery, intervention-driven feedback, and counterfactual reasoning, supporting continual cognitive refinement and enabling cognition itself to evolve over time. Furthermore, we reinterpret embodied interaction not merely as a means of trajectory optimization, but as an epistemic process for causal hypothesis generation, intervention-driven experimentation, and continual knowledge acquisition. This work provides a conceptual and theoretical foundation for a transition from predictive intelligence toward epistemic intelligence, in which intelligence emerges through the continual construction, revision, and refinement of causal world models via interaction with the environment. Accordingly, an intervention-driven causal-epistemic benchmarking paradigm is suggested for evaluating self-evolving embodied scientific intelligence.",
+      "authors": [
+        "Yi Yu",
+        "Tetsunari Inamura"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published": "2026-06-21T11:46:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.22449v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes causal world modeling for predictive and self-evolving cognitive systems",
+      "llm_evidence_cn": "提出因果世界建模用于预测和自进化的认知系统",
+      "llm_evidence": "提出因果世界建模用于预测和自进化的认知系统",
+      "canonical_evidence": "提出因果世界建模用于预测和自进化的认知系统",
+      "llm_tldr_en": "This paper proposes a self-evolving cognitive framework via causal world modeling, integrating causal world modeling, intervention-driven reasoning, and continual refinement for embodied scientific intelligence.",
+      "llm_tldr_cn": "当前具身世界模型局限于预测目标，难以泛化和推理。本文提出一种通过因果世界建模的自进化认知框架，整合因果世界建模、干预驱动推理和持续认知精炼三个互补组件，旨在构建能够不断构建和优化内部因果表征的具身智能系统，超越单纯的预测世界建模。",
+      "llm_tldr": "当前具身世界模型局限于预测目标，难以泛化和推理。本文提出一种通过因果世界建模的自进化认知框架，整合因果世界建模、干预驱动推理和持续认知精炼三个互补组件，旨在构建能够不断构建和优化内部因果表征的具身智能系统，超越单纯的预测世界建模。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "predictive world model",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.22509v1",
+      "source": "arxiv",
+      "title": "Imagine to Ensure Safety in Hierarchical Reinforcement Learning",
+      "abstract": "This work investigates the safe exploration problem in reinforcement learning, where an agent must maximize cumulative performance while simultaneously satisfying safety constraints. This challenge becomes even more pronounced in long-horizon tasks, where existing safe methods face fundamental limitations due to compounding estimation errors and restricted exploration capabilities. To address this problem, we propose a method that combines a learnable world model with two complementary policies a high-level policy and a low-level policy to promote safety at both hierarchical levels. The high-level policy generates intermediate subgoals that bias exploration toward safe regions, while the low-level policy uses imagined rollouts in the learned world model to reduce unsafe behaviors when reaching these subgoals. The proposed method was evaluated on challenging long-horizon navigation and manipulation tasks with high-dimensional action spaces, where it significantly outperforms existing Safe RL baselines in both success rate and strong empirical constraint satisfaction, consistently meeting the prescribed safety budget across seeds, while prior approaches fail to effectively solve these complex long-horizon scenarios.",
+      "authors": [
+        "Gregory Gorbov",
+        "Artem Latyshev",
+        "Aleksandr I. Panov"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-21T14:04:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.22509v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "uses a learnable world model for safe hierarchical RL",
+      "llm_evidence_cn": "使用可学习世界模型进行安全分层强化学习",
+      "llm_evidence": "使用可学习世界模型进行安全分层强化学习",
+      "canonical_evidence": "使用可学习世界模型进行安全分层强化学习",
+      "llm_tldr_en": "This paper proposes a safe reinforcement learning method that combines a learnable world model with hierarchical policies. The high-level policy generates safe subgoals, and the low-level policy uses imagined rollouts in the world model to ensure safety in long-horizon tasks.",
+      "llm_tldr_cn": "针对强化学习中安全探索的挑战，尤其是在长周期任务中估计误差累积和探索受限的问题，本文提出了一种结合可学习世界模型与分层策略的方法。高层策略生成将探索引导至安全区域的子目标，低层策略利用世界模型进行想象 rollout。实验表明该方法在多个安全强化学习基准上显著优于现有方法，为安全分层强化学习提供了新的思路。",
+      "llm_tldr": "针对强化学习中安全探索的挑战，尤其是在长周期任务中估计误差累积和探索受限的问题，本文提出了一种结合可学习世界模型与分层策略的方法。高层策略生成将探索引导至安全区域的子目标，低层策略利用世界模型进行想象 rollout。实验表明该方法在多个安全强化学习基准上显著优于现有方法，为安全分层强化学习提供了新的思路。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "model-based reinforcement learning with world models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25225v1",
+      "source": "arxiv",
+      "title": "MJEPA: A Simple and Scalable Joint-Embedding Predictive Architecture for Audio-Visual Learning",
+      "abstract": "Self-supervised learning from large-scale video data has emerged as a dominant paradigm for visual representation learning. Since audio and visual streams naturally co-occur in video data, extending this success to jointly learn from both modalities is a natural next step, yet it remains challenging. Existing audio-visual self-supervised methods rely on modality-specific encoders and complex combinations of contrastive or reconstruction objectives, limiting cross-modal synergy and scalability. Joint Embedding Predictive Architectures (JEPAs) offer a simple, modality-agnostic alternative, but have to date been applied primarily to individual modalities. We introduce MJEPA, a joint-embedding predictive architecture for audio-visual learning that uses a single, unified encoder for both modalities. Our approach uses only a single predictive objective, applied both within and across modalities. We show that cross-modal prediction is critical: without it, a shared encoder degrades below unimodal baselines; with it, each modality's representation benefits from the other. Our frozen ViT-g model outperforms the best prior frozen baseline by over 6.8 mAP on AudioSet-20K, surpasses fully finetuned models on ESC-50 and FSD50K, and is competitive on video benchmarks despite using 10x less video data.",
+      "authors": [
+        "Revant Teotia",
+        "Adrien Bardes",
+        "Michael Rabbat",
+        "Sumit Chopra",
+        "Matthew J. Muckley",
+        "Nicolas Ballas"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-06-23T22:48:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.25225v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "joint-embedding predictive architecture for audio-visual self-supervised learning",
+      "llm_evidence_cn": "用于音视频自监督学习的联合嵌入预测架构",
+      "llm_evidence": "用于音视频自监督学习的联合嵌入预测架构",
+      "canonical_evidence": "用于音视频自监督学习的联合嵌入预测架构",
+      "llm_tldr_en": "MJEPA proposes a simple and scalable joint-embedding predictive architecture for audio-visual self-supervised learning, avoiding complex contrastive or reconstruction objectives and enabling cross-modal synergy.",
+      "llm_tldr_cn": "现有音视频自监督方法依赖模态特定编码器和复杂对比/重建目标，限制跨模态协同。论文提出MJEPA，一种简单可扩展的联合嵌入预测架构，采用模态无关编码器和统一预测目标。在多个评估中，MJEPA在音频和视觉表示学习上均达到最优性能，且训练效率更高。",
+      "llm_tldr": "现有音视频自监督方法依赖模态特定编码器和复杂对比/重建目标，限制跨模态协同。论文提出MJEPA，一种简单可扩展的联合嵌入预测架构，采用模态无关编码器和统一预测目标。在多个评估中，MJEPA在音频和视觉表示学习上均达到最优性能，且训练效率更高。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-18-733163-v2",
+      "source": "biorxiv",
+      "title": "CellOS: Learning a World Model of Cellular State through Joint Embedding Prediction",
+      "abstract": "Foundation models learned from single-cell transcriptomes are central to the prospect of AI virtual cell that can represent, query and predict cellular state. However, most current single-cell foundation models learn from a single view of gene expression and are optimized primarily through reconstruction or next-token prediction. As a result, they capture expression abundance but can-not explicitly reconcile complementary views of cellular state. Here we present CellOS, a multi-view foundation model that learns cellular representations from paired expression and perception views. CellOS integrates complementary views through a scalable three-stage training strategy that combines causal cell-sentence language modelling, function-preserving dense-to-mixture-of-experts expansion and latent-space alignment via an LLM-JEPA objective. Using this framework, we trained a 12-billion-parameter model on 390.5 million single-cell transcriptomes. Across diverse benchmarks spanning cell-state annotation, batch integration and perturbation-response prediction, CellOS consistently outperformed state-of-the-art single-cell foundation models. Together, these results suggest that predictive alignment between complementary cellular views provides a scalable path toward representation-centric cellular world models and transferable AI virtual cells.",
+      "authors": [
+        "Zhou, Q.",
+        "Le, Y.",
+        "Qi, X.",
+        "Chang, S.",
+        "Lu, H.",
+        "Wu, Y.",
+        "Wang, H.",
+        "Ran, R.",
+        "li, x."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-06-25T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.18.733163v2.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "explicitly learns a world model of cellular state",
+      "llm_evidence_cn": "明确学习细胞状态的世界模型",
+      "llm_evidence": "明确学习细胞状态的世界模型",
+      "canonical_evidence": "明确学习细胞状态的世界模型",
+      "llm_tldr_en": "CellOS learns a multi-view world model of cellular state by aligning expression and perception embeddings via joint prediction, outperforming single-view models in cell state prediction and cross-modal retrieval.",
+      "llm_tldr_cn": "现有单细胞模型仅利用基因表达单一视图，无法捕获细胞状态的多模态信息。本文提出CellOS，一种学习细胞状态世界模型的多视图基础模型。该方法通过联合嵌入预测，将表达与感知视图对齐，并在三阶段训练中结合因果语言建模。实验表明，CellOS在多种任务中达到最优性能，为构建AI虚拟细胞提供了新范式。",
+      "llm_tldr": "现有单细胞模型仅利用基因表达单一视图，无法捕获细胞状态的多模态信息。本文提出CellOS，一种学习细胞状态世界模型的多视图基础模型。该方法通过联合嵌入预测，将表达与感知视图对齐，并在三阶段训练中结合因果语言建模。实验表明，CellOS在多种任务中达到最优性能，为构建AI虚拟细胞提供了新范式。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.25674v1",
+      "source": "arxiv",
+      "title": "BitNet Text Embeddings",
+      "abstract": "LLM-based text embedders have substantially improved retrieval and semantic representation quality, but their deployment remains costly: large backbone models slow down embedding inference, while high-dimensional full-precision embeddings impose substantial storage and bandwidth overhead on large-scale indexes. In this paper, we present BITEMBED, an extreme low-bit framework for LLM-based text embedding that jointly targets encoding efficiency and vector storage. BITEMBED converts pretrained LLM backbones into BitNet-style embedding encoders with ternary weights, quantized activations, and lightweight normalization refinement. The converted model is adapted to representation learning through continual contrastive pre-training, followed by supervised contrastive fine-tuning with both similarity-distribution distillation and attention-relation distillation from a full-precision teacher. Beyond quantizing the backbone, BITEMBED further trains output embeddings to support multiple storage precisions meeting different storage needs in various scenarios. Experiments on MMTEB (eng, v2) with Qwen3-0.6B and Gemma3-270M show that BITEMBED is largely comparable to full precision teacher embedders. Moreover, BITEMBED flexibly obtains text embeddings of various precisions, achieving a trade-off between performance and storage cost.",
+      "authors": [
+        "Zhen Li",
+        "Xin Huang",
+        "Liang Wang",
+        "Nan Yang",
+        "Ting Song",
+        "Yan Xia",
+        "Xun Wu",
+        "Shaohan Huang",
+        "Huishuai Zhang",
+        "Furu Wei",
+        "Dongyan Zhao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.IR"
+      ],
+      "published": "2026-06-24T10:37:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.25674v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "contrastive pre-training for low-bit embeddings",
+      "llm_evidence_cn": "低比特嵌入的对比预训练",
+      "llm_evidence": "低比特嵌入的对比预训练",
+      "canonical_evidence": "低比特嵌入的对比预训练",
+      "llm_tldr_en": "BITEMBED framework converts LLM backbones into ternary-weight embedders via contrastive pre-training and fine-tuning, achieving extreme low-bit text embeddings.",
+      "llm_tldr_cn": "该论文提出BITEMD框架，将预训练大语言模型转换为三元权重嵌入编码器，通过持续对比预训练和监督对比微调，实现了极低比特文本嵌入。该方法显著降低了推理和存储开销，同时保持了表示质量。",
+      "llm_tldr": "该论文提出BITEMD框架，将预训练大语言模型转换为三元权重嵌入编码器，通过持续对比预训练和监督对比微调，实现了极低比特文本嵌入。该方法显著降低了推理和存储开销，同时保持了表示质量。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21344v1",
+      "source": "arxiv",
+      "title": "Mind the Noise: Sensitivity of Transformer-based Interaction-Aware Trajectory Prediction Models to Noisy Data",
+      "abstract": "Trajectory prediction allows autonomous vehicles to anticipate the future behavior of surrounding objects (or agents) and, accordingly, maximize the safety and efficiency of their driving. State-of-the-art Transformed-based interaction-aware trajectory prediction models, which rely on attention mechanisms to capture multi-agent interactions and maximize prediction accuracy, are commonly trained and evaluated on long-range high-quality datasets. These datasets are typically obtained by aggregating data from multiple vehicles or drones and removing any object detection or tracking noise offline. Yet, information about a surrounding object's state (its position, speed, heading) is far from being noiseless in real-world deployments. Object state estimation is affected by perception uncertainties and localization errors that can be particularly large for objects received via Vehicle-to-Everything (V2X) communications. In this paper, we analyze the impact of noisy object state information on the trajectory prediction accuracy of a state-of-the-art Transformer-based interaction-aware trajectory prediction model. Our study demonstrates that trajectory prediction accuracy can rapidly deteriorate as the noise intensity increases. Numerical results show that the prediction accuracy can reduce by a 1.3x factor under small noise levels and by as much as a 3.9x factor under the highest (yet realistic) noise conditions. These findings reveal the strong sensitivity of trajectory prediction models to noisy data, underscoring the need for more realistic training and evaluation datasets as well as noise mitigation strategies.",
+      "authors": [
+        "Shahab Salehi",
+        "Luca Lusvarghi",
+        "Miguel Sepulcre",
+        "Javier Gozalvez"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG",
+        "cs.RO"
+      ],
+      "published": "2026-06-19T11:41:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.21344v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "predicts future trajectories of agents, relevant to predictive world models",
+      "llm_evidence_cn": "预测智能体未来轨迹，与预测世界模型相关",
+      "llm_evidence": "预测智能体未来轨迹，与预测世界模型相关",
+      "canonical_evidence": "预测智能体未来轨迹，与预测世界模型相关",
+      "llm_tldr_en": "This paper studies the sensitivity of transformer-based trajectory prediction models to noisy data, highlighting challenges for real-world deployment.",
+      "llm_tldr_cn": "本文针对自动驾驶中基于Transformer的交互感知轨迹预测模型，系统研究了输入噪声对预测性能的影响。通过设计噪声注入实验，发现现有模型对位置、速度等状态噪声非常敏感，性能显著下降。该工作揭示了高精度数据集与实际部署数据之间的差距，强调了开发鲁棒世界模型的重要性。结论对构建可靠的预测模型具有指导意义。",
+      "llm_tldr": "本文针对自动驾驶中基于Transformer的交互感知轨迹预测模型，系统研究了输入噪声对预测性能的影响。通过设计噪声注入实验，发现现有模型对位置、速度等状态噪声非常敏感，性能显著下降。该工作揭示了高精度数据集与实际部署数据之间的差距，强调了开发鲁棒世界模型的重要性。结论对构建可靠的预测模型具有指导意义。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-18-733198-v1",
+      "source": "biorxiv",
+      "title": "An atlas-scale generative model for unified representation learning of bulk RNA-seq data",
+      "abstract": "Public bulk RNA-seq repositories contain hundreds of thousands of samples, creating opportunities for large-scale representation learning, but integration across studies remains challenging because of heterogeneous annotations, experimental protocols, and technical variation. While pre-trained foundation models are now widely available for single-cell RNA-seq, comparable resources for bulk RNA-seq remain scarce, motivating a model that learns a unified, tissue-aware representation directly from bulk data. We trained a supervised variational autoencoder (VAE) on a compendium of 118,263 bulk RNA-seq samples that we assembled from TCGA, GTEx, and ARCHS4 and mapped to 42 tissue categories. The model classifies tissue of origin at 94.9% balanced accuracy (weighted F1 96.2%) and compresses 16,115 genes into a 121-dimensional latent space. Tissue identity is the primary organizing axis of the latent space, while source effects remain secondary. To assess the impact of data volume, we constructed training sets at three different scales (38K, 75K, and 118K samples). Our results demonstrated that reconstruction fidelity improved incrementally with each expansion of the dataset, but with diminishing returns. We validated the model on an independent cohort of 734 paediatric tumour samples from TARGET, achieving 84.6% agreement with the expected tissue of origin. The trained model and code are available at GitHub (https://github.com/BIMSBbioinfo/flexynesis_tissue_vae_manuscript) with an interactive web application.",
+      "authors": [
+        "Pande, A.",
+        "Uyar, B.",
+        "Akalin, A."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-06-24T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.18.733198v1.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "supervised VAE for representation learning of bulk RNA-seq",
+      "llm_evidence_cn": "有监督变分自编码器用于批量RNA-seq表征学习",
+      "llm_evidence": "有监督变分自编码器用于批量RNA-seq表征学习",
+      "canonical_evidence": "有监督变分自编码器用于批量RNA-seq表征学习",
+      "llm_tldr_en": "This paper trains a supervised VAE on 118,263 bulk RNA-seq samples to learn unified tissue-aware representations, achieving 94.9% tissue classification accuracy.",
+      "llm_tldr_cn": "大规模批量RNA-seq数据集成因异质性标注和实验协议而困难。本文训练一个有监督变分自编码器，在来自TCGA、GTEx和ARCHS4的118,263个样本上学习统一组织感知表征，以94.9%准确率分类组织来源，为批量RNA-seq提供首个类似单细胞基础模型的可复用表征资源。",
+      "llm_tldr": "大规模批量RNA-seq数据集成因异质性标注和实验协议而困难。本文训练一个有监督变分自编码器，在来自TCGA、GTEx和ARCHS4的118,263个样本上学习统一组织感知表征，以94.9%准确率分类组织来源，为批量RNA-seq提供首个类似单细胞基础模型的可复用表征资源。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "generative models for self-supervised learning",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.23611v1",
+      "source": "arxiv",
+      "title": "Data Selection Through Iterative Self-Filtering for Vision-Language Settings",
+      "abstract": "The availability of large amounts of clean data is paramount to training neural networks. However, at large scales, manual oversight is impractical, resulting in sizeable datasets that can be very noisy. Attempts to mitigate this obstacle to producing performant vision-language models have so far involved heuristics, curated reference datasets, and using pre-trained models. Here we propose a novel, bootstrapped method in which a CLIP model is trained on an evolving, self-selected dataset. This evolving dataset constitutes a balance of filtered, highly probable clean samples as well as diverse samples from the entire distribution. Our proposed Self-Filtering method iterates between training the model and selecting a subsequently improved data mixture. Training on vision-language datasets filtered by the proposed approach improves downstream performance without the need for additional data or pre-trained models.",
+      "authors": [
+        "Andrei Liviu Nicolicioiu",
+        "Sarvjeet Singh Ghotra",
+        "Morgane M. Moss",
+        "Aaron Courville"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-22T17:11:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.23611v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "iterative self-filtering for clean data selection in self-supervised vision-language learning",
+      "llm_evidence_cn": "自监督视觉语言学习中的迭代自过滤数据选择方法",
+      "llm_evidence": "自监督视觉语言学习中的迭代自过滤数据选择方法",
+      "canonical_evidence": "自监督视觉语言学习中的迭代自过滤数据选择方法",
+      "llm_tldr_en": "Proposes a bootstrapped method to train a CLIP model on an evolving self-selected dataset balancing clean samples and diversity, improving vision-language model performance.",
+      "llm_tldr_cn": "针对大规模视觉-语言数据集噪声问题，该论文提出一种迭代自过滤方法。方法通过交替训练CLIP模型和基于模型置信度选择数据，在保证数据纯净的同时保持样本多样性。实验表明，该方法无需人工标注或参考数据集即可有效提升模型性能，为自监督学习中的数据治理提供了新思路。",
+      "llm_tldr": "针对大规模视觉-语言数据集噪声问题，该论文提出一种迭代自过滤方法。方法通过交替训练CLIP模型和基于模型置信度选择数据，在保证数据纯净的同时保持样本多样性。实验表明，该方法无需人工标注或参考数据集即可有效提升模型性能，为自监督学习中的数据治理提供了新思路。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised visual representation learning",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.24667v1",
+      "source": "arxiv",
+      "title": "DREAM: Dense Retrieval Embeddings via Autoregressive Modeling",
+      "abstract": "Dense retrieval embedding models are a fundamental component of modern retrieval-based AI systems. Most dense retrievers are trained with contrastive objectives, which require labeled positive and negative document pairs that are often costly and difficult to obtain. In this work, we investigate whether the autoregressive next-token prediction objective of a large language model (LLM) can provide supervision for dense retrieval. The intuition is simple: if a document contains information relevant to a query, conditioning on that document should make the target output easier for the LLM to predict. A key challenge is that the next-token prediction loss is computed inside the LLM, while the retriever is a separate embedding model. To address this challenge, we propose DREAM (Dense Retrieval Embeddings via Autoregressive Modeling), which injects retriever-generated query-document similarity scores into selected attention heads of a frozen LLM. During training, these scores determine how much attention each candidate document receives while the LLM predicts the target output. The resulting prediction loss provides gradients for retriever training through the attention mechanism. We evaluate DREAM on retrieval benchmarks BEIR and RTEB using embedding backbones ranging from 0.5B to 3B parameters. DREAM consistently outperforms existing baselines across different model scales. These results demonstrate that DREAM provides a promising approach for training dense retrievers through autoregressive modeling.",
+      "authors": [
+        "Yixuan Tang",
+        "Yi Yang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-23T15:00:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.24667v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "investigates contrastive vs autoregressive objectives for dense retrieval",
+      "llm_evidence_cn": "研究对比学习与自回归目标在密集检索中的对比",
+      "llm_evidence": "研究对比学习与自回归目标在密集检索中的对比",
+      "canonical_evidence": "研究对比学习与自回归目标在密集检索中的对比",
+      "llm_tldr_en": "DREAM explores using autoregressive next-token prediction as an alternative to contrastive learning for training dense retrieval embeddings.",
+      "llm_tldr_cn": "这项工作研究是否可以用大语言模型的自回归下一个词预测目标替代对比学习来训练密集检索嵌入。提出DREAM方法，通过文档条件化语言建模损失来监督检索器，避免需要标注的正负对。实验表明自回归目标能有效学习检索友好的嵌入表示。",
+      "llm_tldr": "这项工作研究是否可以用大语言模型的自回归下一个词预测目标替代对比学习来训练密集检索嵌入。提出DREAM方法，通过文档条件化语言建模损失来监督检索器，避免需要标注的正负对。实验表明自回归目标能有效学习检索友好的嵌入表示。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.25784v1",
+      "source": "arxiv",
+      "title": "$S^{2}$-FracMix: Label-Preserving Self-Saliency Mixup Augmentation",
+      "abstract": "Data augmentation is known to improve generalization of deep visual models. Recent methods favor mixup strategies that generate interpolated samples to improve model performance. However, these techniques not only incur significant computational overhead, they also lead to semantic disruption of augmentation data due to cross-sample mixing. We first propose Self-Saliency ($S^2$) Mixup, which constructs challenging yet label-consistent samples by extracting multi-scale salient patches and reinserting them into non-salient regions of the same image. This promotes scale-invariant feature learning while avoiding cross-sample interference. To further enhance model robustness, we introduce FracMix, a mixing scheme that injects self-similarity patterns into salient regions using adaptive ratios. Collectively, our unified framework, $S^{2}$-FracMix, enables simultaneous learning from fractal and non-fractal structures within a single image, yielding a targeted and structurally coherent augmentation strategy. We theoretically analyze the advantage of our technique, and empirically establish its superiority over the existing methods by achieving state-of-the-art performance in extensive evaluation with seven benchmarks across classification (coarse and fine-grained), robustness, calibration, object detection, and transfer learning tasks. Project page is available at \\href{https://fracmix-data-augmentation.github.io/}{fracmix-data-augmentation.github.io}",
+      "authors": [
+        "Khawar Islam",
+        "Arif Mahmood",
+        "Xin Jin",
+        "Naveed Akhtar"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-24T13:00:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.25784v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "label-preserving self-saliency mixup augmentation for self-supervised visual representation learning",
+      "llm_evidence_cn": "用于自监督视觉表示学习的标签保持自显著性混合增强方法",
+      "llm_evidence": "用于自监督视觉表示学习的标签保持自显著性混合增强方法",
+      "canonical_evidence": "用于自监督视觉表示学习的标签保持自显著性混合增强方法",
+      "llm_tldr_en": "Proposes Self-Saliency Mixup and FracMix to generate challenging yet label-consistent augmentations within single images, promoting scale-invariant feature learning without cross-sample interference.",
+      "llm_tldr_cn": "该论文针对现有混合增强方法计算开销大且导致语义破坏的问题，提出S^2-FracMix方法。该方法通过在同一图像内部提取多尺度显著块并插入非显著区域，构建具有挑战性但标签一致的样本，促进尺度不变特征学习，避免跨样本干扰。进一步引入FracMix注入自相似模式增强鲁棒性。实验表明，该方法在多个视觉任务上提升了模型泛化能力，为自监督学习提供了一种高效的数据增强策略。",
+      "llm_tldr": "该论文针对现有混合增强方法计算开销大且导致语义破坏的问题，提出S^2-FracMix方法。该方法通过在同一图像内部提取多尺度显著块并插入非显著区域，构建具有挑战性但标签一致的样本，促进尺度不变特征学习，避免跨样本干扰。进一步引入FracMix注入自相似模式增强鲁棒性。实验表明，该方法在多个视觉任务上提升了模型泛化能力，为自监督学习提供了一种高效的数据增强策略。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised visual representation learning",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-22-733718-v1",
+      "source": "biorxiv",
+      "title": "The avian colourscape is disproportionately threatened by species extinctions",
+      "abstract": "The impact of projected extinctions on global animal colour diversity remains unknown. Combining citizen science with self-supervised deep learning, we built novel representations of bird plumage colour patterning based on >125,000 museum specimen images covering 9,143 species. We demonstrate that losing currently threatened bird species will drive a disproportionate reduction in avian plumage diversity, with the most severe losses occurring in tropical and subtropical regions. Furthermore, while humans generally find non-typical plumage phenotypes more aesthetically attractive, threatened species are unexpectedly deemed less visually appealing despite their comparatively unusual plumages. Overall, our results highlight severe, imminent threats to the existing avian colourscape and raise critical questions about the future of animal colour diversity in a changing world.",
+      "authors": [
+        "MacDonald, R. X.",
+        "Harris, K.",
+        "He, Y.",
+        "Hughes, E. C.",
+        "Ioannou, E.",
+        "James, T. D.",
+        "Jardine, M. D.",
+        "Moody, C. J.",
+        "Nouri, L. O.",
+        "Varley, Z. K.",
+        "Thomas, G. H.",
+        "Cooney, C. R."
+      ],
+      "primary_category": "ecology",
+      "categories": [
+        "ecology"
+      ],
+      "published": "2026-06-23T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.22.733718v1.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised deep learning for bird plumage color representation",
+      "llm_evidence_cn": "自监督深度学习用于鸟类羽毛颜色表示",
+      "llm_evidence": "自监督深度学习用于鸟类羽毛颜色表示",
+      "canonical_evidence": "自监督深度学习用于鸟类羽毛颜色表示",
+      "llm_tldr_en": "Uses self-supervised deep learning on 125K museum images to build plumage color representations; shows threatened species disproportionately reduce color diversity.",
+      "llm_tldr_cn": "结合公民科学和自监督深度学习，基于12.5万张博物馆标本图像构建鸟类羽毛颜色表示。发现受威胁物种的灭绝将导致羽毛颜色多样性不成比例地减少，尤其是在热带和亚热带地区。尽管非典型羽毛更吸引人，但受威胁物种却被认为视觉吸引力较低。",
+      "llm_tldr": "结合公民科学和自监督深度学习，基于12.5万张博物馆标本图像构建鸟类羽毛颜色表示。发现受威胁物种的灭绝将导致羽毛颜色多样性不成比例地减少，尤其是在热带和亚热带地区。尽管非典型羽毛更吸引人，但受威胁物种却被认为视觉吸引力较低。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised visual representation learning",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

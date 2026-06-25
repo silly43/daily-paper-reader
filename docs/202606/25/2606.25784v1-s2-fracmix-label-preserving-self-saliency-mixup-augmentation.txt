@@ -1,0 +1,681 @@
+Title: S^2-FracMix: Label-Preserving Self-Saliency Mixup Augmentation
+
+URL Source: https://arxiv.org/pdf/2606.25784v1
+
+Published Time: Thu, 25 Jun 2026 00:59:20 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# S2-FracMix: Label-Preserving Self-Saliency Mixup Augmentation 
+
+Khawar Islam 1 ⋆, Arif Mahmood 2 , Xin Jin 3 , and Naveed Akhtar 1 
+
+> 1
+
+The University of Melbourne, Australia  
+
+> 2
+
+Information Technology University, Pakistan  
+
+> 3
+
+Westlake University, China 
+
+Abstract. Data augmentation is known to improve generalization of deep visual models. Recent methods favor mixup strategies that gener-ate interpolated samples to improve model performance. However, these techniques not only incur significant computational overhead, they also lead to semantic disruption of augmentation data due to cross-sample mixing. We first propose Self-Saliency ( S2) Mixup, which constructs challenging yet label-consistent samples by extracting multi-scale salient patches and reinserting them into non-salient regions of the same im-age. This promotes scale-invariant feature learning while avoiding cross-sample interference. To further enhance model robustness, we intro-duce FracMix, a mixing scheme that injects self-similarity patterns into salient regions using adaptive ratios. Collectively, our unified framework, 
+
+S2-FracMix, enables simultaneous learning from fractal and non-fractal structures within a single image, yielding a targeted and structurally co-herent augmentation strategy. We theoretically analyze the advantage of our technique, and empirically establish its superiority over the ex-isting methods by achieving state-of-the-art performance in extensive evaluation with seven benchmarks across classification (coarse and fine-grained), robustness, calibration, object detection, and transfer learning tasks. Project page is available at fracmix-data-augmentation.github.io 
+
+Keywords: Data Augmentation · Generalization · Robustness 
+
+## 1 Introduction 
+
+The rapid growth in the scale and representational capacity of Deep Neural Networks (DNNs) has enabled modern models to effectively memorize training data [4,5,59,65]. While this capacity contributes to strong empirical performance, it also exacerbates overfitting, thereby widening the generalization gap. To ad-dress this challenge, data augmentation has emerged as a fundamental research direction [30–32,45,47]. Data augmentation strategies have been widely adopted across diverse vision tasks, including image classification [7, 50], object detec-tion [67], and segmentation [13, 28]. By enriching training distributions, these  
+
+> ⋆
+
+Corresponding author: islam.k@unimelb.edu.au 
+
+> arXiv:2606.25784v1 [cs.CV] 24 Jun 2026
+
+2 K. Islam et al. Source  
+
+> Target
+> Mixup
+> CutMix
+> SmoothMix
+> FMix
+> GridMix
+> ResizeMix Ours
+> PuzzleMix
+> AutoMix
+> AdAutoMix
+> Top -1 Accuracy (%)
+> Iterations
+> Ours
+
+Fig. 1: (Left) Performance of ResNet-18 trained with various augmentation methods for 200 epochs on CIFAR100. (Right) Representative augmentation samples created by different methods. The samples get constructed with source and target images. 
+
+methods improve robustness to unseen data, mitigate model collapse [30,58,61], and enhance resilience to distribution shifts [29, 45, 48]. A central objective of modern augmentation techniques is to increase sample diversity and robustness while preserving the structural and semantic integrity of the underlying data [15,19,24,28,29,45,46]. Equally important is their practical applicability, which requires a careful balance between performance gains and computational overhead [25,27,31,32]. In this work, we introduce S2-FracMix, a computationally efficient augmentation framework that promotes greater diver-sity and structural complexity in augmented samples, thereby improving gener-alization without incurring substantial overhead (see Fig. 1 & 2). Top -1 Accuracy (%) 
+
+> Training time (hours)
+
+Fig. 2: Comparisons of total training time vs. top-1 accuracy of ResNet-18 
+
+on CIFAR-100 dataset with RTX 3090. 
+
+Within the broader task-agnostic 
+
+mixup paradigm, samples are typically generated using random pairs of training instances [65]. Representative methods such as CutMix [64], Manifold Mixup [55], AlignMixup [54], and ResizeMix [51] adopt different mixing strategies to con-struct synthetic training examples. Since these techniques combine random pairs of images, they fall short on preserv-ing semantically salient image regions, potentially leading to suboptimal struc-tural consistency. To address this limi-tation, saliency-guided methods - includ-ing SaliencyMix [53], PuzzleMix [31], Co-Mixup [32], and GuidedMixup [30] - were introduced to prioritize informative regions during mixing. While effective, these approaches typically incur substan-tial computational overhead, increasing training time and demanding high-end computational resources [31,32]. Other methods such as AutoMix [42] and AdAu-toMix [49] attempt to automatically learn optimal mixing strategies and label assignments. However, they remain less effective for Transformer-based archi-tectures, besides their heavy compute overhead. Similarly, fractal-based tech-S2-FracMix 3
+
+niques [20, 24, 26] end up disrupting essential image content while inducing un-desirable distribution shifts, which compromises model robustness. Addressing these challenges, we propose S2-FracMix, a unified augmentation framework comprising two complementary components: Self-Saliency ( S2) and 
+
+FracMix . The S2 component extracts multi-scale, saliency-guided patches from an input image, applies diverse transformations to these patches, and reintegrates them into the same image through a controlled mixing operation. By operating within a single image, S2 avoids cross-sample semantic interference while pro-moting structural diversity and scale-invariant representation learning. Building upon this foundation, FracMix introduces targeted fractal-based augmentation. In contrast to methods such as DiffuseMix [26], which diffuses fractal textures across the entire image, FracMix confines self-similar fractal injection to the salient regions identified by S2. This targeted design increases structural com-plexity while preserving the clean contextual background. Consequently, each augmented sample simultaneously contains fractal and non-fractal structures, enhancing diversity without inducing undesirable distribution shifts. Rather than relying on a fixed mixing heuristic, S2-FracMix incorporates multiple mixing modes that are randomly selected for each training instance. This high-level stochastic mixing strategy further diversifies the training dis-tribution, enabling the model to learn more robust object representations and generalize effectively to unseen data. Our extensive evaluations establish that S2-FracMix consistently outperforms state-of-the-art augmentation baselines across seven datasets and nine competitive methods. Our approach achieves superior performance in clean accuracy, adversarial robustness, recognition under occlu-sion, and a broad range of downstream scenarios. The main contributions of this work are summarized as follows: 
+
+– We introduce Self-Saliency ( S2) mixing, a multi-scale, saliency-guided aug-mentation strategy that extracts informative patches, applies diverse trans-formations, and reintegrates them into the same image. 
+
+– We propose FracMix , a targeted fractal-based mixing mechanism that injects self-similar structures exclusively within salient regions, increasing structural complexity while preserving contextual integrity and data fidelity. 
+
+– We develop a unified framework with S2 and FracMix , termed S2-FracMix, and extend it with a proposed concept of multi-mode mixing. We also theo-retically analyze the key strength of our framework. 
+
+– Through comprehensive evaluations on seven datasets and comparisons with nine state-of-the-art methods, we demonstrate consistent improvements across general and fine-grained classification, object detection, transfer learning, self-supervised learning, calibration, and few-shot learning. 
+
+## 2 Related Work 
+
+2.1 Mixup Augmentation 
+
+Mixup-based augmentation generates diverse training samples through inter-polation strategies [21, 35, 63]. Manifold Mixup [55] extends linear interpola-4 K. Islam et al. 
+
+tion to hidden representations, encouraging smoother decision boundaries in la-tent space. CutMix [64] replaces rectangular regions between images to promote occlusion-aware learning. Subsequent variants such as FMix [16] and GridMix [2] adopt structured masking strategies, while ResizeMix [51] resizes and overlays patches to introduce scale-aware transformations. SnapMix [23] improves fine-grained recognition by proportionally mixing semantically relevant regions. More recently, Decoupled Mixup [41] proposed an efficient objective with a decoupled regularizer that leverages hard mixed samples to mine discriminative features. Collectively, these methods enhance generalization by synthesizing new samples, yet they largely rely on inter-image mixing without explicitly preserving seman-tic saliency. 
+
+2.2 Automated Mixup Augmentation 
+
+Automated mixup approaches balance mixing strategy design with optimiza-tion complexity, addressing the disconnect between the mixing heuristics and downstream training objectives. AutoMix [42] jointly optimizes sample genera-tion and classification to produce task-relevant mixed examples. Related direc-tions include adversarial data augmentation [66] and GAN-based methods [1], which seek to automate augmentation through learned generators. Adversarial MixUp [49, 60] further tackles domain shift by synthesizing mixed samples for adaptation. While effective, these approaches often introduce additional training complexity and computational overhead. Their generalizability across network architectures also remains restricted. 
+
+2.3 Saliency-driven Mixup Augmentation. 
+
+Saliency-guided methods prioritize discriminative regions during mixing to pre-serve semantic integrity. SaliencyMix [53] and Attentive-CutMix [57] combine the most informative regions from source and target images. PuzzleMix [31] redistributes patches based on saliency and local statistics, and Co-Mixup [32] extends this formulation to multi-image mixing with supermodular diversity con-straints. SAMix [36] decomposes mixup objectives into locally emphasized and globally constrained terms to enable adaptive mixing. SalfMix [10] generates self-mixed samples by transferring salient regions into less salient areas within the same image. GuidedMixup [30] focuses on critical local features using spectral residual-based saliency. Despite these advances, most saliency-driven methods rely on transferring salient regions across different images, which introduces se-mantic inconsistencies. 
+
+## 3 Proposed Method 
+
+3.1 Overview 
+
+The motivation behind the proposed S2-FracMix is to directly encode self-contained multi-scale saliency-guided augmentation. We preserve object saliency S2-FracMix 5
+
+while promoting structural diversity. Unlike prior works, we take a direct ap-proach for the detection of salient regions via spectral residual method [22], which is then used to guide patch extractions at various scales. These patches are transformed using rotation and blurring and mixed with the original image at non-salient random positions. Thus, S2-FracMix explic-itly encodes scale-invariant representation learning while preserving semantic integrity. As shown in Algorithm 1 and illustrated in Fig. 3, these multiscale patches are mixed with the original image, ensuring that important information highlighted through saliency is retained, while background or less discriminative areas are altered, to strengthen robust feature learning. 
+
+3.2 Self Saliency ( S2) Mixing Fractal Interpolation Fractal  with   
+
+> salient region Non-Fractal Non-Fractal with
+> original bird Fractal Interpolation
+
+Fig. 3: Augmentation samples of S2-FracMix are intricate composition of frac-tal and non-fractal patterns interpolated at multiple scales, all while retaining original image semantics. 
+
+Let D = {(Ii, y i)}Ni=1 represent the training dataset, where Ii ∈ Rc×h×w
+
+is an input image with c channels, height h, and width w, and yi is its corresponding one-hot encoded label. Self Saliency mixup generates an aug-mented image ˜Ii (with ˜yi = yi) as fol-lows. Saliency maps Si ∈ R1×h×w are computed to highlight regions critical to the predictions of model as: 
+
+Si = f (Ii), (1) where f (·) is the saliency detection method. The saliency maps guide the selection and transformation of patches. Patches are extracted from the input image Ii at 2 patch scales 
+
+P = {(h/ 2, w/ 2) , (h/ 4, w/ 4) }. For a patch Pk ∈ P , the top left position (xk, y k)
+
+is sampled uniformly xk ∼ Uniform (0 , w −wk), and yk ∼ Uniform (0 , h −hk). The patch is then extracted as: Pk = Ii[xk : xk +wk, y k : yk +hk]. Let Sk represent the saliency mask for the corresponding patch, defined as: Sk = Si[xk : xk + wk, y k :
+
+yk + hk]. Sk is normalized to [0 , 1] and a random threshold t ∼ Uniform (0 .5, 1.0) 
+
+is applied to obtain the binarized mask ˜Sk. The patch is accepted only if the salient area ratio meets P ˜Sk/(hkwk) ≥ (1 − t); otherwise it is rejected. Each accepted patch is first blended with a randomly selected fractal image F as de-scribed in Section 3.3 to obtain P fk . The transformation Tk(P fk , ˜Sk) is applied as 
+
+Tk = R(P fk , θ ) · ˜Sk + B(P fk ) · (1 − ˜Sk), (2) where R(P fk , θ ) applies a random rotation θ ∼ Uniform (−30 ◦, 30 ◦) and B(·)
+
+applies Gaussian blurring. The transformed patch is resized back to the original image dimensions. 
+
+Rk = Resize (Tk, (h, w ))  (3) 6 K. Islam et al. 
+
+Algorithm 1: S2-FracMix Algorithm 
+
+Require: Ib = {Ii, yi}bi=1 , P, F, λ
+
+Ensure: eIb = { ˜Ii, yi}bi=1 : Augmented batch with labels 
+
+foreach image (Ii, y i) ∈ I b do 
+
+Si ← SaliencyMap (Ii), Pm ← zeros (w, h ), nk ← 0
+
+foreach patch scale pk (hk , w k ) ∈ P do 
+
+xk ← uniform (1 , h − hk ), yk ← uniform (1 , w − wk )
+
+Image patch: Pk ← Ii[xk : xk + hk , y k : yk + wk ]
+
+Saliency patch: Sk ← Si[xk : xk + hk , y k : yk + wk ]
+
+Sk ← (Sk − min (Sk )) /(max (Sk ) − min (Sk )) 
+
+t ← uniform (0 .50 , 1.0) , ˜Sk ← threshold (Sk , t )
+
+if Sum ( ˜Sk )/(wk hk ) < (1 − t) then 
+
+reject Pk
+
+end else 
+
+F ← uniform (F), θ ← uniform (−30 , 30) 
+
+Fractal blending: P fk = λF + (1 − λ)Pk
+
+Transform: Tk ← R(P fk , θ ) · ˜Sk + B(P fk ) · (1 − ˜Sk )
+
+Resize patch: Rk ← Resize (Tk , (h, w )) 
+
+Mixed patch: Pm ← Pm + Rk
+
+nk ← nk + 1 
+
+end end 
+
+α ← uniform (0 , 1) 
+
+Augment image: ˜Ii ← αI i + 1−αnk Pm
+
+eIb ← eIb ∪ { ( ˜Ii, yi)}
+
+end return eIb
+
+These resized patches are mixed into the original image using a weighted sum 
+
+˜Ii = αI i + (1 − α)
+
+> np
+
+X
+
+> k=1
+
+λkRk, (4) where λk = 1 /n p are mixing weights with Pnp 
+
+> k=1
+
+λk = 1 , np is the number of accepted patches, and 0 ≤ α ≤ 1 is a uniform random variable. Thus, S2
+
+drives learning models to handle a range of spatial transformations without complex mask optimization procedures as used in previous methods such as SaliencyMix [53], PuzzleMix [31], and Co-Mixup [32]. As a result, our method remains computationally efficient yet highly diverse, synthesizing effective mix-ing modes that preserve semantic cues. S2-FracMix 7
+
+3.3 FracMix & High-level Mixing Modes 
+
+In traditional methods, fractals are blended with the whole input image. In contrast, we propose fractal blending only inside the salient patches selected by the Self-Saliency (S ²) procedure. We maintain a fixed library of F of fractal patterns constructed before training for each accepted patch Pk, we sample F ←
+
+uniform (F) and blended it with Pk using factor λ as 
+
+P fk = λF + (1 − λ)Pk, (5) In practice, we select λ empirically via a small sweep on a held-out validation split (see Sec. 6, Fig. 5), and use λ =0.20 as the default setting in all experiments. The resulting fractal-enriched patch P fk then undergoes the selective transformation 
+
+Tk (Eq. 2) followed by resizing to full resolution (Eq. 3) to obtain Rk, and mixing in Eq. (4). It is notable that existing approaches generally employ a single mixing strat-egy throughout training, such as Mixup [14], CutMix [64], ResizeMix [51], Puz-zleMix [31], and GuidedMixup [30]. We empirically observed that restricting the model to only one mode of low-level mixing limits the diversity of supervisory signals, compromising model performance. Therefore, we propose to incorporate 
+
+multiple low-level modes of mixing within the training pipeline. Specifically, we allow mixing computationally efficient mechanisms of Mixup [14], CutMix [64], and ResizeMix [51] jointly at high-level with our S2-FracMix technique to further the performance gain. The process behind this mode mixing randomly selects the mechanisms to encourage complementary regularization effects and expose the model to a richer variety of mixed inputs, ultimately improving model gen-eralization. We thoroughly analyze this in Sec. 6. 
+
+## 4 Theoretical Analysis 
+
+Our self-saliency mixing forces high-saliency feature reconstruction in low-saliency context. This can be viewed as effectively adding a structured auxiliary loss that encourages the minimal sufficient statistic to be distributed across the entire image rather than concentrated in a few dominant regions, which improves ro-bustness to local perturbations. Below, we provide a theoretical analysis of this property of our method. Let (x, y ) ∼ D denote a training sample drawn from the data distribution, where x ∈ [0 , 1] C×H×W is an input image with C channels and spatial resolution 
+
+H × W , and y is its ground-truth label. Let hω denote the predictor, and let 
+
+ℓ(·, ·) denote the training loss. For notational convenience, we define 
+
+g(z) := ℓ(hω (z), y ), (6) i.e., g is the loss viewed as a function of the input z while keeping the label 
+
+y fixed. We denote by θ ∼ Π the random augmentation parameters, where θ
+
+collects all randomness in the augmentation process (sampled patch scale and 8 K. Islam et al. 
+
+location, saliency mask, rotation angle, fractal sample, and the mixing coefficient 
+
+α). We define the augmentation operator by Aθ (·), and augmented input by 
+
+x′ := Aθ (x). (7) To analyze its effect, we decompose the augmentation into a structured trans-formation term and an additive localized perturbation term: 
+
+Aθ (x) = Tθ (x) + ∆θ (x). (8) Here, Tθ (x) ∈ [0 , 1] C×H×W denotes the structured transform component, and 
+
+∆θ (x) ∈ RC×H×W denotes the additive perturbation component. In our setting, the structured transform is saliency-guided and corresponds to the selective ro-tation/blur step (Eq. 2) aggregated over the accepted patches (Algorithm 1). Let S(x) ∈ [0 , 1] 1×H×W be a per-pixel saliency map, and let Mθ ∈ { 0, 1}1×H×W
+
+be an effective binary mask induced by the accepted patch-level saliency masks after resizing to full resolution. Let R(x, φ ) denote a rotation of x by angle φ,where φ is sampled as part of θ, and let B(·) denote Gaussian blurring. With the same mixing coefficient α ∼ Uniform (0 , 1) as in Eq. (4), we define 
+
+Tθ (x) = αx + (1 − α)
+
+
+
+R(x, φ ) ⊙ Mθ + B(x) ⊙ (1 − Mθ )
+
+
+
+, (9) where ⊙ denotes element-wise multiplication. We further model the localized fractal perturbation consistent with Sec. 3.3 fractals are injected only through the selected region, using the same blending factor λ as Eq. (5): 
+
+∆θ (x) = (1 − α)λ (Mθ ⊙ F ), (10) where F ∈ RC×H×W denotes the (full-resolution) fractal pattern correspond-ing to the sampled fractal(s) after resizing/aggregation. Then, we analyze the augmentation under the vicinal risk minimization (VRM) [6] objective: 
+
+VRM( hω ) := E(x,y )∼D Eθ∼Π
+
+ℓ(hω (Aθ (x)) , y ) = Ex,y Eθ
+
+g(Tθ (x) + ∆θ (x)) .
+
+(11) For brevity, let 
+
+xT := Tθ (x), ∆θ := ∆θ (x), (12) so that x′ = xT + ∆θ . We make two assumptions. The fractal perturbation is zero-mean with covariance Σf , i.e., E[F ] = 0 and Cov( F ) = Σf . Since ∆θ =(1 − α)λ(Mθ ⊙ F ) and α is sampled independently, this implies Eθ [∆θ ] = 0 .Label consistency under the structured transform Tθ : applying Tθ does not alter the semantic label y. This assumption is used only to justify evaluating the same target y after the transformation. We now perform a second-order Taylor expansion of g around xT . Since x′ = xT + ∆θ , we have 
+
+g(xT + ∆θ ) ≈ g(xT ) + ∇g(xT )⊤∆θ + 12 ∆⊤ 
+
+> θ
+
+Hg (xT )∆θ , (13) S2-FracMix 9
+
+where ∇g(xT ) and Hg (xT ) denote the gradient and Hessian of g with respect to the input, evaluated at xT . Taking expectation over θ, the first-order term vanishes due to the zero-mean perturbation assumption: 
+
+Eθ [∇g(xT )⊤∆θ ] = ∇g(xT )⊤Eθ [∆θ ] = 0 . (14) Therefore, the expected loss under augmentation is approximately 
+
+Eθ [g(xT + ∆θ )] ≈ Eθ [g(xT )] + 12 Eθ
+
+∆⊤ 
+
+> θ
+
+Hg (xT )∆θ
+
+ . (15) Taking expectation over (x, y ) ∼ D yields 
+
+VRM( hω ) ≈ Ex,y Eθ [g(xT )] + 12 Ex,y Eθ
+
+∆⊤ 
+
+> θ
+
+Hg (xT )∆θ
+
+ . (16) To interpret the second term, we rewrite the quadratic form in trace form using the identity ∆⊤H∆ = tr( H∆∆ ⊤). This gives 
+
+Eθ
+
+∆⊤ 
+
+> θ
+
+Hg (xT )∆θ
+
+ = tr  Hg (xT ) Eθ [∆θ ∆⊤ 
+
+> θ
+
+] . (17) We now compute second moment of the perturbation. Since ∆θ = (1 −α)λ(Mθ ⊙
+
+F ) and α ∼ Uniform (0 , 1) is independent of (Mθ , F ), we have E[(1 − α)2] = 13
+
+and thus 
+
+Eθ [∆θ ∆⊤ 
+
+> θ
+
+] = λ2
+
+3 Eθ
+
+Mθ Σf M ⊤
+
+> θ
+
+ . (18) We define mask-dependent covariance as localized perturbation covariance: 
+
+Σloc (x) := Eθ
+
+Mθ Σf M ⊤
+
+> θ
+
+ . (19) Substituting Eq. (18) and Eq. (19) into Eq. (17) yields 
+
+Eθ
+
+∆⊤ 
+
+> θ
+
+Hg (xT )∆θ
+
+ = λ2
+
+3 tr( Hg (xT )Σloc (x)) . (20) Hence, the vicinal risk admits the following second-order approximation: 
+
+VRM( hω ) ≈ Ex,y Eθ
+
+ℓ(hω (Tθ (x)) , y )| {z }
+
+> invariance term
+
++ λ2
+
+6 Ex[tr( Hg (Tθ (x)) Σloc (x))] 
+
+| {z }
+
+> saliency-local stability penalty
+
+. (21) The first term enforces invariance to the structured saliency-guided transform 
+
+Tθ , while the second penalizes curvature-weighted sensitivity to fractal perturba-tions restricted by Σloc (x), concentrating the regularization on accepted salient regions (Algorithm 1). This characterization yields two predictions borne out by our experiments. The penalty grows quadratically in λ, so accuracy should first improve and then degrade as λ increases, matching Figure 5(b) where perfor-mance peaks at λ=0.20 and drops at λ=0.50. Moreover, since the penalty sup-presses sensitivity to localized input perturbations, the largest gains should ap-pear under corruption and adversarial noise rather than on clean data, matching Table 4 where our corruption gain ( 2.40% ) and FGSM error reduction ( 3.14% )over AdAutoMix both exceed the clean gain ( 1.19% ). The choice between lo-cal and global injection corresponds to different Σloc (x), and we resolve that comparison empirically in Table 6. 10 K. Islam et al. 
+
+## 5 Experiments and Results 
+
+We benchmark our proposed S2-FracMix against several recent competitive mixup approaches, including Mixup [65], CutMix [64], ManifoldMix [55], FMix [16], ResizeMix [51], SaliencyMix [53], PuzzleMix [31], AutoMix [42], and AdAu-toMix [49]. Additionally, we report the computational overhead of our method and compare it with timings reported in AdAutoMix [30]. To demonstrate the generalizability of our method, we conduct experiments from small-scale to large-scale backbones including ResNet18 [17], ResNet34 [17], ResNet50 [17], 
+
+ResNeXt50 [62], transformer-based architectures including Swin Transformer [39] and ConvNeXt [40], and contrastive method MoCo v2 [8] and SimSiam [9]. All ex-periments are implemented using open-source OpenMixup. Note that, we follow the standard evaluation practices and protocols men-tioned in AdAutoMix [49] for fair comparison. Hyperparameter configurations and brief implementation guidelines , with dataset statistics are also provided in Appendix A and detailed settings provided in Appendix B. We show that our proposed S2-FracMix not only improves classification performance across both general- and fine-grained tasks, but also enhances robustness to distributional shifts, such as background corruption [19], data scarcity, transfer learning, cali-bration, contrastive learning methods, object detection while maintaining mini-mal computational overhead. 
+
+5.1 General Classification 
+
+We compare the performance of S2-FracMix in Tab. 1, our approach achieves SOTA performance on CNNs and ViTs, consistently outperforming existing aug-mentation strategies such as AdAutoMix [49], AutoMix, ResizeMix, and Puz-zleMix. Notably, S2-FracMix surpasses AdAutoMix, the existing best perform-ing method [49], by approximately 0.42% and 0.69% in Top-1 accuracy on CIFAR-100. The trend is similar across different backbones from small-scale to large-scale backbones. In terms of Tiny-ImageNet and ImageNet-1K, the im-provement gap is even more pronounced, underlining S2-FracMix capacity to 
+
+Table 1: Top-1 performance (%) ↑ of mixup methods on CIFAR-100, Tiny-ImageNet and ImageNet-1K. The results of previous mixup SOTA methods are taken from AdAutoMix [49]. Res18, ResXt50 CNext-T and Res34 refers to ResNet18, ResNeXt50, ConvNeXt-T and ResNet34. Also, ViT-B results are taken from [3].                                                                                                                  
+
+> CIFAR-100 CIFAR-100 Tiny-ImageNet ImageNet-1K Method Res18 ResXt50 Swin-T CNeXt-T Res18 ResXt50 Res18 Res34 Res50 ViT-B
+> Vanilla 78.04 81.09 78.41 78.70 61.68 65.04 70.04 73.85 76.83 76.7 MixUp 79.12 82.10 76.78 81.13 63.86 66.36 69.98 73.97 77.12 80.8 CutMix 78.17 81.67 80.64 82.46 65.53 66.47 68.95 73.58 77.17 79.9 SaliencyMix 79.12 81.53 80.40 82.82 64.60 66.55 69.16 73.56 77.14 –FMix 79.69 81.90 80.72 81.79 63.47 65.08 69.96 74.08 77.19 –PuzzleMix 81.13 82.85 80.33 82.29 65.81 67.83 70.12 74.26 77.54 –ResizeMix 80.01 81.82 80.16 82.53 63.74 65.87 69.50 73.88 77.42 –AutoMix 82.04 83.64 82.67 83.30 67.33 70.72 70.50 74.52 77.91 –AdAutoMix 82.32 84.22 84.33 83.54 69.19 72.89 70.86 74.82 78.04 –
+> S2-FracMix 82.74 84.91 85.35 84.41 70.38 74.27 71.37 75.34 78.54 81.2
+
+S2-FracMix 11 
+
+Table 2: Accuracy (%) ↑ of mixup methods on Caltech Birds-200, FGVC-Aircrafts and Stanford-Cars.                                                                           
+
+> Caltech Birds-200 FGVC-Aircrafts Stanford-Cars Method ResNet18 ResNet50 ResNet18 ResNeXt50 ResNet18 ResNeXt50
+> Vanilla 77.68 82.38 80.23 85.10 86.32 90.15 MixUp 78.39 82.98 79.52 85.18 86.27 90.81 CutMix 78.40 83.17 78.84 84.55 87.48 91.22 ManifoldMix 79.76 83.76 80.68 86.60 85.88 90.20 SaliencyMix 77.95 81.71 80.02 84.31 86.48 90.60 FMix 77.28 83.34 79.36 86.23 87.55 90.90 PuzzleMix 78.63 83.83 80.76 86.23 87.78 91.29 ResizeMix 78.50 83.41 78.10 84.08 88.17 91.36 AutoMix 79.87 83.88 81.37 86.72 88.89 91.38 AdAutoMix 80.88 84.57 81.73 87.16 89.19 91.59
+> S2-FracMix 81.84 85.73 82.81 88.34 90.56 92.86
+
+Table 3: Top-1 accuracy (%) of ResNet-50 (R50) and Vision Transformer (ViT) back-bones on CUB-200 and Stanford Cars datasets.                                  
+
+> Backbone Dataset Vanilla MixUp CutMix PuzzleMix AutoMix AdAutoMix S2-FracMix
+> R50  CUB-200 81.76 82.79 81.67 82.59 82.93 83.36 84.42
+> Stanford Cars 88.88 89.45 88.99 89.37 88.71 89.65 90.85
+> ViT-B  CUB-200 88.0 88.75 87.76 88.23 88.91 88.76 89.84
+> Stanford Cars 91.31 91.36 91.53 91.83 92.51 91.38 92.86
+
+capture rich discriminative features. These results demonstrate that S2-FracMix not only addresses the challenges inherent in CIFAR-100, Tiny-ImageNet, and ImageNet-1K but also establishes a new SOTA among mixup based augmenta-tion methods for enhancing generalization performance. 
+
+5.2 Fine-Grained Visual Classification 
+
+In fine-grained classification, we follow the same training protocols established in AdAutoMix [49] and also previous results are taken from same paper. As reported in Tab. 2, S2-FracMix consistently achieves the highest Top-1 accuracy across different architectures and datasets. On Caltech Birds-200, S2-FracMix improves over the AdAutoMix by +0.96% on ResNet-18 and +1.16% on ResNet-50 .On FGVC-Aircrafts, it achieves gains of +1.08% and +1.18% on ResNet-18 
+
+and ResNeXt-50 , respectively. On Stanford-Cars, improvements of +1.37% and 
+
++1.27% are observed with ResNet-18 and ResNeXt-50 . These results establish the effectiveness of S2-FracMix across fine-grained categorization tasks. 
+
+5.3 Transfer Learning 
+
+We further evaluate the transferability of features learned by S2-FracMix on downstream transfer learning classification tasks, as presented in Table 3. We utilized two pre-trained deep models including ResNet-50 and ViT-B . Both mod-els are pretrained on ImageNet-1K and fine-tuned on Caltech Birds-200 and Stanford-Cars for classification using S2-FracMix. Compared to AdAutoMix [49], the strongest existing method, S2-FracMix achieves consistent gains. In Table 3 on Caltech Birds-200, S2-FracMix reaches a Top-1 performances of 12 K. Islam et al. PuzzleMix  AutoMix  Ad AutoMix  Ours  
+
+> ECE=2.8%
+> MixUp CutMix
+
+Fig. 4: Calibration plots of S2-FracMix on CIFAR-100 using ResNet18 .
+
+84.42%, 89.84% , outperforming the AdAutoMix by 1.06%, 1.08% . On the Stanford-Cars, it achieves 90.85%, 92.86% , exceeding the baseline by 1.20%, 1.48% . These results demonstrate that S2-FracMix improves fine-tuning per-formance over baseline and recent SOTA methods across different datasets. 
+
+5.4 Robustness 
+
+Table 4: Top-1 accuracy and FGSM error of ResNet-18 with other methods.                        
+
+> Clean Corruption FGSM Method Acc(%) ↑Acc(%) ↑Error(%) ↓
+> CutMix 79.45 46.66 88.24 FMix 78.91 50.58 88.35 PuzzleMix 79.96 51.04 80.52 AutoMix 80.02 50.75 82.67 AdAutoMix 81.55 51.44 75.66
+> S2-FracMix 82.74 53.84 72.52
+
+Following the same protocols as used by AdAutoMix [49], we carried out ro-bustness evaluation experiments under common corruptions on CIFAR100-C [18] dataset as shown in Tab. 4. We compared our S2-FracMix with widely used mixup approaches, including Cut-Mix, FMix, PuzzleMix, AutoMix, and AdAutoMix [49]. As shown in Tab. 4, S2-FracMix demonstrated the best performance on both clean and cor-rupted samples, achieving relative gains of 1.19% and 2.4% in classification accuracy over AdAutoMix. The robustness improvement of 3.14% is achieved compared to AdAutoMix. 
+
+5.5 Calibration 
+
+Deep Neural Networks often exhibit overconfidence in their predictions dur-ing image classification tasks, which can lead to poor calibration. To quanti-tatively assess calibration performance, we measure the Expected Calibration Error (ECE) across different mixup methods on the CIFAR-100 dataset. Previ-ous results are taken from AdAutoMix [49]. As visbible in Fig. 4, our S2-FracMix attains the lowest ECE 2.8% surpassing recent SOTA methods and second best method is AdAutoMix [49]. 
+
+## 6 Ablation Study and Analysis 
+
+As noted in Sec. 3, our technique allows multiple modes. Here, we analyze the ef-fects of those modes on performance. More results are mentioned in Appendix C. S2-FracMix 13 Top -1 (%) Accuracy  
+
+> (b) ratio λ (a) threshold t
+
+Fig. 5: Ablation of hyperparameters t
+
+threshold and λ for fractal mixing of S2-FracMix on CIFAR100. 
+
+Table 5: Ablation study of different high-level mixing strategies on CIFAR-100.                                                         
+
+> CIFAR-100 Accuracy (%)
+> S2-FracMix MmMcMrRes18 ResXt50
+> ––––78.04 81.09
+> ✓–––81.73 82.22 –✓––79.12 82.10 ––✓–78.17 81.67 –––✓80.01 81.82
+> ✓✓✓–82.24 82.32
+> ✓✓–✓82.46 82.89
+> ✓–✓✓82.58 83.52
+> ✓✓✓✓82.74 84.91
+> Mf✓✓✓80.24 82.27
+
+Inclusion of Simple Modes. Tab. 5 presents Res18 and ResXt50 results on CIFAR-100. In the table, Mm denotes Mixup [14], Mc represents CutMix [64], 
+
+Mr presents ResizeMix [51] and Mf illustrates FMix [16]. We start with our 
+
+S2-FracMix, which offers two main improvements: i) it generates multi-scale fea-tures. ii) saliency-driven patch transformations in a more principled and diverse manner. The introduction of the S2-FracMix leads to a significant gain of 3.69% and 1.13% in terms of performance over the base model, highlighting the impact of self-mixing compared to the individual performance of other modes Mm, Mc
+
+and Mr . To enable comparison to FMix [16], while retaining the same train-ing and implementation details, we use the mixing mode “ Mf +Mm+Mc+Mr ". Clearly, this degrades the overall performance, which highlights the efficacy of 
+
+S2-FracMix in the mixed mode. 
+
+Exclusion of Simple Modes. In our proposed high-level mixing we do not select methods such as PuzzleMix [31], Co-Mixup [32], and GuidedMixup [30], which demonstrate good performance but incur high computational overhead. As mentioned in Tab. 5, the best combination is “ S2-FracMix+ Mm+Mc+Mr " and the reason is that Mm complements S2 in terms of global inter-image variations, while Mc introduces local inter-image diversity. Mr introduces down-scaled inter-image variations which are missing in the other modes. Thus, the selected set of modes complement each other well to generate a diverse set of augmentations. 
+
+Motivation behind High-level Mixing. Four crucial objectives of the current augmentation methods include: scale-invariance , inter-image diversity , spatial variability , and resolution robustness . Previous methods address these challenges in isolation. With high-level mixing, our objective is to jointly tackles all four ob-jectives while maintaining low computational overhead. Replacing S2-FracMix with Mf (as used by [38]) while keeping all remaining settings same in Tab. 5, leads to significant performance reduction. This verifies that our high-level mix-ing achieves the intended objective through correct composition of modes. 
+
+Global Fractal vs Local Fractal. In Tab. 6, we analyze design choices for frac-tal addition on Stanford-Cars. We compare S2-FracMix with saliency-weighted 14 K. Islam et al.                         
+
+> Table 6: Ablation study of key compo-nents of FracMix in terms of global and lo-cal fractals on Stanford-Cars. sal denotes saliency and weight denotes weighting.
+> Method Top-1 (%)
+> Baseline 85.52
+> S2-FracMix ( w/o sal weight )91.87
+> S2-FracMix ( global f ractal )92.27
+> S2-FracMix ( local )92.78
+> Table 7: Top-1 (%) performance ablation of saliency vs. fractal mixing on CIFAR-100 with ResNet-18 and ResNeXt-50.
+> Method Res18 ResXt50
+> Baseline 78.04 81.09 Saliency (A+B) 79.12 81.53 Saliency S 2(A+A) 79.54 81.92 FracMix (ours) 81.73 82.22
+> S2-FracMix 82.74 84.91
+
+fractal addition applied only to salient regions (Eq. 5) against a global variant that adds fractals to the entire image, Ii = λF + (1 − λ)Ii. We further study 
+
+S2-FracMix without saliency weighting by modifying (Eq. 2) to use an equal mix-ture of region and background transformations, Tk = 0 .50 R(P fk , θ )+0 .50 B(P fk ).These comparisons isolate the benefit of focusing fractal perturbations on salient content rather than applying them uniformly. 
+
+Effect of Saliency and Fractal Mixing. We also study how the mixing strat-egy influences CIFAR-100 accuracy across Res18 and ResXt-50 backbones. We compare a baseline with saliency-guided mixing, where Saliency (A+B) uses the saliency map from the source image A to guide mixing with a target image B,and Saliency S 2 (A+A) uses self-saliency from both inputs presented in Tab. 7. While saliency improves over the baseline on both backbones, our fractal-based 
+
+FracMix yields a larger gain, and the full method S2-FracMix achieves the best performance overall. We attribute this synergy to the fact that salient regions harbor the most discriminative semantic features; by injecting self-similar frac-tal patterns specifically into these regions, we force the model to learn robust features invariant to high-frequency perturbations where it matters most, rather than diluting regularization energy on non-discriminative background pixels. 
+
+Hyperparameters Ablation. In the S2-FracMix, there are two main hyperpa-rameters namely saliency threshold t and λ. In order to achieve good performance both parameters should be properly configured. Firstly, we train the ResNet18 
+
+for 200 epochs via our S2-FracMix. The performance of ResNet18 with t=0.5 is shown in Fig. 5 (a). In addition, the fractal mixing gives best performance at λ
+
+= 0.20 in Fig. 5 (b). However, by increasing the λ to 0.50 , we observe that the classification accuracy is slightly decreased to 82.22%, and when we set t=0.9
+
+the performance degrades to almost the same level. This implies that the two parameters are equally capable of controlling the performance of S2-FracMix. 
+
+Object Localization. For this analysis, we visually analyze the models trained with S2-FracMix and SOTA methods. As evidenced in Fig. 6 (top row), our proposed S2-FracMix produces a contiguous, high-intensity CAM region that consistently highlights the main region, indicating stronger object retention and clearer attention boundaries. S2-FracMix 15 Caltech - Birds -200        
+
+> CutMix PuzzleMix Co -Mixup Guided Mixup Ours
+> CAM for
+> Cliff Swallow
+> CutMix Co -Mixup GuidedMixup Ours PuzzleMix Input
+
+Fig. 6: (Top) Grad-CAM [52] visualization on augmented images and (bottom) t-SNE visualization of ResNet18 trained from scratch. 
+
+Feature Representation. Finally, we compare the trained models by visualiz-ing the feature representation of S2-FracMix and SOTA methods in Fig. 6 (bot-tom row). Closely observing t-SNE [43], it can be seen that images of the same class cluster together for our method, representing better learning. Noticeably, 
+
+S2-FracMix exhibits distinct clusters with well-defined margins between classes, suggesting that the model consistently learns discriminative features specific to each class. 
+
+## 7 Conclusion 
+
+We introduce S2-FracMix data augmentation technique to improve the perfor-mance of deep visual models. The method comprises two main components. In the S2 mixing component, patches of varying sizes are extracted from an input image while utilizing saliency information. Different transformations are applied to these patches and they are seamlessly integrated back into the same image. In the FracMix component, self-similarity fractals are also blended into these salient patches. We also introduce the notion of high-level mixing of multiple low-level mixing modes to enhance diversity among the augmented samples. Experiments are performed on coarse and fine-grained classification, robustness against cor-ruption, few-shot learning, and transfer learning. The proposed S2-FracMix has demonstrated improved results compared to the existing state-of-the-art meth-ods. The potential limitations of our approach are also discussed in Appendix D. 
+
+## 8 Acknowledgement 
+
+Naveed Akhtar is a recipient of the Australian Research Council Discovery Early Career Researcher Award (project # DE230101058) funded by the Australian Government. Khawar Islam is also supported by project # DE230101058. This research was also supported by The University of Melbourne’s Research Com-puting Services and the Petascale Campus Initiative. 16 K. Islam et al. 
+
+## References 
+
+1. Antoniou, A., Storkey, A., Edwards, H.: Data augmentation generative adversarial networks. arXiv preprint arXiv:1711.04340 (2017) 2. Baek, K., Bang, D., Shim, H.: Gridmix: Strong regularization through local context mapping. Pattern Recognition 109 , 107594 (2021) 3. Bai, J., Yuan, L., Xia, S.T., Yan, S., Li, Z., Liu, W.: Improving vision transformers by revisiting high-frequency components. In: European Conference on Computer Vision. pp. 1–18. Springer (2022) 4. Cao, C., Zhou, F., Dai, Y., Wang, J., Zhang, K.: A survey of mix-based data aug-mentation: Taxonomy, methods, applications, and explainability. ACM Computing Surveys 57 (2), 1–38 (2024) 5. Carratino, L., Cissé, M., Jenatton, R., Vert, J.P.: On mixup regularization. Journal of Machine Learning Research 23 (325), 1–31 (2022) 6. Chapelle, O., Weston, J., Bottou, L., Vapnik, V.: Vicinal risk minimization. Ad-vances in neural information processing systems 13 (2000) 7. Chen, J.N., Sun, S., He, J., Torr, P.H., Yuille, A., Bai, S.: Transmix: Attend to mix for vision transformers. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 12135–12144 (2022) 8. Chen, X., Fan, H., Girshick, R., He, K.: Improved baselines with momentum con-trastive learning. arXiv preprint arXiv:2003.04297 (2020) 9. Chen, X., He, K.: Exploring simple siamese representation learning. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 15750–15758 (2021) 10. Choi, J., Lee, C., Lee, D., Jung, H.: Salfmix: a novel single image-based data augmentation technique using a saliency map. Sensors 21 (24), 8444 (2021) 11. Chrabaszcz, P., Loshchilov, I., Hutter, F.: A downsampled variant of imagenet as an alternative to the cifar datasets. arXiv preprint arXiv:1707.08819 (2017) 12. Deng, J., Dong, W., Socher, R., Li, L., Li, K., Li, F.: Imagenet: A large-scale hierarchical image database (2009) 13. Ghiasi, G., Cui, Y., Srinivas, A., Qian, R., Lin, T.Y., Cubuk, E.D., Le, Q.V., Zoph, B.: Simple copy-paste is a strong data augmentation method for instance segmentation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 2918–2928 (2021) 14. Guo, H., Mao, Y., Zhang, R.: Mixup as locally linear out-of-manifold regularization. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 33, pp. 3714– 3722 (2019) 15. Han, J., Petersson, L., Li, H., Reid, I.: Cropmix: Sampling a rich input distribution via multi-scale cropping. arXiv preprint arXiv:2205.15955 (2022) 16. Harris, E., Marcu, A., Painter, M., Niranjan, M., Prügel-Bennett, A., Hare, J.: Fmix: Enhancing mixed sample data augmentation. arXiv preprint arXiv:2002.12047 (2020) 17. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 770–778 (2016) 18. Hendrycks, D., Dietterich, T.: Benchmarking neural network robustness to common corruptions and perturbations. Proceedings of the International Conference on Learning Representations (2019) 19. Hendrycks, D., Mu, N., Cubuk, E.D., Zoph, B., Gilmer, J., Lakshminarayanan, B.: Augmix: A simple data processing method to improve robustness and uncertainty. In: International Conference on Learning Representations (ICLR) (2020) S2-FracMix 17 20. Hendrycks, D., Zou, A., Mazeika, M., Tang, L., Li, B., Song, D., Steinhardt, J.: Pixmix: Dreamlike pictures comprehensively improve safety measures. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 16783–16792 (2022) 21. Hong, M., Choi, J., Kim, G.: Stylemix: Separating content and style for enhanced data augmentation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 14862–14870 (2021) 22. Hou, X., Zhang, L.: Saliency detection: A spectral residual approach. In: 2007 IEEE Conference on computer vision and pattern recognition. pp. 1–8. Ieee (2007) 23. Huang, S., Wang, X., Tao, D.: Snapmix: Semantically proportional mixing for augmenting fine-grained data. In: Proceedings of the AAAI Conference on Artificial Intelligence (2021) 24. Huang, Z., Bao, X., Zhang, N., Zhang, Q., Tu, X., Wu, B., Yang, X.: Ipmix: Label-preserving data augmentation method for training robust classifiers. Advances in Neural Information Processing Systems 36 , 63660–63673 (2023) 25. Islam, K., AKHTAR, N.: Context-guided responsible data augmentation with dif-fusion models. In: ICLR 2025 Workshop on Navigating and Addressing Data Prob-lems for Foundation Models 26. Islam, K., Zaheer, M.Z., Mahmood, A., Nandakumar, K.: Diffusemix: Label-preserving data augmentation with diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 27621– 27630 (2024) 27. Islam, K., Zaheer, M.Z., Mahmood, A., Nandakumar, K., Akhtar, N.: Genmix: Effective data augmentation with generative diffusion model image editing. arXiv preprint arXiv:2412.02366 (2024) 28. Jin, X., Li, S., Jian, S., Yu, K., Wang, H.: Mergemix: A unified augmen-tation paradigm for visual and multi-modal understanding. arXiv preprint arXiv:2510.23479 (2025) 29. Jin, X., Zhu, H., Li, S., Wang, Z., Liu, Z., Yu, C., Qin, H., Li, S.Z.: A survey on mixup augmentations and beyond. arXiv preprint arXiv:2409.05202 (2024) 30. Kang, M., Kim, S.: Guidedmixup: an efficient mixup strategy guided by saliency maps. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 37, pp. 1096–1104 (2023) 31. Kim, J.H., Choo, W., Song, H.O.: Puzzle mix: Exploiting saliency and local statis-tics for optimal mixup. In: International Conference on Machine Learning. pp. 5275–5285. PMLR (2020) 32. Kim, J.H., Park, J., Hwang, S.: Co-mixup: Saliency-guided joint mixup with su-permodular diversity. In: Advances in Neural Information Processing Systems (NeurIPS) (2021) 33. Krause, J., Stark, M., Deng, J., Fei-Fei, L.: 3d object representations for fine-grained categorization. In: 4th International IEEE Workshop on 3D Representation and Recognition (3dRR-13). Sydney, Australia (2013) 34. Krizhevsky, A.: Learning multiple layers of features from tiny images. Master’s thesis, University of Tront (2009) 35. Lee, J.H., Zaheer, M.Z., Astrid, M., Lee, S.I.: Smoothmix: a simple yet effective data augmentation to train robust classifiers. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition workshops. pp. 756–757 (2020) 36. Li, S., Liu, Z., Wang, Z., Wu, D., Liu, Z., Li, S.Z.: Boosting discrimina-tive visual representation learning with scenario-agnostic mixup. arXiv preprint arXiv:2111.15454 (2021) 18 K. Islam et al. 37. Li, S., Wang, Z., Liu, Z., Wu, D., Tan, C., Jin, W., Li, S.Z.: Openmixup: A com-prehensive mixup benchmark for visual classification (2022) 38. Liu, X., Shen, F., Zhao, J., Nie, C.: Randomix: A mixed sample data augmentation method with multiple mixed modes. Multimedia Tools and Applications 84 (8), 4343–4359 (2025) 39. Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B.: Swin transformer: Hierarchical vision transformer using shifted windows. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 10012–10022 (2021) 40. Liu, Z., Mao, H., Wu, C.Y., Feichtenhofer, C., Darrell, T., Xie, S.: A convnet for the 2020s. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 11976–11986 (2022) 41. Liu, Z., Li, S., Wang, G., Wu, L., Tan, C., Li, S.Z.: Harnessing hard mixed samples with decoupled regularizer. Advances in Neural Information Processing Systems 
+
+36 (2024) 42. Liu, Z., Li, S., Wu, D., Liu, Z., Chen, Z., Wu, L., Li, S.Z.: Automix: Unveiling the power of mixup for stronger classifiers. In: European Conference on Computer Vision. pp. 441–458. Springer (2022) 43. Van der Maaten, L., Hinton, G.: Visualizing data using t-sne. Journal of machine learning research 9(11) (2008) 44. Maji, S., Rahtu, E., Kannala, J., Blaschko, M., Vedaldi, A.: Fine-grained visual classification of aircraft. arXiv preprint arXiv:1306.5151 (2013) 45. Parast, A.Y., Azam, B., Akhtar, N.: Ddb: Diffusion driven balancing to address spurious correlations. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 17526–17535 (2025) 46. Parast, A.Y., Hosseini, P., Asadollahzadeh, H., Moakhar, A.S., Azam, B., Feizi, S., Akhtar, N.: Ghost: Hallucination-inducing image generation for multimodal llms. arXiv preprint arXiv:2509.25178 (2025) 47. Parast, A.Y., Islam, K., Won, S., Azam, B., Akhtar, N.: Hsfm: Hard-set-guided feature-space meta-learning for robust classification under spurious correlations. arXiv preprint arXiv:2603.29313 (2026) 48. Pinto, F., Yang, H., Lim, S.N., Torr, P., Dokania, P.: Using mixup as a regularizer can surprisingly improve accuracy & out-of-distribution robustness. Advances in Neural Information Processing Systems 35 , 14608–14622 (2022) 49. Qin, H., Jin, X., Jiang, Y., El-Yacoubi, M., Gao, X.: Adversarial automixup. In: The Twelfth International Conference on Learning Representations. pp. OpenReview, Spotlight (2024) 50. Qin, H., Jin, X., Zhu, H., Liao, H., El-Yacoubi, M.A., Gao, X.: Sumix: Mixup with semantic and uncertain information. In: European Conference on Computer Vision. pp. 70–88. Springer (2025) 51. Qin, J., Fang, J., Zhang, Q., Liu, W., Wang, X., Wang, X.: Resizemix: Mixing data with preserved object information and true labels. arXiv preprint arXiv:2012.11101 (2020) 52. Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D.: Grad-cam: visual explanations from deep networks via gradient-based localization. In-ternational journal of computer vision 128 , 336–359 (2020) 53. Uddin, A.S., Monira, M.S., Shin, W., Chung, T., Bae, S.H.: Saliencymix: A saliency guided data augmentation strategy for better regularization. In: International Con-ference on Learning Representations (2020) S2-FracMix 19 54. Venkataramanan, S., Kijak, E., Amsaleg, L., Avrithis, Y.: Alignmixup: Improving representations by interpolating aligned features. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 19174–19183 (2022) 55. Verma, V., Lamb, A., Beckham, C., Najafi, A., Mitliagkas, I., Lopez-Paz, D., Ben-gio, Y.: Manifold mixup: Better representations by interpolating hidden states. In: International Conference on Machine Learning. pp. 6438–6447. PMLR (2019) 56. Wah, C., Branson, S., Welinder, P., Perona, P., Belongie, S.: The Caltech-UCSD Birds-200-2011 Dataset. Tech. Rep. CNS-TR-2011-001, California Institute of Technology (2011) 57. Walawalkar, D., Shen, Z., Liu, Z., Savvides, M.: Attentive cutmix: An enhanced data augmentation approach for deep learning based image classification. In: ICASSP 2020-2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). pp. 3642–3646. IEEE (2020) 58. Wang, Z., Wei, L., Wang, T., Chen, H., Hao, Y., Wang, X., He, X., Tian, Q.: Enhance image classification via inter-class image mixup with diffusion model. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 17223–17233 (2024) 59. Won, S., Bae, S.H., Kim, S.T.: Effects of mixed sample data augmentation on interpretability of neural networks. Neural Networks 190 , 107611 (2025) 60. Won, S., Kim, H.B., Ahn, Y.H., Lee, H.J., Kim, S.T.: Understanding adversarial robustness of deep neural networks via decision reliance. Image and Vision Com-puting p. 105743 (2025) 61. Xiao, H., Zheng, W., Zhu, Z., Zhou, J., Lu, J.: Token-label alignment for vision transformers. In: Proceedings of the IEEE/CVF international conference on com-puter vision. pp. 5495–5504 (2023) 62. Xie, S., Girshick, R., Dollár, P., Tu, Z., He, K.: Aggregated residual transformations for deep neural networks. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 1492–1500 (2017) 63. Yang, L., Li, X., Zhao, B., Song, R., Yang, J.: Recursivemix: Mixed learning with history. Advances in Neural Information Processing Systems 35 , 8427–8440 (2022) 64. Yun, S., Han, D., Oh, S.J., Chun, S., Choe, J., Yoo, Y.: Cutmix: Regularization strategy to train strong classifiers with localizable features. In: International Con-ference on Computer Vision (ICCV) (2019) 65. Zhang, H., Cisse, M., Dauphin, Y.N., Lopez-Paz, D.: mixup: Beyond empirical risk minimization. In: International Conference on Learning Representations (ICLR) (2018) 66. Zhao, L., Liu, T., Peng, X., Metaxas, D.: Maximum-entropy adversarial data aug-mentation for improved generalization and robustness. Advances in Neural Infor-mation Processing Systems 33 , 14435–14447 (2020) 67. Zoph, B., Cubuk, E.D., Ghiasi, G., Lin, T.Y., Shlens, J., Le, Q.V.: Learning data augmentation strategies for object detection. In: Computer Vision–ECCV 2020: 16th European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part XXVII 16. pp. 566–583. Springer (2020) 20 K. Islam et al. 
+
+## Overview of the Appendices 
+
+This supplementary material complements the main paper with the following content. 
+
+– Section A. Details of the datasets used for training and testing. 
+
+– Section B. Experimental settings, hyperparameters configurations. 
+
+– Section C. Additional ablation studies of our proposed method. 
+
+– Section D. Limitations of our proposed S2-FracMix method. 
+
+## A Dataset Information 
+
+We provide a concise overview of the datasets used in our study, following the protocols adopted by prior SOTA mixup methods [14, 26, 49, 64]. 
+
+CIFAR-100 [34] is a widely used benchmark dataset for evaluating computer vision models. It comprises 50 ,000 training images and 10 ,000 test images, each with a resolution of 32 × 32 . The images are evenly distributed across 100 fine-grained classes, with each class containing 600 images ( 500 for training and 100 
+
+for testing). 
+
+Tiny-ImageNet [11] is a compact version of the ImageNet dataset [12]. It consists of 200 classes, each containing 500 training images, 50 validation images, and 50 test images. Each image is resized to a fixed resolution of 64 × 64 pixels, making the dataset computationally efficient for training and evaluation. 
+
+ImageNet-1K [12] is a large-scale image classification benchmark consisting of approximately 1.28 million training images distributed across 1,000 classes. Each class contains around 1,300 images, and the dataset also includes a validation set of 50 ,000 images. The image resolutions are variable but generally exceed 
+
+256 × 256 pixels, with resizing applied during preprocessing. 
+
+CUB-200-2011 [56] is a fine-grained dataset specifically designed for bird species recognition. It contains a total of 11 ,788 images covering 200 bird species. Each class has approximately 60 images, although the count varies slightly across classes. The dataset is split into 5,994 training images and 5,794 testing images. 
+
+FGVC-Aircraft [44] is a fine-grained dataset designed for the visual catego-rization of aircraft models. It comprises 10 ,000 images spanning 100 aircraft classes, where each class corresponds to a specific aircraft model variant (e.g., Boeing 747-400, Airbus A320-200). The dataset is split into 6,667 training, 1,333 
+
+validation, and 2,000 test images. 
+
+Stanford-Cars [33] is a fine-grained dataset consisting of 16 ,185 images of cars, split into 8,144 training and 8,041 test images. The dataset includes 196 car classes, each corresponding to a specific make, model, and year. All images are S2-FracMix 21 
+
+high resolution and curated from real-world scenarios. The dataset is intended for fine-grained classification, where subtle visual distinctions between very similar car types must be learned. 
+
+## B Implementation Details 
+
+We follow the protocols and configurations of AdAutoMix [49] for fair compar-ison with prior SOTA mixup methods. All experiments are conducted within OpenMixup [37]. 
+
+CIFAR-100. We apply basic data augmentations consisting of random flip and random crop with 4-pixel padding for 32 × 32 images. For ResNet-18 and ResNeXt-50, the training setup uses the SGD optimizer (momentum = 0 .9,weight decay = 0 .0001 ), a batch size of 100 , and 200 training epochs. The initial learning rate is set to 0.1 and decayed via a cosine scheduler. 
+
+ImageNet-1K. We adopt a PyTorch-style training configuration, training the model for 100 epochs using SGD with a batch size of 256 . The initial learning rate is 0.1, the weight decay is 0.0001 , and the momentum is 0.9.
+
+CUB-200, FGVC-Aircraft, and Stanford-Cars. For all three fine-grained datasets we initialize the models with the official PyTorch pre-trained weights on ImageNet-1K. Training uses SGD (momentum = 0 .9, weight decay = 0 .0005 ), a batch size of 16 , and 200 epochs. The learning rate starts at 0.001 and is adjusted dynamically via a cosine scheduler. The hyperparameters λ and t are set to 0.2
+
+and 0.5, respectively. 
+
+## C Additional Ablation Studies 
+
+This section provides further empirical evidence on the design choices of S2-FracMix. We begin by comparing our framework with existing multi-mode mix-ing baselines, then examine the contribution of the multi-mode wrapper itself, study the sensitivity of the fractal library size, contrast targeted fractal injec-tion with the global fractal strategy adopted by PixMix, place our method in a conceptual comparison with prior single-image and fractal-based augmentations, present a direct head-to-head with SalfMix, and finally evaluate the downstream behavior of S2-FracMix when fine-tuning large foundation backbones. 
+
+C.1 Comparison with Multi-Mode Mixing Baselines 
+
+A natural concern is whether the gains of S2-FracMix arise from the multi-mode wrapper rather than from the saliency-fractal core. To address this, we compare against RandomMix [38], which combines Mixup, CutMix, ResizeMix, and FMix, and against AdAutoMix [49] augmented with the same multi-mode 22 K. Islam et al.            
+
+> Table 8: Comparison with multi-mode mixing baselines on CIFAR-100 using ResNet-18 (Res-18) and ResNeXt-50 (ResXt-50). Method Res-18 ResXt-50 RandomMix [38] 81.02 82.21 AdAutoMix +Mm+Mc+Mr81.06 82.56
+> S2-FracMix (no multi-mode) 81.73 82.22
+
+wrapper that we apply to our method (i.e. Mm+Mc+Mr ). Results on CIFAR-100 with ResNet-18 and ResNeXt-50 are reported in Tab. 8. 
+
+S2-FracMix delivers superior accuracy on both backbones at substantially lower computational cost. The key takeaway is that the bare saliency-fractal core already outperforms two strong multi-mode baselines, indicating that the benefit of our framework comes primarily from the targeted saliency-guided frac-tal injection rather than from the act of combining multiple mixing modes. 
+
+C.2 Effect of the Multi-Mode Wrapper on S2-FracMix 
+
+Building on the previous observation, we next quantify the additional gain con-tributed by the high-level multi-mode wrapper when it is layered on top of 
+
+S2-FracMix. Tab. 9 reports Top-1 accuracy on CIFAR-100, Tiny-ImageNet, and ImageNet-1K across seven backbones, covering both convolutional and trans-former architectures.                              
+
+> Table 9: Effect of the multi-mode wrapper across backbones and datasets. S2-FracMix (only) denotes our core saliency-fractal augmentation without the high-level multi-mode wrapper, while S2-FracMix+Multi-Mode additionally enables the random selection of Mm,Mc, and Mralongside our core mechanism. AdAutoMix results fol-low [49] as reported. Method CIFAR-100 Tiny-ImageNet ImageNet-1K Swin-T CNeXt-T Res18 ResXt50 Res18 Res34 Res50 AdAutoMix [49] 84.33 83.54 69.19 72.89 70.86 74.82 78.04
+> S2-FracMix (only) 85.04 84.22 70.17 73.87 71.27 75.28 78.48
+> S2-FracMix + Multi-Mode 85.35 84.41 70.38 74.27 71.37 75.34 78.54
+
+Two trends are visible. First, even without the multi-mode wrapper, S2-FracMix consistently outperforms AdAutoMix across all seven settings, with the largest absolute gains observed on Tiny-ImageNet (up to 0.98% ). Second, enabling the multi-mode wrapper yields a further but smaller improvement of roughly 0.05% to 0.40% , confirming that the wrapper acts as a complementary regularizer rather than as the principal source of improvement. We note that the S2-FracMix 23 
+
+AdAutoMix numbers reported in Tab. 1 of the main paper already incorporate auxiliary augmentations adopted by [49], which explains why the comparison against the multi-mode wrapper is most directly informative. 
+
+C.3 Fractal Library Size Sensitivity 
+
+We next study how the size of the precomputed fractal library affects augmen-tation quality. A small library risks under-diversifying the perturbation distri-bution, while an excessively large library increases storage cost without a clear performance benefit. We vary the number of fractal patterns from 100 to 500 
+
+and report Top-1 accuracy on Stanford-Cars in Fig. 7. 100 200 300 400 500 
+
+Fractal library size (#images)       
+
+> 90.52
+> 90.53
+> 90.55
+> 90.56
+> 90.58
+> Top-1 accuracy (%)
+> 90.54 90.54
+> 90.55
+> 90.56 90.56
+> Fig. 7: Top-1 accuracy on Stanford-Cars when varying the fractal library size from 100
+> to 500 images.
+
+The curve is essentially flat between 100 and 200 fractals ( 90 .54% ), rises modestly through 300 (90 .55% ), and plateaus from 400 onward at 90 .56% . The saturation occurs well before 500 fractals, which suggests that the role of the library is to provide enough self-similar variation to act as structured noise rather than to densely cover a fractal manifold. We therefore adopt 400 fractals as the default in all main experiments, which keeps the precomputation cost negligible. 
+
+C.4 Comparison with PixMix on Safety Benchmarks 
+
+PixMix [20] is the closest prior work in the fractal-augmentation family. The key distinction is that PixMix blends fractals across the entire image, whereas 
+
+S2-FracMix confines fractal injection to the salient regions identified by our self-saliency module. To isolate the effect of targeted injection, we follow the PixMix evaluation protocol on five safety benchmarks. Results are reported in Tab. 10. 24 K. Islam et al.                                       
+
+> Table 10: Safety benchmark comparison with PixMix. Lower is better for corruption, consistency, adversarial, and calibration error, while higher is better for anomaly de-tection. Metric Mixup CutMix AugMix Outlier PixMix Ours
+> Corruptions ↓48.0 51.5 35.4 51.5 30.5 27.8
+> Consistency ↓9.5 12.0 6.5 11.3 5.7 4.8
+> Adversaries ↓97.4 97.0 95.6 97.2 92.9 89.2
+> Calibration ↓13.0 29.3 18.8 15.2 8.1 7.12
+> Anomaly Det. ↑71.7 74.4 84.9 90.3 89.3 90.4
+
+S2-FracMix achieves the best score on every safety axis, with the largest rel-ative improvement on adversarial robustness ( 89 .2 against 92 .9 for PixMix). On the classification task under the PixMix protocol, S2-FracMix attains a Top-1 error of 19 .8% ↓, which is 2.8% lower than the 22 .6% ↓ reported by PixMix. Com-bined with the fine-grained Stanford-Cars comparison ( 92 .78% for S2-FracMix against 86 .73% for PixMix), these results confirm that constraining fractal per-turbations to salient content is consistently more effective than global blending. 
+
+C.5 Conceptual Comparison with Related Methods 
+
+To position S2-FracMix within the broader landscape of saliency-driven and fractal-based augmentations, Tab. 11 summarizes the design ingredients of rep-resentative prior methods along five axes, namely the use of saliency, single-image (self) operation, fractal injection, targeted application of fractals, and multi-scale patch construction.                                                
+
+> Table 11: Conceptual comparison with representative saliency-based and fractal-based augmentation methods. Method Saliency Self Fractal Target Multi-Scale SaliencyMix [53] ✓✗✗✗✗
+> PuzzleMix [31] ✓✗✗✗✗
+> Co-Mixup [32] ✓✗✗✗✗
+> GuidedMixup [30] ✓✗✗✗✗
+> SalfMix [10] ✓✓✗✗✗
+> PixMix [20] ✗✗✓✗✗
+> IPMix [24] ✗✗✓✗✗
+> DiffuseMix [26] ✗✗✓✗✗
+> S2-FracMix ✓✓✓✓✓
+
+Two clusters of prior work are visible. The first comprises saliency-driven ap-proaches such as SaliencyMix, PuzzleMix, Co-Mixup, and GuidedMixup, which S2-FracMix 25 
+
+operate across two distinct images and therefore introduce semantic interference whenever the source and target images carry incompatible content. SalfMix is conceptually closer to our work since it operates within a single image, but it does not employ fractals and reaches only 78 .35% on CIFAR-100 with ResNet-18. The second cluster includes PixMix, IPMix, and DiffuseMix, which use fractal patterns globally over the entire image and therefore disrupt the underlying ob-ject semantics. S2-FracMix unifies the strengths of both clusters by combining single-image saliency-guided construction with targeted fractal injection at mul-tiple scales, and is the only method in the table that satisfies all five design criteria simultaneously. 
+
+C.6 Direct Comparison with SalfMix 
+
+Because SalfMix [10] shares the single-image self-saliency idea with our method, we report a head-to-head comparison on CIFAR-100 with ResNet-18 under matched training settings. SalfMix reaches 78 .35% Top-1 accuracy, whereas S2-FracMix attains 82 .74 %, a gap of 4.39% . The improvement is attributable to two mechanisms missing from SalfMix, namely the multi-scale patch construc-tion that injects scale invariance and the targeted fractal blending that increases structural complexity inside the salient region while preserving the background context. 
+
+C.7 Downstream Fine-tuning with Foundation Backbones 
+
+A practical question is whether the benefits of S2-FracMix transfer to large pre-trained foundation backbones. To answer this, we fine-tune CLIP ResNet-50 and DINOv2 ViT-S on CUB-200 and Stanford-Cars with several mixup augmenta-tions applied during the fine-tuning stage. Tab. 12 reports the Top-1 accuracy.                    
+
+> Table 12: Downstream fine-tuning of CLIP ResNet-50 and DINOv2 ViT-S on CUB-200 and Stanford-Cars under different augmentations. Method CLIP ResNet-50 DINOv2 ViT-S CUB-200 Stan.-Cars CUB-200 Stan.-Cars No Augmentation 79.97 87.10 88.64 88.30 Mixup [14] 80.22 88.27 89.01 88.32 CutMix [64] 79.29 88.24 88.59 88.53
+> S2-FracMix 82.47 89.63 88.97 88.68
+
+S2-FracMix delivers the best Top-1 accuracy in all four settings. The relative gain is largest for CLIP ResNet-50 on CUB-200, where our method improves by 2.50% over the no-augmentation baseline and by 2.25% over Mixup. The im-provement is more modest for DINOv2 ViT-S, which is expected because the DI-NOv2 representation is already strongly invariant to many of the perturbations 26 K. Islam et al. 
+
+introduced by mixup augmentations. The fact that S2-FracMix still produces a consistent gain even on this strong backbone supports the view that targeted saliency-guided fractal injection introduces a form of structured noise that com-plements, rather than duplicates, the invariances learned during self-supervised pre-training. 
+
+## D Limitations of S2-FracMix 
+
+We discuss the limitations of S2-FracMix to provide a balanced view of its ap-plicability. Our proposed S2-FracMix tackles the important question of ‘how many ways to mix?’ , while existing approaches typically consider only one way to mix. Three aspects of the current realization warrant discussion. 
+
+Random selection of mixing modes. The current realization adopts random selection across high-level mixing modes, which may not exploit task-specific or instance-dependent structure. Replacing random selection with a learned gating mechanism would likely improve performance but would introduce additional training overhead, which conflicts with our explicit goal of a low-cost augmen-tation framework. 
+
+Manual hyperparameter setting. All mixup parameters in S2-FracMix, in-cluding the saliency threshold t and the fractal blending coefficient λ, are man-ually set rather than learned. This choice favors reproducibility and simplifies hyperparameter transfer across datasets and architectures, at the cost of adapt-ability to instance-specific augmentation budgets. 
+
+Single-modality scope. The current method targets single-modality visual data and does not natively extend to video or multimodal inputs. Extending the framework to temporal data would require a saliency module that operates over space and time, as well as a notion of fractal injection that respects temporal coherence. 
+
+D.1 Limitation of the Saliency Detector 
+
+Since S2-FracMix relies on a spectral residual saliency detector [22] to identify regions for patch extraction and fractal injection, its behavior depends on the quality of this detector. Our design goal is to remain label-preserving and to avoid generating unrealistic images while maintaining a low memory footprint. When the saliency detector moderately misidentifies salient regions, the overall performance of our method is largely unaffected because the multi-scale patch construction and the multi-mode wrapper compensate for local errors. In the more severe regime, where the detector fails catastrophically, the effectiveness of the self-saliency step diminishes, but the degradation remains graceful since the structured rotation, blur, and fractal blending operations continue to provide useful regularization signal even in the absence of accurate saliency guidance.

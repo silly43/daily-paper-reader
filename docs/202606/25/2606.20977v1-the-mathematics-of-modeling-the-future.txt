@@ -1,0 +1,1603 @@
+Title: The Mathematics of Modeling the Future
+
+URL Source: https://arxiv.org/pdf/2606.20977v1
+
+Published Time: Tue, 23 Jun 2026 00:23:19 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+# The Mathematics of Modeling the Future 
+
+Filtrations, Forecasts, Markov Semigroups, and the Forward Evolution of Laws Miquel Noguer i Alonso 
+
+Artificial Intelligence Finance Institute 
+
+June 18, 2026 
+
+Abstract 
+
+Modeling the future means specifying conditional laws relative to an evolving information flow and describing how those laws move across time. This paper gives a unified mathematical synthesis of that problem along a single spine. Filtrations encode what is known; conditional expectation gives the optimal point forecast; regular conditional probabilities represent full distributional forecasts; Markov kernels and semigroups propagate observables and laws; and infinitesimal generators encode local dynamics, producing the backward and forward Kolmogorov equations and, in continuous time, stochastic differential equations. Along this spine, martingales isolate irreducible surprise, filtering handles partial observation, finance prices discounted futures under martingale measures, stochastic control chooses among feasible futures, and ergodic theory and large deviations describe the structure of the far future. The contribution is architectural rather than encyclopedic. The paper makes explicit the connective derivations that turn these classical objects into one forecasting calculus: the tower property becomes the semigroup law; Itô’s formula becomes the backward equation after condi-tioning; integration by parts gives the forward operator; and generator perturbations become forecast and model-risk distortions. This perspective clarifies that forecasting is not merely extrapolation from data, but the construction of a dynamically coherent family of conditional distributions whose evolution is constrained by information, geometry, and admissible model classes. Two contrasting closed-form threads are carried throughout: the Gaussian Ornstein–Uhlenbeck process and the non-Gaussian, positivity-preserving Cox–Ingersoll–Ross process. These examples show how the same abstract machinery produces explicit transition laws, invariant distributions, spectral decompositions, likelihoods, term-structure formulae, and long-run asymptotics in different geometries. The synthesis also recasts density evolution as a Wasserstein gradient flow of free energy, places forecasting and estimation in Hilbert, Fisher–Rao, and Wasserstein geometries, gives a discrete-time dictionary for empirical practice, and emphasizes the practical caveat that every forecast inherits uncertainty from the estimated generator. The result is a compact mathematical map from information to prediction, from local dynamics to global laws, and from idealized stochastic models to the model-risk problems encountered in empirical forecasting. 
+
+Keywords: filtrations; conditional expectation; Markov processes; transition semigroups; infinites-imal generators; Kolmogorov equations; stochastic differential equations; martingales; filtering; equivalent martingale measures; Wasserstein gradient flows; ergodicity; large deviations. 1
+
+> arXiv:2606.20977v1 [q-fin.MF] 18 Jun 2026
+
+# Contents 
+
+1 Introduction: the future as a conditional law 32 Related work and what the synthesis adds 33 Information: filtered probability spaces 44 Conditional laws and optimal prediction 55 The Markov property: when the present screens the past 66 Semigroups: propagating observables and laws 77 Generators: the infinitesimal future 88 From dynamics to PDEs: Kolmogorov equations 99 The geometry of forward evolution: a Wasserstein gradient flow 11 
+
+9.1 Three geometries: Hilbert, Fisher–Rao, Wasserstein . . . . . . . . . . . . . . . . . . . 13 
+
+10 The pathwise picture: stochastic differential equations 13 11 Martingales: the unpredictable part 14 12 Filtering: the future seen through noise 15 13 Pricing the future: martingale measures 15 14 Control and decision: choosing among futures 17 15 From model to data: estimation and model risk 19 
+
+15.1 A worked estimator: exact likelihood for the OU thread . . . . . . . . . . . . . . . . 20 
+
+16 The far future: ergodicity and large deviations 21 
+
+16.1 The typical long run . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 16.2 The improbable future . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 
+
+17 Discrete time: the same spine on a lattice 22 18 A unified diagram 23 19 Synthesis 23 A Selected derivations 27 
+
+A.1 The forward operator as the adjoint of the generator . . . . . . . . . . . . . . . . . . 27 A.2 The Ornstein–Uhlenbeck transition law and invariant measure . . . . . . . . . . . . . 27 A.3 The Vasicek term structure from the affine ansatz . . . . . . . . . . . . . . . . . . . . 28 A.4 The linear–quadratic regulator and its Riccati equation . . . . . . . . . . . . . . . . 28 A.5 The CIR invariant measure and term-structure Riccati . . . . . . . . . . . . . . . . . 28 21 Introduction: the future as a conditional law 
+
+A mathematical model of the future must answer two questions. First, relative to what information is the forecast being made? Second, how does the conditional law move forward once that information is fixed? The first question is informational and is encoded by a filtration . The second is dynamical and is encoded by a transition mechanism : a kernel, a semigroup, a generator, an SDE, or a PDE. The most economical definition is the following. At time t, given an information set Ft, the future of a process X = ( Xs)s≥0 is the conditional law 
+
+Law ((Xt+u)u≥0 | F t
+
+> )
+
+.
+
+Point forecasts are summaries of this conditional law, most importantly conditional expectations. Distributional forecasts require the whole regular conditional probability. Dynamics specify how these conditional laws change as t and the forecast horizon move. The paper follows the standard progression from information to dynamics: filtration → conditional law → Markov kernel → semigroup → generator → PDE/SDE .
+
+The martingale component then isolates the unpredictable part of the future. Filtering treats the case in which the state is only indirectly observed. Finance changes the probability measure so that no-arbitrage prices become martingales. Long-run theory describes the far future through invariant measures, ergodic averages, and large-deviation rate functions. 
+
+What this paper is, and what it adds. The individual building blocks below are classical. The contribution is a usable synthesis , summarized formally in Theorem 19.1, and it goes past mere collection in five deliberate ways. (i) It states the connective derivations that turn the list into a single object: the tower property is the semigroup law, taking expectations in Itô’s formula is the backward Kolmogorov equation, integration by parts is the forward operator, and the filtering and control Riccati equations are dual under the standard linear–quadratic–Gaussian transposition/time-reversal correspondence. (ii) It carries two contrasting worked examples through every section — the Gaussian Ornstein–Uhlenbeck (OU) process and the non-Gaussian, positivity-preserving Cox– Ingersoll–Ross (CIR) process — so each abstract object acquires a closed form and the construction is visibly not Gaussian-specific. (iii) It recasts the forward evolution of densities as a Wasserstein gradient flow of free energy, delivering on “the forward evolution of laws” geometrically rather than only analytically (§9). (iv) It gives a discrete-time dictionary for the whole spine, the form most forecasting and machine-learning practice actually uses (§17). (v) It closes the loop to data: every object is estimated, and a forecast is only as good as the estimated generator (§15). Throughout, results are stated in representative form; the hypotheses that matter are recorded in §19. 
+
+# 2 Related work and what the synthesis adds 
+
+The progression information → kernel → semigroup → generator → PDE is the organizing logic of the standard references on Markov processes (Ethier and Kurtz, 1986; Rogers and Williams, 2000; Revuz and Yor, 1999), and the semigroup-first development is the explicit program of Pazy (1983) on the analytic side and Bobrowski (2005) on the probabilistic side. The duality between propagating observables and propagating measures is classical (Ethier and Kurtz, 1986); the curvature and functional-inequality view of the generator is developed in Bakry et al. (2014); the metric-geometry view of the forward equation originates with Jordan et al. (1998) and Otto (2001) and is systematized in Ambrosio et al. (2008) and Villani (2009). The financial half rests on Delbaen and Schachermayer 3(2006), Karatzas and Shreve (1991), Björk (2009), and Duffie (2001); the operator/spectral view of long-horizon pricing is Hansen and Scheinkman (2009). Against this background the present synthesis adds four things that no single one of those sources foregrounds simultaneously. First, it keeps one spine and shows that the transitions between its links are not analogies but identities (§6–§8, §14). Second, it makes the spine concrete with two closed-form threads, OU and CIR, so that the generator, both Kolmogorov equations, invariant law, spectral structure, filtering, term-structure pricing, control, and long-run behavior are instantiated in parallel. The OU thread gives the Gaussian/Hermite/Vasicek case; the CIR thread gives the positive/Gamma/Laguerre/Riccati case. Third, it places the analytic forward equation (Fokker– Planck) and its geometric form (Wasserstein gradient flow) side by side. Fourth, it supplies a 
+
+discrete-time column and an explicit estimation caveat, which is where forecasting is done in practice. The intended contribution is therefore pedagogical and architectural: a compressed, self-consistent map rather than a new frontier theorem. 
+
+# 3 Information: filtered probability spaces 
+
+Fix a probability space (Ω , F, P) carrying a filtration (Ft)t≥0 satisfying the usual conditions: completeness and right-continuity. A stochastic process is a family X = ( Xt)t≥0 of random variables valued in a Polish state space (E, E); throughout, unless stated otherwise, E = Rd with its Borel 
+
+σ-algebra. The filtration is the formal carrier of time: 
+
+Ft = “everything observable up to and including time t”, F∞ = σ 
+
+> ( ⋃
+> t≥0
+
+Ft
+
+> )
+
+.
+
+The past at t is Ft; the future is the family {Xs : s > t }, whose law conditioned on Ft is the object to be modeled. 
+
+Definition 3.1 (Adapted, progressive, optional, and predictable processes) . A process X is adapted 
+
+to (Ft)t≥0 if Xt is Ft-measurable for every t. It is progressively measurable if, for every T , the restriction of (ω, t ) 7 → Xt(ω) to Ω × [0 , T ] is FT ⊗ B ([0 , T ]) -measurable. It is optional if it is measurable with respect to the optional σ-algebra, and predictable if it is measurable with respect to the σ-algebra generated by left-continuous adapted processes. Adaptedness says that present values use no future information. Predictability says that a quantity is known just before it acts. This distinction is central in stochastic integration: integrands are predictable, while the next martingale increment is not. In that sense, predictability separates the systematic part of a model from its innovation. For the measure-theoretic foundations see Kallenberg (2021) and Dellacherie and Meyer (1982). 
+
+Definition 3.2 (Natural and enlarged filtrations) . The natural filtration of X is FXt = σ(Xs : 0 ≤
+
+s ≤ t), usually augmented to satisfy the usual conditions. If FXt ⊆ G t, then (Gt) is an enlarged filtration. The same process may have different forecasting properties under different filtrations. 
+
+Remark 3.3 (Information is part of the model) . A claim such as “ X is unpredictable” is never absolute. It means unpredictable relative to a filtration . Enlarging Ft may transform a martingale into a process with drift, or a Markov process into a non-Markov process relative to the larger information set. A forecasting model is therefore not merely a law for X; it is a pair consisting of a law and an information structure. 44 Conditional laws and optimal prediction 
+
+The full object of prediction is a conditional distribution. The most important scalar summary of that distribution is the conditional expectation. 
+
+Definition 4.1 (Conditional expectation) . Let Z ∈ L1(Ω , F, P) and let G ⊆ F be a sub-σ-algebra. The conditional expectation E[Z | G ] is the almost surely unique G-measurable integrable random variable satisfying ∫
+
+> G
+
+E[Z | G ] d P =
+
+> ∫
+> G
+
+Z dP, G ∈ G . (1) Existence and uniqueness follow from the Radon–Nikodym theorem (Williams, 1991, Ch. 9). For square-integrable random variables, conditional expectation is a geometric projection. 
+
+Theorem 4.2 (Conditional expectation is the best mean-square predictor) . If Z ∈ L2(Ω , F, P),then 
+
+E[Z | G ] = arg min  
+
+> Y∈L2(Ω ,G,P)
+
+E[(Z − Y )2].
+
+Equivalently, the residual Z − E[Z | G ] is orthogonal to every G-measurable Y ∈ L2: E[( Z − E[Z |G]) Y ] = 0 .Proof sketch. The space L2(Ω , G, P) is a closed linear subspace of L2(Ω , F, P). Orthogonal projection onto this subspace exists and is unique. The defining identity of the projection is precisely the conditional-expectation identity (1), tested against indicators and extended by density. Among all forecasts allowed to use the information G, the conditional expectation is optimal under squared loss. Other scoring rules produce other summaries, but conditional expectation is the canonical Hilbert-space forecast. 
+
+Proposition 4.3 (Tower property and variance decomposition) . For sub-σ-algebras H ⊆ G ⊆ F 
+
+and Z ∈ L1,
+
+E[E[Z | G ] ∣∣ H] = E[Z | H ].
+
+If Z ∈ L2, then Var( Z) = E[Var( Z | G )] + Var (E[Z | G ]).
+
+The tower property says that a coarser forecast equals the conditional average of a finer one; it is the consistency condition that the whole dynamical theory will inherit (§6). The variance decomposition splits total uncertainty into what is resolved by G and what remains. Operationally, modeling the future means choosing and updating an information set that resolves useful uncertainty without introducing inaccessible information. 
+
+Definition 4.4 (Regular conditional law) . Let X be a random element of a Polish space E. A regular conditional law of X given G is a probability kernel K : Ω × E → [0 , 1] such that K(·, A ) is 
+
+G-measurable for every A ∈ E and K(ω, A ) = P(X ∈ A | G )( ω) a.s. For Polish state spaces, regular conditional laws exist. They upgrade point forecasting to distributional forecasting: E[f (X) | G ]( ω) = ∫ 
+
+> E
+
+f (x) K(ω, dx) for bounded measurable f . The full future forecast is thus not a number but a random probability measure. 55 The Markov property: when the present screens the past 
+
+In general, the conditional law of the future depends on the entire past. The Markov property is the assumption that makes the problem tractable: the present state contains all predictively relevant information. This is relative to the chosen filtration; a process can be Markov with respect to its natural filtration but fail to be Markov with respect to a larger one carrying additional predictive information. 
+
+Definition 5.1 (Markov process) . An adapted process X is Markov with respect to (Ft)t≥0 if, for every bounded measurable f and all s, t ≥ 0,
+
+E[f (Xt+s) | F t 
+
+> ]
+
+= E[f (Xt+s) | Xt 
+
+> ]
+
+= ( Psf )( Xt) a.s. , (2) where (Ps)s≥0 is induced by transition kernels ps(x, dy) through (Psf )( x) = ∫ 
+
+> E
+
+f (y) ps(x, dy). The kernels are consistent through the Chapman–Kolmogorov equation, 
+
+pt+s(x, A ) = 
+
+> ∫
+> E
+
+ps(y, A ) pt(x, dy), A ∈ E . (3) To reach A in time t + s, first propagate to an intermediate state y in time t, then from y to A
+
+in time s, and integrate over all intermediate states. Equation (2) reduces “the future given the past” to “the future given the present,” the conceptual core of forward modeling (Ethier and Kurtz, 1986; Revuz and Yor, 1999). 
+
+Example 5.2 (Autoregression and state augmentation) . A scalar autoregression of order k is not Markov in the scalar observation Xt alone, but it becomes Markov after augmenting the state to 
+
+(Xt, X t−1, . . . , X t−k+1 ). This is the general modeling lesson: non-Markovian dynamics can often be represented as Markovian dynamics on a richer state space. The cost is dimensionality; the benefit is semigroup structure. 
+
+Ornstein–Uhlenbeck thread 1 (the process and its Markov property) . Throughout, the worked example is the scalar Ornstein–Uhlenbeck process 
+
+dXt = θ(μ − Xt) d t + σ dWt, θ > 0, σ > 0, (4) with mean-reversion rate θ, long-run level μ, and volatility σ. It is a time-homogeneous Feller– Markov process with respect to the augmented natural filtration of W ; everything that follows is an explicit instance of the corresponding abstract object. 
+
+Cox–Ingersoll–Ross thread 1 (a non-Gaussian, positivity-preserving counterpart) . The second worked example is the scalar Cox–Ingersoll–Ross process 
+
+dXt = θ(μ − Xt) d t + σ√Xt dWt, θ, μ, σ > 0, (5) with the same mean-reversion rate, long-run level, and volatility parameters, but with state-dependent 
+
+(and degenerate) diffusion σ2x. On the state space (0 , ∞) it is a time-homogeneous Feller–Markov process (Cox et al., 1985; Feller, 1951). It shares the OU mean-reversion drift, so the two threads can be compared object by object, but its non-additive noise makes the transition law non-Gaussian and confines the process to the positive half-line — the feature that makes it the standard model of a strictly positive quantity such as an interest rate or a variance. 
+
+Bridge. The tower property of Proposition 4.3 is the semigroup law. For a Markov process, 
+
+(Pt+sf )( x) = Ex[f (Xt+s)] = Ex
+
+> [
+
+E[f (Xt+s) | F t]] = Ex
+
+> [
+
+(Psf )( Xt)] = ( PtPsf )( x),
+
+where the second equality is the tower property and the third is the Markov property (2) . Thus 
+
+Pt+s = PtPs below is not a new axiom but Proposition 4.3 specialized to the Markov filtration; equivalently, integrating the kernels reproduces Chapman–Kolmogorov (3). 66 Semigroups: propagating observables and laws 
+
+Reading (3) at the level of operators turns transition kernels into a one-parameter semigroup acting on functions. 
+
+Definition 6.1 (Transition semigroup) . The operators (Pt)t≥0 defined by (Ptf )( x) = Ex[f (Xt)] = 
+
+E[f (Xt) | X0 = x] form a semigroup: 
+
+P0 = Id , Pt+s = PtPs, s, t ≥ 0. (6) On a suitable Banach space of functions, for example C0(E) for a Feller process, the semigroup is strongly continuous if ∥Ptf − f ∥ → 0 as t ↓ 0 for every f in that space. The same kernel acts dually on probability measures. If μ is the law of X0, then the law of Xt is 
+
+μP t(A) = 
+
+> ∫
+> E
+
+pt(x, A ) μ( d x), (7) and duality gives ∫
+
+> E
+
+f (y) ( μP t)( d y) = 
+
+> ∫
+> E
+
+(Ptf )( x) μ( d x). (8) Thus Pt propagates observables backward from the horizon to the present, while its adjoint propagates distributions forward from the present to the horizon. This duality is the operator-theoretic form of forecasting. 
+
+Remark 6.2 (Observable view versus distribution view) . There are two equivalent ways to model the future. The first asks: given today’s state x, what is the expected future value of every observable f ?This is Ptf (x). The second asks: given today’s distribution μ, what is tomorrow’s distribution? This is μP t. The backward Kolmogorov equation governs the first view; the forward equation governs the second. 
+
+Ornstein–Uhlenbeck thread 2 (transition law and spectral structure) . Solving (4) explicitly, 
+
+Xt = μ + ( X0 − μ)e −θt + σ 
+
+> ∫t
+> 0
+
+e−θ(t−s) dWs, (9) so the transition law is Gaussian, 
+
+Xt | X0 = x ∼ N
+
+> (
+
+m(t, x ), v (t)
+
+> )
+
+, m(t, x ) = μ + ( x − μ)e −θt , v(t) = σ2
+
+2θ
+
+> (
+
+1 − e−2θt ).
+
+In particular (Ptf )( x) = ∫ 
+
+> R
+
+f (y) N (y; m(t, x ), v (t)) dy and (Pt id )( x) = μ + ( x − μ)e −θt . The OU semigroup has discrete spectrum : the Hermite polynomials {Hn} orthonormal for the invariant Gaussian are eigenfunctions, 
+
+PtHn = e −nθt Hn, n = 0 , 1, 2, . . . , (10) which is Mehler’s formula in spectral form (Bakry et al., 2014). The decay rates nθ are exactly the relaxation times the rest of the thread will reproduce. 
+
+Cox–Ingersoll–Ross thread 2 (transition law and spectral structure) . For CIR the conditional mean coincides with OU, E[Xt | X0 = x] = μ + ( x − μ)e −θt , but the conditional variance is state-dependent, 
+
+Var( Xt | X0 = x) = x σ2
+
+θ
+
+> (
+
+e−θt − e−2θt ) + μ σ2
+
+2θ
+
+> (
+
+1 − e−θt )2,
+
+7and the transition law is a (scaled) noncentral chi-square : with ct = 2 θ/ [σ2(1 − e−θt )] , the variable 
+
+2ctXt given X0 = x is noncentral χ2 with 4θμ/σ 2 degrees of freedom and noncentrality 2ctxe−θt 
+
+(Cox et al., 1985). The semigroup again has discrete spectrum, but with the orthogonal family of the Gamma invariant law: the generalized Laguerre polynomials {L(α−1)  
+
+> n
+
+}, α = 2 θμ/σ 2, are eigenfunctions, 
+
+PtL(α−1)  
+
+> n
+
+= e −nθt L(α−1)  
+
+> n
+
+, n = 0 , 1, 2, . . . , (11) so the relaxation rates nθ match OU exactly while the eigenfunctions are Laguerre rather than Hermite (Karlin and Taylor, 1981; Bakry et al., 2014). OU and CIR are the Hermite and Laguerre members of the classical polynomial-eigenfunction diffusions. 
+
+# 7 Generators: the infinitesimal future 
+
+A strongly continuous semigroup is determined by its behavior at the origin. 
+
+Definition 7.1 (Infinitesimal generator) . The generator of (Pt) is the operator 
+
+Af = lim 
+
+> t↓0
+
+Ptf − ft , (12) defined on the domain D(A) of all f for which the limit exists in the Banach-space norm. 
+
+Theorem 7.2 (Hille–Yosida; semigroup–generator correspondence) . Let A be a densely defined closed operator on a Banach space B. Then A generates a strongly continuous contraction semigroup 
+
+(Pt)t≥0 if and only if (0 , ∞) ⊆ ρ(A) and 
+
+∥(λI − A )−n∥ ≤ λ−n, λ > 0, n ≥ 1.
+
+In that case, for every f ∈ D (A),
+
+ddt Ptf = APtf = PtAf. (13) Formally one writes Pt = e tA; this notation is literal when A is bounded and is understood in the semigroup sense otherwise. See Pazy (1983) for the analytic theory and Ethier and Kurtz (1986) for the probabilistic formulation. Equation (13) says that the generator commutes with the flow it produces: on D(A) the square 
+
+f Pt
+
+−−→ Ptf 
+
+> A
+> yyA
+
+Af Pt
+
+−−→ PtAf
+
+commutes. The generator is the local law of motion; the semigroup is its time-integrated law. Everything operational about how Markovian futures evolve is encoded in (A, D(A)) .
+
+Remark 7.3 (Why the domain matters) . The pair (A, D(A)) matters more than the formal expression for A. Different boundary conditions can give the same differential expression but different domains, hence different processes: absorbing, reflecting, and killed diffusions are distinguished by their generator domains. A model of the future is incomplete until the domain and boundary behavior are specified. 8Remark 7.4 (Local and nonlocal generators) . For a diffusion the generator is a second-order local 
+
+differential operator (16) . This is not the only possibility: a jump or Lévy-type process has a generator with an additional integral term ∫ ( f (x + z) − f (x) − 1{| z|≤ 1}z · ∇ f (x))ν(x, dz), so “local law of motion” must be read as “local plus jump” in general (Applebaum, 2009). The diffusion case is the one carried by the OU thread. 
+
+Ornstein–Uhlenbeck thread 3 (generator and spectrum) . For (4) the generator on C2 
+
+> c
+
+(R) is 
+
+Af (x) = θ(μ − x)f ′(x) + 12 σ2f ′′ (x).
+
+Its Hermite eigenfunctions satisfy AHn = −nθ H n, consistent with (10) via Pt = e tA. The spectral gap θ (the smallest nonzero relaxation rate) will reappear as the convergence rate of the law (§9) and of time averages (§16). 
+
+Cox–Ingersoll–Ross thread 3 (generator, and the boundary remark made concrete) . For (5) the generator on a suitable core in C2((0 , ∞)) is 
+
+Af (x) = θ(μ − x)f ′(x) + 12 σ2x f ′′ (x),
+
+with the same Laguerre spectrum AL(α−1)  
+
+> n
+
+= −nθL (α−1)  
+
+> n
+
+. Because the diffusion coefficient a(x) = σ2x
+
+degenerates at the boundary x = 0 , the abstract domain-and-boundary discussion above becomes an explicit dichotomy: the Feller condition 2θμ ≥ σ2 makes 0 inaccessible and the process stays strictly positive, whereas if 2θμ < σ 2 the boundary is attainable, and the precise Markov process is determined by the Feller boundary classification and the generator domain (Feller, 1951). Alternative boundary prescriptions correspond to different extensions of the same formal differential operator. This is the boundary remark of §7 realized: the differential expression alone does not determine the process; the boundary classification does. 
+
+# 8 From dynamics to PDEs: Kolmogorov equations 
+
+Specializing (13) to u(t, x ) = ( Ptf )( x) = Ex[f (Xt)] yields the equation governing conditional expectations of future observables. 
+
+Theorem 8.1 (Backward Kolmogorov equation) . Let (Pt) be a strongly continuous Markov semigroup with generator A. If f ∈ D (A) and the required regularity holds, then u(t, x ) = Ptf (x) solves 
+
+∂tu(t, x ) = ( Au)( t, x ), u(0 , x ) = f (x). (14) For a diffusion solving 
+
+dXt = b(Xt) d t + σ(Xt) d Wt, (15) with W an m-dimensional Brownian motion, b : Rd → Rd, and σ : Rd → Rd×m, the diffusion matrix is a(x) = σ(x)σ(x)⊤ and the generator is the second-order diffusion operator, elliptic when a(x) is nondegenerate, 
+
+Af (x) = 
+
+> d∑
+> i=1
+
+bi(x)∂if (x) + 12
+
+> d∑
+> i,j =1
+
+aij (x)∂2 
+
+> ij
+
+f (x). (16) Its formal L2-adjoint A∗ governs the evolution of densities. 
+
+Theorem 8.2 (Forward Kolmogorov / Fokker–Planck equation) . Assume Xt admits a density p(t, ·)
+
+and that the coefficients and density are sufficiently regular. Then 
+
+∂tp(t, y ) = ( A∗p)( t, y ) = −
+
+> d∑
+> i=1
+
+∂i
+
+> (
+
+bi(y)p(t, y )) + 12
+
+> d∑
+> i,j =1
+
+∂2
+
+> ij
+> (
+
+aij (y)p(t, y )). (17) 9Bridge. The two equations come from two one-line calculations, and both are derivations rather than analogies. Backward: take Ex of Itô’s formula (24) (the martingale term has zero mean), giving 
+
+Ptf (x) − f (x) = ∫ t 
+
+> 0
+
+Ps(Af )( x) d s; differentiating in t yields (13) and hence (14) . Forward: A∗ is defined by ⟨A f, g ⟩L2 = ⟨f, A∗g⟩L2 ; in one dimension, integrating by parts (twice for the second-order term, discarding boundary terms), 
+
+> ∫ (
+
+bf ′ + a 
+
+> 2
+
+f ′′ )
+
+g dx =
+
+> ∫
+
+f
+
+> (
+
+− (bg )′ + 12 (ag )′′ )
+
+dx, 
+
+so A∗g = −(bg )′ + 12 (ag )′′ , which is (17) . The backward and forward equations are therefore literally adjoint, and differentiating the duality (8) states it cleanly: 
+
+ddt
+
+> ∫
+
+f (y)p(t, y ) d y =
+
+> ∫
+
+(Af )( y)p(t, y ) d y =
+
+> ∫
+
+f (y)( A∗p)( t, y ) d y. 
+
+Adding a killing or discount potential gives the Feynman–Kac formula. If V ≥ 0 and 
+
+u(t, x ) = Ex
+
+> [
+
+f (Xt) exp 
+
+> (
+
+− 
+
+> ∫t
+> 0
+
+V (Xs) d s
+
+> )]
+
+, (18) then, under standard conditions, ∂tu = Au − V u with u(0 , ·) = f . This is the bridge between expectations of path functionals and linear PDEs (Karatzas and Shreve, 1991; Øksendal, 2003), and it is the form that returns in pricing (§13). 
+
+Ornstein–Uhlenbeck thread 4 (both Kolmogorov equations and the invariant law) . For OU the backward and forward operators are 
+
+Au = θ(μ − x)∂xu + σ2 
+
+> 2
+
+∂xx u, A∗p = −∂y
+
+> (
+
+θ(μ − y)p) + σ2 
+
+> 2
+
+∂yy p. 
+
+The stationary forward equation A∗p∞ = 0 has the Gaussian solution 
+
+p∞(y) ∝ exp 
+
+> (
+
+− θ(y − μ)2
+
+σ2
+
+> )
+
+, i.e. p∞ = N
+
+> (
+
+μ, σ2
+
+2θ
+
+> )
+
+, (19) the t → ∞ limit of v(t) in Thread 2. The invariant law is read off as the kernel of A∗.
+
+Cox–Ingersoll–Ross thread 4 (forward operator, Gamma invariant law, and ergodicity) . For CIR the forward operator is 
+
+A∗p = −∂y
+
+> (
+
+θ(μ − y)p) + σ2 
+
+> 2
+
+∂yy 
+
+> (
+
+y p ),
+
+and the stationary equation A∗p∞ = 0 has the Gamma solution 
+
+p∞(y) ∝ yα−1e−βy (y > 0) , α = 2θμ σ2 , β = 2θσ2 , (20) i.e. p∞ = Gamma (α, β ) with mean α/β = μ and variance α/β 2 = μσ 2/2θ, the t → ∞ limit of the conditional variance in Thread 2. Where OU relaxes to a Gaussian, CIR relaxes to a Gamma. The process is positive Harris recurrent and exponentially ergodic at the spectral-gap rate θ (Meyn and Tweedie, 2009; Bakry et al., 2014), the non-Gaussian analogue of the W2 contraction of §9. 10 9 The geometry of forward evolution: a Wasserstein gradient flow 
+
+The forward equation (17) is an evolution of densities ; it therefore has a geometry, and that geometry is the natural meaning of “the forward evolution of laws.” Let P2(Rd) be the probability measures with finite second moment, equipped with the quadratic Wasserstein distance 
+
+W2(ρ0, ρ 1)2 = inf 
+
+> γ∈Π( ρ0,ρ 1)
+> ∫
+> Rd×Rd
+
+|x − y|2 dγ(x, y ),
+
+the infimum over couplings γ with marginals ρ0, ρ 1 (Villani, 2009). For a reversible diffusion with gradient drift b = −∇ Ψ and constant diffusion D = 12 σ2, the Fokker–Planck equation reads 
+
+∂tρ = ∇· (ρ∇Ψ) + D∆ρ.
+
+Theorem 9.1 (Jordan–Kinderlehrer–Otto) . The Fokker–Planck flow ∂tρ = ∇· (ρ∇Ψ) + D∆ρ is the gradient flow in (P2, W 2) of the free energy 
+
+F(ρ) = 
+
+> ∫
+> Rd
+
+Ψ ρ dx + D
+
+> ∫
+> Rd
+
+ρ log ρ dx = D KL( ρ ∥ ρ∞) + const , ρ∞ ∝ e−Ψ/D .
+
+It is realized by the minimizing-movement (JKO) scheme: with step τ > 0,
+
+ρ(k+1) = arg min 
+
+> ρ∈P 2
+> {
+
+F(ρ) + 12τ W2(ρ, ρ (k))2}
+
+, (21) 
+
+which converges to the continuous flow as τ ↓ 0 (Jordan et al., 1998; Otto, 2001; Ambrosio et al., 2008). 
+
+The forward evolution of laws is thus a steepest descent of free energy: the system moves to lower energy ∫ Ψρ and higher entropy, and the two balance at the Gibbs measure ρ∞. With the convention 
+
+I(ρ∥ρ∞) = 
+
+> ∫
+> Rd
+> ∣∣∣∣
+
+∇ log ρρ∞
+
+> ∣∣∣∣
+> 2
+
+ρ dx, 
+
+energy dissipation is exactly the decay of relative entropy, 
+
+ddt KL( ρt∥ρ∞) = −D I(ρt∥ρ∞) ≤ 0,
+
+where a different normalization of I merely moves the factor D (Bakry et al., 2014). 
+
+Ornstein–Uhlenbeck thread 5 (mean reversion as Wasserstein contraction) . OU is the canonical instance: Ψ( x) = θ 
+
+> 2
+
+(x − μ)2 is θ-convex and D = 12 σ2, so ρ∞ = N (μ, σ 2/2θ) as in (19) and the flow is uniformly geodesically convex. The contraction rate is exactly the spectral gap θ, by an elementary synchronous coupling: if X and X′ solve (4) driven by the same W , then d( Xt−X′
+
+> t
+
+) = −θ(Xt−X′
+
+> t
+
+) d t,hence |Xt − X′
+
+> t
+
+| = |X0 − X′
+
+> 0
+
+|e−θt pathwise, and therefore 
+
+W2(ρt, ρ ′
+
+> t
+
+) ≤ e−θt W2(ρ0, ρ ′
+
+> 0
+
+). (22) Mean reversion, the relaxation rate nθ of (10) , and exponential convergence to the Gaussian invariant law are one and the same fact, seen as a contraction in W2.Figure 1 makes the thread concrete: every curve is evaluated from a closed form derived above, with no simulation. Panel (a) shows the law (9) relaxing to the invariant Gaussian (19) ; panel (b) the mean reversion of (9) with the ±√v(t) band; panel (c) the spectral decay (10) ; and panel (d) anticipates §13, the Vasicek yield curves implied by the same generator. 11 2 1 0 1 2
+
+y
+
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> density
+
+(a) Forward evolution of the law p(t, x0 = 2)          
+
+> t= 0.10
+> t= 0.30
+> t= 0.70
+> t= 1.50
+> t= 3.50
+> p
+> 01234
+
+t 
+
+> 2
+> 1
+> 0
+> 1
+> 2
+> [Xt X0 = x]
+> ±v(t) band
+
+(b) Mean reversion m(t, x) = + ( x )e t    
+
+> 01234
+
+t
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> eigenvalue  e n t
+
+(c) Spectral relaxation PtHn = e n tHn          
+
+> n= 1
+> n= 2
+> n= 3
+> n= 4
+> 0246810 12
+
+maturity T t
+
+> 3
+> 4
+> 5
+> 6
+> 7
+> yield (\%)
+
+(d) Vasicek term structure (OU short rate)    
+
+> r0= 0.03
+> r0= 0.05
+> r0= 0.07
+
+Figure 1: The Ornstein–Uhlenbeck thread, computed from the paper’s closed forms ( θ = 1 , μ = 0 ,
+
+σ = 0 .6; panel (d) uses short-rate parameters θ = 0 .6, μ = 0 .05 , σ = 0 .015 ). (a) The conditional density p(t, · | x0) evolves forward to the invariant law p∞ = N (μ, σ 2/2θ). (b) The conditional mean reverts at rate θ while the conditional variance saturates at σ2/2θ. (c) The Hermite eigenvalues e−nθt 
+
+set the relaxation times. (d) The implied Vasicek term structure is upward-, flat-, or downward-sloping as the short rate sits below, at, or above its long-run level. 12 9.1 Three geometries: Hilbert, Fisher–Rao, Wasserstein 
+
+The Wasserstein picture is one corner of a triangle of geometries that the rest of the paper has been using implicitly, each natural to a different object of forecasting. 
+
+• Hilbert ( L2) geometry of observables. Conditional expectation is orthogonal projection in L2(P)
+
+(Theorem 4.2); point forecasting is a Hilbert-space projection and the residual is orthogonal to present information. This is the geometry of §4. 
+
+• Fisher–Rao geometry of model families. On a parametric family {pϑ} the Fisher information 
+
+gij (ϑ) = Eϑ[∂i log pϑ ∂j log pϑ] is the canonical Riemannian metric, with relative entropy as the associated divergence (ichi Amari, 2016; Ay et al., 2017). This is the geometry in which the estimation of §15 lives, and the Cramér–Rao bound is its length element. 
+
+• Wasserstein geometry of laws. On P2 the metric W2 is the one under which the forward equation is the gradient flow of free energy (Theorem 9.1). This is the geometry of §9. The three meet rather than merely coexist. The same relative Fisher information I(ρ∥ρ∞) that controls Wasserstein-side entropy dissipation, ddt KL = −D I, is the infinitesimal Fisher–Rao length along the flow; and the Gaussian family of the OU thread carries explicit forms of all three metrics at once, just as the Gamma family does for CIR. Forecasting (Hilbert), estimating the generator (Fisher–Rao), and propagating the law (Wasserstein) are thus three faces of one geometric object. 
+
+# 10 The pathwise picture: stochastic differential equations 
+
+Generators describe the future in law; SDEs describe it path by path. 
+
+Theorem 10.1 (Existence, uniqueness, Markov property, generator) . Assume b : Rd → Rd and 
+
+σ : Rd → Rd×m are globally Lipschitz with linear growth. Then 
+
+dXt = b(Xt) d t + σ(Xt) d Wt, X0 = x, (23) 
+
+has a unique strong solution; the solution is a Feller–Markov process with generator (16) on C2 
+
+> c
+
+(Rd).For f ∈ C2 
+
+> c
+
+(Rd), Itô’s formula gives 
+
+df (Xt) = ( Af )( Xt) d t  
+
+> ︸︷︷ ︸
+> predictable drift
+
++ ∇f (Xt)⊤σ(Xt) d Wt  
+
+> ︸︷︷ ︸
+> martingale increment
+
+. (24) Equation (24) is the stochastic chain rule for the future: the generator gives the predictable instantaneous change of every smooth observable; the Itô integral is the irreducible innovation. As shown in the Bridge of §8, taking expectations recovers the backward equation. See Karatzas and Shreve (1991), Øksendal (2003), and Stroock and Varadhan (1979). 
+
+Definition 10.2 (Martingale problem) . Let A be an operator on a domain D(A). A process X
+
+solves the martingale problem for (A, D(A)) if, for every f ∈ D (A),
+
+M ft = f (Xt) − f (X0) − 
+
+> ∫t
+> 0
+
+(Af )( Xs) d s (25) is a martingale. 13 The martingale problem reverses the SDE logic: instead of starting with paths and deriving the generator, it starts with the generator and asks whether a process exists whose observables have exactly the prescribed drift. Well-posedness is equivalent, in many settings, to uniqueness in law of the corresponding Markov process (Stroock and Varadhan, 1979; Ethier and Kurtz, 1986). 
+
+Ornstein–Uhlenbeck thread 6 (explicit drift–innovation split) . Solution (9) is already in predictable-plus-martingale form: μ + ( X0 − μ)e −θt is the predictable finite-variation part and σ ∫ t 
+
+> 0
+
+e−θ(t−s) dWs
+
+is the Gaussian martingale innovation, with conditional variance v(t). The martingale problem (25) is solved explicitly: f (Xt) − f (X0) − ∫ t 
+
+> 0
+
+Af (Xs) d s = ∫ t 
+
+> 0
+
+σf ′(Xs) d Ws.
+
+# 11 Martingales: the unpredictable part 
+
+A forecast that already incorporates all available information should not be systematically improvable. This is the martingale property. 
+
+Definition 11.1 (Martingale) . An adapted integrable process M is a martingale if E[Mt | F s] = Ms
+
+for 0 ≤ s ≤ t. It is a local martingale if there exist stopping times τn ↑ ∞ such that M τn is a martingale for every n.A martingale is a fair game: its best forecast of any future value is its present value. Decomposi-tion theorems make precise the idea that every sufficiently regular future is predictable trend plus unpredictable innovation. 
+
+Theorem 11.2 (Doob–Meyer decomposition) . Every right-continuous submartingale X of class (D) admits a unique decomposition 
+
+Xt = X0 + At + Mt, (26) 
+
+where A is predictable, increasing, integrable, A0 = 0 , and M is a uniformly integrable martingale. 
+
+The predictable part A is systematic accumulation; the martingale part M is residual surprise. In Brownian filtrations the surprise has a canonical representation. 
+
+Theorem 11.3 (Martingale representation) . Let (Ft) be the augmented natural filtration of an 
+
+m-dimensional Brownian motion W . Every square-integrable (Ft)-martingale M admits 
+
+Mt = M0 + 
+
+> ∫t
+> 0
+
+Hs dWs, (27) 
+
+for a predictable H with E ∫ T 
+
+> 0
+
+∥Hs∥2 ds < ∞ for each finite T .
+
+In a Brownian world, every uncertain future is the present plus accumulated fresh noise weighted by a predictable sensitivity. This underlies hedging in complete markets, innovations in filtering, and stochastic control (Revuz and Yor, 1999; Karatzas and Shreve, 1991; Protter, 2005). The continuous-time decomposition (26) has an exact discrete analogue (§17). 
+
+Remark 11.4 (The integrand is a conditional expectation) . Martingale representation (27) is existen-tial, but the Clark–Ocone formula makes the integrand explicit: for F = MT smooth in the Malliavin sense, Ht = E[DtF | F t], the predictable projection of the Malliavin derivative (Nualart, 2006). The unpredictable future is thus reconstructed from a conditional expectation of an infinitesimal perturbation — the same projection that defines forecasting (§4) and filtering (§12), and, read financially, the hedge ratio. 14 12 Filtering: the future seen through noise 
+
+Often the state X is not observed directly. One observes a noisy process Y and must forecast the hidden signal using the observation filtration Yt = σ(Ys : s ≤ t).
+
+Definition 12.1 (Filter) . For a signal X and observation filtration (Yt), the nonlinear filter is the measure-valued process πt(f ) = E[f (Xt) | Y t], defined for bounded measurable f .By Theorem 4.2, πt( id ) is the minimum-variance estimate of the current state from observations. The filter itself evolves by a Kushner–Stratonovich equation: for the diffusion signal with generator 
+
+A and scalar observation dYt = h(Xt) d t + d Vt,
+
+dπt(f ) = πt(Af ) d t + (πt(hf ) − πt(h)πt(f ))( dYt − πt(h) d t), (28) the forward (generator) term plus a correction driven by the innovation (Bain and Crisan, 2009; Liptser and Shiryaev, 2001). In the linear–Gaussian case the filter is finite-dimensional and explicit. 
+
+Theorem 12.2 (Kalman–Bucy filter) . Consider the linear system 
+
+dXt = AX t dt + B dWt, dYt = CX t dt + D dVt,
+
+with W, V independent Brownian motions and DD ⊤ ≻ 0. If the initial state is Gaussian and independent of (W, V ), then the conditional law of Xt given Yt is Gaussian with mean ̂ Xt = E[Xt | Y t]
+
+and covariance Σt solving 
+
+d̂ Xt = ÂXt dt + Σ tC⊤(DD ⊤)−1( dYt − Ĉ Xt dt), (29) 
+
+˙Σt = AΣt + Σ tA⊤ + BB ⊤ − ΣtC⊤(DD ⊤)−1CΣt. (30) The process dνt = d Yt − Ĉ Xt dt is the innovations process: the part of each new observation not predicted by the current filter. After normalization by the observation covariance it is a Brownian motion in (Yt).
+
+Bridge. The innovation is a martingale by construction. Since Ĉ Xt = E[CX t | Y t], for s < t 
+
+E[νt − νs | Y s] = E 
+
+> [ ∫ts
+> (
+
+CX u − Ĉ Xu 
+
+> )
+
+du + 
+
+> ∫ts
+
+D dVu 
+
+> ∣∣∣
+
+Ys
+
+> ]
+
+= 0 ,
+
+because E[CX u − Ĉ Xu | Y s] = 0 for u ≥ s by the tower property and the observation noise is mean-zero and independent. Filtering is thus the recursive conversion of observations into a conditional law, and innovations are exactly the martingale surprises of §11 left after the best forecast is removed. 
+
+Ornstein–Uhlenbeck thread 7 (the canonical linear–Gaussian signal) . Taking the signal to be OU, 
+
+A = −θ and B = σ in Theorem 12.2: the mean-reverting process is the textbook Kalman–Bucy signal, and the scalar Riccati equation (30) has a stationary solution Σ∞ giving the steady-state filter gain. The same Riccati equation reappears, transposed, in control (§14). 
+
+# 13 Pricing the future: martingale measures 
+
+In financial markets the relevant future is the discounted value of payoffs. Absence of arbitrage forces the existence of measures under which discounted prices are martingales. 15 Theorem 13.1 (Fundamental theorem of asset pricing) . Let S be a locally bounded semimartingale price process. Then S satisfies no free lunch with vanishing risk if and only if there exists a probability measure Q ∼ P under which the discounted price process is a local martingale. 
+
+Under such a Q, the no-arbitrage value of a claim paying VT at maturity T is 
+
+Vt = θ−1 
+
+> t
+
+EQ[θT VT | F t
+
+> ]
+
+, θt = exp 
+
+> (
+
+− 
+
+> ∫t
+> 0
+
+rs ds
+
+> )
+
+, (31) so the discounted value θtVt is a Q-martingale. The pricing operator is a conditional expectation, but under a risk-neutral measure rather than the physical one. In complete markets this measure is unique; in incomplete markets the equivalent martingale measure need not be unique, so (31) is the price associated with the chosen pricing measure while no-arbitrage alone may determine only a range of admissible prices. In Markov diffusion models (31) becomes a Feynman–Kac representation (18) and hence a backward pricing PDE (Delbaen and Schachermayer, 2006; Karatzas and Shreve, 1991; Duffie, 2001; Björk, 2009). 
+
+Remark 13.2 (Physical versus pricing futures) . The physical measure P describes empirical fre-quencies; the pricing measure Q encodes no-arbitrage valuation. A physical forecast asks what is likely to happen; a no-arbitrage price asks which present value prevents a self-financing strategy from generating arbitrage. The two coincide only under special preferences or market-price-of-risk structures, and the gap between them is itself a modeling object (§15). 
+
+Ornstein–Uhlenbeck thread 8 (OU as Vasicek: Feynman–Kac becomes an affine term structure) . Let the short rate follow OU under Q, drt = θ(μ − rt) d t + σ dWt. By (31) the zero-coupon bond price 
+
+P (t, T ) = EQ[exp( − ∫ Tt ru du) | F t] solves the Feynman–Kac PDE 
+
+∂tP + θ(μ − r)∂rP + σ2 
+
+> 2
+
+∂rr P − rP = 0 , P (T, T ) = 1 .
+
+The affine ansatz P (t, T ) = exp (a(t, T ) − b(t, T ) rt 
+
+> )
+
+separates it into ODEs with the closed-form Vasicek solution 
+
+b(t, T ) = 1 − e−θ(T −t)
+
+θ ,
+
+a(t, T ) = 
+
+> (
+
+μ − σ2
+
+2θ2
+
+> )(
+
+b(t, T ) − (T − t)) − σ2
+
+4θ b(t, T )2,
+
+(Vasicek, 1977; Björk, 2009). The abstract pricing identity (31) has become an explicit yield curve, and the operator/spectral view of long-horizon discounting is the subject of Hansen and Scheinkman (2009). 
+
+Cox–Ingersoll–Ross thread 5 (CIR as a positive short rate: a genuine Riccati term structure) . Let the short rate follow CIR under Q, drt = θ(μ − rt) d t + σ√rt dWt, which (unlike Vasicek) keeps rates nonnegative. The bond price P (t, T ) = EQ[exp( − ∫ Tt ru du) | F t] solves 
+
+∂tP + θ(μ − r)∂rP + σ2 
+
+> 2
+
+r ∂ rr P − rP = 0 , P (T, T ) = 1 ,
+
+and the affine ansatz P = exp( a(τ ) − b(τ )r), τ = T − t, now separates into 
+
+b′ = 1 − θb − 12 σ2b2, a′ = −θμ b, (32) where the b-equation is a genuine Riccati equation — the quadratic term is the trace of the √r
+
+diffusion — in contrast to the linear Vasicek b-equation. With γ = √θ2 + 2 σ2 its solution is, in closed form (Cox et al., 1985), 
+
+b(τ ) = 2(e γτ − 1) (γ + θ)(e γτ − 1) + 2 γ , a(τ ) = 2θμ σ2 log 2γ e(γ+θ)τ / 2
+
+(γ + θ)(e γτ − 1) + 2 γ .
+
+16 Object Ornstein–Uhlenbeck Cox–Ingersoll–Ross 
+
+SDE dX = θ(μ − X) d t + σ dW dX = θ(μ − X) d t + σ√X dW
+
+State space R (0 , ∞)
+
+Generator θ(μ − x)∂x + 12 σ2∂xx θ(μ − x)∂x + 12 σ2x ∂ xx 
+
+Conditional mean μ + ( x − μ)e −θt μ + ( x − μ)e −θt (same) Transition law Gaussian noncentral χ2
+
+Invariant law N (μ, σ 2/2θ) Gamma(2 θμ/σ 2, 2θ/σ 2)
+
+Eigenfunctions Hermite Hn Laguerre L(α−1) 
+
+> n
+
+Eigenvalues −nθ −nθ (same) Boundary at 0 not applicable accessible iff 2θμ < σ 2 (Feller) Zero-coupon bond affine, linear b-ODE (Vasicek) affine, Riccati b-ODE (CIR) Table 1: Two complete threads on the same spine. The shared drift gives identical mean reversion and identical relaxation rates −nθ ; the additive-versus-multiplicative noise gives Gaussian-versus-Gamma stationarity, Hermite-versus-Laguerre spectra, an unconstrained-versus-half-line state space, and a linear-versus-Riccati term structure. The framework is visibly not Gaussian-specific. The Riccati structure that appeared in filtering (30) and control (Thread 9) thus reappears a third time, here in the term structure itself. 
+
+# 14 Control and decision: choosing among futures 
+
+Forecasting estimates the future; control changes it. A controlled Markov process has dynamics depending on an admissible action at ∈ U :
+
+dXt = b(Xt, a t) d t + σ(Xt, a t) d Wt. (33) Given a running cost c and terminal cost g, the value function is 
+
+V (t, x ) = inf  
+
+> a∈A
+
+Et,x  
+
+> [ ∫Tt
+
+c(Xs, a s) d s + g(XT )
+
+> ]
+
+. (34) 
+
+Bridge. The dynamic programming principle is the controlled tower property. For small h,
+
+V (t, x ) = inf  
+
+> a
+
+Et,x  
+
+> [ ∫t+ht
+
+c(Xs, a s) d s + V (t + h, X t+h)
+
+> ]
+
+,
+
+which is (34) with the inner conditional expectation collapsed by the tower property of Proposition 4.3; expanding V (t + h, X t+h) by Itô and letting h ↓ 0 gives the Hamilton–Jacobi–Bellman equation. 
+
+Theorem 14.1 (HJB equation) . Under regularity, V solves 
+
+−∂tV (t, x ) = inf 
+
+> a∈U
+> {
+
+c(x, a ) + AaV (t, x )}, V (T, x ) = g(x), (35) 
+
+where Aa is the generator under action a (Fleming and Soner, 2006; Yong and Zhou, 1999). 
+
+17 0 1 2 3 4 5
+
+y
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> density
+
+(a) Forward evolution to the Gamma law ( x0 = 3)           
+
+> t= 0.10
+> t= 0.30
+> t= 0.70
+> t= 1.50
+> t= 3.50
+> p(Gamma)
+> 01234
+
+t
+
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> [Xt X0 = x]
+
+(b) Mean reversion (same e t as OU)     
+
+> 01234
+
+t
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> eigenvalue  e n t
+
+(c) Laguerre relaxation PtLn = e n tLn          
+
+> n= 1
+> n= 2
+> n= 3
+> n= 4
+> 0246810 12
+
+maturity T t
+
+> 3
+> 4
+> 5
+> 6
+> 7
+> yield (\%)
+
+(d) CIR term structure (positive rates)    
+
+> r0= 0.03
+> r0= 0.05
+> r0= 0.07
+
+Figure 2: The Cox–Ingersoll–Ross thread, the non-Gaussian counterpart of Figure 1, computed from closed forms ( θ = 1 , μ = 1 , σ = 0 .7, Feller condition 2θμ ≥ σ2 satisfied; panel (d) uses short-rate parameters θ = 0 .6, μ = 0 .05 , σ = 0 .06 ). (a) The conditional density (noncentral χ2) evolves forward to the Gamma invariant law, skewed and supported on (0 , ∞). (b) The conditional mean reverts at rate θ exactly as for OU, while the conditional variance is state-dependent. (c) The Laguerre eigenvalues e−nθt give the same relaxation rates as OU. (d) The implied CIR term structure stays positive; its b-factor solves a genuine Riccati equation. 18 Thus the mathematics of the future has two modes: prediction propagates laws, while control optimizes over possible law propagations. 
+
+Ornstein–Uhlenbeck thread 9 (controlled OU is the linear–quadratic regulator, dual to the filter) .
+
+Take controlled OU dXt = ( −θX t + at) d t + σ dWt with quadratic cost ∫ T 
+
+> 0
+
+(qX 2 
+
+> s
+
++ ρa 2 
+
+> s
+
+) d s + g X 2 
+
+> T
+
+.The HJB equation (35) is solved by a quadratic value V (t, x ) = Π tx2 + const , optimal linear feedback 
+
+a⋆t = −ρ−1ΠtXt, and a control Riccati equation 
+
+− ˙Πt = −2θ Πt + q − ρ−1Π2 
+
+> t
+
+, ΠT = g. 
+
+This is the same Riccati structure as the Kalman covariance (30) , transposed and run back-ward in time: estimation and control are dual linear–quadratic–Gaussian problems, and the OU thread exhibits the two Riccati equations as dual under the standard linear–quadratic–Gaussian transposition/time-reversal correspondence. 
+
+# 15 From model to data: estimation and model risk 
+
+Every object above has been assumed known . In practice the relevant information set, the generator coefficients (b, σ ), the transition kernel pt, the invariant law ρ∞, and the change of measure linking P
+
+to Q are all estimated from finite data, and a forecast inherits the error of whatever was estimated. Three estimation channels recur. (i) Drift and diffusion estimation : from discretely sampled paths one estimates (b, σ ) parametrically or nonparametrically, with a discretization bias that vanishes only as the sampling interval shrinks; the estimated generator ̂ A then drives every downstream forecast. (ii) Spectral / operator estimation : because the long-horizon behavior of Pt is controlled by the leading spectrum of A (Threads 2, 3), one can estimate eigenvalues and eigenfunctions of the transition operator directly from data, the operator approach to long-term risk of Hansen and Scheinkman (2009); this is also where data-driven spectral methods meet the semigroup picture. (iii) 
+
+Two-measure calibration : in finance Q is calibrated to prices while P is estimated from history, and the wedge between them, the market price of risk, is itself an estimated and possibly misspecified quantity. 
+
+Proposition 15.1 (Generator-error propagation bound) . Let Pt = e tA and ̂ Pt = e t̂A be contraction semigroups on a Banach space B. Suppose, in the bounded-perturbation sense relevant for the chosen core, that ∆ := ̂ A − A is bounded with ∥∆∥ ≤ ε. Then, for every observable f ∈ B and horizon 
+
+t ≥ 0,
+
+∥̂ Ptf − Ptf ∥ ≤ tε ∥f ∥. (36) 
+
+More generally, if ∥∆Psf ∥ ≤ εf (s) for 0 ≤ s ≤ t, then 
+
+∥̂Ptf − Ptf ∥ ≤  
+
+> ∫t
+> 0
+
+εf (s) d s. (37) 
+
+Proof. Duhamel’s formula gives ̂
+
+Ptf − Ptf =  
+
+> ∫t
+> 0̂
+
+Pt−s(̂A − A )Psf ds. 
+
+Taking norms and using contractivity yields (37); the bounded perturbation case gives (36). Thus generator error is controlled no faster than linearly in horizon under a bounded perturbation, before any spectral or nonlinear amplification is considered. 19 Remark 15.2 (The identities are exact; the inputs are not) . The bridges of this paper hold for the 
+
+true generator. A forecast built on ̂ A carries both variance, from finite samples, and bias, from misspecified dynamics, an unobserved state, or the wrong filtration. The far-future regime is the most fragile: ergodic averages and large-deviation rates depend on the spectral gap and the tails of ρ∞, so small perturbations of the estimated generator can produce large long-horizon errors (Figure 3). Quantifying this gap between the assumed and the realized law-propagation mechanism is the proper subject of model risk, and it sits outside the classical identities rather than being implied by them. 0 1 2 3 4 5 6               
+
+> horizon t
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> m(t, x)
+> (a) Over-forecast of persistence
+> true
+> estimated = 0.85
+> 0123456
+> horizon t
+> 0
+> 10 1
+> 10 2
+> 10 3
+> mode forecast error (\%)
+> (b) Long-horizon error amplification
+> mode n= 1
+> mode n= 2
+> mode n= 3
+
+Figure 3: Model risk in the OU thread: a 15% under -estimate of the mean-reversion rate ( ̂ θ = 0 .85 θ), with everything else exact. (a) The conditional-mean forecast reverts too slowly, over-stating persistence. (b) The error of the nth spectral-mode forecast, e−n̂ θt /e−nθt − 1, grows with the horizon (symmetric-log scale) and is worse for higher modes: the identities are exact for the true generator, but a forecast inherits the estimate’s error, amplified at long horizons. 
+
+15.1 A worked estimator: exact likelihood for the OU thread 
+
+The OU thread closes the loop concretely. Sampled at a fixed step ∆, the OU process (4) is exactly 
+
+a Gaussian first-order autoregression, 
+
+Xk∆ = μ + (X(k−1)∆ − μ)ρ + εk, ρ = e −θ∆, εk ∼ N (0, v (∆) ), (38) with v(∆) = σ2(1 − ρ2)/2θ and independent innovations, because the transition law of Thread 2 is Gaussian for every ∆. The exact log-likelihood of a path X0, X ∆, . . . , X N ∆ is therefore the AR(1) likelihood, and maximizing it gives closed-form estimators: ̂ ρ and ̂ μ from the least-squares regression of Xk∆ on X(k−1)∆ , then ̂
+
+θ = − log ̂ ρ
+
+∆ ,̂ σ2 = 2̂θ̂ v
+
+1 −̂ ρ 2 , (39) with ̂ v the residual variance. Two lessons generalize. First, OU is the rare diffusion whose discrete-time likelihood is exact , so its estimator carries no discretization bias; for a general diffusion the transition density is not available in closed form and one either accepts an Euler pseudo-likelihood with O(∆) bias or uses a closed-form likelihood expansion (Aït-Sahalia, 2002). The map ρ 7 → θ
+
+20 exposes the bias directly: the consistent estimator uses − log ̂ ρ/ ∆, whereas the naive Euler estimator effectively uses (1 −̂ ρ)/∆, and the two differ by the deterministic factor (1 − ρ)/(− log ρ), which departs from 1 as θ∆ grows. Second, the estimator’s precision is set by the Fisher information of (38) : by the delta method Var (̂ θ) ≈ (e 2θ∆ − 1) /(N ∆2), which is O(1 /N ) at fixed ∆ and tends to the continuous-record variance 2θ/T as ∆ ↓ 0 with N ∆ = T . The generator coefficients are thus estimable at the parametric rate, but the long-horizon objects built from them remain subject to the amplification of Proposition 15.1 and Figure 3. Figure 4 shows both effects. 0.0 0.5 1.0 1.5 2.0         
+
+> sampling step
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> estimator ratio
+> (a) Discretization bias in
+> naive Euler / exact
+> exact MLE (unbiased)
+> 10 110 210 310 4
+> sample size N
+> 10 1
+> 10 0
+> asymptotic SE(  )
+> (b) Estimator SE: N1/2 rate
+> = 0.1
+> = 0.5
+> = 1.0
+
+Figure 4: Estimation for the OU thread, computed from closed forms (no simulation). (a) Discretiza-tion bias of the naive Euler estimator of θ: the factor (1 − e−θ∆)/(θ∆) relative to the exact estimator departs from 1 as the sampling step θ∆ grows, while the exact likelihood (39) is free of discretization bias at every ∆. (b) Asymptotic standard error of the exact estimator ̂ θ,
+
+√
+
+(e 2θ∆ − 1) /(N ∆2),against sample size N for several steps ∆ (log–log), showing the parametric N −1/2 rate. 
+
+# 16 The far future: ergodicity and large deviations 
+
+Two asymptotic regimes describe long horizons: the typical future and the improbable future. 
+
+16.1 The typical long run 
+
+A measure μ is invariant for (Pt) if μP t = μ for all t, equivalently ∫ Ptf dμ = ∫ f dμ for bounded measurable f . For a diffusion with invariant density this is the stationary Fokker–Planck equation 
+
+A∗μ = 0 .
+
+Theorem 16.1 (Ergodic theorem for Markov processes) . Let X be a positive Harris recurrent Markov process with invariant probability measure μ. If f ∈ L1(μ), then for every initial distribution absolutely continuous with respect to the maximal irreducibility measure, and in particular for 
+
+μ-almost every initial state, 
+
+1
+
+T
+
+∫ T
+
+> 0
+
+f (Xs) d s a.s. 
+
+−−−−→ 
+
+> T→∞
+
+∫
+
+> E
+
+f dμ. (40) 
+
+Under stronger stability assumptions, such as positive Harris recurrence together with the usual irreducibility and aperiodicity conditions on the relevant class, analogous convergence statements hold beyond the stationary initial distribution. 
+
+21 Equation (40) states that the infinite future forgets the initial condition: time averages converge to spatial averages against the invariant measure, the only forecast that survives at the longest horizons (Meyn and Tweedie, 2009; Prato and Zabczyk, 1996). 
+
+16.2 The improbable future 
+
+Risk analysis also asks how unlikely a given excursion is. 
+
+Definition 16.2 (Large-deviation principle) . A family (με)ε> 0 on a Polish space satisfies a large-deviation principle with speed ε−1 and good rate function I if, for every closed F and open 
+
+G,
+
+lim sup 
+
+> ε↓0
+
+ε log με(F ) ≤ − inf  
+
+> x∈F
+
+I(x), lim inf  
+
+> ε↓0
+
+ε log με(G) ≥ − inf  
+
+> x∈G
+
+I(x).
+
+Heuristically με(Γ) ≈ exp( −ε−1 inf x∈Γ I(x)) for regular Γ.For small-noise diffusions dXεt = b(Xεt ) d t + √ε σ (Xεt ) d Wt, Freidlin–Wentzell theory identifies 
+
+I as an action functional. Rare futures concentrate around minimizers of this action, so the rate function is a variational description of tail risk: it gives not only the probability of an unlikely event but the most likely path by which it occurs (Dembo and Zeitouni, 1998; Freidlin and Wentzell, 2012). 
+
+Ornstein–Uhlenbeck thread 10 (invariant law, ergodic average, and the action functional) . For OU the invariant measure is the Gaussian (19) , N (μ, σ 2/2θ); ergodic averages of any f ∈ L1 converge to its Gaussian mean, and the e−θt relaxation of Thread 5 sets the rate. For small-noise OU 
+
+dXεt = θ(μ − Xεt ) d t + √ε σ dWt, the Freidlin–Wentzell action of an absolutely continuous path φ
+
+on [0 , T ] with φ0 = x0 is 
+
+I0,T (φ) = 12σ2  
+
+> ∫T
+> 0
+> ∣∣
+
+˙φt − θ(μ − φt)∣∣2 dt, (41) finite exactly for paths absolutely continuous from x0; its minimizers are the most likely excursions, and the induced quasipotential governs the exponential rarity of large deviations from μ.
+
+Cox–Ingersoll–Ross thread 6 (the non-Gaussian far future) . For CIR the invariant law is the Gamma measure (20) ; ergodic averages of f ∈ L1(p∞) converge to its Gamma mean, and the spectral gap 
+
+θ again sets the rate (Thread 4). The small-noise large-deviation rate function takes the same Freidlin–Wentzell form as (41) with the state-dependent diffusion σ2φ in place of σ2, so the metric weighting the action degenerates toward the boundary — the long-run theory inherits the positivity constraint that distinguishes CIR from OU. 
+
+# 17 Discrete time: the same spine on a lattice 
+
+Most forecasting and machine-learning practice is in discrete time. The entire spine transfers, with the generator replaced by the one-step transition operator minus the identity and Itô’s formula replaced by the Doob decomposition. Let (Fn)n≥0 be a filtration and X a Markov chain with transition operator (P f )( x) = E[f (Xn+1 ) | Xn = x].
+
+Proposition 17.1 (Discrete Doob decomposition) . Any integrable adapted X admits the unique decomposition Xn = X0 + An + Mn with An = ∑nk=1 E[Xk − Xk−1 | F k−1] predictable, A0 = 0 , and 
+
+Mn = ∑nk=1 
+
+> (
+
+Xk − Xk−1 − E[Xk − Xk−1 | F k−1]) a martingale. The increments ξk := Mk − Mk−1
+
+are martingale differences, E[ξk | F k−1] = 0 .
+
+22 Object Continuous time Discrete time 
+
+Information filtration (Ft) filtration (Fn)
+
+Optimal forecast E[· | F t] (L2-projection) E[· | F n]
+
+Propagation (observables) semigroup Pt powers P n
+
+Propagation (laws) μ 7 → μP t μ 7 → μP n
+
+Local dynamics generator A = lim t↓0(Pt − Id )/t discrete generator P − Id 
+
+Backward equation ∂tu = Au un+1 − un = ( P − Id) un
+
+Forward equation ∂tp = A∗p μn+1 − μn = μn(P − Id) 
+
+Pathwise model SDE (23), Itô recursion 
+
+Xn+1 = F (Xn, ξ n+1 )
+
+Trend + innovation Itô split (24) Doob split (Prop. 17.1) Innovation noise Itô integral ∫ H dW martingale differences ξk
+
+Filtering Kushner–Stratonovich (28); Kalman–Bucy forward (HMM) recursion; Kalman filter Pricing θtVt a Q-martingale Vn = EQ[Vn+1 /(1 + rn) | F n]
+
+Control HJB (35) Bellman Vn(x) = inf a{c + E[Vn+1 | x, a ]}
+
+Typical far future ergodic theorem (40) chain ergodic theorem Improbable far future Freidlin–Wentzell (41) Cramér / Gärtner–Ellis Table 2: The same spine in continuous and discrete time. Each row is one conditional-law statement; the generator becomes P − Id and Itô becomes the Doob decomposition. This is the exact discrete analogue of Itô’s split (24) : predictable drift plus martingale innovation. Table 2 gives the full dictionary; each row is the same conditional-law statement read in two time scales (Norris, 1997; Cappé et al., 2005). 
+
+# 18 A unified diagram 
+
+Figure 5 draws the spine and its branches. The vertical axis is the core progression of §3–§8; the branches are the specializations (innovation, geometry, partial observation, valuation, control, far future) attached at the link where each enters. 
+
+# 19 Synthesis 
+
+The pieces assemble into a single mathematical picture. The following theorem records the common core of the paper in one statement. 
+
+Theorem 19.1 (The conditional-law spine) . Let X = ( Xt)t≥0 be a time-homogeneous Feller–Markov process on a Polish state space E, with transition semigroup (Pt)t≥0 and generator (A, D(A)) . For 
+
+23 Information filtration (Ft)
+
+Conditional law 
+
+Law( Xt+· | F t)
+
+State compression Markov kernel pt
+
+Propagation semigroup Pt
+
+Local dynamics generator A
+
+Dual equations backward / forward 
+
+> Partial observation filtering
+> Valuation martingale measures
+> Decision control / HJB
+> Far future ergodicity, LDP
+> Pathwise model SDE and Itô
+> Innovation martingales
+> Geometry Wasserstein flow
+
+Figure 5: The unified spine (center) and its branches. Conditional expectation projects the conditional law into a point forecast; the Markov property compresses the past into the present; the semigroup and generator propagate it; backward and forward equations are adjoint; and the martingale component is the part of the future no admissible information removes. 24 every bounded measurable observable f and every s, t ≥ 0,
+
+E[f (Xt+s) | F t] = ( Psf )( Xt), Pt+s = PtPs.
+
+If f ∈ D (A), then u(s, x ) = Psf (x) satisfies the backward Kolmogorov equation in the semigroup sense, 
+
+∂su(s, x ) = Au(s, x ), u(0 , x ) = f (x).
+
+Dually, for every initial law μ0, the propagated laws μs = μ0Ps satisfy the weak forward equation 
+
+dds
+
+> ∫
+> E
+
+f (x) μs( d x) = 
+
+> ∫
+> E
+
+Af (x) μs( d x), f ∈ D (A).
+
+When μs admits a density ps and the formal adjoint A∗ is well defined on that density class, this weak identity is the forward Kolmogorov equation 
+
+∂sps = A∗ps.
+
+Thus the conditional law of the future, the Markov semigroup, the generator, and the back-ward/forward Kolmogorov equations are not separate modeling languages; they are equivalent representations of the same forecasting object. Proof. The Markov property gives 
+
+E[f (Xt+s) | F t] = E[f (Xt+s) | Xt] = ( Psf )( Xt),
+
+and applying the same identity first over horizon s and then over horizon t gives Chapman– Kolmogorov, equivalently Pt+s = PtPs. By definition of the generator, 
+
+Af = lim 
+
+> h↓0
+
+Phf − fh ,
+
+so for u(s, ·) = Psf the semigroup law gives 
+
+∂su(s, ·) = lim 
+
+> h↓0
+
+Ps+hf − Psfh = PsAf = APsf, 
+
+with the equality interpreted on the appropriate generator domain. Finally, 
+
+> ∫
+> E
+
+f dμs =
+
+> ∫
+> E
+
+Psf dμ0,
+
+and differentiating in s yields the weak forward equation. If densities exist, integration by parts identifies the weak equation with ∂sps = A∗ps.1. Information is a filtration (Ft). The future is the conditional law of the path beyond t given 
+
+Ft.2. The optimal point forecast is conditional expectation, the L2-projection onto present informa-tion (Theorem 4.2). The tower property keeps forecasts dynamically consistent and, specialized to the Markov filtration, is the semigroup law itself. 3. The full distributional forecast is a regular conditional law; it contains all conditional expecta-tions of bounded observables. 25 4. The Markov assumption compresses the relevant past into the present state, producing kernels satisfying Chapman–Kolmogorov. 5. The semigroup propagates observables by Ptf (x) = Ex[f (Xt)] and propagates laws dually by 
+
+μ 7 → μP t.6. The generator A = lim t↓0(Pt − Id )/t is the infinitesimal law of motion; the semigroup is its integrated flow. 7. Kolmogorov equations convert the generator into PDEs, backward for observables and forward for densities, and the two are exact adjoints by integration by parts. 8. Geometrically, the forward equation is the Wasserstein gradient flow of free energy (Theo-rem 9.1); for OU, mean reversion is W2 contraction at the spectral-gap rate θ. Forecasting, estimation, and law-evolution are the Hilbert, Fisher–Rao, and Wasserstein faces of one geometry (§9.1). 9. Pathwise dynamics represent the same law by an SDE; Itô’s formula splits every smooth observable into predictable drift plus martingale innovation, and taking expectations returns the backward equation. 10. Martingales are the residue of unpredictability. Doob–Meyer separates trend from surprise; martingale representation expresses surprise through driving noise. 11. Filtering replaces direct observation by conditional laws given noisy data; innovations are the observation-level martingale surprises, and the Kalman and control Riccati equations are dual under the standard linear–quadratic–Gaussian transposition/time-reversal correspondence. 12. Finance prices discounted payoffs as martingales under an equivalent measure; in Markov models this is Feynman–Kac, hence a backward PDE, hence the explicit Vasicek yield curve for OU. 13. Control moves from forecasting to choosing among futures through the dynamic programming principle, the controlled tower property, and the HJB equation. 14. Asymptotics describe the far future: ergodicity gives typical long-run averages, large deviations quantify improbable excursions, and both are governed by the spectrum of A.15. The same spine carries two contrasting closed-form threads: OU (Gaussian, real line, Hermite spectrum, linear term structure) and CIR (non-Gaussian, half-line, Laguerre spectrum, Riccati term structure), with identical drift, mean reversion, and relaxation rates −nθ (Table 1) — evidence that the construction is not Gaussian-specific. 16. Every object is in practice estimated; the identities are exact for the true generator (Proposi-tion 15.1 bounds the error of an estimated one), and the OU thread is estimable in closed form at the parametric rate while its long-horizon objects remain fragile (§15). In one line: the present information set determines a conditional law; under Markov compression a generator determines the forward evolution of that law; conditional expectation projects it into a forecast; the martingale component is the part of the future no admissible information can remove; and in practice the generator itself is estimated, so the forecast is only as good as that estimate. 
+
+On rigor. The statements above are standard theorems of probability, stochastic analysis, semi-group theory, optimal transport, filtering, mathematical finance, control, ergodic theory, and large 26 deviations. For readability several results are stated in representative forms rather than maximal generality. In applications the technical hypotheses matter: completeness and right-continuity of filtrations; existence of regular conditional probabilities; domain and boundary conditions for generators; Lipschitz or weak-solution assumptions for SDEs; integrability and class (D) conditions for Doob–Meyer; smoothness and convexity of Ψ for the Wasserstein gradient-flow and contraction statements; local boundedness or sigma-martingale refinements for the fundamental theorem of asset pricing; observability and stabilizability for filtering and control; recurrence and irreducibility for ergodicity; and exponential tightness for large deviations. The central message is invariant across these variants: forecasting is conditional law, dynamics is law propagation, surprise is martingale residual, and the link to data is an estimated generator. 
+
+# A Selected derivations 
+
+The bridges of the main text are recorded here in full for the diffusion case, and the closed forms asserted in the Ornstein–Uhlenbeck thread are derived. Throughout, boundary terms vanish under the standing assumption that test functions and densities decay at infinity. 
+
+A.1 The forward operator as the adjoint of the generator 
+
+Let Af = bf ′ + 12 af ′′ in one dimension, with a = σ2. For f, g smooth and decaying, two integrations by parts give ∫
+
+bf ′g dx = −
+
+> ∫
+
+f (bg )′ dx,   
+
+> ∫12
+
+af ′′ g dx =
+
+> ∫
+
+f 12 (ag )′′ dx, 
+
+so that ⟨A f, g ⟩ = ∫ f ( − (bg )′ + 12 (ag )′′ ) dx = ⟨f, A∗g⟩ with 
+
+A∗g = −(bg )′ + 12 (ag )′′ ,
+
+which is the one-dimensional forward operator of (17) . The forward Kolmogorov equation ∂tp = A∗p
+
+is therefore the adjoint of the backward equation ∂tu = Au, exactly as the duality (8) requires. 
+
+A.2 The Ornstein–Uhlenbeck transition law and invariant measure 
+
+Write Yt = Xt − μ, so dYt = −θY t dt + σ dWt. The integrating factor eθt gives d(e θt Yt) = σeθt dWt,hence 
+
+Xt = μ + ( X0 − μ)e −θt + σ 
+
+> ∫t
+> 0
+
+e−θ(t−s) dWs,
+
+which is (9) . The stochastic integral has a deterministic integrand, so Xt is Gaussian with mean 
+
+μ + ( x − μ)e −θt and, by the Itô isometry, 
+
+Var( Xt | X0 = x) = σ2 
+
+> ∫t
+> 0
+
+e−2θ(t−s) ds = σ2
+
+2θ
+
+> (
+
+1 − e−2θt ),
+
+recovering m(t, x ) and v(t) of Thread 2. For the invariant law, set the stationary probability flux 
+
+J = θ(μ−y)p− σ2 
+
+> 2
+
+p′ to zero. The choice p∞(y) ∝ exp (−θ(y −μ)2/σ 2) gives p′∞/p ∞ = −2θ(y −μ)/σ 2,whence J = θ(μ − y)p∞ + θ(y − μ)p∞ = 0 and so A∗p∞ = −J′ = 0 . Thus p∞ = N (μ, σ 2/2θ) as in (19). 27 A.3 The Vasicek term structure from the affine ansatz 
+
+With τ = T − t and the ansatz P = exp (a(τ ) − b(τ )r), a(0) = b(0) = 0 , the derivatives are 
+
+∂tP = −(a′ − b′r)P , ∂rP = −bP , ∂rr P = b2P . Substituting into the term-structure PDE of Thread 8 and dividing by P ,
+
+−(a′ − b′r) − θ(μ − r)b + σ2 
+
+> 2
+
+b2 − r = 0 .
+
+Matching powers of r separates this into 
+
+b′ = 1 − θb, a′ = σ2 
+
+> 2
+
+b2 − θμ b.
+
+The first is linear with b(0) = 0 , giving b(τ ) = (1 − e−θτ )/θ ; substituting and integrating the second yields the closed form 
+
+a(τ ) = 
+
+(
+
+μ − σ2
+
+2θ2
+
+)(b(τ ) − τ ) − σ2
+
+4θ b(τ )2,
+
+which is the Vasicek bond price used in Thread 8 (direct differentiation confirms a′ = σ2 
+
+> 2
+
+b2 − θμ b
+
+using b′ − 1 = −θb). 
+
+A.4 The linear–quadratic regulator and its Riccati equation 
+
+For controlled OU dXt = ( −θX t + at) d t + σ dWt and cost density qx 2 + ρa 2, the HJB equation (35) reads 
+
+−∂tV = inf 
+
+> a
+
+{
+
+qx 2 + ρa 2 + ( −θx + a)∂xV + σ2 
+
+> 2
+
+∂xx V
+
+}
+
+.
+
+The inner minimization gives a⋆ = −∂xV / (2 ρ); substituting, 
+
+−∂tV = qx 2 − (∂xV )2
+
+4ρ − θx ∂ xV + σ2 
+
+> 2
+
+∂xx V. 
+
+The quadratic ansatz V (t, x ) = Π tx2 + φt has ∂xV = 2Π tx and ∂xx V = 2Π t. Matching the coefficient of x2 gives the control Riccati equation 
+
+− ˙Πt = −2θΠt + q − ρ−1Π2 
+
+> t
+
+, ΠT = g, 
+
+and the optimal feedback a⋆t = −ρ−1ΠtXt, as in Thread 9; the constant term obeys ˙φt = −σ2Πt,
+
+φT = 0 . Comparing with the Kalman covariance equation (30) exhibits the two Riccati equations as dual under time reversal and transposition, the linear–quadratic–Gaussian duality of estimation and control. 
+
+A.5 The CIR invariant measure and term-structure Riccati 
+
+For CIR the forward operator is A∗p = −∂y(θ(μ − y)p) + 12 σ2∂yy (yp ). Setting the stationary flux 
+
+J = θ(μ − y)p − 12 σ2∂y(yp ) to zero and trying p∞(y) = Cy α−1e−βy gives ∂y(yp ∞) = p∞(α − βy ), so 
+
+J = θ(μ − y)p∞ − 12 σ2p∞(α − βy ) = p∞
+
+[(θμ − 12 σ2α) − (θ − 12 σ2β)y
+
+]
+
+.
+
+Both brackets vanish for β = 2 θ/σ 2 and α = 2 θμ/σ 2, so J ≡ 0 and A∗p∞ = −∂yJ = 0 : the invariant law is Gamma (α, β ), equation (20) , with mean α/β = μ and variance α/β 2 = μσ 2/2θ. For the bond 28 price, the affine ansatz P = exp (a(τ ) − b(τ )r) in the CIR term-structure PDE of Thread 5 gives, on collecting powers of r (the 12 σ2r ∂ rr P term now contributes 12 σ2r b2 to the r-coefficient), 
+
+b′ = 1 − θb − 12 σ2b2, a′ = −θμ b, a(0) = b(0) = 0 .
+
+The b-equation is a constant-coefficient Riccati; with γ = √θ2 + 2 σ2 its solution is b(τ ) = 2(e γτ −
+
+1) /[( γ + θ)(e γτ − 1) + 2 γ] (one checks b(0) = 0 , b′(0) = 1 , and the steady state 12 σ2b2 + θb − 1 = 0 ), and integrating a′ = −θμ b gives the closed form quoted in Thread 5 (Cox et al., 1985). The quadratic term, absent for Vasicek, is exactly the contribution of the √r diffusion. 
+
+# References 
+
+Yacine Aït-Sahalia. Maximum likelihood estimation of discretely sampled diffusions: A closed-form approximation approach. Econometrica , 70(1):223–262, 2002. Luigi Ambrosio, Nicola Gigli, and Giuseppe Savaré. Gradient Flows in Metric Spaces and in the Space of Probability Measures . Birkhäuser, 2 edition, 2008. David Applebaum. Lévy Processes and Stochastic Calculus . Cambridge University Press, 2 edition, 2009. Nihat Ay, Jürgen Jost, Hông Vân Lê, and Lorenz Schwachhöfer. Information Geometry . Springer, 2017. Alan Bain and Dan Crisan. Fundamentals of Stochastic Filtering . Springer, 2009. Dominique Bakry, Ivan Gentil, and Michel Ledoux. Analysis and Geometry of Markov Diffusion Operators . Springer, 2014. Tomas Björk. Arbitrage Theory in Continuous Time . Oxford University Press, 3 edition, 2009. Adam Bobrowski. Functional Analysis for Probability and Stochastic Processes: An Introduction .Cambridge University Press, 2005. Olivier Cappé, Eric Moulines, and Tobias Rydén. Inference in Hidden Markov Models . Springer, 2005. John C. Cox, Jonathan E. Ingersoll, and Stephen A. Ross. A theory of the term structure of interest rates. Econometrica , 53(2):385–407, 1985. Freddy Delbaen and Walter Schachermayer. The Mathematics of Arbitrage . Springer, 2006. Claude Dellacherie and Paul-André Meyer. Probabilities and Potential B: Theory of Martingales .North-Holland, 1982. Amir Dembo and Ofer Zeitouni. Large Deviations Techniques and Applications . Springer, 2 edition, 1998. Darrell Duffie. Dynamic Asset Pricing Theory . Princeton University Press, 3 edition, 2001. Stewart N. Ethier and Thomas G. Kurtz. Markov Processes: Characterization and Convergence .Wiley, 1986. 29 William Feller. Two singular diffusion problems. Annals of Mathematics , 54(1):173–182, 1951. Wendell H. Fleming and Halil Mete Soner. Controlled Markov Processes and Viscosity Solutions .Springer, 2 edition, 2006. Mark I. Freidlin and Alexander D. Wentzell. Random Perturbations of Dynamical Systems . Springer, 3 edition, 2012. Lars Peter Hansen and José A. Scheinkman. Long-term risk: An operator approach. Econometrica ,77(1):177–234, 2009. Shun ichi Amari. Information Geometry and Its Applications . Springer, 2016. Richard Jordan, David Kinderlehrer, and Felix Otto. The variational formulation of the Fokker– Planck equation. SIAM Journal on Mathematical Analysis , 29(1):1–17, 1998. Olav Kallenberg. Foundations of Modern Probability . Springer, 3 edition, 2021. Ioannis Karatzas and Steven E. Shreve. Brownian Motion and Stochastic Calculus . Springer, 2 edition, 1991. Samuel Karlin and Howard M. Taylor. A Second Course in Stochastic Processes . Academic Press, 1981. Robert S. Liptser and Albert N. Shiryaev. Statistics of Random Processes I: General Theory .Springer, 2 edition, 2001. Sean P. Meyn and Richard L. Tweedie. Markov Chains and Stochastic Stability . Cambridge University Press, 2 edition, 2009. James R. Norris. Markov Chains . Cambridge University Press, 1997. David Nualart. The Malliavin Calculus and Related Topics . Springer, 2 edition, 2006. Bernt Øksendal. Stochastic Differential Equations: An Introduction with Applications . Springer, 6 edition, 2003. Felix Otto. The geometry of dissipative evolution equations: the porous medium equation. Commu-nications in Partial Differential Equations , 26(1–2):101–174, 2001. Amnon Pazy. Semigroups of Linear Operators and Applications to Partial Differential Equations .Springer, 1983. Giuseppe Da Prato and Jerzy Zabczyk. Ergodicity for Infinite Dimensional Systems . Cambridge University Press, 1996. Philip E. Protter. Stochastic Integration and Differential Equations . Springer, 2 edition, 2005. Daniel Revuz and Marc Yor. Continuous Martingales and Brownian Motion . Springer, 3 edition, 1999. L. C. G. Rogers and David Williams. Diffusions, Markov Processes and Martingales . Cambridge University Press, 2 edition, 2000. Volumes 1 and 2. 30 Daniel W. Stroock and S. R. Srinivasa Varadhan. Multidimensional Diffusion Processes . Springer, 1979. Oldrich Vasicek. An equilibrium characterization of the term structure. Journal of Financial Economics , 5(2):177–188, 1977. Cédric Villani. Optimal Transport: Old and New . Springer, 2009. David Williams. Probability with Martingales . Cambridge University Press, 1991. Jiongmin Yong and Xun Yu Zhou. Stochastic Controls: Hamiltonian Systems and HJB Equations .Springer, 1999. 31
