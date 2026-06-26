@@ -6,64 +6,44 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-25
-- 运行时间：2026-06-25 22:19:54 UTC
+- 最新运行日期：2026-06-26
+- 运行时间：2026-06-26 21:57:44 UTC
 - 运行状态：成功
-- 本次总论文数：14
-- 精读区：7
-- 速读区：7
+- 本次总论文数：8
+- 精读区：4
+- 速读区：4
 
 ### 今日简报（AI）
-1) 今日14篇论文聚焦智能体世界模型，两篇满分精读揭示通用智能体新范式。
-2) 最值得深入：智能体自主构建世界模型（10分双星）与BitNet文本嵌入（8分），前者革新决策推理，后者压缩效率突破。
-3) 普通读者建议优先精读《Qwen-AgentWorld》与《Beyond Next-Observation Prediction》，探索如何让智能体从“预测”走向“创作”式建模。
-- 详情：[/202606/25/README](/202606/25/README)
+今日精读4篇、速读4篇，聚焦世界模型与安全攻击两大方向。最值得看JEPA世界模型泛化理论（10分）与自动驾驶视频后门攻击（9分）。建议优先精读这两篇，速读资源分配与大脑模拟方向。
+- 详情：[/202606/26/README](/202606/26/README)
 
 ### 精读区论文标签
-1. [Qwen-AgentWorld: Language World Models for General Agents](/202606/25/2606.24597v1-qwen-agentworld-language-world-models-for-general-agents)  
+1. [A Generalization Theory for JEPA-Based World Models](/202606/26/2606.27014v1-a-generalization-theory-for-jepa-based-world-models)  
    标签：评分：10.0/10、query:world-models
-   evidence：面向通用智能体的语言世界模型，预测环境动态
-2. [Beyond Next-Observation Prediction: Agent-Authored World Modeling for Sequential Decision Making](/202606/25/2606.25421v1-beyond-next-observation-prediction-agent-authored-world-modeling-for-sequential-decision-making)  
-   标签：评分：10.0/10、query:world-models
-   evidence：智能体自主构建世界模型用于序贯决策
-3. [The Mathematics of Modeling the Future](/202606/25/2606.20977v1-the-mathematics-of-modeling-the-future)  
+   evidence：基于JEPA的世界模型泛化理论
+2. [BadDreamer: Transferable Backdoor Attacks against Video World Models for Autonomous Driving](/202606/26/2606.21172v1-baddreamer-transferable-backdoor-attacks-against-video-world-models-for-autonomous-driving)  
    标签：评分：9.0/10、query:world-models
-   evidence：预测未来状态的数学框架
-4. [Self-Evolving Cognitive Framework via Causal World Modeling for Embodied Scientific Intelligence](/202606/25/2606.22449v1-self-evolving-cognitive-framework-via-causal-world-modeling-for-embodied-scientific-intelligence)  
-   标签：评分：9.0/10、query:world-models
-   evidence：提出因果世界建模用于预测和自进化的认知系统
-5. [Imagine to Ensure Safety in Hierarchical Reinforcement Learning](/202606/25/2606.22509v1-imagine-to-ensure-safety-in-hierarchical-reinforcement-learning)  
-   标签：评分：9.0/10、query:world-models
-   evidence：使用可学习世界模型进行安全分层强化学习
-6. [MJEPA: A Simple and Scalable Joint-Embedding Predictive Architecture for Audio-Visual Learning](/202606/25/2606.25225v1-mjepa-a-simple-and-scalable-joint-embedding-predictive-architecture-for-audio-visual-learning)  
-   标签：评分：9.0/10、query:ssl
-   evidence：用于音视频自监督学习的联合嵌入预测架构
-7. [CellOS: Learning a World Model of Cellular State through Joint Embedding Prediction](/202606/25/biorxiv-10-64898-2026-06-18-733163-v2-cellos-learning-a-world-model-of-cellular-state-through-joint-embedding-prediction)  
-   标签：评分：9.0/10、query:world-models
-   evidence：明确学习细胞状态的世界模型
+   evidence：针对视频世界模型的后门攻击
+3. [Scalable Plasmonic Metasurface-Enabled Physics-Guided Self-Supervised Cellular Imaging](/202606/26/biorxiv-10-64898-2026-06-21-733589-v1-scalable-plasmonic-metasurface-enabled-physics-guided-self-supervised-cellular-imaging)  
+   标签：评分：8.0/10、query:ssl
+   evidence：使用物理引导先验的自监督去噪细胞成像
+4. [Learning Perturbation Effects Through Contrastive Alignment of Multimodal Biological Embeddings](/202606/26/biorxiv-10-64898-2026-06-23-734145-v1-learning-perturbation-effects-through-contrastive-alignment-of-multimodal-biological-embeddings)  
+   标签：评分：8.0/10、query:ssl
+   evidence：CLIP风格的对比对齐多模态生物嵌入预测扰动效应
 
 ### 速读区论文标签
-1. [BitNet Text Embeddings](/202606/25/2606.25674v1-bitnet-text-embeddings)  
-   标签：评分：8.0/10、query:ssl
-   evidence：低比特嵌入的对比预训练
-2. [Mind the Noise: Sensitivity of Transformer-based Interaction-Aware Trajectory Prediction Models to Noisy Data](/202606/25/2606.21344v1-mind-the-noise-sensitivity-of-transformer-based-interaction-aware-trajectory-prediction-models-to-noisy-data)  
+1. [Backdoor Attacks on Speech Emotion Recognition via TTS-Generated Poisoning](/202606/26/2606.21052v1-backdoor-attacks-on-speech-emotion-recognition-via-tts-generated-poisoning)  
+   标签：评分：7.0/10、query:ssl
+   evidence：利用自监督学习的语音情感识别后门攻击
+2. [PoLAR: Factorizing Extent and Mode in Latent Actions for Robot Policy Learning](/202606/26/2606.21139v1-polar-factorizing-extent-and-mode-in-latent-actions-for-robot-policy-learning)  
    标签：评分：7.0/10、query:world-models
-   evidence：预测智能体未来轨迹，与预测世界模型相关
-3. [Data Selection Through Iterative Self-Filtering for Vision-Language Settings](/202606/25/2606.23611v1-data-selection-through-iterative-self-filtering-for-vision-language-settings)  
-   标签：评分：7.0/10、query:ssl
-   evidence：自监督视觉语言学习中的迭代自过滤数据选择方法
-4. [DREAM: Dense Retrieval Embeddings via Autoregressive Modeling](/202606/25/2606.24667v1-dream-dense-retrieval-embeddings-via-autoregressive-modeling)  
-   标签：评分：7.0/10、query:ssl
-   evidence：研究对比学习与自回归目标在密集检索中的对比
-5. [$S^{2}$-FracMix: Label-Preserving Self-Saliency Mixup Augmentation](/202606/25/2606.25784v1-s2-fracmix-label-preserving-self-saliency-mixup-augmentation)  
-   标签：评分：7.0/10、query:ssl
-   evidence：用于自监督视觉表示学习的标签保持自显著性混合增强方法
-6. [The avian colourscape is disproportionately threatened by species extinctions](/202606/25/biorxiv-10-64898-2026-06-22-733718-v1-the-avian-colourscape-is-disproportionately-threatened-by-species-extinctions)  
-   标签：评分：7.0/10、query:ssl
-   evidence：自监督深度学习用于鸟类羽毛颜色表示
-7. [An atlas-scale generative model for unified representation learning of bulk RNA-seq data](/202606/25/biorxiv-10-64898-2026-06-18-733198-v1-an-atlas-scale-generative-model-for-unified-representation-learning-of-bulk-rna-seq-data)  
+   evidence：潜在动作预训练分解变迁幅度与模式，类似用于强化学习的潜在世界模型
+3. [Dynamic resource allocation orchestrates physical simulation in the human brain](/202606/26/biorxiv-10-64898-2026-06-21-732202-v1-dynamic-resource-allocation-orchestrates-physical-simulation-in-the-human-brain)  
+   标签：评分：7.0/10、query:world-models
+   evidence：大脑内部模拟预测物理事件，类似于内在世界模型
+4. [Unsupervised Representation Learning Reveals Individualized Neurophysiological Profiles](/202606/26/biorxiv-10-64898-2026-02-10-705127-v2-unsupervised-representation-learning-reveals-individualized-neurophysiological-profiles)  
    标签：评分：6.0/10、query:ssl
-   evidence：有监督变分自编码器用于批量RNA-seq表征学习
+   evidence：无监督自编码器用于神经生理剖面的自监督表示学习
 
 
 <div class="dpr-home-promo-card">
