@@ -6,31 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-27
-- 运行时间：2026-06-27 21:08:33 UTC
+- 最新运行日期：2026-06-28
+- 运行时间：2026-06-28 21:29:08 UTC
 - 运行状态：成功
 - 本次总论文数：3
 - 精读区：2
 - 速读区：1
 
 ### 今日简报（AI）
-今日精选3篇论文，重点推荐JEPA世界模型通用化理论与蛋白质结构对齐的对比学习方法。  
-JEPA世界模型的理论统一性分析（10分）与残基级对比学习提升蛋白质结构比对精度（8分）值得深读。  
-普通读者可优先关注JEPA理论框架对AI世界模型的指导意义，再了解预训练模型在结构生物学中的创新应用。
-- 详情：[/202606/27/README](/202606/27/README)
+今日精读两篇8分论文，速读一篇6分研究，聚焦生理信号自监督学习与神经编码机制。  
+最值得关注的是SPOTR的时空池化重构方法，以及Chandelier细胞如何通过门控机制编码符号化预测误差。  
+建议普通读者深入了解生理信号自监督学习的前沿范式，同时关注抑制性神经元在认知计算中的新角色。
+- 详情：[/202606/28/README](/202606/28/README)
 
 ### 精读区论文标签
-1. [A Generalization Theory for JEPA-Based World Models](/202606/27/2606.27014v1-a-generalization-theory-for-jepa-based-world-models)  
-   标签：评分：10.0/10、query:world-models
-   evidence：首个基于JEPA的潜在世界模型泛化理论
-2. [Effective structure-aware protein alignment via residue-level contrastive learning](/202606/27/biorxiv-10-1101-2024-03-09-583681-v2-effective-structure-aware-protein-alignment-via-residue-level-contrastive-learning)  
+1. [SPOTR: Spatio-temporal Pooling One-Token Reconstruction for Universal Physiological Signal Self-supervised Learning](/202606/28/2606.21973v1-spotr-spatio-temporal-pooling-one-token-reconstruction-for-universal-physiological-signal-self-supervised-learning)  
    标签：评分：8.0/10、query:ssl
-   evidence：使用对比学习进行蛋白质比对
+   evidence：针对生理信号的自监督学习方法，使用单标记重建
+2. [Temporal Gating by Chandelier Cells Encodes Signed Prediction Errors](/202606/28/biorxiv-10-64898-2026-06-26-734797-v1-temporal-gating-by-chandelier-cells-encodes-signed-prediction-errors)  
+   标签：评分：8.0/10、query:world-models
+   evidence：研究大脑如何利用预测误差信号更新内部世界模型
 
 ### 速读区论文标签
-1. [Dynamic Compression Flows for Neuroscience Data](/202606/27/biorxiv-10-64898-2026-02-12-705535-v2-dynamic-compression-flows-for-neuroscience-data)  
-   标签：评分：7.0/10、query:world-models
-   evidence：神经科学数据中的潜动态系统
+1. [Escaping the Self-Confirmation Trap: An Execute-Distill-Verify Paradigm for Agentic Experience Learning](/202606/28/2606.24428v1-escaping-the-self-confirmation-trap-an-execute-distill-verify-paradigm-for-agentic-experience-learning)  
+   标签：评分：6.0/10、query:world-models
+   evidence：智能体从交互经验中学习，间接涉及世界模型
 
 
 <div class="dpr-home-promo-card">

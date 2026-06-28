@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-28",
+  "date": "2026-06-28",
+  "generated_at": "2026-06-28T21:29:14",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/28/2606.21973v1-spotr-spatio-temporal-pooling-one-token-reconstruction-for-universal-physiological-signal-self-supervised-learning",
+      "section": "deep",
+      "title_en": "SPOTR: Spatio-temporal Pooling One-Token Reconstruction for Universal Physiological Signal Self-supervised Learning",
+      "authors": "Yiyu Gui, Mingzhi Chen, Yuesheng Zhu, Guibo Luo, Yuchao Yang",
+      "date": "2026-06-20",
+      "pdf": "https://arxiv.org/pdf/2606.21973v1",
+      "score": "8.0",
+      "evidence": "针对生理信号的自监督学习方法，使用单标记重建",
+      "tldr": "现有自监督学习方法在异质生理信号数据集上表现不佳，常扭曲临床结构或学习时间冗余捷径。SPOTR提出压缩-重建预训练框架，将每个波形压缩为单令牌全局瓶颈表示并仅基于此重建，同时引入高效时空压缩模块降低计算成本。在EEG、iEEG、ECG、PPG共20个数据集上预训练，线性探测下平均AUC提升4.64%至21.71%，延迟和峰值GPU内存分别降低约78%和52%。该方法实现了生理信号的通用高效自监督学习。",
+      "tags": "query:ssl",
+      "abstract_en": "Physiological signals such as EEG, ECG, and PPG are widely used in clinical monitoring. Recent self-supervised learning (SSL) methods offer an attractive way to leverage unlabeled recordings, yet they still fall short in practice. In particular, current SSL methods struggle across heterogeneous datasets, often distorting clinically meaningful structures or learning shortcuts from temporal and cross-channel redundancy. Consequently, existing SSL methods often deliver limited performance under linear probing, a lightweight adaptation setting that better matches real-world medical scenarios. Moreover, most Transformer-based SSL models encode a flattened spatiotemporal token sequence, incurring high computation and memory cost, and are typically developed within a single modality. To address these limitations, we present SPOTR (Spatio-temporal Pooling One-Token Reconstruction), a compress-reconstruct pretraining framework that introduces a single-token global bottleneck for physiological signals. SPOTR compresses each waveform into a single-token representation and reconstructs the signal conditioned only on this representation. Meanwhile, SPOTR introduces an efficient spatio-temporal compaction module to reduce computation and memory cost. Pretrained on 20 datasets spanning EEG, iEEG, ECG, and PPG, SPOTR consistently outperforms the strongest baseline under linear probing, improving average AUC by 18.49%, 21.71%, 17.86%, and 4.64%, respectively. Compared with a representative general-purpose time-series foundation model, SPOTR achieves around 78% lower latency and 52% lower peak GPU memory on average. The code can be found at https://github.com/5GYYYYY/SPOTR.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/28/biorxiv-10-64898-2026-06-26-734797-v1-temporal-gating-by-chandelier-cells-encodes-signed-prediction-errors",
+      "section": "deep",
+      "title_en": "Temporal Gating by Chandelier Cells Encodes Signed Prediction Errors",
+      "authors": "Jarzebowski, P., Bendor, D.",
+      "date": "2026-06-28",
+      "pdf": "https://www.biorxiv.org/content/10.64898/2026.06.26.734797v1.full.pdf",
+      "score": "8.0",
+      "evidence": "研究大脑如何利用预测误差信号更新内部世界模型",
+      "tldr": "大脑需要根据预测误差的符号更新模型，但皮层如何编码符号尚不清楚。本文提出SETA模型，利用Chandelier细胞的时间门控机制，通过L2/3神经元放电时机相对于L5可塑性窗口的早晚来编码误差正负。正误差放电早，落入增强窗口；负误差放电晚，落入抑制窗口。该模型在双房室模型上验证，并用小鼠视皮层在体记录支持，还解释了E/I失衡的病理性后果。",
+      "tags": "query:world-models",
+      "abstract_en": "The brain refines its predictions of the world by updating its internal model whenever sensory input differs from expectation. The sign of this prediction error matters: an unexpected event signals that the model under-predicted (positive error), while a predicted event that fails to occur indicates that the model over-predicted (negative error), and the two should drive opposite synaptic changes. How cortical circuits represent error sign in spiking activity, and how that representation translates into synaptic learning, remain unresolved. We propose the Signed Error by Timing Asymmetry (SETA) model, in which the sign of a prediction error is encoded by when layer 2/3 neurons fire relative to a brief plasticity window in their layer 5 targets. Chandelier cells, an inhibitory cell type recruited by the prediction, impose a temporal clamp on layer 2/3 output: positive errors escape the clamp and arrive within the synaptic potentiation window, while negative errors are released only after the clamp decays and arrive later, during the synaptic depression window. The same circuit, therefore, biases downstream synapses toward either potentiation or depression depending on the prediction-error sign. We demonstrate this signed-error computation in a reduced two-compartment model, test SETA-specific predictions using in vivo recordings from mouse visual cortex, and examine how E/I imbalance leads to pathological consequences in predictive coding.",
+      "source": "biorxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/28/2606.24428v1-escaping-the-self-confirmation-trap-an-execute-distill-verify-paradigm-for-agentic-experience-learning",
+      "section": "quick",
+      "title_en": "Escaping the Self-Confirmation Trap: An Execute-Distill-Verify Paradigm for Agentic Experience Learning",
+      "authors": "Shiding Zhu, Yudi Qi, Yajie Wang, Jiaze Li, Chao Song, Yaorui Shi, Yibo Miao, Hanqi Gao, Kai Zhang",
+      "date": "2026-06-23",
+      "pdf": "https://arxiv.org/pdf/2606.24428v1",
+      "score": "6.0",
+      "evidence": "智能体从交互经验中学习，间接涉及世界模型",
+      "tldr": "大语言模型agent通过经验学习自我进化时，单agent循环易陷入自我确认陷阱，将错误但自洽的轨迹误认为成功经验。本文提出EDV框架，通过多异构agent并行执行、第三方agent蒸馏分析、共识验证三个阶段，将经验学习从孤立自省转为协同构建。在tau2-bench、Mind2Web和MMTB三个长程任务上，EDV持续超越强基线。该工作验证了可靠经验构建对agent鲁棒自我进化的关键作用。",
+      "tags": "query:world-models",
+      "abstract_en": "Experience-driven self-evolution is critical for large language model (LLM) agents to improve through open-world interaction. However, existing experience learning methods mostly rely on single-agent loops, where the same agent executes tasks, summarizes outcomes, and determines memory content. This setup makes agents vulnerable to the Self-Confirmation Trap: wrong-but-self-consistent trajectories are misidentified as successful experience, leading to cumulative errors during retrieval and reuse. To address this issue, we propose EDV, an Execute-Distill-Verify framework for reliable experience learning. In the Execute stage, multiple heterogeneous agents explore the same task space in parallel to generate diverse candidate trajectories. In the Distill stage, a dedicated third-party agent comparatively analyzes these trajectories to produce candidate experiences, reducing executor-centric summarization bias. In the Verify stage, the execution group validates candidates via a consensus mechanism, and only approved experiences are written into shared or private memory. By decoupling the three stages, EDV transforms experience learning from isolated self-reflection into collaborative construction, filtering erroneous and noisy content before memory insertion. We evaluate EDV on three challenging long-horizon benchmarks: tau2-bench, Mind2Web and MMTB. Results show EDV consistently outperforms strong baselines, validating that reliable experience construction is essential for robust agent self-evolution. Our code is available at https://github.com/shidingz/EDV.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
