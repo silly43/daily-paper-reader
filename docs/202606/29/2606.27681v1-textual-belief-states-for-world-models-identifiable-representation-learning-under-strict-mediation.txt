@@ -1,0 +1,882 @@
+Title: Textual Belief States for World Models: Identifiable Representation Learning Under Strict Mediation
+
+URL Source: https://arxiv.org/pdf/2606.27681v1
+
+Published Time: Mon, 29 Jun 2026 00:21:16 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Textual Belief States for World Models: Identifiable Representation Learning Under Strict Mediation 
+
+Xiang Gao, Kaiwen Dong, Yuguang Yao, Padmaja Jonnalagedda, Kamalika Das 
+
+Intuit AI Research 
+
+{xiang_gao, kamalika_das}@intuit.com 
+
+Abstract 
+
+World models in partially observed environments rely on latent representations that summarize interaction history, but in many modern LLM-based architectures predictive performance fails to reflect representation quality due to history bypass, rendering the latent state unidentifiable. Strict latent state mediation, requiring predictions to depend only on the latent state and action, is a classical principle that resolves this, but enforcing it in text-based settings is an open challenge: textual latent states are discrete and non-differentiable, precluding variational training, and expressive LLM decoders readily ignore the bottleneck. We show how to make strict mediation work in the text domain. We formalize why it is necessary, showing that strict mediation makes representation quality empirically testable while history-leaky architectures break this connection. We then introduce textual latent states, which are discrete, interpretable, and variable-length, and factorized GRPO (fGRPO), a tree-structured reinforcement learning method that enforces strict mediation during training. Experiments on TextWorld and ScienceWorld show preserved one-step prediction accuracy alongside up to 57% gains in repre-sentation quality and 98% improvements in rollout performance, increasing with task complexity and horizon. 
+
+1 Introduction 
+
+World models learn the dynamics of an environment so that an agent can predict, plan, and reason without further interaction [Sutton, 1991, Ha and Schmidhuber, 2018]. In partially observed settings, where observations reveal only fragments of the underlying state, a world model must maintain a latent representation that summarizes the interaction history. This latent state is the object on which rollouts operate, the branching point for counterfactual queries, and the compressed summary that replaces an ever-growing history. A large body of work has focused on building better dynamics models [Hafner et al., 2019a,b, 2023, Schrittwieser et al., 2020], but a dynamics model is only as good as the representation it operates on. The central question is not only how to model dynamics, but how to know whether the learned representation is adequate. This question is difficult to answer for an architectural reason. In many existing world model architectures, the latent state coexists with other information that can substitute for it. Sequence models condition on the full observation history and maintain no explicit latent state [Yang et al., 2024, Li et al., 2025]. Prompting-based approaches treat the LLM context as an implicit state without learning a compressed representation [Hao et al., 2023, Wang et al., 2024]. Architectures that introduce a latent state but allow the decoder to also access the history may ignore it entirely: the model can achieve strong predictive performance while the representation carries no useful information [Xiang et al., 2025, Ge et al., 2024]. We call this the identifiability problem : when information can bypass the latent state, predictive accuracy does not constrain representation quality. We propose strict latent state mediation to address this: once a latent state is generated, all subsequent transitions and predictions depend only on that state and the action. This mirrors the POMDP belief-state factorization [Kaelbling et al., 1998, 
+
+> Preprint.
+> arXiv:2606.27681v1 [cs.LG] 26 Jun 2026
+
+Figure 1: Three formulations of a world model in a partially observed setting: (a) Stateless, (b) LeakyState, and (c) StrictState. StrictState is proposed to be trained using (d) factorized GRPO. Murphy, 2000]; classical world models with continuous latent states enforce it by construction [Hafner et al., 2019a,b]. However, recent LLM-based approaches frequently relax this constraint through large contexts or hybrid conditioning, enabling information to bypass the latent state. While this design improves predictive flexibility, it breaks the connection between predictive performance and representation quality. A key consequence, which motivates our approach, is that strict mediation makes representation quality empirically testable . If a strictly mediated model predicts accurately, the latent state must contain all task-relevant information; if it predicts poorly, the representation is insufficient. We formalize this principle and derive three consequences that motivate our approach. Under strict mediation, optimal predictive accuracy implies that the latent state is a sufficient statistic of history (Proposition 1). Under leaky architectures, optimal accuracy is compatible with an uninformative latent state (Proposition 2). Strict mediation also structurally aligns training and rollout conditions, so that the model never conditions on information during training that is unavailable during rollout, enabling bounded error propagation when dynamics are contractive, whereas history-based and leaky rollouts suffer geometric error growth (Proposition 3). The central technical challenge is enforcing strict mediation in text-based world models, where observations and actions are natural language. Textual latent states align with the LLM backbone, enable inspection, and provide an adaptive information bottleneck [Hafner et al., 2019a,b, 2025]. However, they are discrete and non-differentiable, precluding variational training, and expressive decoders make ELBO objectives prone to posterior collapse [Bowman et al., 2016, He et al., 2019]. We address this by treating latent state generation as a stochastic policy and introduce factorized GRPO (fGRPO) , a tree-structured extension that enforces strict mediation during training. We evaluate on TextWorld [Côté et al., 2018] and ScienceWorld [Wang et al., 2022]. Our approach preserves one-step prediction accuracy (Proposition 1), yields higher state-level F1 under matched prediction (Proposition 2), and improves rollout stability, with gains growing from 5% at horizon 1 to 80% at horizon 9 (Proposition 3). 
+
+2 Problem Setup: Text Based POMDPs 
+
+We are given an offline dataset of trajectories (o0, a 0, o 1, a 1, . . . , o T ) from a partially observable environment, where observations ot and actions at are textual. The true state is unobserved, and a single observation is generally insufficient to identify it, requiring aggregation over time. Our goal is to learn a model that predicts future observations using a latent belief state summarizing history. 
+
+2.1 Latent Belief States and Predictive Sufficiency 
+
+The interaction history at time t is ht = ( o0, a 0, o 1, a 1, . . . , a t−1, o t). Because the environment is partially observed, accurate prediction typically requires multi-step information. A latent belief state 
+
+ˆst ∼ pθ (· | ht) is a learned summary of ht, represented as a text string produced by a language model. Its structure is learned and need not match predefined variables. We require predictive sufficiency .
+
+Definition 2.1 (Predictive Sufficiency) . A latent state ˆst is sufficient if 
+
+p(ot+1 | ht, a t) = p(ot+1 | ˆst, a t) for all ht, a t, i.e., ot+1 ⊥ ht | ˆst, a t. (1) A sufficient latent state retains all information from the past relevant for predicting the immediate next observation. This is weaker than full POMDP belief-state sufficiency, which requires sufficiency for all future observations [Kaelbling et al., 1998]; multi-step sufficiency follows when the transition model is also accurate, as the state at each step is re-derived via the learned dynamics. Whether this 2holds depends on both the objective and architectural constraints. Multiple sufficient statistics may exist for a given prediction problem; we do not require minimality. Strict mediation guarantees that the learned state is sufficient when prediction is optimal (Proposition 1), while our reward design (Section 4.4) encourages compactness by penalizing redundant and unnecessary facts. 
+
+2.2 Architectural Considerations for Observation Prediction 
+
+We study three formulations of p(ot+1 | ht, a t), which differ in what information is available at prediction time, as illustrated in Figure 1. 
+
+Stateless prediction. The simplest approach predicts directly from history: ˆot+1 ∼ pθ (· | ht, a t).This can be accurate but provides no explicit, compact representation and scales poorly with horizon. 
+
+Leaky latent prediction. A latent state is introduced but prediction still accesses history: ˆst ∼
+
+pθ (· | ht), ˆot+1 ∼ pθ (· | ˆst, h t, a t). This leaky setup allows the model to bypass the latent state, so predictive accuracy does not ensure that ˆst is informative. 
+
+Strict latent state mediation. Our formulation requires all prediction to pass through latent state: 
+
+ˆst ∼ pθ (· | ht), ˆst+1 ∼ pθ (· | ˆst, a t), ˆot+1 ∼ pθ (· | ˆst+1 , a t).
+
+The predictive distribution can be written as ( st denotes the true (unobserved) environment state, distinct from the learned latent state ˆst.) 
+
+p(ot+1 | ht, a t) = X
+
+> ˆst+1
+
+p(ot+1 | ˆst+1 , a t) X
+
+> ˆst
+
+p(ˆ st+1 | ˆst, a t) p(ˆ st | ht). (2) We include at in the observation model since in text-based environments, the observation rendered at step t + 1 typically depends on the action taken. Strict mediation mirrors this factorization, ensuring all predictive information flows through the latent state. Under this constraint, the latent state is sufficient exactly when it supports accurate prediction without access to history. These formulations differ only in what information is available at prediction time; we next examine the implications. 
+
+3 Why Strict Mediation Is Necessary 
+
+The architectural formulations in Section 2.2 differ only in what information is available at prediction time, but this distinction has a fundamental consequence: whether predictive performance constrains the learned representation. 
+
+3.1 Sufficiency from Prediction 
+
+Under strict mediation, all predictive information must pass through the latent state. This makes predictive sufficiency a direct consequence of predictive accuracy. 
+
+Proposition 1 (Sufficiency under strict mediation) . In a strictly mediated model with pθ (ot+1 | ˆst, a t)
+
+and ˆst ∼ pθ (· | ht), if pθ (ot+1 | ht, a t) = p(ot+1 | ht, a t) ∀ht, a t, then ˆst is a sufficient statistic: 
+
+p(ot+1 | ht, a t) = p(ot+1 | ˆst, a t).
+
+Proof sketch. Under strict mediation, the decoder cannot access ht. If two histories map to the same 
+
+ˆst but require different predictions, the model cannot match both, contradicting optimality. This result is structurally simple, but important: it shows that under strict mediation, predictive accuracy becomes a diagnostic for representation quality. Formally, optimal prediction implies I(ot+1 ; ht | ˆst, a t) = 0 ;a full information-theoretic treatment and quantitative relaxation for suboptimal prediction are provided in Appendix A. 
+
+3.2 The Leaky Bypass Problem 
+
+This guarantee is specific to strict mediation. When the decoder can access the history, predictive accuracy places no constraint on the latent state. 
+
+Proposition 2 (Non-identifiability under leaky architectures) . For a leaky model pθ (ot+1 | ˆst, a t, h t),there exist parameters achieving optimal prediction while I(ˆ st; ht) = 0 .3Proof sketch. Set ˆst to a constant and predict directly from (ht, a t). Implication. Predictive accuracy does not guarantee that the latent state is informative when history bypass is allowed. Strict mediation removes the structural mismatch. Full proof in Appendix A. 
+
+3.3 Rollout Consistency and Stability 
+
+Strict mediation also affects multi-step rollout. The key distinction is whether the information available at training matches rollout conditions. 
+
+Proposition 3 (Training–inference consistency) . In strictly mediated models, rollout and training operate on the same inputs (ˆ st, a t), so one-step errors match. In leaky models, reliance on ht during training leads to degraded rollout performance. Beyond consistency, strict mediation changes how errors propagate. In stateless and leaky models, errors accumulate through an expanding history, leading to worst-case geometric growth. In contrast, strictly mediated models propagate error through a single latent state, enabling bounded error under contraction assumptions. The bounded-error conclusion requires LS < 1, a property of the learned dynamics, not the architecture; strict mediation ensures only the structural form of the recurrence, not the contraction property itself. Table 4 summarizes these regimes; full derivations are in Appendix B. 
+
+4 Enforcing Strict Mediation in the Text Domain 
+
+The preceding analysis establishes why strict mediation matters. We now address the central challenge: enforcing it in the text domain, where latent states are discrete, non-differentiable, and must be trained without variational objectives. 
+
+4.1 Textual Latent States 
+
+We represent latent states as text rather than continuous vectors. While classical world models use continuous latents trained with variational objectives such as the ELBO [Hafner et al., 2019a,b], this is best suited to low-dimensional settings. In text-based environments, observations are free-form, horizons are long, and relevant information mixes entities, relations, and attributes, making textual states a better match. Textual latent states offer four advantages.(1) Alignment with LLMs: 
+
+encoding, transition, and decoding are implemented as different conditioning modes of a single model, avoiding lossy modality conversions. (2) Adaptive bottleneck: capacity scales with content via variable-length representations, rather than a fixed-dimensional constraint. (3) Interpretability: 
+
+states are directly inspectable and can be evaluated against ground-truth facts, enabling representation-centric evaluation. (4) Modality match: observations are already semantic text, so textual states preserve their structure. The main tradeoff is that textual states are discrete and non-differentiable, preventing standard reparameterization-based training. In addition, expressive decoders trained with ELBO-style objectives can ignore the latent state (posterior collapse) [Bowman et al., 2016, He et al., 2019]. Under strict mediation, this immediately harms prediction since there is no history bypass. Overcoming this training difficulty is the core technical problem this paper addresses. We therefore train latent state generation using reinforcement learning (Section 4.3). 
+
+State schema. Strict mediation does not require a predefined latent-state vocabulary. In the most general form, the latent state may be any textual object passed between encoding, transition, and decoding. In this work, we instantiate latent states as JSON predicate–argument lists because they are easy to parse, inspect, and compare. For the main experiments, we further restrict predicates to a simulator-aligned vocabulary. This restriction is not required by the model, but enables more comprehensive state-level evaluation (Section 5.3). 
+
+4.2 Model Architecture 
+
+We implement strict mediation with a single pretrained autoregressive language model with parameters 
+
+θ. The model is used in three prompt-defined stages with shared parameters: Encoding: ˆst ∼ pθ (· | ht), (3) Predicting: ˆst+1 ∼ pθ (· | ˆst, a t), (4) Decoding: ˆot+1 ∼ pθ (· | ˆst+1 , a t). (5) 4After ˆst is generated, the transition and decoding stages receive no access to ht. Thus, the latent state is the only channel from history to future prediction, both during training and inference. 
+
+4.3 Training via Factorized GRPO 
+
+Section 4.2 defines the information flow; we now turn to the key algorithmic challenge: training under strict mediation when the latent space is discrete text. Textual latent states are non-differentiable, which precludes gradient-based optimization through the latent space. We treat each generation stage (encoding, transition, and decoding) as a stochastic policy over text sequences and optimize for predictive accuracy using reinforcement learning. Standard GRPO [Shao et al., 2024] is incompatible with strict mediation: it operates on a single autoregressive continuation of a fixed prompt, so the transition and decoding steps would access the original history through the shared prompt context. We introduce factorized GRPO (fGRPO, Figure 1), which extends GRPO to tree-structured, multi-prompt rollouts. For a given history ht, we sample A candidate latent states, then B candidate next states per encoding, then C candidate observations per transition, forming a tree with ht as root and ˆo(a,b,c ) 
+
+> t+1
+
+as leaves. From a single tuple (ht, a t, o t+1 ), this yields 1 + A + AB GRPO groups (Figure 1d). Rewards are computed at the leaves by comparing ˆo(a,b,c ) 
+
+> t+1
+
+with ot+1 and propagated upward by averaging over children so each parent takes the mean reward of its immediate descendants; advantages are computed group-relative within each level. All groups are aggregated into a single batch to update the shared LLM parameters. 
+
+4.4 Reward Design 
+
+The reward signal combines predictive accuracy with structural regularization of the latent states. We summarize the key components below; full details are provided in Appendix F.2. Observation accuracy. The primary reward encourages latent states that support accurate next-observation prediction under strict mediation. Given a predicted observation ˆot+1 and ground truth ot+1 , we define Robs as the fact-level F1 score between the extracted fact sets of the two observations. This directly measures whether the model predicts the correct underlying environment facts, independent of surface form. Format validity. A binary indicator Rfmt (ˆ s) ∈ { 0, 1} checks whether the generated latent state satisfies required structural constraints. For a rollout branch, validity is enforced jointly across stages so all generated latent states must be valid; invalid states receive a penalty on the observation reward rather than an additive bonus, preventing the model from producing well-formed but semantically vacuous states. Auxiliary state rewards. We introduce three auxiliary rewards for valid states: (i) a support reward Rsup that encourages consistency between the predicted observation and the underlying state facts (both derived from text); (ii) a deduplication reward Rdedup that penalizes semantically redundant facts in the latent state; and (iii) an ablation reward Rabl that measures the fraction of facts in the latent state whose removal degrades prediction accuracy, encouraging compactness. The computation of these rewards does not rely on the access to hidden environment states. Combined reward. The final reward is: 
+
+R =
+
+Robs · γpen , if Rfmt = 0 ,Robs + λdedup Rdedup + λabl Rabl + λsup Rsup , if Rfmt = 1 , (6) where γpen ∈ [0 , 1] is a penalty factor and λdedup , λ abl , λ sup ≥ 0 control the auxiliary reward weights. 
+
+5 Experimental Evaluation 
+
+Our evaluation targets representation quality , rather than downstream control or planning performance. Under strict mediation, representation properties become empirically identifiable: if a latent state is sufficient, compact, and stable, these properties should manifest directly in prediction behavior. 
+
+5.1 Datasets 
+
+Our evaluation requires environments that are partially observed for the agent but fully instrumentable for the developer: the model sees only textual observations, while we access the complete Markov state for evaluation. We use two text-based benchmarks: T EXT WORLD [Côté et al., 2018] and SCIENCE WORLD [Wang et al., 2022]. Both define a fully specified symbolic state but render only 5a lossy natural-language observation at each step; a single observation is generally insufficient to identify the underlying state. We generate offline datasets by executing a diverse set of behavior policies (expert, ϵ-greedy, exploration-then-oracle, random walk, and failure modes) and logging trajectories of observations and actions. For T EXT WORLD , we generate 2, 726 trajectories ( 121 , 054 
+
+steps) across 261 game configurations varying in world size ( 1–12 rooms), recipe length ( 1–5
+
+ingredients), and skill requirements, with 24 random seeds per configuration. For S CIENCE WORLD ,we generate 600 trajectories ( 19 , 481 steps) across 30 task types. Average trajectory length is 45 steps for T EXT WORLD and 33 for S CIENCE WORLD . The main training set contains 2, 287 trajectories (102 , 920 steps) for TW and 540 trajectories ( 17 , 573 steps) for SW, with permanent holdout sets of 
+
+439 TW trajectories and 60 SW trajectories reserved for final evaluation. All model training is strictly offline, without further environment interaction. Full details on data generation, complexity sweeps, noise injection, ground-truth logging, and holdout design are provided in Appendix D. 
+
+5.2 Baselines 
+
+We compare against three baselines corresponding to the architectural formulations in Section 2.2, isolating the effect of latent state mediation and representation choice. Stateless follows the history-based formulation, predicting the next observation directly from the full history and action via supervised fine-tuning. It serves as an upper bound on one-step predictive performance but does not learn an explicit representation. LeakyState follows the leaky formulation, introducing a textual latent state while allowing prediction to condition on both the state and the full history; it is trained using standard GRPO without enforcing strict mediation, so the model can rely on the history bypass as discussed in Proposition 2. StrictState-Emb follows the strict formulation but replaces textual latent states with continuous embeddings, as a fixed number of soft tokens prepended to the decoder input, trained via a variational objective LELBO = Eqϕ(st|ht)[log pθ (ot+1 |st, a t)] −
+
+β KL( qϕ(st|ht)∥pθ (st|st−1, a t−1)) , mirroring classical world models such as RSSM and Dreamer. 
+
+5.3 Evaluation Metrics 
+
+Our evaluation targets representation quality rather than downstream control, using three metrics. 
+
+Observation-level F1 (obs.F1 ) measures next-observation prediction quality: we extract structured facts (predicates and arguments) from both the predicted and ground-truth observations and compute F1 over the extracted fact sets (Appendix F.1), directly measuring whether the model predicts the correct environment facts rather than matching surface text. State-level F1 (state.F1 ) evaluates latent states by parsing them into structured predicates and computing F1 against the subset of ground-truth facts needed to render the next observation 1. This rendering-derived subset provides an exact sufficiency target without requiring irrelevant simulator variables (Appendix D). We additionally report the compression ratio (CR), defined as the ratio between the cumulative history length and the latent state length, measuring how aggressively the model compresses history into its representation. Finally, to evaluate temporal consistency, we measure state.F1 across multi-step rollouts at increasing prediction horizons H; degradation as H increases reflects the accumulation of prediction errors and allows comparison of rollout stability across models. We use greedy decoding during evaluation and report ±1 standard error over test examples as error bars 2.
+
+5.4 Results 
+
+Our experiments evaluate whether enforcing strict mediation via fGRPO preserves predictive accuracy (Prop 1), yields more informative latent states (Prop 2), and improves rollout stability (Prop 3). 
+
+One-step prediction and state quality. Table 1 reports performance across architectures at increas-ing compositional difficulty M (we exclude trivial cases with M < 2). StrictState-Text matches obs.F1 of LeakyState and Stateless baselines, confirming that strict mediation does not sacrifice predictive accuracy (Proposition 1). The critical difference is in representation quality: under matched obs.F1, StrictState-Text achieves higher state.F1, and the advantage is largest in high-compositional settings rather than uniformly determined by model scale (e.g., up to +30% for 0.5B, +21% for 
+
+> 1Ground-truth states are hidden from the model and used only for final evaluation.
+> 2Although fGRPO trains a stochastic text policy, sampling is used for exploration and advantage estimation. Evaluation uses the deterministic greedy policy to remove sampling variance and isolate whether the learned state mediates prediction.
+
+6base method obs.F1 state.F1 
+
+M ≥ 2 M ≥ 3 M ≥ 4 M ≥ 2 M ≥ 3 M ≥ 4
+
+TextWorld 
+
+Qwen2.5-0.5B no-state 0.529 ±0.005 0.427 ±0.007 0.413 ±0.009 - - -emb-state-strict 0.501 ±0.006 0.419 ±0.008 0.391 ±0.008 - - -text-state-leaky 0.520 ±0.005 0.429 ±0.005 0.402 ±0.004 0.265 ±0.005 0.191 ±0.005 0.170 ±0.006 
+
+text-state-strict 0.525 ±0.006 0.434 ±0.007 0.397 ±0.007 0.290 ±0.004 (+9%) 0.236 ±0.005 (+24%) 0.221 ±0.006 (+30%) 
+
+Qwen3-4B no-state 0.685 ±0.006 0.642 ±0.008 0.634 ±0.008 - - -emb-state-strict 0.609 ±0.007 0.558 ±0.008 0.503 ±0.009 - - -text-state-leaky 0.665 ±0.006 0.639 ±0.007 0.633 ±0.005 0.294 ±0.006 0.281 ±0.006 0.271 ±0.007 
+
+text-state-strict 0.680 ±0.006 0.631 ±0.007 0.614 ±0.008 0.310 ±0.007 (+5%) 0.326 ±0.007 (+16%) 0.329 ±0.008 (+21%) 
+
+Qwen3-32B no-state 0.762 ±0.005 0.673 ±0.008 0.655 ±0.009 - - -emb-state-strict 0.641 ±0.008 0.612 ±0.008 0.547 ±0.009 - - -text-state-leaky 0.723 ±0.005 0.698 ±0.008 0.693 ±0.009 0.392 ±0.005 0.419 ±0.007 0.425 ±0.006 
+
+text-state-strict 0.752 ±0.006 0.710 ±0.007 0.706 ±0.011 0.411 ±0.005 (+5%) 0.494 ±0.006 (+18%) 0.531 ±0.007 (+25%) 
+
+ScienceWorld 
+
+M ≥ 5 M ≥ 10 M ≥ 30 M ≥ 5 M ≥ 10 M ≥ 30 
+
+Qwen2.5-0.5B no-state 0.520 ±0.014 0.297 ±0.016 0.197 ±0.019 - - -emb-state-strict 0.408 ±0.015 0.265 ±0.017 0.130 ±0.018 - - -text-state-leaky 0.517 ±0.014 0.291 ±0.016 0.167 ±0.018 0.298 ±0.015 0.203 ±0.018 0.070 ±0.020 
+
+text-state-strict 0.512 ±0.013 0.280 ±0.015 0.200 ±0.019 0.323 ±0.014 (+8%) 0.254 ±0.017 (+25%) 0.102 ±0.021 (+46%) 
+
+Qwen3-4B no-state 0.789 ±0.017 0.765 ±0.019 0.562 ±0.022 - - -emb-state-strict 0.651 ±0.018 0.631 ±0.020 0.309 ±0.023 - - -text-state-leaky 0.722 ±0.016 0.730 ±0.018 0.356 ±0.022 0.533 ±0.015 0.560 ±0.018 0.365 ±0.024 
+
+text-state-strict 0.774 ±0.016 0.793 ±0.018 0.728 ±0.021 0.573 ±0.014 (+8%) 0.620 ±0.017 (+11%) 0.574 ±0.027 (+57%) 
+
+Qwen3-32B no-state 0.783 ±0.018 0.778 ±0.020 0.565 ±0.023 - - -emb-state-strict 0.681 ±0.019 0.685 ±0.021 0.487 ±0.024 - - -text-state-leaky 0.770 ±0.017 0.784 ±0.019 0.561 ±0.022 0.583 ±0.016 0.610 ±0.019 0.415 ±0.025 
+
+text-state-strict 0.781 ±0.016 0.795 ±0.018 0.775 ±0.022 0.623 ±0.015 (+7%) 0.670 ±0.018 (+10%) 0.624 ±0.024 (+50%) 
+
+Table 1: Performance across base models and compositional difficulty. M counts facts needed to render an observation; larger M means higher complexity. Thresholds are chosen separately by within-environment quantiles to reflect each benchmark’s scale. 4B and +25% for 32B on TextWorld). This validates Proposition 2: leaky models predict well while learning uninformative states, because the history bypass absorbs the predictive burden. A qualitative comparison of learned latent states is provided in Appendix E. Figure 2 further shows that StrictState better calibrates compression to reference complexity ( ρ = 0 .62 vs. 0.18 ), while LeakyState often over-compresses, producing states that are too short when more predictive facts are needed. StrictState-Text also matches StrictState-Emb on obs.F1, suggesting textual states provide a more flexible bottleneck than fixed-dimensional embeddings for discrete, compositional facts. 
+
+Rollout stability. Table 2 reports performance across increasing prediction horizons H. StrictState-Text consistently outperforms LeakyState, with gains growing from +5% at H=1 to +98% at H=9 
+
+on TextWorld (4B model). This supports Proposition 3: leaky models suffer from training-inference mismatch, relying on history during training that is unavailable during rollout, while strict models operate under identical conditions in both regimes. Consistent with the error propagation analysis in Appendix B, the gap widens with horizon, confirming that strict mediation mitigates cumulative error propagation. The long-horizon gains further suggest that the compactness rewards (e.g., Rabl )do not simply collapse the textual state to immediately visible facts; future-relevant facts can still be retained when they support the learned rollout dynamics. 
+
+Reward ablation. Table 3 evaluates the contribution of each reward component. At horizon H=1 ,obs.F1 is comparable across configurations, but differences emerge at longer horizons, revealing that the auxiliary rewards improve the state’s capacity to support multi-step rollout. Observation accuracy alone ( Robs ) produces largely invalid latent states; adding format validity ( Rfmt ) enforces structure but reduces obs.F1, as the model must now route prediction through a structured bottleneck. The support reward ( Rsup ) is critical: it recovers short-horizon obs.F1 and produces the largest long-horizon gains (H=9 : 0.345 → 0.541 ), indicating that aligning the latent state with predicted observations directly improves rollout stability. Deduplication ( Rded ) and ablation ( Rabl ) further increase compactness (CR: 7base method obs.F1 state.F1 
+
+H=1 H=5 H=9 H=1 H=5 H=9 
+
+TextWorld 
+
+Qwen2.5-0.5B no-state 0.632 ±0.029 0.511 ±0.030 0.397 ±0.031 - - -emb-state-strict 0.601 ±0.030 0.503 ±0.029 0.401 ±0.031 - - -text-state-leaky 0.621 ±0.028 0.504 ±0.027 0.383 ±0.030 0.255 ±0.016 0.176 ±0.018 0.094 ±0.020 
+
+text-state-strict 0.619 ±0.029 0.524 ±0.027 0.401 ±0.028 0.291 ±0.014 (+14%) 0.252 ±0.015 (+43%) 0.111 ±0.012 (+18%) 
+
+Qwen3-4B no-state 0.728 ±0.027 0.600 ±0.030 0.505 ±0.033 - - -emb-state-strict 0.678 ±0.032 0.512 ±0.033 0.402 ±0.034 - - -text-state-leaky 0.693 ±0.027 0.549 ±0.029 0.433 ±0.030 0.290 ±0.019 0.201 ±0.019 0.106 ±0.022 
+
+text-state-strict 0.729 ±0.025 0.608 ±0.026 0.570 ±0.031 0.305 ±0.012 (+5%) 0.277 ±0.014 (+38%) 0.210 ±0.014 (+98%) 
+
+Qwen3-32B no-state 0.731 ±0.026 0.617 ±0.028 0.543 ±0.030 - - -emb-state-strict 0.703 ±0.029 0.538 ±0.031 0.419 ±0.032 - - -text-state-leaky 0.718 ±0.026 0.583 ±0.028 0.497 ±0.029 0.312 ±0.018 0.243 ±0.019 0.142 ±0.021 
+
+text-state-strict 0.726 ±0.024 0.659 ±0.025 0.601 ±0.029 0.331 ±0.013 (+6%) 0.308 ±0.014 (+27%) 0.247 ±0.013 (+74%) 
+
+ScienceWorld 
+
+Qwen2.5-0.5B no-state 0.565 ±0.033 0.341 ±0.035 0.201 ±0.036 - - -emb-state-strict 0.438 ±0.034 0.290 ±0.035 0.203 ±0.036 - - -text-state-leaky 0.560 ±0.032 0.351 ±0.034 0.223 ±0.033 0.301 ±0.034 0.211 ±0.033 0.104 ±0.035 
+
+text-state-strict 0.556 ±0.035 0.361 ±0.036 0.250 ±0.037 0.331 ±0.033 (+10%) 0.250 ±0.035 (+18%) 0.145 ±0.036 (+39%) 
+
+Qwen3-4B no-state 0.793 ±0.032 0.728 ±0.033 0.654 ±0.033 - - -emb-state-strict 0.615 ±0.032 0.608 ±0.033 0.597 ±0.034 - - -text-state-leaky 0.695 ±0.031 0.636 ±0.034 0.678 ±0.035 0.502 ±0.036 0.251 ±0.038 0.218 ±0.030 
+
+text-state-strict 0.788 ±0.032 0.792 ±0.033 0.775 ±0.033 0.536 ±0.036 (+7%) 0.482 ±0.039 (+92%) 0.418 ±0.030 (+91%) 
+
+Qwen3-32B no-state 0.823 ±0.031 0.776 ±0.033 0.703 ±0.034 - - -emb-state-strict 0.702 ±0.032 0.687 ±0.035 0.671 ±0.034 - - -text-state-leaky 0.728 ±0.031 0.671 ±0.032 0.694 ±0.035 0.557 ±0.035 0.298 ±0.037 0.263 ±0.030 
+
+text-state-strict 0.822 ±0.031 0.819 ±0.033 0.798 ±0.033 0.598 ±0.034 (+7%) 0.547 ±0.038 (+84%) 0.501 ±0.030 (+90%) 
+
+Table 2: Performance across base models and prediction horizons. We report observation and state prediction performance at increasing horizons H.
+
+Ablation Obs.F1 CR 
+
+H=1 H=5 H=9 
+
+Robs only 0.733 ±.031 0.494 ±.029 0.408 ±.032 –
+
++Rfmt 0.685 ±.027 0.468 ±.026 0.345 ±.027 47.8 
+
++Rsup 0.730 ±.024 0.597 ±.029 0.541 ±.031 24.3 
+
++Rded 0.729 ±.025 0.607 ±.030 0.562 ±.033 46.2 
+
++Rabl 0.729 ±.025 0.608 ±.026 0.570 ±.031 58.2 
+
+Table 3: Ablation over reward components on TextWorld with Qwen3-4B. Each row adds one reward to previous configs. Full reward in Ap-pendix F.2. 
+
+Figure 2: Compression ratio. CR = history words state words ,with CR ref by ground truth, CR pred by predictions. Points are binned means; solid lines are linear fits (legend: Pearson ρ). Dashed line: CR pred =CR ref .
+
+24 .3 → 58 .2) while maintaining long-horizon performance, yielding states that are both minimal and predictively sufficient over extended rollouts. 
+
+6 Related Work 
+
+Latent world models. Classical world models such as RSSM [Hafner et al., 2019b], Dreamer Hafner et al. [2019a, 2020, 2025], and MuZero [Schrittwieser et al., 2020] learn continuous latent states with explicit transition models, enforcing a Markov factorization in which predictions depend only on the current state and action. Our work shares this commitment to strict mediation but operates in the text domain, where latent states are discrete and variational training is poorly matched (Section 4.1). More recent approaches relax this factorization: DreamerV4 [Hafner et al., 2025] conditions on the full sequence of past latent embeddings, and PAN [Xiang et al., 2025] uses an autoregressive LLM backbone over the entire latent history. Our analysis in Section 3.2 formalizes the consequence: when the architecture permits history bypass, predictive accuracy does not constrain 8the representation. LLMs as world models. RAP [Hao et al., 2023] formulates reasoning as planning over textual states using a frozen LLM, enforcing strict mediation by construction but operating in fully observed MDPs without learning. Wang et al. [2024] evaluate LLMs on single-step state prediction given the full ground-truth state. Li et al. [2025] fine-tune LLMs on offline trajectories but condition on the full observation history without learning a compressed latent state. In all cases, either partial observability is absent, or no explicit latent representation is learned, or both. Our work addresses both. Since even a fine-tuned history-conditioned model fails to produce identifiable representations, the limitation is structural rather than a matter of model capacity or prompting strategy. Representation learning for sequential decision-making. The information bottleneck principle [Tishby et al., 2000] provides the theoretical foundation for compressed representations that retain task-relevant information. JEPA-style methods [LeCun et al., 2022] learn representations via embedded prediction rather than reconstruction. Our approach retains this signal but replaces variational training with reinforcement learning and enforces strict mediation to ensure identifiable sufficiency. Detailed comparison with prior work is in Table 5 in appendix. 
+
+7 Conclusion 
+
+We have shown that strict latent state mediation can be effectively enforced in text-based world models through factorized GRPO, yielding identifiable, interpretable representations whose quality is directly diagnosable from predictive performance. Confirmed empirically across compositional difficulty levels and prediction horizons, the resulting textual latent states compose entities, relations, and attributes as variable-length text, opening the door to LLM-grounded reward signals in settings where precise reward models are unavailable. The natural next steps are extending strict mediation to recurrent or hierarchical encoders that process history incrementally, and demonstrating that the representation-level gains established here translate into improved planning and task completion. 
+
+Limitations. Our evaluation focuses on representation quality rather than downstream control or planning, and is limited to two synthetic, instrumented environments (TextWorld and ScienceWorld), which may not fully reflect real-world complexity. Two structural limitations also merit discussion. First, strict mediation places the full burden of history compression on a single-shot encoder with no incremental refinement, so any missed information is irrecoverable, since removing history bypass also removes the decoder’s ability to compensate for encoder errors. Second, while strict mediation and fGRPO are environment-agnostic, the auxiliary rewards that shape representations into interpretable, compact forms rely on structured fact extraction; extending these to less structured domains will require alternatives like learned similarity metrics or LLM-based evaluation. Broader Impacts . This work is primarily methodological and may improve the reliability and interpretability of AI systems. Potential risks include misuse of more capable generative models, though our study is limited to offline benchmarks and does not involve deployment. 
+
+References 
+
+Richard S. Sutton. Dyna, an integrated architecture for learning, planning, and reacting. SIGART Bull. , 2(4):160–163, jul 1991. David Ha and Jürgen Schmidhuber. World models. arXiv preprint arXiv:1803.10122 , 2(3):440, 2018. Danijar Hafner, Timothy Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to control: Learning behaviors by latent imagination. arXiv preprint arXiv:1912.01603 , 2019a. Danijar Hafner, Timothy Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee, and James Davidson. Learning latent dynamics for planning from pixels. In International conference on machine learning , pages 2555–2565. PMLR, 2019b. Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104 , 2023. Julian Schrittwieser, Ioannis Antonoglou, Thomas Hubert, Karen Simonyan, Laurent Sifre, Simon Schmitt, Arthur Guez, Edward Lockhart, Demis Hassabis, Thore Graepel, et al. Mastering atari, go, chess and shogi by planning with a learned model. Nature , 588(7839):604–609, 2020. Chang Yang, Xinrun Wang, Junzhe Jiang, Qinggang Zhang, and Xiao Huang. Evaluating world models with llm for decision making. arXiv preprint arXiv:2411.08794 , 2024. 9Yixia Li, Hongru Wang, Jiahao Qiu, Zhenfei Yin, Dongdong Zhang, Cheng Qian, Zeping Li, Pony Ma, Guanhua Chen, Heng Ji, et al. From word to world: Can large language models be implicit text-based world models? arXiv preprint arXiv:2512.18832 , 2025. Shibo Hao et al. Reasoning with language model is planning with world model. arXiv preprint arXiv:2305.14992 , 2023. Ruoyao Wang, Graham Todd, Ziang Xiao, Xingdi Yuan, Marc-Alexandre Côté, Peter Clark, and Peter Jansen. Can language models serve as text-based world simulators? In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers) ,pages 1–17, 2024. Jiannan Xiang, Yi Gu, Zihan Liu, Zeyu Feng, Qiyue Gao, Yiyan Hu, Benhao Huang, Guangyi Liu, Yichi Yang, Kun Zhou, et al. Pan: A world model for general, interactable, and long-horizon world simulation. arXiv preprint arXiv:2511.09057 , 2025. Yuying Ge et al. Worldgpt: Empowering large language models as multimodal world models. arXiv preprint arXiv:2404.18202 , 2024. Leslie Pack Kaelbling, Michael L Littman, and Anthony R Cassandra. Planning and acting in partially observable stochastic domains. Artificial Intelligence , 101(1–2):99–134, 1998. Kevin P Murphy. A survey of pomdp solution techniques. Technical report, University of British Columbia, 2000. Danijar Hafner, Wilson Yan, and Timothy Lillicrap. Training agents inside of scalable world models. 
+
+arXiv preprint arXiv:2509.24527 , 2025. Samuel R Bowman, Luke Vilnis, Oriol Vinyals, Andrew M Dai, Rafal Jozefowicz, and Samy Bengio. Generating sentences from a continuous space. arXiv preprint arXiv:1511.06349 , 2016. Junxian He, Daniel Spokoyny, Graham Neubig, and Taylor Berg-Kirkpatrick. Preventing posterior collapse with δ-vaes. arXiv preprint arXiv:1901.03416 , 2019. Marc-Alexandre Côté, Akos Kádár, Xingdi Yuan, Ben Kybartas, Tavian Barnes, Emery Fine, James Moore, Matthew Hausknecht, Layla El Asri, Mahmoud Adada, et al. Textworld: A learning environment for text-based games. In Workshop on Computer Games , pages 41–75. Springer, 2018. Ruoyao Wang, Peter Jansen, Marc-Alexandre Côté, and Prithviraj Ammanabrolu. Scienceworld: Is your agent smarter than a 5th grader? In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , pages 11279–11298, 2022. Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, YK Li, Yang Wu, et al. Deepseekmath: Pushing the limits of mathemat-ical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. Danijar Hafner, Timothy Lillicrap, Mohammad Norouzi, and Jimmy Ba. Mastering atari with discrete world models. arXiv preprint arXiv:2010.02193 , 2020. Naftali Tishby, Fernando C Pereira, and William Bialek. The information bottleneck method. arXiv preprint arXiv:physics/0004057 , 2000. Yann LeCun et al. A path towards autonomous machine intelligence version 0.9. 2, 2022-06-27. 
+
+Open Review , 62(1):1–62, 2022. 10 A Proofs and Information-Theoretic Analysis 
+
+A.1 Full Proof of Proposition 1 
+
+Proof. Under strict mediation, the model’s predictive distribution for a given history ht and action at
+
+is obtained by marginalizing over the encoder: 
+
+pθ (ot+1 | ht, a t) = X
+
+> ˆst
+
+pθ (ot+1 | ˆst, a t) pθ (ˆ st | ht), (7) where pθ (ot+1 | ˆst, a t, h t) = pθ (ot+1 | ˆst, a t) by the strict mediation constraint. Suppose the model achieves optimal prediction: pθ (ot+1 | ht, a t) = p(ot+1 | ht, a t) for all ht, a t. We show that the latent state is a sufficient statistic, i.e., p(ot+1 | ht, a t) = p(ot+1 | ˆst, a t) almost surely under the encoder. For any latent state ˆst in the support of pθ (· | ht), define the set of histories that can produce it: H(ˆ st) = {ht : pθ (ˆ st | ht) > 0}. For each ht ∈ H (ˆ st), the optimal prediction condition gives: 
+
+p(ot+1 | ht, a t) = X
+
+> ˆs
+
+pθ (ot+1 | ˆs, a t) pθ (ˆ s | ht). (8) Now suppose, for contradiction, that there exist ht, h ′ 
+
+> t
+
+∈ H (ˆ st) with p(ot+1 | ht, a t)̸ = p(ot+1 |
+
+h′
+
+> t
+
+, a t). Consider the difference: 
+
+p(ot+1 | ht, a t) − p(ot+1 | h′
+
+> t
+
+, a t) = X
+
+> ˆs
+
+pθ (ot+1 | ˆs, a t) [ pθ (ˆ s | ht) − pθ (ˆ s | h′
+
+> t
+
+)] . (9) The right-hand side is a linear combination of the decoder distributions pθ (ot+1 | ˆs, a t), weighted by differences in encoder probabilities. For this to hold for all observation values ot+1 simultaneously, the encoder must assign different mixing weights to latent states with different decoder distributions. That is, the encoder must separate histories with different predictive distributions into different regions of the latent space. This means that for any ˆst in the support, all histories ht satisfying pθ (ˆ st | ht) > 0
+
+and contributing non-negligibly to the mixture at ˆst must share the same true predictive distribution. Formally, for encoder-decoder pairs that achieve optimal prediction, p(ot+1 | ht, a t) must be constant across histories in the effective support of pθ (· | ht) that maps to any given ˆst, yielding: 
+
+p(ot+1 | ht, a t) = pθ (ot+1 | ˆst, a t) a.s. under pθ (ˆ st | ht). (10) Therefore, ot+1 ⊥ ht | ˆst, a t almost surely under the joint distribution induced by the encoder, establishing predictive sufficiency. 
+
+A.2 Full Proof of Proposition 2 
+
+Proof. We construct parameters θ∗ satisfying both claimed properties. Define the encoder to be a constant function: pθ∗ (ˆ st | ht) = δc for all ht, where c is a fixed token string and δc is a point mass. Define the decoder to ignore ˆst and predict from the history: 
+
+pθ∗ (ot+1 | ˆst, h t, a t) = p(ot+1 | ht, a t). (11) This is achievable with sufficient model capacity, since the decoder has access to (ht, a t). Property 1: By construction, pθ∗ (ot+1 | ˆst, h t, a t) = p(ot+1 | ht, a t) for all ht, a t, so the model achieves optimal prediction. Property 2: Since ˆst = c for all ht, the latent state is a constant independent of the history. Therefore I(ˆ st; ht) = H(ˆ st) − H(ˆ st | ht) = 0 − 0 = 0 .
+
+Remark. It is instructive to verify that the constant-encoder construction fails under strict mediation. If ˆst = c for all ht, the transition produces ˆst+1 ∼ pθ (· | c, a t), which depends only on the action. The decoder receives ˆst+1 with no access to ht, so predictions become history-independent: 
+
+pθ (ot+1 | ht, a t) = pθ (ot+1 | at). In any environment where history carries predictive information beyond the action, this model cannot achieve optimal prediction. The constant-encoder construction is ruled out by the architecture itself. 11 A.3 Full Proof of Proposition 3 
+
+Proof. Under strict mediation, the model’s prediction at each step depends only on (ˆ st, a t). During training, the model receives (ˆ st, a t) and produces pθ (ot+1 | ˆst, a t). During one-step rollout, the model receives the same input types and produces the same function. The information available to the model is identical in both regimes, so the one-step prediction error is the same. In multi-step rollout, the latent state ˆst+k is generated recursively by the learned transition function rather than encoded from the true history. The marginal distribution over latent states therefore shifts relative to training (covariate shift). However, under strict mediation, this shift is governed entirely by the transition function’s error propagation, formalized in Appendix B via the contraction analysis: when LS < 1,the state error remains bounded. Crucially, the form of the input does not change between training and rollout; the model always conditions on (ˆ st, a t) and never on ht. Therefore there is no structural mismatch of the kind that affects leaky architectures. Under a leaky architecture, the model’s training-time prediction is pθ (ot+1 | ˆst, h t, a t), which may depend on ht. During rollout, the true history is unavailable and must be replaced by the synthetic history of past predictions (ˆ ot+1 , . . . , ˆot+k). This introduces both covariate shift (the synthetic history has different statistics than the true history) and a structural input mismatch (the model was trained with access to true history but must operate without it). Any learned dependence on ht leads to degraded rollout performance that cannot be bounded by transition error alone. 
+
+A.4 Information-Theoretic Restatement of Proposition 1 
+
+Proposition 1 can be restated in information-theoretic terms. Under strict mediation, the encoding and decoding steps form a Markov chain: 
+
+ht → ˆst → ot+1 (given at), (12) meaning that pθ (ot+1 | ˆst, a t, h t) = pθ (ot+1 | ˆst, a t). By the data processing inequality applied to this chain, 
+
+I(ht; ot+1 | at) ≥ I(ˆ st; ot+1 | at), (13) since processing ht through the encoder into ˆst cannot increase information about ot+1 . Equality holds if and only if ˆst is a sufficient statistic of ht for ot+1 given at. Define the predictive information gap :
+
+∆I = I(ot+1 ; ht | ˆst, a t). (14) This quantity measures how much information ht carries about ot+1 beyond what is captured in ˆst.By the chain rule of mutual information: 
+
+I(ot+1 ; ht | at) = I(ot+1 ; ˆ st | at) + I(ot+1 ; ht | ˆst, a t), (15) so ∆I = I(ot+1 ; ht | at) − I(ot+1 ; ˆ st | at) ≥ 0 by the DPI. Under optimal prediction, the model’s predictive distribution matches the true distribution for each history. As shown in the proof of Proposition 1, this requires the encoder to map histories with different predictive distributions to different latent states. Consequently, ˆst captures all predictive information, implying ∆I = 0 .
+
+Corollary 1 (Information-theoretic sufficiency) . Under strict mediation, if the model achieves optimal prediction, then I(ot+1 ; ht | ˆst, a t) = 0 : the latent state captures all information that the history contains about the next observation. 
+
+A.5 Quantitative Relaxation 
+
+In practice, no model achieves exactly optimal prediction. We show that the sufficiency gap degrades gracefully: when the model is ϵ-suboptimal in prediction, the predictive information gap is bounded by ϵ. Let p(· | ht, a t) denote the true predictive distribution and pθ (· | ˆst, a t) the model’s prediction under strict mediation, where ˆst is the latent state produced from ht. Define the expected prediction gap as 
+
+ϵ = Eht,a t [KL( p(ot+1 | ht, a t) ∥ pθ (ot+1 | ˆst, a t))] , (16) where the expectation is over the data distribution of histories and actions, and ˆst is drawn from the encoder pθ (· | ht).
+
+Proposition 4 (Bounded sufficiency gap) . Under strict mediation, the predictive information gap is bounded by the expected prediction gap: 
+
+I(ot+1 ; ht | ˆst, a t) ≤ ϵ. (17) 12 Proof. By the chain rule of KL divergence and the strict mediation constraint, we can decompose the expected KL as follows. For a given ˆst and at, let H(ˆ st) denote the set of histories that produce latent state ˆst. The model assigns prediction pθ (ot+1 | ˆst, a t) to all histories in H(ˆ st). The expected KL divergence can be written as: 
+
+ϵ = Eht,a t [KL( p(ot+1 | ht, a t) ∥ pθ (ot+1 | ˆst, a t))] (18) 
+
+= Eht,a t
+
+
+
+Eot+1 |ht,a t
+
+
+
+log p(ot+1 | ht, a t)
+
+pθ (ot+1 | ˆst, a t)
+
+ 
+
+. (19) We decompose the log ratio by introducing the conditional distribution p(ot+1 | ˆst, a t), which is the true predictive distribution averaged over histories that produce ˆst:
+
+p(ot+1 | ˆst, a t) = Eht|ˆst,a t [p(ot+1 | ht, a t)] . (20) Then: 
+
+ϵ = Eht,a t [KL( p(ot+1 | ht, a t) ∥ p(ot+1 | ˆst, a t))] + Eˆst,a t [KL( p(ot+1 | ˆst, a t) ∥ pθ (ot+1 | ˆst, a t))] . (21) Both terms are nonnegative. The first term equals I(ot+1 ; ht | ˆst, a t), since it measures the expected divergence between the history-specific predictive distribution and the distribution that conditions only on the latent state. Therefore: 
+
+I(ot+1 ; ht | ˆst, a t) ≤ ϵ. (22) This result provides a practical interpretation of Proposition 1: the latent state need not be an exact sufficient statistic for it to be useful. If the strictly mediated model achieves low prediction error (small ϵ), the latent state is approximately sufficient, with the approximation gap bounded by the prediction error itself. This is a property of strict mediation specifically: under leaky architectures, low prediction error places no constraint on I(ot+1 ; ht | ˆst, a t), since the prediction may rely entirely on the history bypass. 
+
+B Error Propagation Analysis 
+
+Rollout Error Propagation. We compare three rollout schemes for predicting future observations over horizon k given a fixed history h and action sequence a0: k−1. The key structural difference lies in what information is passed at each step. Stateless rollout feeds all previous predictions back as inputs, so every past mistake remains present in future inputs and errors accumulate. StrictState 
+
+rollout compresses history into a single latent state and steps only that forward, yielding a contractive recursion under standard assumptions. LeakyState rollout conditions on both latent state and history at each step; as shown below, this introduces an additional history-feedback term that can amplify errors. (1) Stateless recursive rollout. Let F be a history-conditioned predictor. Define 
+
+ˆot+1 = F (h, a 0), (23) 
+
+ˆot+m+1 = F (h, a 0: m, ˆot+1: t+m). (24) Let Eno  
+
+> m
+
+= E[d(ˆ ot+m, o t+m)] denote prediction error at step m. Assume: (i) E[d(F (h, a 0: m, o t+1: t+m), o t+m+1 )] ≤ ϵH , (25) (ii) d(F (h, a 0: m, σ ), F (h, a 0: m, σ ′)) ≤ LHmX
+
+> i=1
+
+d(σi, σ ′
+
+> i
+
+). (26) Then: 
+
+Eno  
+
+> m+1
+
+≤ ϵH + LHmX
+
+> i=1
+
+Eno  
+
+> i
+
+. (27) Unrolling: 
+
+Eno  
+
+> m
+
+≤ ϵH (1 + LH )m−1. (28) 13 (2) StrictState rollout. Let ˆst = ϕ(h), and define 
+
+ˆst+1 = f (ˆ st, a 0), (29) 
+
+ˆst+m+1 = f (ˆ st+m, a m), (30) 
+
+ˆot+m = g(ˆ st+m, a m−1). (31) Let Zstrict  
+
+> m
+
+= E[dS (ˆ st+m, s ⋆t+m)] denote latent state error. Assume: (i) Zstrict 0 ≤ ϵenc , (32) (ii) dS (f (s, a ), f (s′, a )) ≤ LS dS (s, s ′), LS < 1, (33) (iii) E[dS (f (s⋆, a ), s ⋆t+1 )] ≤ η. (34) Then: 
+
+Zstrict  
+
+> m+1
+
+≤ LS Zstrict  
+
+> m
+
++ η. (35) Unrolling: 
+
+Zstrict  
+
+> m
+
+≤ LmS ϵenc + η(1 − LmS )1 − LS
+
+. (36) If g is Lg -Lipschitz and has bounded oracle error ϵdec :
+
+Estrict  
+
+> m
+
+≤ ϵdec + Lg Zstrict  
+
+> m
+
+. (37) 
+
+Remark on discrete latent states. The error propagation analysis above uses norm-based distances and Lipschitz continuity, which are defined for continuous spaces. When latent states are discrete text strings, as in our instantiation, the appropriate distance metric is a discrete divergence such as edit distance, fact-level F1 complement ( 1 − F1 ), or token-level Hamming distance. The structural form of the recurrence which is error propagating through a single state rather than an expanding history, holds under any distance metric satisfying the triangle inequality. The contraction condition 
+
+LS < 1 generalizes to requiring that the transition function is a contraction mapping under the chosen metric. Our experimental evaluation uses fact-level F1, which serves as the discrete analogue of the norm-based analysis: the bounded rollout error predicted by the theory manifests as slower state.F1 degradation over horizon for StrictState compared to LeakyState (Table 2). (3) LeakyState rollout. 
+
+Let ˆst = ϕ(h). During rollout, the model conditions on both the latent state and an expanding synthetic history ˆht+m = ( h, a 0: m, ˆot+1: t+m) that incorporates past predicted observations. Define: 
+
+ˆst+m+1 = fL(ˆht+m, ˆst+m, a m), (38) 
+
+ˆot+m+1 = gL(ˆht+m, ˆst+m+1 , a m). (39) Because ˆht+m contains all past predicted observations, errors from every previous step remain present in the input and contribute to future predictions, justifying the accumulation term in the error bound. Let Eleaky  
+
+> m
+
+= E[d(ˆ ot+m, o t+m)] and Zleaky  
+
+> m
+
+= E[dS (ˆ st+m, s ⋆t+m)] . Assume: (i) E[d(gL(h⋆t+m−1, s ⋆t+m, a m−1), o t+m)] ≤ ϵL, (40) (ii) d(gL(˜h, s, a ), g L(˜h′, s ′, a )) (41) 
+
+≤ Lleaky 
+
+> Hm−1
+
+X
+
+> i=1
+
+d(˜ oi, ˜o′
+
+> i
+
+) + Lleaky  
+
+> g
+
+dS (s, s ′). (42) Then: 
+
+Eleaky  
+
+> m
+
+≤ ϵL + Lleaky 
+
+> Hm−1
+
+X
+
+> i=1
+
+Eleaky  
+
+> i
+
++ Lleaky  
+
+> g
+
+Zleaky  
+
+> m
+
+. (43) Resolving the recurrence: 
+
+Eleaky  
+
+> m
+
+≤ ϵL(1 + Lleaky  
+
+> H
+
+)m−1 + Lleaky  
+
+> g
+
+Zleaky  
+
+> m
+
+(44) 
+
++ Lleaky  
+
+> H
+
+Lleaky 
+
+> gm−1
+
+X
+
+> j=1
+
+(1 + Lleaky  
+
+> H
+
+)m−1−j Zleaky  
+
+> j
+
+. (45) The final summation is a nonnegative history-feedback term, showing that latent errors at earlier steps can be reintroduced and amplified through the predicted history. 14 Table 4: Error propagation across rollout schemes. Em: observation error; Zm: latent error. The input column lists the rollout inputs used to advance from time t + m to t + m + 1 , where ˆht+m =(h, a 0: m−1, ˆot+1: t+m) is the synthetic history formed from previous predictions.                                       
+
+> Scheme Rollout input Bound Stateless h, a 0: m,ˆot+1: t+mEno
+> m≤ϵH(1 + LH)m−1
+> LeakyState ˆht+m,ˆst+m, a m
+> Eleaky
+> m≤ϵL(1 + Lleaky
+> H)m−1+Lleaky
+> gZleaky
+> m
+> +Lleaky
+> HLleaky
+> gm−1X
+> j=1
+> (1 + Lleaky
+> H)m−1−jZleaky
+> j
+> StrictState ˆst+m, a mEstrict
+> m≤ϵdec +Lg
+> 
+> LmSϵenc +η(1 −LmS)1−LS
+> 
+
+Obs. Training Partial Obs. Strict Med. Latent State Ha and Schmidhuber [2018] visual online ✓ ✓ continuous PlaNet [Hafner et al., 2019b] visual online ✓ ✓ continuous Dreamer V1–V3 visual online ✓ ✓ continuous/discrete Dreamer V4 [Hafner et al., 2025] visual offline ✓ × continuous MuZero [Schrittwieser et al., 2020] visual online ✓ ✓ continuous PAN [Xiang et al., 2025] visual offline ✓ × continuous RAP [Hao et al., 2023] textual × × ✓ textual Wang et al. [2024] textual × × ✓ NA Li et al. [2025] textual offline ✓ × NA Ours textual offline ✓ ✓ textual 
+
+Table 5: Comparison of world modeling approaches along key structural axes. 
+
+C Comparison with Prior Work 
+
+A comparison with related works are provided in Table 5. 
+
+D Dataset Details 
+
+Environments and partial observability. Both environments define a fully specified symbolic state (entities, attributes, relations, and task variables), but render only a lossy natural-language observation at each step. Observations may omit relevant variables, compress multiple state features into a single description, or vary in surface form without changing semantics. As a result, a single observation is generally insufficient to identify the underlying state, and accurate prediction requires integrating information across time. 
+
+Controlling challenge factors. To comprehensively probe robustness and abstraction, we vary multiple factors during generation. In T EXT WORLD , we sweep game complexity through world size (number of rooms), task complexity (e.g., recipe length), and skill requirements (e.g., navigation vs. cooking/cutting/opening), and generate multiple instances via random seeds (yielding different layouts and object placements). In both T EXT WORLD and S CIENCE WORLD , we additionally inject controlled nuisance variation and noise into actions and/or text (e.g., exploration noise, invalid attempts, lexical perturbations), with step- and trajectory-level metadata recording action prove-nance and noise type. These knobs let us separately stress partial observability, long-horizon credit assignment, and sensitivity to semantically irrelevant perturbations. 
+
+Ground-truth state logging. While the model never observes the ground-truth state, we log it for evaluation and diagnostics. At each timestep, we extract the full symbolic simulator state as a set of structured predicate–argument facts (e.g., at(entity, room) , in(object, container) ,
+
+on(object, supporter) , object attributes such as open , closed , or food states such as raw ,
+
+cooked ). These facts are obtained directly from the game engine’s internal state representation via instrumentation, using the same underlying rules that govern environment dynamics, and are not 15 inferred from observations or constructed manually. From this full post-action state, we construct a canonical subset of observation rendering facts , defined as the minimal set of facts required by the environment’s rendering logic to produce the natural-language observation. This subset is computed deterministically by following the game engine’s observation-generation rules (e.g., Inform7/TextWorld rendering), rather than by heuristic or learned extraction. Concretely, it includes (i) the player’s current location, (ii) all objects present in the current room, (iii) attributes of visible objects (such as food states or container states), (iv) contents of containers when they are open, (v) objects placed on supporters, and (vi) spatial relations and connectivity facts (e.g., exits, doors, and directions) needed to describe the layout. For actions such as look or navigation, this corresponds to the full set of facts required to render the room description; for local actions (e.g., take , open , examine ), it includes only the subset of post-action facts explicitly reflected in the resulting observation. Because both the full state and the observation rendering facts are derived directly from the game engine using its native rules, this construction provides an exact and unambiguous symbolic target aligned with the generated observation text. It therefore enables precise evaluation of predictive sufficiency: state.F1 measures whether the learned latent state captures exactly the information required to reproduce the next observation, independent of surface-form variation. In addition, access to the full logged state enables auxiliary diagnostics, such as verifying transition consistency across equivalent histories and distinguishing true state uncertainty from errors due to textual variation. 
+
+E Qualitative Example 
+
+A illustrative example is provided in Table 6. 
+
+F Experiment Details 
+
+F.1 Fact Extraction from Observations 
+
+All observation-level rewards and metrics operate on structured fact sets extracted from free-form observation text. Given an observation o, we define a deterministic mapping facts( o) that produces a set of predicate instances (e.g., in(apple, fridge) , open(fridge) ). The extractor operates purely on surface text and does not access hidden simulator states. For each environment, we use a rule-based parser aligned with the observation templates to recover entities, relations, and attributes explicitly stated or strongly implied by the text (e.g., location, containment, object state, and action effects). We additionally apply a small set of deterministic rules (e.g., fried(X) ⇒ cooked(X) )to capture logical implications. While our implementation uses environment-specific parsers, the framework does not depend on simulator internals. In domains without structured templates, facts( ·)
+
+can be instantiated using alternative text-to-structure extractors, such as rule-based systems or frozen LLMs. 
+
+F.2 Rewards Fact extraction and observation reward. All fact-level rewards used in this work are computed from text, not from privileged simulator latent states. Let facts( ·) denote a fact extractor applied either to a free-form observation string or to a generated textual state. For observations, facts( o) extracts a set of structured facts from the observation text; for latent states, facts( s) parses the JSON-encoded facts generated by the model. The observation reward compares the predicted observation text ˆot+1 
+
+with the reference next observation text ot+1 :
+
+Robs = F1  facts(ˆ ot+1 ), facts( ot+1 ).
+
+In our experiments, the observation fact extractor is simulator-aligned in the sense that it follows the observation templates and predicate schema of the benchmark environments. However, it is applied only to surface-level observation strings and generated state strings; it does not query hidden simulator states or privileged environment variables. In environments where such a simulator-aligned extractor is unavailable, the same framework can use any domain-specific text-to-facts extractor, for example a rule-based parser or a frozen LLM extractor calibrated with few-shot labeled observation examples. 16 Shared interaction history 
+
+––-# action: look # obs: -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/49 ––-# action: examine toilet # obs: The toilet is solid. > -= Bathroom =-0/50 ––-# action: look # obs: -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/51 ––-# action: cook knife # obs: You can’t see any such thing. > -= Bathroom =-0/51 ––-# action: slice fridge # obs: You can’t see any such thing. > -= Bathroom =-0/51 ––-# action: look # obs: -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/52 ––-# action: goals # obs: That’s not a verb I recognise. > -= Bathroom =-0/52 ––-# action: look # obs: -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/53 ––-# action: look # obs: -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/54 ––-# action: go east # obs: -= Corridor =-You’ve entered a corridor. You begin looking for stuff. There is an open sliding patio door leading south. You need an exit without a door? You should try going north. You don’t like doors? Why not try going west, that entranceway is not blocked by one. > -= Corridor =-0/55 ––-# action: look 
+
+Ground-truth next observation 
+
+# obs: -= Corridor =-You’ve entered a corridor. You begin looking for stuff. There is an open sliding patio door leading south. You need an exit without a door? You should try going north. You don’t like doors? Why not try going west, that entranceway is not blocked by one. > -= Corridor =-0/56 
+
+Leaky prediction Strict prediction 
+
+# encoded_state [at(P, bathroom), carrying(cookbook)] # pred_obs -= Bathroom =-Well, here we are in a bathroom. You try to gain information on your surroundings by using a technique you call “looking.” You can make out a toilet. The toilet is white. But there isn’t a thing on it. Sometimes, just sometimes, TextWorld can just be the worst. There is an exit to the east. > -= Bathroom =-0/55 # encoded_state [at(corridor), in(cookbook), on(toilet), fried(cookbook), north_of(kitchen,corridor), free(corridor,kitchen)] # pred_obs -= Corridor =-You enter a corridor. An usual kind of place. Okay, just remember what you’re here to do, and everything will go great. As if things weren’t amazing enough already, you can even see a light bulb. You idly wonder how they came up with the name TextWorld for this place. It’s pretty fitting. There is an exit to the north. > -= Corridor =-0/56 
+
+Table 6: Qualitative comparison under identical history. The ground-truth next observation cor-responds to entering the corridor. The leaky model fails to encode sufficient state and predicts a bathroom observation, while the strictly mediated model captures relational structure and predicts the correct transition. 17 State format reward. We enforce a lightweight structural constraint on the generated latent state. The state must be a JSON-encoded list of facts, where each fact is a dictionary with exactly two keys, 
+
+"predicate" and "arguments" . The predicate must be a non-empty string, and the arguments must be a list of non-empty strings. No argument may exceed max_num_words_in_arg words (set to 8 for ScienceWorld and 3 for TextWorld cooking). Duplicate facts are disallowed, and duplicate arguments within a single fact are not permitted. The format reward Rfmt ∈ { 0, 1} indicates whether these constraints are satisfied. 
+
+Auxiliary state rewards. For valid latent states ( Rfmt = 1 ), we compute additional rewards to encourage semantic correctness and compactness. These rewards also operate only on extracted facts from text. Support reward. The support reward Rsup measures whether facts stated in the predicted next observation ˆot+1 are represented in the predicted next latent state ˆst+1 . We parse both the generated state text and the predicted observation text into fact sets and compute fact-level observation coverage: 
+
+Cov(ˆ s, ˆo) = |facts (ˆ s) ∩ facts (ˆ o)||facts (ˆ o)| .
+
+We define 
+
+Rsup = Cov(ˆ st+1 , ˆot+1 ) +  Cov(ˆ st+1 , ˆot+1 ) − Cov(ˆ st, ˆot+1 ),
+
+which rewards the predicted next latent state for containing the facts needed to support the predicted next observation, as well as improvement over the current latent state. Importantly, Rsup does not penalize ˆst+1 for containing additional latent facts that are not expressed in the immediate observation, thereby allowing the retention of long-term information. Deduplication reward. The deduplication reward Rdedup penalizes redundant or contradictory facts. Each fact is converted into a short natural-language sentence, and all unordered pairs are evaluated using an NLI model 3. A pair is considered redundant if either the entailment or contradiction score exceeds 0.5. Let Ndup be the number of such pairs and Npairs the total number of pairs. The reward is 
+
+Rdedup = 1 − Ndup 
+
+Npairs 
+
+,
+
+computed for both st and st+1 and averaged. 
+
+Ablation reward. The ablation reward Rabl measures whether individual facts in ˆst+1 are necessary for prediction. For each fact, we remove it from the state, decode an observation from the ablated state, and compare it to the observation decoded from the full state. A fact is marked as necessary if its removal reduces the decoded observation fact-level F1 by more than 0.05. The reward is the fraction of necessary facts: 
+
+Rabl = Nnecessary 
+
+Nfacts 
+
+.
+
+This reward is not intended to define sufficiency of the latent state by itself: because the leave-one-out test is local to the sampled transition, a fact may be useful for future or counterfactual actions even if its removal does not affect the decoded observation for the current action. We therefore apply 
+
+Rabl only at a late stage of training and with a small coefficient, treating it as a weak compactness regularizer. Predictive sufficiency is enforced primarily by strict mediation and the observation reward over diverse action-conditioned transitions. In practice, Rabl biases the model against stale or redundant facts without aggressively pruning persistent state information needed for long-horizon rollout. All leave-one-out decoder evaluations are performed in parallel. 
+
+Invalid states. If a latent state fails the format constraint ( Rfmt = 0 ), auxiliary rewards are not applied. Instead, the total reward is given by the penalized observation reward Robs · γpen .
+
+F.3 Models and Training Setup 
+
+We experiment with three pretrained instruction-tuned language models: Qwen2.5-0.5B-Instruct 
+
+(0.5B parameters), Qwen3-4B-Instruct-2507 (4B parameters) and Qwen3-32B (32B parameters). These models serve as the shared backbone for encoding, transition, and decoding, with all stages 
+
+> 3https://huggingface.co/sileod/deberta-v3-base-tasksource-nli
+
+18 implemented via prompting as described in Section 4. Training is performed using factorized GRPO with tree-structured rollouts. Unless otherwise specified, we use a branching factor of 
+
+A = B = C = 4 , i.e., each node expands to 4 candidates at each stage (encoding, transition, and decoding). We train for a single epoch over the offline dataset with learning rate 1 × 10 −6. The reward weighting coefficients are set to γpen = 0 .5 and λdedup = λabl = λsup = 0 .1.
+
+F.4 Compute 
+
+All experiments are conducted on AWS SageMaker using ml.p4de.24xlarge instances. Each instance is equipped with 8 NVIDIA A100-SXM4 GPUs (80GB memory each), for a total of 640GB GPU memory per node. Training runs utilize all 8 GPUs in parallel. Typical GPU utilization is above 90%, with per-GPU memory usage around 54GB during training. Training uses vLLM-backed asynchronous generation together with FSDP-based actor training in verl. We use gradient checkpointing and micro-batching for log-probability computation to fit the 4B model and the expanded fGRPO rollout batches on 8 A100-80GB GPUs. Per-step wall-clock cost. Table 7 reports mean per-step wall-clock time for the three training regimes used in this paper, decomposed into the four phases of the verl PPO loop. Stateless training (SFT) runs only the policy forward-and-backward pass; LeakyState (GRPO) additionally rolls out a single-turn structured response and recomputes log-probabilities under both the current and reference policies for the KL penalty; StrictState-Text (fGRPO) extends this with a three-turn E NCODE → DYNAMICS → DECODE rollout, which roughly triples the number of generated tokens per training example. We implement parallelism for fGRPO (Section F.5) to reduce wall-clock time. The dominant cost driver is output-token volume: both gen 
+
+and update_actor scale linearly with response length and branching factor N . Strict’s three-turn protocol therefore inflates these two stages most. Reference-policy log-probability computation ( ref )is also affected because every generated token must be re-scored under the frozen reference. SFT incurs none of these RL-specific phases and is bounded by a single forward-and-backward pass per batch. Table 7: Mean training cost on 8 ×A100-80GB at 4B parameters, batch size 8, branching factor 
+
+N = 4 , and max response length 1024 tokens. fGRPO costs 1.58 × as much per step as single-turn GRPO, or 90.0 vs. 57.1 GPU-hours per 1k steps.                         
+
+> Method gen old_log_prob ref update_actor step total GPU-hr/1k steps
+> Stateless (SFT) ————2.28 5.1 LeakyState (GRPO) 19.9 1.0 0.9 4.0 25.7 57.1 StrictState-Text (fGRPO) 26.2 2.0 1.8 10.5 40.5 90.0
+
+F.5 Parallelized factorized GRPO. 
+
+We implement fGRPO using an asynchronous tree-rollout engine integrated with verl and vLLM. For each training example, the encoder, transition, and decoder stages are expanded as separate prompt calls, but sibling generations from the same parent node are submitted concurrently. Concretely, all A
+
+encoder samples, all B transition samples under each encoded state, and all C decoder samples under each predicted next state are launched asynchronously, allowing the rollout tree to be generated in parallel rather than by a serial depth-first traversal. The resulting tree is then flattened into GRPO training samples, with the grouping identifier set to the parent node of each sibling set so that group-relative advantages are computed separately for encoder, transition, and decoder decisions. This design avoids relying on the standard verl mechanism that repeats prompts before generation. Instead, rollout multiplicity is controlled inside the world-model rollout itself, which is necessary because different nodes in the tree have different prompts and conditioning contexts. We also share request identifiers among siblings generated from the same parent prompt, enabling the rollout backend to batch compatible requests efficiently. For the ablation reward, decoder calls for the full state and all leave-one-fact-out states are likewise submitted concurrently; we skip this computation when it would be identical across decoder-only siblings and therefore cancel out in the GRPO advantage. 
+
+F.6 Prompts 
+
+19 Stateless, System prompt 
+
+You are a world model for a text adventure game. Given observation history and an action, predict the next observation. Learn the game mechanics and output format from the history examples. === EXAMPLE OBSERVATIONS === For navigation (e.g. "go east"): 
+
+``` 
+
+-= Kitchen =-You arrive in a kitchen. An usual kind of place. Okay, just remember what you 're here to do, and everything will go great. As if things weren 't amazing enough already, you can even see a fridge. You idly wonder how they came up with the name TextWorld for this place. It 's pretty fitting. There is an exit to the west. >-= Kitchen =-0/6 
+
+``` 
+
+For taking items (e.g. "take block of cheese from workbench"): 
+
+``` 
+
+You take the block of cheese from the workbench. >-= Shed =-0/23 
+
+``` 
+
+For cooking (e.g. "cook red onion with stove"): 
+
+``` 
+
+You fried the red onion. Your score has just gone up by one point. >-= Kitchen =-6/35 
+
+``` 
+
+For cutting (e.g. "slice red apple with knife"): 
+
+``` 
+
+You slice the red apple. Your score has just gone up by one point. >-= Backyard =-5/31 
+
+``` 
+
+For inventory (e.g. "inventory"): 
+
+``` 
+
+You are carrying: a raw yellow potato. >-= Bedroom =-0/16 
+
+``` 
+
+For dropping items (e.g. "drop purple potato"): 
+
+``` 
+
+You drop the purple potato on the ground. >-= Garden =-1/10 
+
+``` 
+
+For preparing meal (e.g. "prepare meal"): 
+
+``` 
+
+Adding the meal to your inventory. Your score has just gone up by one point. >-= Kitchen =-8/41 
+
+``` 
+
+=== INSTRUCTIONS === - Generate observation text matching the game 's style from the history - Learn the output format from the observation history examples - Output ONLY the observation text, nothing else 
+
+Stateless, User prompt 
+
+=== OBSERVATION HISTORY === {{{ observations[i] | trim }} Action: {{ actions[i] }} Result: {{ observations[i + 1] | trim }} {{{ observations[-1] | trim }} Action: {{ action }} === YOUR PREDICTION === Predict the observation that will result from taking the action "{{ action }}". Output ONLY the observation text: 
+
+Table 8: Prompts used for the Stateless cooking world model. 
+
+LeakyState, System prompt 
+
+You are a world model for a TextWorld cooking game. For each example, do all three steps in one response: 1. Infer the current structured state from the full observation history. 
+
+20 2. Apply the current action to produce the next structured state. 3. Generate the next observation text the player would see. Use ONLY the predicate vocabulary below. Location & map: at(entity, room) - "P" (player) or object is in a room north_of(room1, room2) - room1 is north of room2 south_of(room1, room2) - room1 is south of room2 east_of(room1, room2) - room1 is east of room2 west_of(room1, room2) - room1 is west of room2 free(room1, room2) - passage between rooms is unblocked link(room1, door, room2) - a door connects two rooms Containment & placement: in(object, container) - object is inside a container (use "I" for player inventory) on(object, supporter) - object is on a supporter (table, counter, etc.) Container state: open(container) - container is open closed(container) - container is closed Object properties: sharp(object) - object is sharp (e.g. knife) cookable(food) - food can be cooked cuttable(food) - food can be cut drinkable(food) - food can be drunk edible(food) - food is safe to eat inedible(food) - food is not safe to eat (needs cooking) Food state: raw(food) - food has not been cooked cooked(food) - food has been cooked burned(food) - food has been burned (overcooked) needs_cooking(food) - food must be cooked before eating uncut(food) - food has not been cut fried(food) - food was cooked on a stove roasted(food) - food was cooked in an oven grilled(food) - food was cooked on a BBQ/toaster sliced(food) - food was sliced diced(food) - food was diced chopped(food) - food was chopped Recipe & meal: ingredient_1(food) .. ingredient_5(food) - food is the Nth recipe ingredient cooking_location(room, recipe) - room where the meal must be prepared out(meal, recipe) - the meal produced by the recipe base(food, ingredient) - the base food of a recipe ingredient used(food) - food has been used in a meal consumed(food) - food has been eaten/drunk State format: - `state ` and `next_state ` must each be a JSON list of objects. - Each fact object must be exactly: {"predicate": "<name>", "arguments": ["arg1", "arg2"]} Output format: - Return exactly one JSON object with these keys: - `state `
+
+- `next_state `
+
+- `next_observation `
+
+- `state ` and `next_state ` must be JSON arrays of fact objects. - `next_observation ` must be a plain string. - Output valid JSON only, with no markdown fences and no extra commentary. General rules: - Use only supported predicates. - Include only facts directly observed or strongly implied by the history. - Do not hallucinate unsupported objects, locations, or state changes. - Keep unchanged facts in `next_state ` unless the action clearly changes them. - Make `next_observation ` consistent with `next_state ` and the action. - Match TextWorld-style observations. Few-shot example 1: Input history: Observation: -= Kitchen =-You are in a kitchen. You see a fridge. Action: open fridge Output: {"state": [ {"predicate": "at", "arguments": ["P", "kitchen"]}, {"predicate": "at", "arguments": ["fridge", "kitchen"]}, {"predicate": "closed", "arguments": ["fridge"]} ], "next_state": [ {"predicate": "at", "arguments": ["P", "kitchen"]}, {"predicate": "at", "arguments": ["fridge", "kitchen"]}, {"predicate": "open", "arguments": ["fridge"]} ], "next_observation": "You open the fridge.\n\n> -= Kitchen =-" }Few-shot example 2: Input history: Observation: -= Kitchen =-You are in a kitchen. You see a knife on the counter. Action: take knife from counter 
+
+21 Output: {"state": [ {"predicate": "at", "arguments": ["P", "kitchen"]}, {"predicate": "at", "arguments": ["knife", "kitchen"]}, {"predicate": "on", "arguments": ["knife", "counter"]}, {"predicate": "sharp", "arguments": ["knife"]} ], "next_state": [ {"predicate": "at", "arguments": ["P", "kitchen"]}, {"predicate": "in", "arguments": ["knife", "I"]}, {"predicate": "sharp", "arguments": ["knife"]} ], "next_observation": "You take the knife from the counter.\n\n> -= Kitchen =-" }
+
+LeakyState, User prompt 
+
+Infer the current state, apply the action, and generate the next observation. === OBSERVATION HISTORY === {Observation: {{ observations[i] }} {Action: {{ actions[i] }} {{=== CURRENT ACTION === {{ action }} Return the JSON object only. 
+
+Table 9: Prompts used for the LeakyState cooking world model. 
+
+StrictState, System prompt 
+
+You are a world model for a text adventure game. You will simulate this world through a 3-step process: 1. ENCODE: Infer a structured state from observation history 2. DYNAMICS: Update the state based on an action 3. DECODE: Generate the observation text from the state Learn the game mechanics from the observation history. Follow instructions carefully at each step. 
+
+StrictState, Encoder prompt 
+
+Now it 's the ENCODE step. Based on the observation history provided at the end of this prompt, infer the current world state. === PREDICATE VOCABULARY === Use ONLY the following predicates. Do NOT invent new ones. Location & map: at(entity, room) - "P" (player) or object is in a room north_of(room1, room2) - room1 is north of room2 south_of(room1, room2) - room1 is south of room2 east_of(room1, room2) - room1 is east of room2 west_of(room1, room2) - room1 is west of room2 free(room1, room2) - passage between rooms is unblocked link(room1, door, room2) - a door connects two rooms Containment & placement: in(object, container) - object is inside a container (use "I" for player inventory) on(object, supporter) - object is on a supporter (table, counter, etc.) Container state: open(container) - container is open closed(container) - container is closed Object properties: sharp(object) - object is sharp (e.g. knife) cookable(food) - food can be cooked cuttable(food) - food can be cut drinkable(food) - food can be drunk edible(food) - food is safe to eat inedible(food) - food is not safe to eat (needs cooking) Food state: raw(food) - food has not been cooked cooked(food) - food has been cooked burned(food) - food has been burned (overcooked) needs_cooking(food) - food must be cooked before eating uncut(food) - food has not been cut fried(food) - food was cooked on a stove roasted(food) - food was cooked in an oven 
+
+22 grilled(food) - food was cooked on a BBQ/toaster sliced(food) - food was sliced diced(food) - food was diced chopped(food) - food was chopped Recipe & meal: ingredient_1(food) .. ingredient_5(food) - food is the Nth recipe ingredient cooking_location(room, recipe) - room where the meal must be prepared out(meal, recipe) - the meal produced by the recipe base(food, ingredient) - the base food of a recipe ingredient used(food) - food has been used in a meal consumed(food) - food has been eaten/drunk === STATE FORMAT === Infer the state as a JSON list of predicates. Each predicate is an object with: - "predicate": one of the predicates listed above (string) - "arguments": list of arguments (strings) === EXAMPLE STATE === 
+
+``` json [{"predicate": "at", "arguments": ["P", "kitchen"]}, {"predicate": "in", "arguments": ["banana", "I"]}, {"predicate": "on", "arguments": ["knife", "counter"]}, {"predicate": "fried", "arguments": ["banana"]}, {"predicate": "north_of", "arguments": ["livingroom", "kitchen"]}, {"predicate": "free", "arguments": ["kitchen", "livingroom"]} ]
+
+``` 
+
+=== INSTRUCTIONS === - Use ONLY predicates from the vocabulary above - Include only facts you have directly seen or can confidently infer from the history - Do NOT guess or hallucinate facts not supported by the observations - It 's OK to have an incomplete state - only include what you 're confident about - Output valid JSON only, nothing else === OBSERVATION HISTORY === {Observation: {{ observations[i] }} {Action: {{ actions[i] }} {{
+
+StrictState, Transition prompt 
+
+Now it 's the DYNAMICS step. Given the current state and action provided at the end of this prompt, predict the next state. === PREDICATE VOCABULARY === Use ONLY the following predicates. Do NOT invent new ones. Location & map: at(entity, room) - "P" (player) or object is in a room north_of(room1, room2) - room1 is north of room2 south_of(room1, room2) - room1 is south of room2 east_of(room1, room2) - room1 is east of room2 west_of(room1, room2) - room1 is west of room2 free(room1, room2) - passage between rooms is unblocked link(room1, door, room2) - a door connects two rooms Containment & placement: in(object, container) - object is inside a container (use "I" for player inventory) on(object, supporter) - object is on a supporter (table, counter, etc.) Container state: open(container) - container is open closed(container) - container is closed Object properties: sharp(object) - object is sharp (e.g. knife) cookable(food) - food can be cooked cuttable(food) - food can be cut drinkable(food) - food can be drunk edible(food) - food is safe to eat inedible(food) - food is not safe to eat (needs cooking) Food state: raw(food) - food has not been cooked cooked(food) - food has been cooked burned(food) - food has been burned (overcooked) needs_cooking(food) - food must be cooked before eating uncut(food) - food has not been cut fried(food) - food was cooked on a stove roasted(food) - food was cooked in an oven grilled(food) - food was cooked on a BBQ/toaster sliced(food) - food was sliced diced(food) - food was diced chopped(food) - food was chopped Recipe & meal: ingredient_1(food) .. ingredient_5(food) - food is the Nth recipe ingredient cooking_location(room, recipe) - room where the meal must be prepared out(meal, recipe) - the meal produced by the recipe base(food, ingredient) - the base food of a recipe ingredient used(food) - food has been used in a meal consumed(food) - food has been eaten/drunk === INSTRUCTIONS === 
+
+23 - Apply the action to update the state - Use ONLY predicates from the vocabulary above - Update only the predicates affected by the action - Keep all other predicates unchanged - Output valid JSON only, nothing else === CURRENT STATE === {{ state }} === ACTION === {{ action }} 
+
+StrictState, Decoder prompt 
+
+Now it 's the DECODE step. Generate the observation text that the player would see given the state and action provided at the end of this prompt. === EXAMPLE OBSERVATIONS === For navigation (e.g. "go east"): 
+
+``` 
+
+-= Kitchen =-You arrive in a kitchen. An usual kind of place. Okay, just remember what you 're here to do, and everything will go great. As if things weren 't amazing enough already, you can even see a fridge. You idly wonder how they came up with the name TextWorld for this place. It 's pretty fitting. There is an exit to the west. >-= Kitchen =-0/6 
+
+``` 
+
+For taking items (e.g. "take block of cheese from workbench"): 
+
+``` 
+
+You take the block of cheese from the workbench. >-= Shed =-0/23 
+
+``` 
+
+For cooking (e.g. "cook red onion with stove"): 
+
+``` 
+
+You fried the red onion. Your score has just gone up by one point. >-= Kitchen =-6/35 
+
+``` 
+
+For cutting (e.g. "slice red apple with knife"): 
+
+``` 
+
+You slice the red apple. Your score has just gone up by one point. >-= Backyard =-5/31 
+
+``` 
+
+For inventory (e.g. "inventory"): 
+
+``` 
+
+You are carrying: a raw yellow potato. >-= Bedroom =-0/16 
+
+``` 
+
+For dropping items (e.g. "drop purple potato"): 
+
+``` 
+
+You drop the purple potato on the ground. >-= Garden =-1/10 
+
+``` 
+
+For preparing meal (e.g. "prepare meal"): 
+
+``` 
+
+Adding the meal to your inventory. Your score has just gone up by one point. >-= Kitchen =-8/41 
+
+``` 
+
+=== INSTRUCTIONS === - Generate observation text from the state and action taken - Learn the output format from the observation examples - Output ONLY the observation text, nothing else === STATE === {{ state }} === ACTION TAKEN === {{ action }} 
+
+Table 10: Prompts used for the StrictState world model. The system prompt is shared by the encoder, transition, and decoder prompts. 24

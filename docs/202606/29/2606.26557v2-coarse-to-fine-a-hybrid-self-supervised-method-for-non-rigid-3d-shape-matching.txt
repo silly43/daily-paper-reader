@@ -1,0 +1,1437 @@
+Title: Coarse-to-Fine: A Hybrid Self-Supervised Method for Non-rigid 3D Shape Matching
+
+URL Source: https://arxiv.org/pdf/2606.26557v2
+
+Published Time: Mon, 29 Jun 2026 00:29:52 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+# Coarse-to-Fine: A Hybrid Self-Supervised Method for Non-rigid 3D Shape Matching 
+
+Feifan Luo 1,2 , Ting Li 3 , Zhao Li 2 , and Hongyang Chen 2 ⋆ 
+
+> 1
+
+Zhejiang University, China  
+
+> 2
+
+Zhejiang Lab, China  
+
+> 3
+
+Wenzhou University of Technology, China 
+
+luoff@zju.edu.cn dr.h.chen@ieee.org 
+
+Abstract. Non-rigid 3D shape matching is a fundamental task in com-puter vision and graphics. In this paper, we propose a hybrid self-supervised method based on a coarse-to-fine strategy, which ensures consistency between the coarse mapping and the refined correspondence produced by our refinement module. The architecture features a dual-branch de-sign, consisting of two symmetric functional map learning streams: one based on the Laplacian basis and the other utilizing the elastic ba-sis. Extensive experiments show that our approach not only maintains computational efficiency, but also achieves state-of-the-art performance across a variety of challenging scenarios, including non-isometric defor-mations and topological noise. Finally, we rigorously demonstrate that contrastive energies promote feature discrimination. Furthermore, inte-grating these energies with existing methods yields consistent improve-ments, validating the overall efficacy of our approach. Our code is avail-able at https://github.com/LuoFeifan77/Coarse-to-Fine-Hybrid-Self-Supervised-Matching .
+
+Keywords: 3D shape matching · Functional maps · Self-supervised learn-ing · Coarse-to-fine 
+
+## 1 Introduction 
+
+Establishing accurate correspondences between non-rigid 3D shapes is a long-standing challenge in computer vision and graphics, which has a wide range of applications, including shape analysis [50], shape generation [23], deformation transfer [74], and shape interpolation [27]. Deep functional maps [47] have emerged as a preferred solution for non-rigid shape matching, paving the way for significant advancements in near-isometric shape matching [5, 22, 32, 68], non-isometric shape matching [21, 27, 28, 36, 42], multi-shape matching [11, 29, 76], and partial shape matching [3, 24, 25]. However, these methods [5,21,22,36,42,68] primarily rely on geometric prior constraints (e.g., orthogonality) to supervise pointwise or functional maps, while overlooking self-supervised prior constraints, leading to suboptimal performance.  
+
+> ⋆
+
+Corresponding author.  
+
+> arXiv:2606.26557v2 [cs.CV] 26 Jun 2026 2Feifan Luo et al.
+
+Although incorporating the coupling loss [15] to promote functional map proper-ness [64] enhances performance, it inevitably incurs substantial computational overhead. This is because these methods either necessitate solving linear op-timization problems to estimate functional maps [2, 6, 15, 21, 53, 76] or rely on fine-tuning techniques [6, 13, 15, 40] during inference to bolster results. To address these limitations, we propose a novel and efficient hybrid self-supervised method for non-rigid shape matching. We first introduce a coarse-to-fine framework for functional map learning. The core idea is to align the coarse map with the refined map, and it consists of two main components: (1) the proposal of three different self-supervised prior constraints, which facilitate the alignment of the coarse map and the refined map from spatial, spectral, and spatial-spectral perspectives; (2) the introduction of a general refinement method, which can be applied not only to generate both refined pointwise and functional maps but also to non-orthogonal settings. Based on the aforemen-tioned framework, a hybrid self-supervised method is composed of two fully sym-metric branches: the intrinsic branch, which employs a functional map learning module based on the orthonormal Laplacian basis, and the extrinsic branch, which uses a functional map learning module based on the non-orthogonal elastic basis, while eliminating the time-consuming least-squares solvers and fine-tuning techniques. Extensive experiments demonstrate that our method outperforms ex-isting state-of-the-art methods in both matching accuracy and runtime. Finally, we rigorously prove that contrastive energies promote feature discrimination and lead to consistent improvements when integrated with other methods, thereby validating the effectiveness of our proposed framework. The main contributions are summarized as follows: 
+
+– We propose a general coarse-to-fine strategy, which establishes a unified bridge between functional map learning frameworks and map refinement methods. 
+
+– We present a robust and efficient hybrid self-supervised method for non-rigid 3D shape matching. 
+
+– Extensive experiments demonstrate that our approach achieves excellent per-formance across challenging benchmarks, while maintaining remarkable com-putational efficiency. 
+
+– We provide a rigorous proof that contrastive energies induce feature dis-crimination. Moreover, our proposed energies deliver consistent performance gains when integrated into baseline methods. 
+
+## 2 Related Work 
+
+Non-rigid 3D shape matching is a basic problem that has been extensively stud-ied. For a comprehensive overview of the field, readers are referred to surveys such as [19, 49, 70, 86]. Coarse-to-Fine Hybrid Self-Supervised Shape Matching 3
+
+2.1 Axiomatic Functional Maps 
+
+Numerous axiomatic approaches [1,7,10,60,77,82] have been proposed to address the shape matching problem. Among these, the functional map framework [60] has gained significant prominence due to its inherent flexibility and efficiency, which has inspired extensive subsequent works [20,30,31,34,35,37,54,56,58,61,65, 66, 78]. However, axiomatic functional map methods rely heavily on the quality of handcrafted features [4, 44, 48, 71, 75], resulting in unsatisfactory performance in challenging settings. 
+
+2.2 Deep Functional Maps 
+
+FMNet [47], also known as deep functional maps, effectively overcomes the bot-tlenecks of axiomatic functional map approaches [60] by learning local features via neural networks. Subsequent approaches [5,22,32] followed this principle, con-straining pointwise or functional maps to enhance feature representation [68,72], where the geometric prior constraints like bijectivity and orthogonality [65] have been widely adopted. Recently, the remarkable success of functional maps in ensuring properness [15, 76] has brought dual-branch functional map learning architectures [2, 6, 13, 16, 40, 53] and a single-branch self-supervised network [55]. Moreover, approaches based on hybrid bases [6,45], diffusion models [62,87], neu-ral adjoint maps [78], unsupervised contrastive learning [52], basis learning [51], and other studies [8, 9, 67, 80, 83, 85] have gradually been applied to the field of shape matching. Despite advancements, existing methods either demonstrate poor matching performance [5,21,22,36,42,68,72] in challenging scenarios, such as non-isometric deformations and cross-dataset generalization, or rely on time-consuming linear system solvers [2, 6, 11–16, 21, 22, 42, 76], or fine-tuning techniques [6, 13–16]. In contrast, we propose an effective and efficient hybrid self-supervised method for non-rigid shape matching, which outperforms these methods in both matching accuracy and computational efficiency. Furthermore, we demonstrate that the self-supervised losses introduced in previous works [16, 55] are special cases of the contrastive energy proposed in our study. Finally, the contrastive energies in-troduced in our method consistently improve the performance of other functional map learning techniques, such as ULRSSM [15]. 
+
+## 3 Background 
+
+We begin by providing a brief overview of the basic pipeline for deep functional maps, directing interested readers to relevant literature [6, 15, 60, 86] for further details. The notation used throughout the paper is summarized in Table 1. 
+
+3.1 Functional Map Learning Pipeline 
+
+Given a pair of non-rigid 3D shapes denoted as X and Y, the common functional map learning frameworks mainly consist of five main stages: 4 Feifan Luo et al. 
+
+Table 1: Summary of the symbol description. Symbol Description                                                
+
+> X,Y3D shapes (triangle mesh) with |VX|,|VY|vertices
+> ΛXRk×keigenvalue matrix of shape X
+> ΦXR|VX|× keigenfunctions matrix
+> Φ†XRk×| VX|Moore-Penrose inverse of ΦX
+> AXR|VX|×| VX|mass matrix.
+> AX,k Rk×kreduced mass matrix.
+> FXR|VX|× dvertex-wise features of shape X,ddenotes the feature dimension
+> ΠYX R|VY|×| VX|point-wise map between shapes Yand X
+> CX Y Rk×k(spectral) functional maps matrix obtained by solving a linear system Eq.(1)
+> ˆCX Y Rk×kspatial functional maps matrix obtained from ΠYX
+> || · || FFrobenius norm for Laplacian eigensystem
+> || · || HS Hilbert–Schmidt norm for elastic eigensystem.
+> {gs(·)}Ss=1 a set of filter functions
+
+(1) Precomputation. Compute the first k eigenfunctions ΦX , Φ Y , eigenval-ues ΛX , Λ Y in matrix notation via generalized eigendecomposition, respectively. For example, the orthonormal Laplacian eigensystem {ΦLB  
+
+> X
+
+, Λ LB  
+
+> X
+
+} and the non-orthogonal elastic eigensystem {ΦEL  
+
+> X
+
+, Λ EL  
+
+> X
+
+} can be obtained by decomposing the Laplacian operator [63] and elastic thin-shell energy [81]. (2) Feature extraction. The vertex features FX and FY are extracted by a feature extractor network FΘ , respectively, with shared parameters Θ. Among numerous feature extraction methods, DiffusionNet [73] remains the predomi-nant choice for the majority of functional map learning approaches. (3) Functional map computation. Functional maps have two computation methods. The first is the definition-based approach [60], which is obtained by solving a linear optimization problem, specifically: 
+
+CX Y = arg min 
+
+> CX Y
+
+CX Y Φ†X FX − Φ†Y FY + μE reg (CX Y ), (1) 
+
+where Ereg = ∥CX Y ΛX − ΛY CX Y ∥ denotes the regularization term, μ is a hyperparameter. Here, the choice of norm is determined by the type of basis functions Φ employed. For the orthonormal Laplacian eigensystem, Eq. (1) is computed using the Frobenius norm ||·|| F, whereas for the non-orthogonal elastic eigensystem, the Hilbert–Schmidt norm || · || HS is adopted [6]. The second is the projection-based approach [60], where the pointwise map is projected onto the spectral domain, expressed as: 
+
+ˆCX Y = Φ†Y ΠYX ΦX , (2) where the pointwise map satisfies FY = ΠYX FX .To avoid ambiguity, the functional map CX Y derived from Eq.(1) is termed the (spectral) functional map, while that explicitly computed via pointwise map, i.e., Eq. (2), is designated as the spatial functional map [76, 84] (or the proper functional map in some references [55, 62, 64]). (4) Loss functions. During the training phase, axiomatic prior constraints, such as bijectivity and orthogonality [65], are typically applied as structural Coarse-to-Fine Hybrid Self-Supervised Shape Matching 5
+
+penalties, namely, 
+
+Lbi = ∥CX Y CYX − I∥ , L or = CX Y CT 
+
+> X Y
+
+− I , (3) or the coupling [15] between spatial and spectral functional maps, i.e., 
+
+Lco = CX Y − ˆCX Y . (4) Additionally, the aforementioned loss terms can be extended to bidirectional constraints by incorporating reverse mapping terms. However, most existing functional map learning methods [5,21,42,87] mostly rely on geometric prior constraints while ignoring self-supervised prior con-straints, leading to subpar performance in challenging scenarios, such as non-isometric deformations and matching with topological noise. On the other hand, they rely on time-consuming computational modules, such as the linear system solver [2, 22] in Eq. (1) and fine-tuning techniques [6, 13, 15], which significantly increase the computational cost. In contrast, we propose a novel, efficient, and effective hybrid self-supervised method that achieves outstanding performance in both matching accuracy and computational cost. Spatial contrast Spectral contrast Spatial-spectral contrast 
+
+> Coarse map  Refined map
+
+Fig. 1: Comparison of the three coarse-to-fine contrastive energy terms. From left to right: spatial contrastive energy, spectral contrastive energy, and spatial-spectral contrastive energy. 
+
+## 4 Coarse-to-Fine Guided Functional Maps 
+
+This section introduces the coarse-to-fine strategy tailored for the functional map framework, which aims to align the coarse map more closely with the re-fined map. We begin by defining three types of self-supervised prior constraint terms: spatial, spectral, and spatial-spectral contrastive energies, each of which promotes the alignment of the coarse and refined maps from different directions in Section 4.1. We then present a general refinement method that generates refined functional and pointwise maps, applicable to both orthogonal and non-orthogonal basis functions in Section 4.2. 6 Feifan Luo et al. 
+
+4.1 Contrastive Energy 
+
+The essence of the coarse-to-fine strategy lies in enforcing the coarse maps to converge toward the refined maps, where the latter serves as a high-fidelity guid-ance. To this end, we formulate a series of contrastive energy constraints based on this coarse-to-fine hierarchy, see Fig. 1. 
+
+Spatial contrast. Given a coarse pointwise map ΠYX , the pointwise map contrastive energy is defined as: 
+
+∥ΠYX − Πref  
+
+> YX
+
+∥, (5) where Πref  
+
+> YX
+
+represents the refined pointwise map. Since the refined pointwise maps Πref  
+
+> YX
+
+encode higher-quality correspondences, they can be regarded as a proxy for ground truth, guiding the optimization of the coarse pointwise maps 
+
+ΠYX .If the pointwise map represents a self-mapping relationship within the shape itself, denoted as ΠYY , then the refined map Πref  
+
+> YY
+
+reduces to the identity map-ping IY ∈ R|VY |×| VY | due to the self-evident correspondence of vertex features, leading to 
+
+∥ΠYY − IY ∥. (6) Interestingly, the self-supervised constraints introduced in earlier works [16, 55] are special cases of our spatial contrastive energies, with additional details provided in the supplementary materials. 
+
+Spectral contrast. Parallel to the spatial contrastive regularization, we incorporate a coarse-to-fine representation for the spectral functional map CX Y ,denoted as 
+
+∥CX Y − Cref  
+
+> X Y
+
+∥. (7) Unlike the self spatial contrastive energy Eq. (6), since spectral functional maps are computed from a linear system Eq. (1) via the least-square method, the resulting CYY is necessarily equal to I. Consequently, we omit this trivial contrastive constraint. 
+
+Spatial-spectral contrast. The coupling constraint Eq. (4), which pro-motes properness [15,76], has proven highly effective in challenging shape match-ing tasks. However, it specifically aligns the coarse functional maps with the coarse pointwise maps, thereby ensuring what we term as coarse properness . In contrast, we propose a novel spatial-spectral contrastive energy to promote fine properness , namely, 
+
+CX Y − Φ†Y Πref  
+
+> YX
+
+ΦX . (8) The above equation can be interpreted as aligning spectral functional maps with refined pointwise maps. On the other hand, we also leverage the refined spectral functional map Cref 
+
+> X Y
+
+to facilitate the optimization of the coarse pointwise maps, i.e., 
+
+ΠYX − ΦY Cref  
+
+> X Y
+
+Φ†X . (9) Coarse-to-Fine Hybrid Self-Supervised Shape Matching 7
+
+Our coarse-to-fine strategy establishes a unified bridge between deep func-tional map frameworks and map refinement methods, by employing the afore-mentioned contrastive energies as self-supervised losses to enhance map quality. On the other hand, this integration allows various established axiomatic refine-ment techniques [35, 58, 66, 77] to generate refined maps. 
+
+4.2 Map Refinement 
+
+Despite the proposal of numerous axiomatic map refinement techniques [34, 58], they lack a unified framework capable of refining both pointwise and functional maps simultaneously. Inspired by [53], we introduce a more generalized refine-ment paradigm that is equally effective for both pointwise and functional map representations, even under non-orthogonal basis functions. 
+
+Functional map refinement. We extend the refinement method proposed in [53]—specifically, the general multi-scale Laplacian commutativity term—to the context of non-orthogonal basis functions. For additional background and detailed information, we strongly recommend that readers refer to the original paper. The general multi-scale Laplacian commutativity term is as follows: 
+
+E(CX Y ) = 
+
+> S
+
+X
+
+> s=1
+
+∥CX Y gs(ΛX ) − gs(ΛY )CX Y ∥2HS , (10) where {gs}Ss=1 denote the filter functions. Although one could compute this following the approach for solving stan-dard Laplacian commutativity in the previous study [6], such a computation is complex and incurs significant computational overhead. Instead, we recommend adopting a strategy similar to the prior work [53]. Specifically, we assume that one of the functional maps is already obtained (denoted as Cinit  
+
+> X Y
+
+), then, 
+
+E(CX Y ) = 
+
+> S
+
+X
+
+> s=1
+
+∥CX Y gs(ΛX ) − gs(ΛY )Cinit  
+
+> X Y
+
+∥2HS . (11) Consequently, we only need to solve for the other functional map. 
+
+Lemma 1 The regularization term E(CX Y ) can be formulated as: 
+
+Cref  
+
+> X Y
+
+= arg min 
+
+> CX Y
+> S
+
+X
+
+> s=1
+
+∥pAY,k 
+
+ CX Y gs(ΛX ) − gs(ΛY )Cinit 
+
+> X Y
+
+ q
+
+A−1 
+
+> X,k
+
+∥2F,
+
+where AX ,k = ΦT 
+
+> X
+
+AX ΦX .Moreover, if the set of filter functions {gs(λ)}Ss=1 satisfy Parseval condition that P 
+
+> s
+
+g2 
+
+> s
+
+(λ) ≡ 1, ∀λ, then the functional map in Eq. (11) can be obtained via 
+
+Cref  
+
+> X Y
+
+= X
+
+> s
+
+gs (ΛY ) Cinit  
+
+> X Y
+
+gs (ΛX ) . (12) 8 Feifan Luo et al. 
+
+Proof. The first statement expresses the HS-norm in terms of the Frobenius norm. For the second claim, the formulation of Eq. (12) is analogous to that in reference [53]. Detailed proofs are provided in supplementary materials. Clearly, Eq. (12) can be interpreted as refining the coarse functional map 
+
+Cinit  
+
+> X Y
+
+using multiple sets of filters, analogous to signal denoising. 
+
+Pointwise map refinement. Similarly, we employ the same strategy to generate refined pointwise maps. First, we compute the spatial functional map 
+
+ˆCX Y = Φ†Y ΠYX ΦX and then refine it via Eq. (12), yielding the refined spa-tial functional map ˆCref  
+
+> X Y
+
+. Then, we utilize a common strategy originating from ZoomOut [58], which converts the refined spatial functional map ˆCref  
+
+> X Y
+
+into a refined pointwise map by minimizing the following energy: 
+
+Πref  
+
+> YX
+
+= arg min 
+
+> ΠYX
+
+ΦY − ΠYX ΦX ( ˆCref  
+
+> X Y
+
+)∗
+
+> HS
+
+, (13) where ( ˆCref  
+
+> X Y
+
+)∗ = A−1 
+
+> X,k
+
+( ˆCref  
+
+> X Y
+
+)TAY,k denotes the adjoint operator of ˆCref  
+
+> X Y
+
+. The above equation can be solved via nearest neighbor search [34], i.e., 
+
+Πref  
+
+> YX
+
+= N N 
+
+
+
+(A1/2
+
+> Y,k
+
+Φ†Y A−1 
+
+> Y
+
+)T, (A1/2 
+
+> Y,k
+
+ˆCref  
+
+> X Y
+
+Φ†X A−1 
+
+> X
+
+)T
+
+. (14) In the orthonormal setting, since AX ,k = I and AY,k = I, the adjoint opera-tor of ˆCref  
+
+> X Y
+
+reduces to its transpose, i.e., ( ˆCref  
+
+> X Y
+
+)∗ = ( ˆCref  
+
+> X Y
+
+)T. Additionally, with 
+
+Φ†Y A−1 
+
+> Y
+
+= ΦT 
+
+> Y
+
+, Eq. (14) is simplified to 
+
+Πref  
+
+> YX
+
+= N N (ΦY , Φ X ( ˆCref  
+
+> X Y
+
+)T). (15) 
+
+Algorithm 1 Map refinement 
+
+Input : CX Y , ΠYX , {gs(ΛX )}Ss=1 , {gs(ΛY )}Ss=1 
+
+Output : Cref  
+
+> X Y
+
+and Πref 
+
+> YX
+
+L2-normalization ensures P 
+
+> s
+
+g2 
+
+> s
+
+(ΛX ) ≡ 1 and P 
+
+> s
+
+g2 
+
+> s
+
+(ΛY ) ≡ 1.Estimate refined functional map: Cref  
+
+> X Y
+
+= P 
+
+> s
+
+gs (ΛY ) CX Y gs (ΛX ).Estimate refined pointwise map: (1): ˆCref  
+
+> X Y
+
+= P 
+
+> s
+
+gs (ΛY ) ˆCX Y gs (ΛX ) with ˆCX Y =
+
+Φ†Y ΠYX ΦX . (2) Recover Πref  
+
+> YX
+
+from Eq. (13). 
+
+Filter normalization. If the set of filters does not satisfy the Parseval framework [33] (i.e., P 
+
+> s
+
+g2 
+
+> s
+
+(λ)̸ = 1 , ∃λ), the refinement process necessitates ma-trix inversion [53]. To circumvent numerical instability arising from matrix inver-sion, we impose an L2 norm constraint on the filters {gs(λ)}Ss=1 to ensure they satisfy the Parseval condition. This approach not only facilitates computation but also enhances numerical robustness. We summarize the generalized refinement strategy for both functional and pointwise maps in Algorithm 1. Coarse-to-Fine Hybrid Self-Supervised Shape Matching 9
+
+## 5 Hybrid Self-Supervised Learning Shape Matching 
+
+In this section, we propose a novel and efficient hybrid self-supervised learning method for non-rigid 3D shape matching, a dual-branch framework that bypasses the computationally expensive least-squares solver. This framework consists of an intrinsic branch, which constructs functional maps using the Laplacian ba-sis in Section 5.3, and an extrinsic branch, which utilizes an Elastic basis for functional map learning in Section 5.4. Each branch incorporates two distinct computational pipelines: a refinement stream and unsupervised losses. The net-work architecture is illustrated in Fig. 2. Feature  
+
+> Extractor
+> Map
+> Refinement
+> Softmax
+> Operator
+> FX
+> FY
+> Map Computation
+> Map
+> Refinement ,EL ref
+> ΠYX
+> ΠYX
+> Intrinsic Energy
+> Extrinsic Energy
+> ,LB ref
+> ΠYX
+> Unsupervised Loss
+> Y
+
+X F 
+
+> 
+> Extrinsic module Intrinsic module Train Test
+
+Fig. 2: An overview of our method. (1) Feature extraction: Utilize DiffusionNet [73] to extract vertex representations FX and FY from X and Y, respectively. (2) Map computation: Employ the softmax operator and the refinement Algorithm 1 to generate the coarse soft map ΠYX and the refined hard maps ΠLB,ref  
+
+> YX
+
+and ΠEL,ref  
+
+> YX
+
+, respectively. (3) Unsupervised loss: Apply intrinsic and extrinsic energies (Eq. (22) and Eq. (31)) to supervise the network learning. (4) Map recovery. Use Eq. (17) and Eq. (32) to recover the pointwise maps during inference. 
+
+5.1 Eliminating Least-Squares Optimization 
+
+Solving the functional map optimization problem via least-squares, as shown in Eq. (1), has become a standard component in many state-of-the-art meth-ods [6, 11, 13–16, 21, 40, 42, 53]. However, the least-squares solver introduces sig-nificant computational overhead. For instance, HybridFMaps [6] requires solving a dense k2 × k2 linear system (where k is the number of eigenvectors, typically between 100 and 200); detailed runtimes are provided in supplementary materi-als. Furthermore, least-squares solvers can suffer from numerical instability and require higher-dimensional feature inputs [55]. Consequently, although we have designed a series of regularization terms Eq. (7), Eq. (8), and Eq. (9) for spec-tral functional maps that could potentially enhance performance, we deliberately bypass these potential gains in favor of computational efficiency. Instead, we es-tablish a highly efficient shape matching framework based solely on pointwise map constraints. 10 Feifan Luo et al. 
+
+5.2 Coarse Map 
+
+The coarse map refers to the initial mapping generated prior to any refinement operations. To ensure both differentiability and computational efficiency, after extracting shape features FX and FY , we follow several state-of-the-art meth-ods [15, 27, 53] by employing a softmax operator to compute the differentiable pointwise map matrix, defined as: 
+
+ΠYX = Softmax( FY F T 
+
+> X
+
+/τ ), (16) where the element at position ( j, i) represents the probability of correspondence between the j-th point on Y and the i-th point on X , and τ is the temperature factor to determine the softness of the matrix. 
+
+5.3 Intrinsic Branch 
+
+The Laplacian basis encodes essential intrinsic spectral information and has been widely adopted in functional map-based methods. Motivated by its efficacy, we utilize the spectral basis to construct the intrinsic self-supervised learning branch of our framework. 
+
+Non-differentiable refined map. The refined map is designed to provide optimization guidance for the coarse soft map, therefore it does not strictly require differentiability. On the other hand, an ideal soft correspondence matrix 
+
+ΠYX should approximate a binary correspondence matrix. This implies achieving optimal discriminativity, where the mapping is concentrated on the most similar candidate points while maintaining maximum separation from the remaining low-similarity or dissimilar points. We first compute the initial binary pointwise map matrix based on a nearest neighbor search, i.e., 
+
+Πinit  
+
+> YX
+
+= N N (FY , F X ), (17) where Πinit  
+
+> YX
+
+∈ { 0, 1}|VY |×| VX |. Subsequently, we apply the Algorithm 1 to derive the refined binary pointwise map ΠLB,ref  
+
+> YX
+
+.
+
+Unsupervised loss. Unsupervised loss functions are essential for learning functional maps. Our unsupervised loss design consists of two components: the widely used geometric prior constraints [64, 65] and the self-supervised con-straints proposed previously. Geometric prior constraints impose structural penalties on the mapping, such as bijectivity and orthogonality. However, these constraints fail to penalize the image of ΠYX that lies outside the span of ΦY . Inspired by [64], we employ variants of orthogonality and bijectivity penalties to constrain the coarse map 
+
+ΠYX , formulated as: 
+
+LLB or = ΦLB  
+
+> Y
+
+− ΠYX ΦLB  
+
+> X
+
+( ˆCLB  
+
+> X Y
+
+)T
+
+> F
+
+(18) and 
+
+LLB bi = ΦLB  
+
+> Y
+
+− ΠYX ΦLB  
+
+> X
+
+ˆCLB  
+
+> YX F
+
+, (19) Coarse-to-Fine Hybrid Self-Supervised Shape Matching 11 
+
+respectively, where ΦLB  
+
+> X
+
+∈ R|VX |× kLB 
+
+.However, directly imposing these constraints on coarse maps would lead to a significant numerical discrepancy between different losses, as the orthogonality Eq. (18) and bijectivity terms Eq. (19) are defined in RNY ×k while the spatial contrastive losses Eq. (5) and Eq. (6) reside in RNY ×NX and RNY ×NY , respec-tively. This imbalance could cause network training to fail. To address this, we multiply by the corresponding Laplacian basis, which not only ensures numerical consistency across loss terms but also has no adverse impact on the optimization of the coarse map, namely, 
+
+LLB cross = ΠYX ΦLB  
+
+> X
+
+− ΠLB,ref  
+
+> YX
+
+ΦLB  
+
+> XF
+
+. (20) On the other hand, for self-spatial contrast energy, we also leverage the fine pointwise map IY to facilitate the optimization of the coarse maps, i.e., 
+
+LLB self = ΠYY ΦLB  
+
+> Y
+
+− ΦLB   
+
+> YF
+
+. (21) The unsupervised losses of the intrinsic branch are expressed as: 
+
+LLB total = θLB cross LLB cross + θLB self LLB self + θLB bi LLB bi + θLB or LLB or , (22) where θLB denotes the corresponding weight. 
+
+5.4 Extrinsic Branch 
+
+As the functional map learning pipeline on the extrinsic branch mirrors the intrinsic branch in its underlying formulation, we omit repetitive details for the sake of brevity and focus on the primary distinctions. 
+
+Non-differentiable refined map. Similarly, by employing Algorithm 1 with the same initial pointwise map, we can obtain the refined binary pointwise maps, denoted as ΠEL,ref  
+
+> YX
+
+.
+
+Unsupervised loss. To impose a structured penalty on elastic maps, we in-troduce, for the first time, novel orthogonality and bijectivity loss terms, denoted as: 
+
+LEL or = ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+( ˆCEL  
+
+> X Y
+
+)∗
+
+> HS
+
+(23) and 
+
+LEL bi = ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+ˆCEL  
+
+> YX HS
+
+, (24) where ΦEL  
+
+> X
+
+∈ R|VX |× kEL 
+
+.These are reformulated in terms of the standard Frobenius norm, denoted as: 
+
+LEL or = A1/2
+
+> Y
+
+
+
+ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+( ˆCEL  
+
+> X Y
+
+)∗
+
+A−1/2 
+
+> Y,k F
+
+(25) and 
+
+LEL bi = A1/2
+
+> Y
+
+
+
+ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+( ˆCEL  
+
+> YX
+
+)
+
+
+
+A−1/2 
+
+> Y,k F
+
+, (26) 12 Feifan Luo et al. 
+
+respectively. Analogously, for the spatial contrastive regularizer defined on elastic bases, we have 
+
+LEL cross = ΠYX ΦEL  
+
+> X
+
+− ΠEL,ref  
+
+> YX
+
+ΦEL  
+
+> XHS
+
+(27) and 
+
+LEL self = ΠEL  
+
+> YY
+
+ΦEL  
+
+> Y
+
+− ΦEL   
+
+> YHS
+
+. (28) Expressing them by the Frobenius norm, namely, 
+
+LEL cross = A1/2
+
+> Y
+
+
+
+ΠYX ΦEL  
+
+> X
+
+− ΠEL,ref  
+
+> YX
+
+ΦEL 
+
+> X
+
+
+
+A−1/2  
+
+> X,k F
+
+(29) and 
+
+LEL self = A1/2
+
+> Y
+
+ ΠEL  
+
+> YY
+
+ΦEL  
+
+> Y
+
+− ΦEL 
+
+> Y
+
+ A−1/2 
+
+> Y,k F
+
+, (30) respectively. Then, the unsupervised losses of the extrinsic branch are repre-sented as: 
+
+LEL total = θEL cross LEL cross + θEL self LEL self + θEL bi LEL bi + θEL or LEL or . (31) Finally, overall losses Ltotal = LLB total + LEL total and the detailed proofs of Eq. (25), (26), (29), and (30) are provided in supplementary materials. 
+
+5.5 Inference 
+
+Inspired by [15], employing distinct recovery strategies during the inference stage yields more robust results, a practice widely adopted in existing state-of-the-art approaches [6, 14, 16, 40]. For non-isometric matching scenarios, we directly recover pointwise maps from the learned feature embedding space using the nearest neighbor algorithm, namely, ΠYX = N N (FY , F X ). For near-isometric matching scenarios, we recover pointwise maps from the hybrid basis space by applying the proposed map refinement to the obtained ΠYX , i.e., 
+
+Πref  
+
+> YX
+
+= N N 
+
+
+
+ΦLB  
+
+> Y
+
+∥(A1/2 
+
+> Y,k
+
+ΦEL †Y A−1 
+
+> Y
+
+)T, Φ LB  
+
+> X
+
+( ˆCLB,ref  
+
+> X Y
+
+)T)∥(A1/2 
+
+> Y,k
+
+ˆCEL,ref  
+
+> X Y
+
+ΦEL, †X A−1 
+
+> X
+
+)T
+
+,
+
+(32) 
+
+where ∥ denotes matrix concatenation. 
+
+## 6 Experimental Results 
+
+6.1 Datasets 
+
+We extensively evaluate our method on widely used challenging benchmarks, including 
+
+– Near-isometry. The near-isometric datasets comprise remeshed FAUST(F for short) [66], SCAPE [66], and challenging SHREC’19 [57]. Moreover, anisotropic meshing datasets FAUST [15](F_a for short) and SCAPE [15] were used to evaluate robustness across different discretizations. Coarse-to-Fine Hybrid Self-Supervised Shape Matching 13 
+
+– Non-isometry. Commonly employed non-isometric datasets include SMAL [88] and DT4D-H [56]. DT4D-H offers two configurations: intra-class and inter-class. We omit the intra-class setting because it is overly simple, thereby precluding further evaluation of the method’s performance. Consequently, we retain SMAL and the most challenging DT4D-H inter-class setting. 
+
+– Topological noise. The TOPKIDS dataset [39] is employed to evaluate our method’s robustness to topological noise. The training and testing protocols on SMAL follow the same procedure as pre-vious related studies [21, 87], and the remaining datasets use the same splits as those in many earlier works [15, 42]. 
+
+6.2 Baselines 
+
+We extensively compare our method with existing non-rigid deformable shape matching methods, which we categorize as follows: 
+
+– Axiomatic approaches , including ZoomOut [58], Smooth Shells [26], Discre-teOp [64], and MWP [35]. 
+
+– Supervised approaches , FMNet [47], GeomFMaps [22]. 
+
+– Unsupervised approaches , including Deep Shells [28], DUO-FMNet [21], At-tentiveFMaps [42], RFMNet [36], ULRSSM [15], DiffZO [55], HybridFMaps [6], DeepFAFM [53], and DenoiseFMaps [87]. 
+
+Excluding test-time fine-tuning. Employing a fine-tuning technique dur-ing the inference stage can significantly enhance method performance [15], par-ticularly in terms of generalization capability. However, except for ULRSSM [15] and HybridFMaps [6], the remaining baselines do not adopt any fine-tuning strategies during inference to improve matching performance. Utilizing that re-finement technique involving parameter updates during the inference stage would lead to unfair competition with the other unsupervised methods. Therefore, we omit the fine-tuning technique from ULRSSM and HybridFMaps. 
+
+6.3 Results 
+
+The mean geodesic error [38] is adopted to evaluate correspondence accuracy, with all results multiplied by 100 for improved readability. 
+
+Near-isometric matching. These results are summarized in Table 2. We achieve competitive performance in near-isometric matching scenarios, surpass-ing many axiomatic, supervised, and unsupervised methods. For instance, on the FAUST dataset, our method achieves the second-best performance. 
+
+Cross-dataset generalization. Cross-dataset generalization is a critical metric for evaluating a method’s practical effectiveness. We assess this by train-ing our model on one dataset and testing it on an unseen one, with quantitative results reported in Table 2. Our method achieves highly competitive perfor-mance across most settings. Notably, even on the more challenging SHREC’19 dataset [57] (i.e., training on FAUST or SCAPE and testing on SHREC’19), 14 Feifan Luo et al. 
+
+Table 2: Evaluating the matching results across various benchmarks, including near-isometric shape matching, cross-dataset generalization (FAUST, SCAPE, and SHREC’19), anisotropic meshing (F_a and S_a), non-isometric shape matching (SMAL and DT4D-H), and matching with topological noise (TOPKIDS), respectively. The numbers in the table are mean geodesic errors ( ×100 ). Bold : Best. Underline: Runner-up. Train FAUST SCAPE FAUST SCAPE SMAL DT4D-H inter TOPKIDS Test F S S19 F S S19 F_a S_a F_a S_a Axiomatic Methods ZoomOut [58] 6.1 7.5 - 6.1 7.5 - 8.7 15.0 8.7 15.0 47.7 29.0 33.7 SmoothShells [26] 2.5 4.7 - 2.5 4.7 - 5.4 5.0 5.4 5.0 34.9 6.3 35.5 DiscreteOp [64] 5.6 13.1 - 5.6 13.1 - 6.2 14.6 6.2 14.6 36.1 27.6 10.8 MWP [35] 3.1 4.1 - 3.1 4.1 - 8.2 8.7 8.2 8.7 20.9 25.4 5.7 Supervised Methods FMNet [47] 11.1 30.0 - 33.0 17.0 - 42.0 43.0 43.0 41.0 - 38.0 -GeomFMaps [22] 2.6 3.4 9.9 3.0 3.0 12.2 3.2 3.8 8.4 3.1 4.3 4.1 -Unsupervised Methods Deep Shells [28] 1.7 5.4 27.4 2.7 2.5 23.4 12.0 16.0 15.0 10.0 21.4 31.1 13.7 DUO-FMNet [21] 2.5 4.2 6.4 2.7 2.6 8.4 3.0 4.4 3.1 2.7 4.8 15.8 -AttentiveFMaps [42] 1.9 2.6 6.4 2.2 2.2 9.9 2.4 2.8 2.5 2.3 4.4 11.6 23.4 RFMNet [36] 1.7 2.3 6.3 1.7 2.1 6.9 3.6 2.6 3.6 3.9 4.4 13.9 -ULRSSM [15] 1.6 6.7 14.5 4.8 1.9 18.5 2.5 8.9 7.0 1.9 4.5 5.2 9.4 DiffZO [55] 1.9 2.4 4.2 1.9 2.4 6.9 2.2 3.8 2.7 2.4 4.3 4.1 -HybridFMaps [6] 1.4 4.2 9.5 2.3 1.8 13.0 2.0 4.6 3.4 1.8 3.5 3.9 5.0 DeepFAFM [53] 1.6 2.7 7.0 1.9 1.9 7.9 2.0 2.9 2.6 1.9 3.9 4.2 6.3 DenoiseFMaps [87] 1.8 - - - 2.3 - 2.0 - - 2.3 4.3 12.8 43.6 Ours 1.6 2.4 4.4 1.6 2.0 4.0 1.9 2.4 2.4 1.9 2.9 3.5 4.9 Source DenoiseFMaps ULRSSM Ours GT DeepFAFM HybridFMaps 
+
+Fig. 3: Qualitative non-isometric matching results on the SMAL (top) [88] and DT4D-H (bottom) [56] datasets. Our method consistently suppresses matching errors and preserves texture coherence better than alternative methods, underscoring its efficacy in challenging non-isometric scenarios. 
+
+our performance remains robust. In contrast, existing state-of-the-art meth-ods—such as DUO-FMNet [21], ULRSSM [15], and HybridFMaps [6]—exhibit varying degrees of degradation in relatively simpler cross-dataset scenarios (e.g., training on FAUST, testing on SCAPE) and suffer even steeper performance drops on SHREC’19. These quantitative findings confirm that our approach generalizes substantially better than current baselines. Coarse-to-Fine Hybrid Self-Supervised Shape Matching 15 
+
+Matching with anisotropic meshing. To evaluate the robustness of the method under different surface discretizations, we trained on remeshed data and tested on anisotropic remeshed data. The quantitative results are shown in Table 2. Many state-of-the-art methods exhibited varying degrees of fluctua-tion. For example, the accuracy of DiffZO significantly dropped when training on FAUST and testing on anisotropic remeshed SCAPE (S_a). However, our method achieved outstanding performance in most scenarios, demonstrating the robustness of our approach to discretization variations and showing that it con-sistently outperforms current supervised and unsupervised methods. 
+
+Non-isometric matching. We evaluate our method on the highly chal-lenging non-isometric SMAL and DT4D-H datasets, with quantitative results presented in Table 2. Across all non-isometric settings, our method consistently outperforms all baselines—even fully supervised ones—firmly validating its ef-fectiveness and reliability. In contrast, existing methods such as DenoiseFMaps exhibit a significant drop in accuracy on the particularly demanding DT4D-H dataset. Furthermore, the qualitative results in Fig. 3 demonstrate that our approach yields significantly lower matching errors and more coherent texture transfers compared to competitive baselines. Together, these results underscore our framework’s superior performance and robustness when handling large-scale non-isometric deformations. 
+
+Matching with topological noise. We conducted experiments on the SHREC’16 TOPKIDS dataset [39] to evaluate robustness against topological perturbations. The results are summarized in Table 2. Many functional map learning methods [42,87] struggle to produce satisfactory results, as the intrinsic geometric structure is distorted. In contrast, our method still outperforms all baselines and achieves superior performance under such conditions. For additional comparisons and discussions, please refer to the supplementary materials. 
+
+## 7 Conclusion 
+
+We propose a novel and effective hybrid self-supervised method for non-rigid shape matching, based on the proposed coarse-to-fine strategy. Extensive exper-iments demonstrate that our method outperforms existing state-of-the-art meth-ods in terms of matching accuracy, generalization capability, and computational efficiency. Finally, we rigorously demonstrate that contrastive energies promote feature discrimination and yield consistent improvements when integrated into existing architectures, further confirming the validity of our approach. 
+
+## 8 Acknowledgments 
+
+We extend our gratitude to Yizheng Xie for his generous assistance. This work was supported by the National Natural Science Foundation of China under Grant No. 62271452. 16 Feifan Luo et al. 
+
+## References 
+
+1. Aflalo, Y., Dubrovina, A., Kimmel, R.: Spectral generalized multi-dimensional scal-ing. International Journal of Computer Vision 118 (3), 380–392 (2016) 3 2. Attaiki, S., Ovsjanikov, M.: Understanding and improving features learned in deep functional maps. In: Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition. pp. 1316–1326 (2023) 2, 3, 5 3. Attaiki, S., Pai, G., Ovsjanikov, M.: Dpfm: Deep partial functional maps. In: In-ternational Conference on 3D Vision (3DV). pp. 175–185 (2021) 1 4. Aubry, M., Schlickewei, U., Cremers, D.: The wave kernel signature: A quantum mechanical approach to shape analysis. In: IEEE International Conference on Com-puter Vision Workshops. pp. 1626–1633 (2011) 3, 7 5. Aygün, M., Lähner, Z., Cremers, D.: Unsupervised dense shape correspondence using heat kernels. In: International Conference on 3D Vision (3DV). pp. 573–582 (2020) 1, 3, 5 6. Bastian, L., Xie, Y., Navab, N., Lähner, Z.: Hybrid functional maps for crease-aware non-isometric shape matching. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 3313–3323 (2024) 2, 3, 4, 5, 7, 9, 12, 13, 14 7. Besl, P.J., McKay, N.D.: Method for registration of 3-d shapes. In: Sensor fusion IV: control paradigms and data structures. vol. 1611, pp. 586–606. Spie (1992) 3 8. Bracha, A., Dagès, T., Kimmel, R.: On unsupervised partial shape correspondence. In: Proceedings of the Asian Conference on Computer Vision. pp. 4488–4504 (2024) 39. Bracha, A., Dagès, T., Kimmel, R.: Wormhole loss for partial shape matching. In: Proceedings of the 38th International Conference on Neural Information Processing Systems. pp. 131247–131277 (2024) 3 10. Bronstein, A.M., Bronstein, M.M., Kimmel, R.: Generalized multidimensional scal-ing: a framework for isometry-invariant partial surface matching. Proceedings of the National Academy of Sciences 103 (5), 1168–1172 (2006) 3 11. Cao, D., Bernard, F.: Unsupervised deep multi-shape matching. In: European Con-ference on Computer Vision. pp. 55–71. Springer (2022) 1, 3, 9 12. Cao, D., Bernard, F.: Self-supervised learning for multimodal non-rigid 3d shape matching. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 17735–17744 (2023) 3 13. Cao, D., Eisenberger, M., El Amrani, N., Cremers, D., Bernard, F.: Spectral meets spatial: Harmonising 3d shape matching and interpolation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 3658– 3668 (2024) 2, 3, 5, 9, 11 14. Cao, D., Lähner, Z., Bernard, F.: Synchronous diffusion for unsupervised smooth non-rigid 3d shape matching. In: European Conference on Computer Vision. pp. 262–281 (2024) 3, 9, 12 15. Cao, D., Roetzer, P., Bernard, F.: Unsupervised learning of robust spectral shape matching. ACM Transactions on Graphics 42 , 1–15 (2023) 2, 3, 5, 6, 9, 10, 12, 13, 14, 7 16. Cao, D., Roetzer, P., Bernard, F.: Revisiting map relations for unsupervised non-rigid shape matching. In: 2024 International Conference on 3D Vision (3DV). pp. 1371–1381. IEEE (2024) 3, 6, 9, 12, 10 17. Chen, R.T., Lipman, Y.: Flow matching on general geometries. In: International Conference on Learning Representations. vol. 2024, pp. 47922–47945 (2024) 11 Coarse-to-Fine Hybrid Self-Supervised Shape Matching 17 18. Choukroun, Y., Shtern, A., Bronstein, A., Kimmel, R.: Hamiltonian operator for spectral shape analysis. IEEE transactions on visualization and computer graphics 
+
+26 (2), 1320–1331 (2018) 11 19. Deng, B., Yao, Y., Dyke, R.M., Zhang, J.: A survey of non-rigid 3d registration. In: Computer Graphics Forum. vol. 41, pp. 559–589 (2022) 2 20. Donati, N., Corman, E., Melzi, S., Ovsjanikov, M.: Complex functional maps: A conformal link between tangent bundles. Computer Graphics Forum 41 , 317–334 (2022) 3 21. Donati, N., Corman, E., Ovsjanikov, M.: Deep orientation-aware functional maps: Tackling symmetry issues in shape matching. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 732–741 (2022) 1, 2, 3, 5, 9, 13, 14 22. Donati, N., Sharma, A., Ovsjanikov, M.: Deep geometric functional maps: Robust feature learning for shape correspondence. In: Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition. pp. 8589–8598 (2020) 1, 3, 5, 13, 14 23. Egger, B., Smith, W.A., Tewari, A., Wuhrer, S., Zollhoefer, M., Beeler, T., Bernard, F., Bolkart, T., Kortylewski, A., Romdhani, S., et al.: 3d morphable face mod-els—past, present, and future. ACM Transactions on Graphics (ToG) 39 (5), 1–38 (2020) 1 24. Ehm, V., Gao, M., Roetzer, P., Eisenberger, M., Cremers, D., Bernard, F.: Partial-to-partial shape matching with geometric consistency. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 27488– 27497 (2024) 1 25. Ehm, V., Roetzer, P., Eisenberger, M., Gao, M., Bernard, F., Cremers, D.: Geo-metrically consistent partial shape matching. In: 2024 International Conference on 3D Vision (3DV). pp. 914–922. IEEE Computer Society (2024) 1 26. Eisenberger, M., Lähner, Z., Cremers, D.: Smooth shells: Multi-scale shape reg-istration with functional maps. In: Proceedings of the IEEE/CVF conference on Computer Vision and Pattern Recognition. pp. 12262–12271 (2020) 13, 14, 11 27. Eisenberger, M., Novotny, D., Kerchenbaum, G., Labatut, P., Neverova, N., Cre-mers, D., Vedaldi, A.: Neuromorph: Unsupervised shape interpolation and corre-spondence in one go. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 7473–7483 (2021) 1, 10, 11 28. Eisenberger, M., Toker, A., Leal-Taixé, L., Cremers, D.: Deep shells: Unsupervised shape correspondence with optimal transport. Advances in Neural information pro-cessing systems 33 , 10491–10502 (2020) 1, 13, 14, 11 29. Eisenberger, M., Toker, A., Leal-Taixé, L., Cremers, D.: G-msm: Unsupervised multi-shape matching with graph-based affinity priors. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 22762– 22772 (2023) 1 30. Fan, A., Ma, J., Tian, X., Mei, X., Liu, W.: Coherent point drift revisited for non-rigid shape matching and registration. In: Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition. pp. 1424–1434 (2022) 3 31. Gao, M., Lahner, Z., Thunberg, J., Cremers, D., Bernard, F.: Isometric multi-shape matching. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14183–14193 (2021) 3 32. Halimi, O., Litany, O., Rodolà, E.R., Bronstein, A.M., Kimmel, R.: Unsupervised learning of dense shape correspondence. In: Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition. pp. 4365–4374 (2019) 1, 318 Feifan Luo et al. 33. Hammond, D.K., Vandergheynst, P., Gribonval, R.: Wavelets on graphs via spec-tral graph theory. Applied and computational harmonic analysis 30 (2), 129–150 (2011) 8, 7 34. Hartwig, F., Sassen, J., Azencot, O., Rumpf, M., Ben-Chen, M.: An elastic basis for spectral shape correspondence. In: ACM SIGGRAPH conference proceedings. pp. 1–11 (2023) 3, 7, 8, 2 35. Hu, L., Li, Q., Liu, S., Liu, X.: Efficient deformable shape correspondence via mul-tiscale spectral manifold wavelets preservation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14531–14540 (2021) 3, 7, 13, 14 36. Hu, L., Li, Q., Liu, S., Yan, D.M., Xu, H., Liu, X.: Rfmnet: Robust deep functional maps for unsupervised non-rigid shape correspondence. Graphical Models 129 , 1– 11 (2023) 1, 3, 13, 14 37. Huang, R., Ren, J., Wonka, P., Ovsjanikov, M.: Consistent zoomout: Efficient spectral map synchronization. Computer Graphics Forum 39 , 265–278 (2020) 3 38. Kim, V.G., Lipman, Y., Funkhouser, T.: Blended intrinsic maps. ACM transactions on graphics 30 , 1–12 (2011) 13 39. Lähner, Z., Rodolà, E., Bronstein, M.M., Cremers, D., Burghard, O., Cosmo, L., Dieckmann, A., Klein, R., Sahillioˇ glu, Y., et al.: Shrec’16: Matching of deformable shapes with topological noise. In: Eurographics Workshop on 3D Object Retrieval. pp. 55–60 (2016) 13, 15, 4 40. Le, T., Nguyen, K., Sun, S., Ho, N., Xie, X.: Integrating efficient optimal transport and functional maps for unsupervised shape correspondence learning. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 23188–23198 (2024) 2, 3, 9, 12 41. Leonardi, N., Van De Ville, D.: Tight wavelet frames on multislice graphs. IEEE Transactions on Signal Processing 61 (13), 3357–3367 (2013) 3, 7 42. Li, L., Donati, N., Ovsjanikov, M.: Learning multi-resolution functional maps with spectral attention for robust shape matching. Advances in Neural Information Pro-cessing Systems 35 , 29336–29349 (2022) 1, 3, 5, 9, 13, 14, 15 43. Li, Q., Guo, Y., Liu, X., Hu, L., Luo, F., Liu, S.: Deformable shape matching with multiple complex spectral filter operator preservation. The Visual Computer 
+
+40 (7), 4885–4898 (2024) 7 44. Li, Q., Hu, L., Liu, S., Yang, D., Liu, X.: Anisotropic spectral manifold wavelet descriptor. In: Computer Graphics Forum. vol. 40, pp. 81–96. Wiley Online Library (2021) 3 45. Li, Q., Meng, J., Wang, H., Liu, S.: Mdnd: Unsupervised learning guided by non-differentiable refinement for shape correspondence. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 40, pp. 6351–6359 (2026) 3 46. Lipman, Y., Chen, R.T., Ben-Hamu, H., Nickel, M., Le, M.: Flow matching for generative modeling. arXiv preprint arXiv:2210.02747 (2022) 11 47. Litany, O., Remez, T., Rodolà, E., Bronstein, A., Bronstein, M.: Deep functional maps: Structured prediction for dense shape correspondence. In: IEEE Interna-tional Conference on Computer Vision. pp. 5660–5668 (2017) 1, 3, 13, 14 48. Liu, S., Luo, F., Li, Q., Liu, X., Hu, L.: Awedd: a descriptor simultaneously encod-ing multiscale extrinsic and intrinsic shape features. The Visual Computer 40 (4), 2537–2554 (2024) 3 49. Liu, S., Wang, H., Yan, D.M., Li, Q., Luo, F., Teng, Z., Liu, X.: Spectral descriptors for 3d deformable shape matching: A comparative survey. IEEE transactions on visualization and computer graphics 31 (3), 1677–1697 (2024) 2 Coarse-to-Fine Hybrid Self-Supervised Shape Matching 19 50. Loncaric, S.: A survey of shape analysis techniques. Pattern recognition 31 (8), 983–1001 (1998) 1 51. Luo, F., Chen, H.: From feature learning to spectral basis learning: A unifying and flexible framework for efficient and robust shape matching. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 31377–31388 (2026) 3 52. Luo, F., Chen, H.: Unsupervised contrastive learning for efficient and robust spec-tral shape matching. In: Proceedings of the AAAI Conference on Artificial Intelli-gence. vol. 40, pp. 7662–7670 (2026) 3 53. Luo, F., Li, Q., Hu, L., Wang, H., Xu, H., Liu, X., Liu, S., Chen, H.: Deep fre-quency awareness functional maps for robust shape matching. IEEE Transactions on Visualization and Computer Graphics 31 , 7781–7794 (2025) 2, 3, 7, 8, 9, 10, 13, 14, 11 54. Maggioli, F., Baieri, D., Rodolà, E., Melzi, S.: Rematching: Low-resolution repre-sentations for scalable shape correspondence. In: European Conference on Com-puter Vision. pp. 183–200. Springer (2024) 3 55. Magnet, R., Ovsjanikov, M.: Memory-scalable and simplified functional map learn-ing. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 4041–4050 (2024) 3, 4, 6, 9, 13, 14 56. Magnet, R., Ren, J., Sorkine-Hornung, O., Ovsjanikov, M.: Smooth non-rigid shape matching via effective dirichlet energy optimization. In: International Conference on 3D Vision (3DV). pp. 495–504 (2022) 3, 13, 14 57. Melzi, S., Marin, R., Rodolà, E., Castellani, U., Ren, J., Poulenard, A., Ovsjanikov, P., et al.: Shrec’19: matching humans with different connectivity. In: Eurographics Workshop on 3D Object Retrieval. pp. 1–8 (2019) 12, 13, 4 58. Melzi, S., Ren, J., Rodolà, E., Sharma, A., Wonka, P., Ovsjanikov, M.: Zoomout: Spectral upsampling for efficient shape correspondence. ACM Transactions on Graphics 38 , 1–14 (2019) 3, 7, 8, 13, 14, 10 59. Olearo, L., Viganò, G., Baieri, D., Maggioli, F., Melzi, S.: Fuse: A flow-based mapping between shapes. arXiv preprint arXiv:2511.13431 (2025) 11 60. Ovsjanikov, M., Ben-Chen, M., Solomon, J., Butscher, A., Guibas, L.: Functional maps: a flexible representation of maps between shapes. ACM Transactions on Graphics 31 , 1–11 (2012) 3, 4 61. Pai, G., Ren, J., Melzi, S., Wonka, P., Ovsjanikov, M.: Fast sinkhorn filters: Using matrix scaling for non-rigid shape correspondence with functional maps. In: Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion. pp. 384–393 (2021) 3 62. Pierson, E., Li, L., Dai, A., Ovsjanikov, M.: Diffumatch: Category-agnostic spec-tral diffusion priors for robust non-rigid shape matching. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 5745–5756 (2025) 3, 4, 11 63. Pinkall, U., Polthier, K.: Computing discrete minimal surfaces and their conjugates. Experimental mathematics 2(1), 15–36 (1993) 4, 7 64. Ren, J., Melzi, S., Wonka, P., Ovsjanikov, M.: Discrete optimization for shape matching. In: Computer Graphics Forum. vol. 40, pp. 81–96 (2021) 2, 4, 10, 13, 14 65. Ren, J., Panine, M., Wonka, P., Ovsjanikov, M.: Structured regularization of func-tional map computations. In: Computer Graphics Forum. vol. 38, pp. 39–53 (2019) 3, 4, 10 66. Ren, J., Poulenard, A., Wonka, P., Ovsjanikov, M.: Continuous and orientation-preserving correspondences via functional maps. ACM Transactions on Graphics 
+
+37 , 1–16 (2018) 3, 7, 12, 4 20 Feifan Luo et al. 67. Roetzer, P., Bernard, F.: Spidermatch: 3d shape matching with global optimal-ity and geometric consistency. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14543–14553 (2024) 3 68. Roufosse, J.M., Sharma, A., Ovsjanikov, M.: Unsupervised deep learning for struc-tured shape matching. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 1617–1627 (2019) 1, 3, 10 69. Rustamov, R.M., Ovsjanikov, M., Azencot, O., Ben-Chen, M., Chazal, F., Guibas, L.: Map-based exploration of intrinsic shape differences and variability. ACM Transactions on Graphics (TOG) 32 (4), 1–12 (2013) 9 70. Sahillioğlu, Y.: Recent advances in shape correspondence. The Visual Computer 
+
+36 , 1705–1721 (2020) 2 71. Salti, S., Tombari, F., Di Stefano, L.: Shot: Unique signatures of histograms for surface and texture description. Computer Vision and Image Understanding 125 ,251–264 (2014) 3 72. Sharma, A., Ovsjanikov, M.: Weakly supervised deep functional maps for shape matching. Advances in Neural Information Processing Systems 33 , 19264–19275 (2020) 3 73. Sharp, N., Attaiki, S., Crane, K., Ovsjanikov, M.: Diffusionnet: Discretization ag-nostic learning on surfaces. ACM Transactions on Graphics (TOG) 41 (3), 1–16 (2022) 4, 9, 3 74. Sumner, R.W., Popović, J.: Deformation transfer for triangle meshes. ACM Trans-actions on graphics 23 , 399–405 (2004) 1 75. Sun, J., Ovsjanikov, M., Guibas, L.: A concise and provably informative multi-scale signature based on heat diffusion. Computer Graphics Forum 28 , 1383–1392 (2009) 3, 7 76. Sun, M., Mao, S., Jiang, P., Ovsjanikov, M., Huang, R.: Spatially and spectrally consistent deep functional maps. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 14497–14507 (2023) 1, 2, 3, 4, 6 77. Vestner, M., Lähner, Z., Boyarski, A., Litany, O., Slossberg, R., Remez, T., Rodola, E., Bronstein, A., Bronstein, M., Kimmel, R., et al.: Efficient deformable shape cor-respondence via kernel matching. In: 2017 International Conference on 3D Vision (3DV). pp. 517–526. IEEE (2017) 3, 7 78. Viganò, G., Ovsjanikov, M., Melzi, S.: Nam: Neural adjoint maps for refining shape correspondences. ACM Transactions on Graphics (TOG) 44 (4), 1–15 (2025) 3 79. Wang, Y., Solomon, J.: Intrinsic and extrinsic operators for shape analysis. In: Handbook of numerical analysis, vol. 20, pp. 41–115. Elsevier (2019) 11 80. Weber, S., Dages, T., Gao, M., Cremers, D.: Finsler-laplace-beltrami operators with application to shape analysis. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 3131–3140 (2024) 3, 11 81. Wirth, B., Bar, L., Rumpf, M., Sapiro, G.: A continuum mechanical approach to geodesics in shape space. International Journal of Computer Vision 93 (3), 293–318 (2011) 4 82. Xiang, R., Lai, R., Zhao, H.: Efficient and robust shape correspondence via sparsity-enforced quadratic assignment. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 9513–9522 (June 2020) 3 83. Xie, Y., Ehm, V., Roetzer, P., El Amrani, N., Gao, M., Bernard, F., Cremers, D.: Echomatch: Partial-to-partial shape matching via correspondence reflection. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 11665–11675 (2025) 3 Coarse-to-Fine Hybrid Self-Supervised Shape Matching 21 84. Xu, H., Li, Q., Hu, L., Liu, S., Wang, H., Liu, X.: Sedfmnet: A simple and efficient unsupervised functional map for shape correspondence based on deconstruction. Graphical Models 139 , 101270 (2025) 4 85. Yona, G., Velich, R., Rivlin, E., Kimmel, R.: Neural descriptors: Self-supervised learning of robust local surface descriptors using polynomial patches. In: Interna-tional Conference on Scale Space and Variational Methods in Computer Vision. pp. 218–230. Springer (2025) 3 86. Zhuravlev, A., Bastian, L., Cao, D., Amrani, N.E., Roetzer, P., Ehm, V., Marin, R., Nishizawa, H., Morishima, S., Theobalt, C., et al.: Non-rigid 3d shape corre-spondences: From foundations to open challenges and opportunities. In: Computer Graphics Forum. p. e70397. Wiley Online Library (2026) 2, 3 87. Zhuravlev, A., Lähner, Z., Golyanik, V.: Denoising functional maps: Diffusion mod-els for shape correspondence. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 26899–26909 (2025) 3, 5, 13, 14, 15, 11 88. Zuffi, S., Kanazawa, A., Jacobs, D.W., Black, M.J.: 3d menagerie: Modeling the 3d shape and pose of animals. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 6365–6373 (2017) 13, 14, 6, 7 Supplementary Material: Coarse-to-Fine: A Hybrid Self-Supervised Method for Non-rigid 3D Shape Matching 
+
+Feifan Luo 1 , Ting Li 3 , Zhao Li 2 , and Hongyang Chen 2 ⋆ 
+
+> 1
+
+Zhejiang University, China  
+
+> 2
+
+Zhejiang Lab, China  
+
+> 3
+
+Wenzhou University of Technology, China 
+
+luoff@zju.edu.cn dr.h.chen@ieee.org 
+
+This supplementary document provides additional theoretical and experi-mental details to support the findings presented in the main manuscript. First, Section 1 presents formal proofs for our map refinement and extrinsic energy for-mulations. Next, Sections 2 through 7 offer a comprehensive experimental eval-uation, encompassing implementation details, qualitative results, comparative analyses with fine-tuning-based methods, ablation studies, parameter sensitivity analysis, and runtime comparisons. Subsequently, Section 8 provides an in-depth analysis of the proposed method, while Section 9 discusses the relationship be-tween our approach and related works. Furthermore, Section 10 demonstrates the versatility of our spectral and spatial-spectral contrastive energies by integrating them into alternative frameworks as plug-and-play modules. Finally, Section 11 addresses current limitations and outlines promising avenues for future research. 
+
+## 1 Theoretical Proofs 
+
+For the sake of completeness, we provide detailed theoretical derivations in the supplementary material, specifically: (i) the analytical derivation of map refine-ment, and (ii) the Frobenius norm formulation of the contrastive energies utilized in the extrinsic branch. 
+
+1.1 Map Refinement Lemma 1 E(CX Y ) = PSs=1 ∥CX Y gs(ΛX ) − gs(ΛY )Cinit  
+
+> X Y
+
+∥2HS can be formulated in the Hilbert-Schmidt norm as: 
+
+Cref  
+
+> X Y
+
+= arg min 
+
+> CX Y
+> S
+
+X
+
+> s=1
+
+∥A1/2
+
+> Y,k
+
+ CX Y gs(ΛX ) − gs(ΛY )Cinit 
+
+> X Y
+
+ A−1/2  
+
+> X,k
+
+∥2F, (1) 
+
+where AX ,k = ΦT 
+
+> X
+
+AX ΦX .Moreover, if the set of filter functions {gs(λ)}Ss=1 satisfy the condition that P 
+
+> s
+
+g2 
+
+> s
+
+(λ) ≡ 1, ∀λ, then the functional map can be obtained via 
+
+Cref  
+
+> X Y
+
+= X
+
+> s
+
+gs (ΛY ) Cinit  
+
+> X Y
+
+gs (ΛX ) . (2)  
+
+> ⋆
+
+Corresponding author. 2 Feifan Luo et al. 
+
+Proof. The proof consists of two parts: first, converting the HS-norm in Eq. (1) to the Frobenius norm, and second, solving for refined functional map Cref  
+
+> X Y
+
+from the transformed optimization problem Eq. (1). For the first part, the definition of the Hilbert-Schmidt norm for a general operator on a Hilbert space [34], namely, 
+
+∥X∥2HS = tr( X∗X), (3) where tr denotes trace and X∗ represents the adjoint operator of X.If X : F(X ) → F (Y), then the following equivalence holds with the Frobenius norm [6, 34]: 
+
+∥X∥2HS : = tr( A−1 
+
+> X,k
+
+XTAY,k X) (4) 
+
+= tr( A−1/2  
+
+> X,k
+
+XTA1/2
+
+> Y,k
+
+A1/2
+
+> Y,k
+
+XA −1/2  
+
+> X,k
+
+)= A1/2
+
+> Y,k
+
+XA −1/2 
+
+> X,k
+> 2F
+
+, where ∥X∥2F = tr (XTX).
+
+Let X = CX Y g(ΛX ) − g(ΛY )Cinit  
+
+> X Y
+
+, s = 1 , 2, ..., S , then we have Eq. (1). For the second part, Eq.(1) can be equivalently transformed into 
+
+A1/2
+
+> Y,k
+
+CX Y gs(ΛX )A−1/2  
+
+> X,k
+
+= A1/2
+
+> Y,k
+
+gs(ΛY )Cinit  
+
+> X Y
+
+A−1/2  
+
+> X,k
+
+, s = 1 , 2, ..., S. 
+
+On the other hand, since the inverses of AX ,k and AY,k exist [34]. Then, by left-multiplying both sides of the equation by A−1/2 
+
+> Y,k
+
+and right-multiplying by 
+
+A1/2 
+
+> X,k
+
+, the above expression is transformed into: 
+
+CX Y gs(ΛX ) = gs(ΛY )Cinit  
+
+> X Y
+
+, s = 1 , 2, ..., S. 
+
+Next, we can obtain the analytical expression of Cref  
+
+> X Y
+
+via least square method, the detailed derivation is given below: 
+
+CX Y gs(ΛX ) = gs(ΛY )CX Y , s = 1 , 2, ..., S CX Y g2 
+
+> s
+
+(ΛX ) = gs(ΛY )CX Y gs(ΛX ),CX Y 
+
+X
+
+> s
+
+g2 
+
+> s
+
+(ΛX ) = X
+
+> s
+
+gs (ΛY ) CX Y gs (ΛX ) .
+
+Finally, we have Cref  
+
+> X Y
+
+= P 
+
+> s
+
+gs (ΛY ) Cinit  
+
+> X Y
+
+gs (ΛX ), with P 
+
+> s
+
+g2 
+
+> s
+
+(λ) ≡ 1, ∀λ.
+
+1.2 Extrinsic Energy 
+
+Since the four contrastive energy expressions in the extrinsic branch have a consistent structure, it is sufficient to prove one of the expressions. 
+
+Lemma 2 the bijectivity energy 
+
+LEL bi = ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+ˆCEL  
+
+> YX HS
+
+,Coarse-to-Fine Hybrid Self-Supervised Learning Shape Matching 3
+
+which can be reformulated in terms of the standard Frobenius norm, denoted as: 
+
+LEL bi = A1/2
+
+> Y
+
+
+
+ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+( ˆCEL  
+
+> YX
+
+)
+
+
+
+A−1/2 
+
+> Y,k F
+
+, (5) 
+
+Proof. If Y : F(Y) → R|VY |, then the following equivalence holds with the Frobenius norm: 
+
+∥Y ∥2HS : = tr( A−1
+
+> Y,k
+
+Y TAY Y ) (6) 
+
+= tr( A−1/2 
+
+> Y,k
+
+Y TA1/2 
+
+> Y
+
+A1/2 
+
+> Y
+
+Y A −1/2 
+
+> Y,k
+
+)= A1/2 
+
+> Y
+
+Y A −1/2
+
+> Y,k
+> 2F
+
+.
+
+Let Y = ΦEL  
+
+> Y
+
+− ΠYX ΦEL  
+
+> X
+
+ˆCEL  
+
+> YX
+
+, then we obtain Eq. (5). 
+
+## 2 Implementation Details 
+
+All experiments were executed on a server with Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz, an NVIDIA A40 GPU using PyTorch 2.0.0 and CUDA 11.8. We utilize DiffusionNet [73] with its default configurations for feature extraction, employing 16-dimensional Heat Kernel Signatures (HKS) [75] as input to produce a 128-dimensional feature embedding. The spectral resolution is set to kLB = 140 
+
+for the Laplace-Beltrami eigensystem and kEL = 60 for the Elastic eigensystem. For coarse map computation, we employ a temperature of τ = 0 .07 , while the refinement stage incorporates Meyer filter functions [41] across S = 6 scales. Notably, to ensure that the extrinsic loss values are comparable in magnitude to their intrinsic counterparts, the term A1/2 
+
+> Y
+
+is omitted from the extrinsic loss formulations. Consequently, the unsupervised loss weights remain predominantly uniform, with all θ parameters fixed at 1.0, except for the self-contrastive weights 
+
+θLB/EL self , which are set to 0.5, demonstrating the stability of our framework. 
+
+## 3 Qualitative Results 
+
+In this section, we provide the qualitative results of our method on SHREC’19 (see Fig. 1) and TOPKIDS (see Fig. 2) corresponding to the quantitative results reported in the main text. 
+
+## 4 Compared with the Fine-tuning Methods 
+
+By incorporating those fine-tuning-based methods as baselines, we aim to demon-strate that our approach can achieve outstanding performance without the need for fine-tuning during testing, even surpassing these methods. The comparative results both with and without test-time fine-tuning are summarized in Table 1. 4 Feifan Luo et al. Source ULRSSM DiffZO Ours GT DeepFAFM HybridFMaps 
+
+Fig. 1: Qualitative comparison of cross-dataset generalization performance. The top row illustrates results for models trained on FAUST [66] and evaluated on SHREC’19 [57], while the bottom row depicts models trained on SCAPE [66] and eval-uated on SHREC’19. Our method demonstrates superior accuracy with significantly fewer artifacts and more consistent color transfers compared to existing baselines, un-derscoring its robustness to domain shifts. Source GT HybridFMaps ULRSSM Ours DeepFAFM DenoiseFMaps 
+
+Fig. 2: Qualitative comparison of shape matching under topological noise. Results are evaluated on the SHREC’16 Topology benchmark [39]. Compared to existing baselines, our method produces more spatially consistent texture transfers with significantly fewer mapping artifacts. This demonstrates the superior robustness of our framework to connectivity inconsistencies and local topological perturbations. 
+
+Our analysis indicates that while fine-tuning yields a comprehensive perfor-mance boost for baseline methods, particularly in cross-dataset generalization scenarios, e.g., training on FAUST and testing on SHREC’19. Such gains typi-cally stem from bridging the distributional discrepancies (domain shift) between training and testing sets by iteratively updating parameters to fit the test-time data distribution. In contrast, our framework maintains high precision and ro-bustness to cross-dataset generalization through a strictly feed-forward pass. This suggests that our proposed self-supervised energy terms effectively regular-Coarse-to-Fine Hybrid Self-Supervised Learning Shape Matching 5
+
+Table 1: Comparing our method with fine-tuning approaches [6, 15] across all bench-marks. The numbers in the table are mean geodesic errors ( ×100 ). Bold : Best. Underline: Runner-up. Train FAUST SCAPE FAUST SCAPE SMAL DT4D-H inter TOPKIDS Test F S S19 F S S19 F_a S_a F_a S_a Unsupervised Methods ULRSSM [15] 1.6 6.7 14.5 4.8 1.9 18.5 2.5 8.9 7.0 1.9 4.5 5.2 9.4 HybridFMaps [6] 1.4 4.2 9.5 2.3 1.8 13.0 2.0 4.6 3.4 1.8 3.5 3.9 5.0 Fine-tuning Methods ULRSSM(w.FT) 1.6 2.2 5.7 1.6 1.9 6.7 1.9 2.4 2.1 1.9 4.2 4.1 9.2 HybridFMaps(w.FT) 1.4 2.1 5.6 1.4 1.8 5.3 1.8 2.2 2.1 1.7 2.8 3.5 5.1 Ours 1.6 2.4 4.4 1.6 2.0 4.0 1.9 2.4 2.4 1.9 2.9 3.5 4.9 
+
+ize the model to learn domain-invariant geometric features, eliminating the need for per-pair optimization during inference. Furthermore, in the majority of sce-narios involving non-isometric deformations and topological noise, our method outperforms even the fine-tuned results of the baselines. This demonstrates that our framework attains superior accuracy through a purely feed-forward pass dur-ing inference, surpassing methods that rely on iterative parameter optimization. 
+
+Table 2: We conduct ablation studies on remeshed FAUST, SHREC’19, SMAL, DT4D-H, and TOPKIDS. Where LLB contrast = LLB cross + LLB self , LEL contrast = LEL cross + LEL self , and 
+
+LEL f map = LEL or + LEL bi .Settings F SMAL TOPKIDS F S19 w.o LLB contrast and LEL total 1.7 6.2 5.3 26.8 w.o LEL total 1.6 4.3 3.3 12.9 w.o LEL f map 1.6 5.3 3.6 5.5 w.o LEL contrast 1.7 4.8 3.7 11.3 Ours 1.6 4.4 2.9 4.9 
+
+## 5 Ablation Studies 
+
+We conduct ablation studies across multiple datasets, covering near-isometric, cross-dataset generalization, non-isometric, and topological noise scenarios, to evaluate the performance of our proposed hybrid self-supervised components: intrinsic contrastive energies LLB contrast , extrinsic contrastive energies LEL contrast ,and extrinsic geometric prior energies LEL f map , respectively. Our ablation study, summarized in Table 2, highlights the contribution of each component in our framework. On near-isometric benchmarks, we observe that the impact of the hybrid self-supervised components is marginal. This sug-gests that near-isometric matching is already highly optimized, leaving limited 6 Feifan Luo et al. Source w.o 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀      
+
+> 𝐀 𝐀 &𝐀 𝐀 𝐀 𝐀 𝐀 𝐀
+> 𝐀 𝐀
+> Ours w.o 𝐀 𝐀 𝐀 𝐀 𝐀
+> 𝐀 𝐀
+> w.o 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀
+> 𝐀 𝐀
+> w.o 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 𝐀
+> 𝐀 𝐀
+
+Fig. 3: As demonstrated by vertex transfer on the SMAL dataset [88], the integration of our proposed intrinsic and extrinsic contrastive energies and the extrinsic geometric prior significantly improves matching accuracy and produces visually smoother map-pings. 
+
+headroom for further improvement. Consequently, our analysis focuses on more challenging scenarios: cross-dataset generalization, non-isometric deformations, and topological noise. Comparison between the first and final rows reveals that our proposed en-ergy terms yield comprehensive performance gains, particularly in challenging scenarios involving topological artifacts and non-isometry. A more granular anal-ysis of the second and final rows highlights that the extrinsic energy terms are pivotal for robustness against topological noise; their omission results in a pre-cipitous decline in accuracy on the TOPKIDS dataset. Furthermore, comparing the third and last rows demonstrates that while removing the extrinsic geometric prior energies LEL f map leads to a marginal decrease in accuracy for non-isometric and topological cases, it causes a substantial degradation in generalization ca-pability. Similarly, the comparison between the fourth and final rows indicates that the absence of extrinsic contrastive energies—specifically LEL contrast —results in a minor reduction in generalization but a significant drop in performance under topological noise. Lastly, the comparison between the first and second rows confirms that LLB contrast provides consistent improvements across all eval-uated metrics. Collectively, these results underscore the efficacy and necessity of our proposed hybrid self-supervised framework in regularizing complex shape correspondences. Moreover, the qualitative results presented in Fig. 3 demonstrate that our proposed intrinsic and extrinsic contrastive energies, combined with the extrinsic geometric prior, boost matching performance and yield smoother vertex trans-fers. Coarse-to-Fine Hybrid Self-Supervised Learning Shape Matching 7
+
+## 6 Parametric Analysis 
+
+Our framework maintains a minimal hyperparameter configuration. Specifically, the temperature factor ( τ = 0 .07 ) and the dimensions of the hybrid eigenbasis (140 for the Laplacian basis [63] and 60 for the elastic basis [34]) are kept consis-tent with recent state-of-the-art work [6]. Consequently, our parametric analysis focuses primarily on the choice of filter functions and the number of scales S.These filters can be formulated as orthogonal polynomials [43], heat kernels [75], wavelet kernels [4], and can even be learned in a data-driven manner [53]. We report the matching performance of our approach across various types and quantities of filter functions, as illustrated in Fig. 4. We observe that a set of 6 Meyer filters achieves the optimal configuration; consequently, we adopt this as our default parameter setting. 2 4 6 8 10 
+
+> Number of Scales (S)
+> 22.4 2.8 3.2 3.6 4
+> Mean Geodesic Error (  100)
+
+SMAL 
+
+> 2.9
+> Meyer
+> Mexican-hat
+> Heat-kernel
+
+Fig. 4: Parametric analysis on the SMAL dataset [88]. We report the mean geodesic error across various filter bank sizes and types, specifically comparing Meyer [41], Mexican-hat [33], and heat kernel [75] filters (with t uniformly sampled in [0 , 1] ). Em-pirically, employing 6 Meyer filters emerges as the optimal configuration. 
+
+## 7 Runtime Analysis 
+
+The computational efficiency of our method is evaluated across datasets with varying vertex resolutions (5K, 8K, 10K, 12K, and 15K), focusing on both train-ing and inference times. As shown in Fig. 5(left), our training speed signifi-cantly outperforms state-of-the-art methods, including ULRSSM [15] and Hy-bridFMaps [6]. Specifically, ULRSSM solves k independent k × k linear systems via least squares, yielding a time complexity of O(k4), while HybridFMap im-poses a substantially higher computational burden. Beyond the spectral func-tional map computation on the Laplacian basis, HybridFMap necessitates solv-ing a (kEL )2 × (kEL )2 system derived from the elastic basis. This results in an 8 Feifan Luo et al. 
+
+overall complexity of O(( kLB )4 + ( kEL )6). Since the O(( kEL )6) term constitutes a severe bottleneck, HybridFMap is forced to utilize a strictly limited number of elastic basis functions ( kEL = 60 ) to avoid prohibitive overhead, thereby maintaining a total execution time comparable to that of ULRSSM. 5K 8K 10K 12K 15K 
+
+> Number of vertices
+> 020 40 60 80 100
+> Runtime (s)
+
+Training Time     
+
+> ULRSSM
+> HybridFMaps
+> Ours 5K 8K 10K 12K 15K
+> Number of vertices
+> 10 20 30 40
+> Runtime (s)
+> 700 900 1100 1300
+> With fine-tuning
+
+Inference Time 
+
+> ULRSSM
+> HybridFMaps
+> Ours
+> ULRSSM+FT
+> HybridFMaps+FT
+
+Fig. 5: Runtime analysis across varying vertex resolutions. Left: Mean training du-ration per method (measured over 100 iterations). Right: Average inference time per 100 shape pairs. Note that the runtimes for ULRSSM(+FT) and HybridFMaps(+FT) (dotted lines) are plotted against the secondary (right) y-axis due to their substantial latency ( ≥ 50 × higher than other methods); all other baselines correspond to the pri-mary (left) y-axis. Our framework exhibits superior computational efficiency, striking an optimal balance between matching accuracy, training duration, and inference la-tency. 
+
+In contrast, our approach substantially reduces computational costs by elim-inating the least-squares solver typically used for the spectral functional map computation on both Laplacian and elastic bases. Furthermore, while existing methods require computing bidirectional spectral and spatial functional maps to accommodate their bidirectional loss formulations, our framework only necessi-tates the unidirectional spatial functional maps, ensuring superior efficiency. Quantitative statistics for inference time are provided in Fig. 5 (right). Our method achieves an inference speed comparable to that of ULRSSM and Hy-bridFMaps, primarily because our additional refined map calculation introduces only negligible overhead. It is worth noting that while ULRSSM and HybridFMaps report competitive speeds, they heavily rely on test-time adaptation, a fine-tuning technique that iteratively updates network parameters during inference (e.g., 15 backpropagation iterations per shape pair). For a standard set of 100 pairs, this results in an additional 1500 iterations for parameter optimizations, significantly increasing the computational burden. In contrast, our method achieves superior performance without any test-time parameter updating, even outper-forming baseline methods that utilize such a fine-tuning technique, as shown in Table 1. Coarse-to-Fine Hybrid Self-Supervised Learning Shape Matching 9
+
+## 8 Method Discussion 
+
+Our unsupervised loss functions are comprised of two distinct components: ax-iomatic prior-based energies and contrastive energies. While the former enforces fundamental geometric constraints for functional maps, such as orthogonality (or local area preservation [69]) and bijectivity. The latter is specifically de-signed to enhance feature representation. In particular, our spatial contrastive terms promote orthogonality within the feature space, distinguishing them from traditional geometric regularizers. 
+
+Remark 1 In the feature space, these spatial contrastive energy terms act as surrogates for orthogonality constraints within the feature space, namely, 
+
+∥ΠYX − Πref  
+
+> YX
+
+∥ ≈ ∥ FY F T 
+
+> X
+
+− IYX ∥ (7) 
+
+and 
+
+∥ΠYY − IY ∥ ≈ ∥ FY F T 
+
+> Y
+
+− IY ∥, (8) 
+
+where ΠYX = Softmax( FY F ⊤X /τ ), IYX ∈ R|VY |×| VX | with each row being a one-hot vector. IY is defined as the identity matrix of size |VY |.Proof. The cross-spatial contrastive energy aims to align the coarse soft assign-ment map ΠYX with the refined hard map Πref  
+
+> YX
+
+. Specifically, the soft map is defined by the similarity of vertex features as ΠYX = Softmax( FY F ⊤X /τ ).Given that the softmax operator normalizes the feature product into a proba-bility distribution, we conceptually approximate the soft map as ΠYX ≈ FY F ⊤X
+
+to simplify our derivation. Furthermore, since Πref  
+
+> YX
+
+is an indicator matrix, en-couraging FY F ⊤X to approximate Πref  
+
+> YX
+
+effectively enforces cross-orthogonality between the feature sets FX and FY . In this ideal configuration, each vertex feature [FY ]j ∈ Rd (j-th row of FY , j = 1 , 2, ..., |VY |) corresponds to a unique index i0 such that their inner product satisfies the Kronecker delta property: 
+
+[FY ]j [FX ]⊤ 
+
+> i
+
+= δi,i 0 , i.e., [FY ]j [FX ]⊤ 
+
+> i
+
+= 1 if i = i0, and [FY ]j [FX ]⊤ 
+
+> i
+
+= 0 other-wise. Analogously, the self-contrastive term enforces self-orthogonality among the features, thereby suppressing feature collapse and preserving the uniqueness of individual vertex representations. In summary, the cross- and self-spatial contrastive energies provide comple-mentary constraints that collectively enhance the discriminative power of the learned features from both inter-shape and intra-shape perspectives. 
+
+## 9 Relation to Other Techniques 
+
+In this section, we demonstrate that the consistency constraint proposed in Dif-fZO [55] and the vertex-wise contrastive energy introduced in RevisitedFM [16] are, in fact, special cases of our generalized contrastive framework. 10 Feifan Luo et al. 
+
+Table 3: Summary of contrastive energies. Formula Description                       
+
+> ∥ΠYX −Πref
+> YX ∥cross-spatial contrastive energy
+> ∥ΠYY −IY∥self-spatial contrastive energy
+> ∥CX Y −Cref
+> X Y ∥spectral contrastive energy
+> CX Y −Φ†YΠref
+> YX ΦXspatial-spectral contrastive or fine properness energy
+> ΠYX −ΦYCref
+> X Y Φ†Xspatial-spectral contrastive energy induced by refined functional maps
+
+Specifically, DiffZO employs a consistency loss ∥ ˆCX Y − ˆCref  
+
+> X Y
+
+∥, where the refined spectral map ˆCref  
+
+> X Y
+
+is obtained via ZoomOut refinement [58]. This objec-tive can be interpreted as a specific instance of spectral projection of our cross-spatial contrastive energy, formulated as ∥Φ†Y ΠYX ΦX − Φ†Y Πref  
+
+> YX
+
+ΦX ∥. Similarly, the vertex-wise contrastive energy ∥ ˆCYY − I∥ in RevisitedFM [16] represents a spectral-domain specialization of our self-spatial contrastive loss, which can be expressed as ∥Φ†Y ΠYY ΦY −Φ†Y Πref  
+
+> YY
+
+ΦY ∥. By unifying these diverse objectives, our framework provides a more comprehensive perspective on spatial coarse-to-fine contrast, opening new avenues for future research. 
+
+## 10 Contrastive Energies in Different Frameworks 
+
+To prioritize computational efficiency, we intentionally bypassed the use of least-squares solvers for functional map computation in our main pipeline. How-ever, this design choice means that our proposed contrastive energies, specifi-cally, the spectral and spatial-spectral contrastive terms, i.e, CX Y − Cref  
+
+> X Y
+
+and 
+
+CX Y − Φ†Y Πref  
+
+> YX
+
+ΦX , are not utilized to their full potential within our own framework. To rigorously validate the efficacy of these energy terms and demon-strate their consistent performance gains, we integrated them as plug-and-play modules into two established frameworks: SURFMNet [68] and ULRSSM [15]. Specifically, we augmented SURFMNet (which relies on orthogonality and bijectivity losses) with our proposed spectral contrastive loss (corresponding weight θ = 5 ), denoting this variant as SURFMNet*. Similarly, for ULRSSM, we replaced the standard coarse properness loss CX Y − Φ†Y ΠYX ΦX with our fine properness loss, resulting in ULRSSM*. Both the refined pointwise corre-spondences and functional maps used during the training and inference stages are derived from our proposed map refinement algorithm. Moreover, all remaining hyperparameter configurations and loss weighting coefficients were kept consis-tent with the original implementations to ensure a rigorous and fair comparison. The quantitative results of this integration are summarized in Table 4. Experimental results show that performance consistently improves after adding these regularization terms. This is particularly evident in cross-dataset general-ization and topological noise scenarios. In the case of ULRSSM* on SMAL, we Coarse-to-Fine Hybrid Self-Supervised Learning Shape Matching 11 
+
+observe a slight performance decline compared to ULRSSM, which could be due to the hyperparameters not being tailored to the specific characteristics of the method. Nevertheless, our contrastive energy still brings a substantial improve-ment to the results of ULRSSM. In conclusion, incorporating our self-supervised energies provides a compre-hensive improvement to these frameworks, highlighting their effectiveness in en-hancing both functional and pointwise map representations.                                    
+
+> Table 4: Evaluating the matching results across various conditions. The numbers in the table are mean geodesic errors ( ×100 ). Improvement refers to the performance enhancement( ↑) achieved after adding the contrastive energy constraints. Settings FAUST SMAL DT4D-H TOPKIDS FAUST SHREC’19 SURFMNet 2.5 17.6 21.3 26.1 40.7 SURFMNet* 1.9 6.5 16.2 12.7 21.1
+> Improvement (↑)24% 63% 31% 51% 48% ULRSSM 1.6 14.5 4.5 5.2 9.4 ULRSSM* 1.6 7.1 4.6 4.5 6.5
+> Improvement (↑)0% 51% -2% 13% 31%
+
+## 11 Limitation and Future Work 
+
+Despite its robustness to challenging scenarios such as non-isometric deforma-tions and topological noise, our method currently struggles with partial shape matching. This limitation arises because the missing boundary regions in par-tial geometries introduce severe intrinsic distortions, which lead to suboptimal matching performance. Several promising directions remain for future exploration, such as (1) En-hanced Refinement: Integrating spatial deformation constraints [13, 26–28] or learning filter functions [53] into the refinement stage to better accommodate sce-narios characterized by large-scale non-isometric deformations and severe topo-logical noise. (2) Contrastive Frameworks: Developing a novel matching architec-ture that leverages spatial-spectral contrastive energy to steer coarse pointwise optimization via refined functional maps, see Table 3; (3) Generative Paradigms: Exploring diffusion models [62,87] and flow matching [17,46,59] to bolster gener-alization across diverse and out-of-distribution datasets; (4) Robust Shape Oper-ators: Constructing hybrid geometric operators by aggregating multiple spectral bases [18, 79, 80] to improve map stability under noise and topological changes.
