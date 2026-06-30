@@ -6,68 +6,76 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-29
-- 运行时间：2026-06-29 19:40:02 UTC
+- 最新运行日期：2026-06-30
+- 运行时间：2026-06-30 19:46:42 UTC
 - 运行状态：成功
-- 本次总论文数：16
-- 精读区：11
-- 速读区：5
+- 本次总论文数：18
+- 精读区：10
+- 速读区：8
 
 ### 今日简报（AI）
-今日16篇推荐中精读2篇满分，聚焦导航世界模型的前瞻规划与表征守恒律的认证边界。最值得关注《NavWM》的统一导航预测框架，以及守恒律在潜在世界模型中的可证生存条件。建议优先精读这两篇满分工作，速读可关注音乐自监督表示与3D形状匹配的混合自监督方法。
-- 详情：[/202606/29/README](/202606/29/README)
+今日精读两篇满分论文探索世界模型表征与严格中介学习，速读聚焦自监督在音乐、图像质量与视频编码的落地。  
+最值得关注：世界模型的文本信念状态可识别性，以及频域感知自监督音乐表示框架。  
+建议优先精读《Textual Belief States for World Models》把握可解释性前沿，同时参考速读中图像退化嵌入的质量评估新方法。
+- 详情：[/202606/30/README](/202606/30/README)
 
 ### 精读区论文标签
-1. [NavWM: A Unified Navigation World Model for Foresight-Driven Planning](/202606/29/2606.24101v1-navwm-a-unified-navigation-world-model-for-foresight-driven-planning)  
+1. [Textual Belief States for World Models: Identifiable Representation Learning Under Strict Mediation](/202606/30/2606.27681v1-textual-belief-states-for-world-models-identifiable-representation-learning-under-strict-mediation)  
    标签：评分：10.0/10、query:world-models
-   evidence：提出统一导航世界模型，集成潜在世界推理、多模态动作预测和可控视觉生成
-2. [When Do Conservation Laws Survive Learned Representations? Certified Horizons for Latent World Models](/202606/29/2606.24945v1-when-do-conservation-laws-survive-learned-representations-certified-horizons-for-latent-world-models)  
+   evidence：直接提出在严格中介下可识别的文本世界模型表示
+2. [Orca: The World is in Your Mind](/202606/30/2606.30534v1-orca-the-world-is-in-your-mind)  
    标签：评分：10.0/10、query:world-models
-   evidence：潜在世界模型，认证视界
-3. [Internalizing the Future: A Unified Agentic Training Paradigm for World Model Planning](/202606/29/2606.27483v1-internalizing-the-future-a-unified-agentic-training-paradigm-for-world-model-planning)  
-   标签：评分：10.0/10、query:world-models
-   evidence：直接提出智能体中的世界模型规划
-4. [Active Inference as the Test-Time Scaling Law for Physical AI Agents](/202606/29/2606.22813v1-active-inference-as-the-test-time-scaling-law-for-physical-ai-agents)  
+   evidence：世界基础模型，统一潜在空间与下一状态预测
+3. [Conformal Orbit-Valid Trust Horizons for Equivariant World Models](/202606/30/2606.24946v1-conformal-orbit-valid-trust-horizons-for-equivariant-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：世界模型用于测试时缩放
-5. [3D Masked Autoencoders are Robust Learners of Volumetric and Multimodal Cellular Representations for Microscopy](/202606/29/2606.23964v1-3d-masked-autoencoders-are-robust-learners-of-volumetric-and-multimodal-cellular-representations-for-microscopy)  
-   标签：评分：9.0/10、query:ssl
-   evidence：掩码自编码器用于3D显微镜的自监督学习
-6. [Conformal Orbit-Valid Trust Horizons for Equivariant World Models](/202606/29/2606.24946v1-conformal-orbit-valid-trust-horizons-for-equivariant-world-models)  
+   evidence：为预测未来状态的潜在世界模型认证信任地平线
+4. [Internalizing the Future: A Unified Agentic Training Paradigm for World Model Planning](/202606/30/2606.27483v1-internalizing-the-future-a-unified-agentic-training-paradigm-for-world-model-planning)  
    标签：评分：9.0/10、query:world-models
-   evidence：研究等变潜在世界模型的信任视界认证，直接针对世界模型的可靠性
-7. [Coarse-to-Fine: A Hybrid Self-Supervised Method for Non-rigid 3D Shape Matching](/202606/29/2606.26557v2-coarse-to-fine-a-hybrid-self-supervised-method-for-non-rigid-3d-shape-matching)  
-   标签：评分：9.0/10、query:ssl
-   evidence：用于非刚性3D形状匹配的混合自监督方法
-8. [Sketched Linear Contrastive Learning: Approximation, Optimization, and Statistical Scaling](/202606/29/2606.26617v1-sketched-linear-contrastive-learning-approximation-optimization-and-statistical-scaling)  
-   标签：评分：9.0/10、query:ssl
-   evidence：对比学习，理论缩放
-9. [EO-WM: A Physically Informed World Model for Probabilistic Earth Observation Forecasting](/202606/29/2606.27277v1-eo-wm-a-physically-informed-world-model-for-probabilistic-earth-observation-forecasting)  
+   evidence：训练具有内部世界模型的LLM代理进行未来规划
+5. [A Path-Space Formulation of Prediction in World Models: From a Single Action to Prediction, Planning, and Irreversibility](/202606/30/2606.28751v1-a-path-space-formulation-of-prediction-in-world-models-from-a-single-action-to-prediction-planning-and-irreversibility)  
    标签：评分：9.0/10、query:world-models
-   evidence：提出一种用于地球观测预测的物理信息世界模型
-10. [ReWorld: Learning Better Representations for World Action Models](/202606/29/2606.27504v1-reworld-learning-better-representations-for-world-action-models)  
+   evidence：世界模型中预测的路径空间形式化
+6. [Flow Matching in Feature Space for Stochastic World Modeling](/202606/30/2606.29059v1-flow-matching-in-feature-space-for-stochastic-world-modeling)  
    标签：评分：9.0/10、query:world-models
-   evidence：提出了ReWorld框架，用于在世界动作模型中学习更好的世界表示
-11. [Textual Belief States for World Models: Identifiable Representation Learning Under Strict Mediation](/202606/29/2606.27681v1-textual-belief-states-for-world-models-identifiable-representation-learning-under-strict-mediation)  
+   evidence：基于流匹配的随机世界模型
+7. [Prototype Latent World Model Replay for Class-Incremental Learning](/202606/30/2606.29465v1-prototype-latent-world-model-replay-for-class-incremental-learning)  
    标签：评分：9.0/10、query:world-models
-   evidence：研究世界模型中的严格潜在状态中介
+   evidence：用于类增量学习的潜在世界模型
+8. [Learning Transferable Dynamics Priors from Action to World Modeling](/202606/30/2606.29501v1-learning-transferable-dynamics-priors-from-action-to-world-modeling)  
+   标签：评分：9.0/10、query:world-models
+   evidence：从动作经验学习世界模型
+9. [FutureNav: Unified World-Action Modeling for Vision-and-Language Navigation](/202606/30/2606.30367v1-futurenav-unified-world-action-modeling-for-vision-and-language-navigation)  
+   标签：评分：9.0/10、query:world-models
+   evidence：用于视觉语言导航的联合世界-动作建模与未来状态预测
+10. [Self-Evolving World Models for LLM Agent Planning](/202606/30/2606.30639v1-self-evolving-world-models-for-llm-agent-planning)  
+   标签：评分：9.0/10、query:world-models
+   evidence：用于LLM智能体规划的自演化世界模型
 
 ### 速读区论文标签
-1. [Frequency-Aware Self-Supervised Music Representation Learning](/202606/29/2606.25713v1-frequency-aware-self-supervised-music-representation-learning)  
+1. [Frequency-Aware Self-Supervised Music Representation Learning](/202606/30/2606.25713v2-frequency-aware-self-supervised-music-representation-learning)  
    标签：评分：8.0/10、query:ssl
-   evidence：基于预测架构的自监督音乐表示学习
-2. [Coarse-to-Fine: A Hybrid Self-Supervised Method for Non-rigid 3D Shape Matching](/202606/29/2606.26557v1-coarse-to-fine-a-hybrid-self-supervised-method-for-non-rigid-3d-shape-matching)  
+   evidence：自监督视觉表示学习用于音乐
+2. [Spatially Localized Image Degradation Embeddings for Image Quality Assessment](/202606/30/2606.29162v1-spatially-localized-image-degradation-embeddings-for-image-quality-assessment)  
    标签：评分：8.0/10、query:ssl
-   evidence：用于3D形状匹配的自监督视觉表征学习
-3. [What Do Deepfake Benchmarks Measure? An Audit Using Frozen Self-Supervised Representations](/202606/29/2606.26384v1-what-do-deepfake-benchmarks-measure-an-audit-using-frozen-self-supervised-representations)  
+   evidence：提出针对视觉表示的自监督学习方法，利用空间退化嵌入
+3. [A Self-Supervised Learning Framework for Video Encoding Complexity Clustering](/202606/30/2606.29166v1-a-self-supervised-learning-framework-for-video-encoding-complexity-clustering)  
+   标签：评分：8.0/10、query:ssl
+   evidence：用于视频编码复杂度聚类的自监督学习框架
+4. [OLIVE: View-Augmented Latent Prediction with Waveform Reconstruction for Speech SSL](/202606/30/2606.30356v1-olive-view-augmented-latent-prediction-with-waveform-reconstruction-for-speech-ssl)  
+   标签：评分：8.0/10、query:ssl
+   evidence：自监督语音表示学习，结合掩码潜在预测和重构
+5. [L2D2-GS: Learning to Densify for Feedforward Dynamic Gaussian Scene Reconstruction](/202606/30/2606.29374v1-l2d2-gs-learning-to-densify-for-feedforward-dynamic-gaussian-scene-reconstruction)  
+   标签：评分：7.0/10、query:world-models
+   evidence：解决自动驾驶中动态城市场景重建的世界建模问题
+6. [CellDETR: A Detection-Guided Framework for Scalable Cell Representation Learning from Histopathology Images](/202606/30/2606.29463v1-celldetr-a-detection-guided-framework-for-scalable-cell-representation-learning-from-histopathology-images)  
    标签：评分：7.0/10、query:ssl
-   evidence：使用冻结的自监督表示审计深度伪造基准
-4. [Geometric Gradient Rectification for Safe Open-Set Semi-Supervised Learning](/202606/29/2606.26973v1-geometric-gradient-rectification-for-safe-open-set-semi-supervised-learning)  
+   evidence：自监督视觉表示学习，结合对比学习用于组织病理学
+7. [Self-Supervised Behavioral Representations Across the Life Course: A Killifish Case Study](/202606/30/biorxiv-10-64898-2026-06-23-733896-v1-self-supervised-behavioral-representations-across-the-life-course-a-killifish-case-study)  
    标签：评分：7.0/10、query:ssl
-   evidence：用于开集半监督学习的自监督表征学习方法
-5. [DNSMOS-C: Improving End-to-end Speech Quality Models via Contrastive Learning](/202606/29/2606.26903v1-dnsmos-c-improving-end-to-end-speech-quality-models-via-contrastive-learning)  
-   标签：评分：6.0/10、query:ssl
-   evidence：对比学习用于语音质量评估
+   evidence：自监督行为表征学习
+8. [Frontotemporal cortex flexibly adapts latent structural representations](/202606/30/biorxiv-10-64898-2026-06-25-734414-v1-frontotemporal-cortex-flexibly-adapts-latent-structural-representations)  
+   标签：评分：6.0/10、query:world-models
+   evidence：大脑中内部世界模型的适应
 
 
 <div class="dpr-home-promo-card">
