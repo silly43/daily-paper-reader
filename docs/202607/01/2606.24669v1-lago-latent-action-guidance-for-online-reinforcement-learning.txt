@@ -1,0 +1,275 @@
+Title: LaGO: Latent Action Guidance for Online Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2606.24669v1
+
+Published Time: Wed, 24 Jun 2026 01:09:02 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+Kuan-Yen Liu * 1 Ren-Jyun Huang * 2 Ti-Rong Wu 3
+
+# Abstract 
+
+Large language models (LLMs) have shown strong potential for planning and sequential decision-making, but prior work often relies on using them as direct controllers, which requires precise action generation and can be unreliable in practice. This paper proposes Latent Action Guid-ance for Online Reinforcement Learning (LaGO) ,a framework that uses a pretrained LLM as a la-tent action prior to softly guide online policy opti-mization, rather than treating the LLM as an ex-plicit planner or controller. Experiments on both a discrete-control benchmark, CLEVR-Robot, and a continuous-control benchmark, Meta-World, demonstrate that LaGO consistently improves both reward and success rate over Vanilla PPO. In particular, LaGO increases the average success rate from 15.1% to 27.2% on CLEVR-Robot and from 2.7% to 15.2% on Meta-World. Our analy-sis further shows that stronger pretrained LLMs provide more effective guidance, suggesting that LLM knowledge can improve planning and online decision-making. 
+
+# 1. Introduction 
+
+Large language models (LLMs) have shown remarkable ca-pabilities across a wide range of tasks (OpenAI et al., 2024; Touvron et al., 2023; Guo et al., 2025; Yang et al., 2025), suggesting that pretrained models acquire rich knowledge about environments, tasks, and possible behaviors. Moti-vated by this, recent studies have explored the use of LLMs in reinforcement learning (RL) and sequential decision-making problems. For example, some works use LLMs as direct controllers (Brohan et al., 2023; Reed et al., 2022; 
+
+> *
+
+Equal contribution 1Siebel School of Computing and Data Science, University of Illinois Urbana-Champaign, USA 
+
+> 2
+
+Department of Computer Science, National Yang Ming Chiao Tung University, Taiwan 3Institute of Information Science, Academia Sinica, Taiwan. Correspondence to: Kuan-Yen Liu 
+
+<kuanyen2@illinois.edu >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+Yao et al., 2023), where the model predicts actions from observations or multimodal inputs. Other works use LLMs as high-level planners (Ahn et al., 2022; Huang et al., 2022; Wang et al., 2023; Hu et al., 2026), where the model pro-poses subgoals or task plans and a separate low-level RL policy executes them. Furthermore, LLMs have also been used as internal world model simulators (Hao et al., 2023; Lin et al., 2024; Bruce et al., 2024; Team et al., 2026; Fang et al., 2025), where the model generates imagined future trajectories to predict environment dynamics for planning. These results highlight the potential of LLMs as a useful component for planning and RL. Despite these promising results, existing approaches often require LLMs to provide sufficiently accurate outputs, such as actions, plans, or imagined trajectories, in order to be useful for RL control. However, this requirement can be overly strong in practice, since the capabilities of LLMs may vary substantially across different models. As a result, directly relying on an LLM as the primary controller may be unreliable, especially in RL problems that require precise execution and long-horizon reasoning. In such settings, even small prediction errors may accumulate over time and lead to poor control performance. Therefore, although LLMs may contain useful prior knowledge, using them for explicit control in RL remains challenging. To address this challenge, this paper investigates whether LLMs can be used not as explicit controllers but as a source of soft guidance for RL. Specifically, we propose Latent Ac-tion Guidance for Online Reinforcement Learning (LaGO) ,a two-stage framework for leveraging LLM knowledge in online RL. In the first stage, LaGO uses expert demonstra-tions to fine-tune a pretrained LLM to learn a latent action guidance model. Then, the learned model provides action guidance signals as inductive priors for policy learning dur-ing online RL training. This substantially relaxes the accu-racy requirement of using LLMs as direct controllers, since the LLM only needs to provide a coarse but informative guidance signal rather than exact decisions. Experiments on both discrete control tasks on CLEVR-Robot and continuous control tasks in Meta-World demon-strate that LaGO consistently improves both reward and success rate over vanilla PPO. Specifically, it increases the average success rate from 15.1% to 27.2% in CLEVR-Robot, 1
+
+> arXiv:2606.24669v1 [cs.AI] 23 Jun 2026 LaGO: Latent Action Guidance for Online Reinforcement Learning
+
+and from 2.7% to 15.2% in Meta-World. The results demon-strate that LLMs can still help RL training even when they are not sufficiently accurate to serve as direct controllers. Furthermore, our results show that the quality of the pre-trained LLM models has a substantial impact on the effec-tiveness of the proposed method. These findings suggest that stronger foundation LLMs are more likely to provide useful guidance signals for RL training in the future. Over-all, LaGO provides a simple and practical framework for leveraging pretrained LLM knowledge as latent action guid-ance for planning and RL. 
+
+# 2. Related Work 
+
+2.1. LLMs as Direct or Hierarchical Controllers 
+
+Recent progress in Vision-Language-Action (VLA) mod-els (Brohan et al., 2023; Driess et al., 2023; Kim et al., 2024) has demonstrated that large-scale pretraining founda-tion LLM models can be adapted to directly output control signals in embodied environments. These methods demon-strate the potential of using foundation models as direct controllers, especially when rich visual and language in-puts are available. However, using LLMs as end-to-end controllers remains challenging in reinforcement learning settings, as it requires precise action execution, particularly in vectorized environments where observations and actions are not naturally represented in language or visual form. An alternative approach is to adopt a hierarchical paradigm (Ahn et al., 2022; Wang et al., 2023; Huang et al., 2022), where the LLM serves as a high-level planner that proposes textual subgoals or instructions, while a separate low-level policy handles execution. This design avoids requiring the LLM to perform direct low-level control, but still relies on explicit textual outputs, and effectively integrating these outputs into RL policy learning remains a challenge. 
+
+2.2. LLMs as World Models for Planning 
+
+LLMs have been shown to encode structured world knowl-edge about environments, including task dynamics, physi-cal regularities, and action consequences, acquired during large-scale pretraining (Li et al., 2024; Bubeck et al., 2023). Recent studies have further provided evidence that world-relevant information is preserved in LLM hidden representa-tions. For example, Gurnee & Tegmark (2024) demonstrate that spatial and temporal information can be linearly de-coded from LLM hidden states, while Jin & Rinard (2024) show that sequence models can encode future environment configurations in their latent state. Motivated by this, several works have attempted to leverage such world knowledge from LLMs for planning and sequential decision-making. Lin et al. (2024) incorporate language into a world model to improve future prediction and policy learning. Xiang et al. (2023) improve language models by finetuning them on embodied experiences collected from simulators. Despite these advances, these approaches still require LLMs to explicitly and accurately simulate valid future states or trajectories. To address this, recent work such as KALM (Pang et al., 2024) first fine-tunes an LLM on expert demon-strations, and then uses the fine-tuned model to generate additional rollouts under offline RL settings. While effec-tive, this approach does not directly extend to the online setting. In contrast, our work investigates whether LLMs can also improve reinforcement learning in the online set-ting. 
+
+2.3. LLMs as Priors for Reinforcement Learning 
+
+In reinforcement learning, another natural idea is to intro-duce a prior to guide policy learning and exploration. Re-cent work has begun to explore LLMs in this direction. For example, Yan et al. (2024) treat LLMs as the prior action distribution and incorporate them into both policy-based and value-based RL frameworks from a Bayesian inference per-spective, demonstrating that fixed LLM priors can improve learning efficiency. However, this and related approaches (Yao et al., 2023; Carta et al., 2026) are still limited to text-based or highly discretized action spaces. In conclusion, compared to previous works, our work inves-tigates a different way of leveraging LLMs in reinforcement learning. Rather than using LLMs as direct controllers, ex-plicit world model simulators, or text-based action priors, we study whether their knowledge can benefit online RL through latent representations rather than explicit text. In-stead of requiring the LLM to generate precise actions, plans, or trajectories during interaction, we use it as a source of latent guidance that guides policy learning without relying on explicit text. 
+
+# 3. Method 
+
+This paper presents Latent Action Guidance for Online Re-inforcement Learning (LaGO) , a framework that leverages pretrained LLM knowledge as a latent behavioral prior for online reinforcement learning. As illustrated in Figure 1, LaGO contains two stages. First, LaGO trains a latent policy model from offline demonstrations that maps environment states to action distributions through a pretrained language model backbone. Second, this model serves as a behavioral prior to guide online reinforcement learning. We describe these two stages in detail below. 
+
+3.1. Learning a Latent Policy Prior from Offline Demonstrations 
+
+Pretrained LLMs have been shown to encode rich knowl-edge about environments, tasks, and possible behaviors, suggesting that they can serve as a useful source of behav-2LaGO: Latent Action Guidance for Online Reinforcement Learning Expert data             
+
+> (offline)
+> 𝑫 ={(𝒙 ,𝝉 𝒕 ,𝒂 𝒕 +𝟏 )}
+> CLEVR -Robot Meta -World
+> LLM Backbone
+> Stage
+> 𝑺 𝒕 +𝟏
+> RL Policy 𝝅 𝝍 (𝒂 |𝒔 )
+> LLM Prior
+> Policy
+> 𝝅 𝑲 (𝒂 𝒕 +𝟏 |𝒙 ,𝝉 𝒕 )
+> Stage 𝑺 𝒕 +𝟏
+> Reward 𝑹
+> Action
+> 𝒂 𝒕 +𝟏
+> Stage 1: Offline Prior Learning Stage 2: Online RL
+> 𝒙 𝝉 𝒕
+> Goal: Predict 𝒂 𝒕 +𝟏
+> 𝑳 𝒑𝒓𝒊𝒐𝒓
+
+Figure 1. Overview of the LaGO framework. Numeric environment states are injected into the frozen LLM latent space via learned projection layers, and the resulting action distribution serves as a KL-regularized prior for online RL policy optimization. 
+
+ioral priors for reinforcement learning. In principle, there are several ways to extract such a latent policy prior from a pretrained LLM. Since the main focus of this work is on how the prior is incorporated into online reinforcement learning, we adopt a KALM-style approach in this paper to obtain the prior. Specifically, given an offline expert dataset, we first provide the task description as textual input to the pretrained LLM. We then learn a projection module to convert the non-textual state-action sequence from offline demonstrations into la-tent representations and feed them into the LLM together with the task description. Conditioned on both the task de-scription and the projected demonstration trajectory, a newly added action head is trained to predict the next action. Formally, let x denote the task description, let τt =
+
+{(s1, a 1), (s2, a 2), · · · , (st, a t)} denote the state-action tra-jectory prefix from an offline demonstration, let Es(·) and 
+
+Ea(·) denote the learnable projection modules for states and actions, let Fϕ(·) denote the pretrained LLM backbone, and let Gθ (·) denote the newly added action head. At time step t, each state and action in τt is first mapped into latent embeddings as 
+
+esi = Es(si), eai = Ea(ai), i = 1 , . . . , t. (1) These embeddings, together with the task description, are then fed into the LLM as a sequence 
+
+Xt = [ x, e s
+
+> 1
+
+, e a 
+
+> 1
+
+, e s
+
+> 2
+
+, e a 
+
+> 2
+
+, . . . , e st , e at ]. (2) The resulting latent representation is computed as 
+
+zt = Fϕ(Xt), (3) and the latent policy prior is defined as 
+
+πK (at+1 | x, τ t) = Gθ (zt). (4) We train this latent policy prior using an offline expert dataset D = {(x, τ t, a t+1 )}. The training objective is to minimize the negative log-likelihood: 
+
+Loffline = −E(x,τ t,a t+1 )∼D [log πK (at+1 | x, τ t)] . (5) Overall, this stage is not intended to produce an optimal LLM controller, as it uses supervised fine-tuning rather than reward optimization. Instead, this model aims to capture a coarse behavioral prior from offline demonstrations and pretrained LLM knowledge, which will later be used to guide online RL policy learning. 
+
+3.2. Online Reinforcement Learning with Latent Action Guidance 
+
+After learning the latent policy prior πK from offline demon-strations, we use it to guide online reinforcement learning in the second stage. Specifically, we freeze the prior model and train a separate RL policy πψ (a|s) through online inter-action with the environment. Instead of learning only from task rewards, LaGO regularizes the policy learning toward the latent policy prior produced by the pretrained LLM. The training loss is defined as: 
+
+Lonline = LPG + β Lprior (6) where LPG denotes a standard policy optimization objective, such as PPO or SAC, and β controls the influence of the prior. 3LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+Algorithm 1 LaGO Training Procedure  
+
+> 1:
+
+Input: Offline dataset D, pretrained LLM backbone 
+
+Fϕ, regularization coefficient β 
+
+> 2:
+
+Stage 1: Offline Prior Learning  
+
+> 3:
+
+Train projection layers and action head on D to mini-mize Loffline  
+
+> 4:
+
+Obtain latent policy prior πK 
+
+> 5:
+
+Stage 2: Online RL  
+
+> 6:
+
+Freeze latent policy prior πK 
+
+> 7:
+
+Initialize RL policy πψ (a | s) 
+
+> 8:
+
+repeat  
+
+> 9:
+
+Collect rollouts via interaction with the environment  
+
+> 10:
+
+Compute policy objective LPG  
+
+> 11:
+
+Compute prior loss Lprior  
+
+> 12:
+
+Update policy parameters ψ using Lonline = LPG +
+
+β Lprior  
+
+> 13:
+
+until Convergence  
+
+> 14:
+
+Output: Optimized policy πψ (a | s)
+
+In practice, the prior regularization term is implemented differently for discrete and continuous action spaces. The loss is defined as: 
+
+Lprior =
+
+
+
+− log πψ (aK | s), discrete ,
+
+−
+
+Z
+
+> A
+
+πK (a | s) log πψ (a | s) da, continuous ,
+
+(7) where aK denotes the action predicted by the latent policy prior, and A denotes the continuous action space. The con-tinuous cross-entropy term differs from the exact KL only by the entropy of the fixed prior distribution, and therefore provides an equivalent optimization signal for policy reg-ularization. Thus, the latent prior acts as a soft behavioral bias that guides policy learning while still allowing the RL policy to adapt to online reward feedback. The training procedure is summarized in Algorithm 1. Over-all, this design allows LaGO to benefit from pretrained LLM knowledge even when the latent prior is not sufficiently ac-curate to serve as a standalone controller. Instead, the prior only needs to provide a coarse but informative behavioral bias, which can guide policy learning toward more promis-ing directions during training. This is particularly useful in challenging tasks, where reward signals are limited and unguided exploration can be inefficient. Moreover, since the influence of the prior is controlled by the coefficient β, the guidance remains soft and does not overly constrain policy learning when the prior is imperfect. By combining such rough prior guidance with online environment feedback, the RL policy remains adaptive while still benefiting from the structural knowledge encoded in the pretrained LLM. 
+
+# 4. Experiments 
+
+4.1. Experimental Setup 
+
+We evaluate LaGO on two control benchmarks: CLEVR-Robot (Google Research, 2019), which has a discrete ac-tion space, and Meta-World (Yu et al., 2020), which has a continuous action space. CLEVR-Robot is a manipulation benchmark in which the agent moves five balls to satisfy target spatial relations. Its offline dataset covers tasks that move a designated ball relative to another ball in directions such as front, behind, left, and right. The state is represented by a 10-dimensional vector of ball positions, and the action is a 40-dimensional one-hot vector representing one of 40 discrete movements. Meta-World is a robotic manipulation benchmark in which the agent controls a Sawyer robot to interact with objects such as doors, drawers, windows, etc. Its offline dataset includes a diverse set of manipulation tasks, such as reach, push, pick-place, button-press, door-related tasks, window-open, faucet-open, and coffee-related tasks. The state is represented by a 91-dimensional vector describing the robot state and object poses, and the action is a 4-dimensional gripper control signal. For each benchmark, we follow the settings used in KALM (Pang et al., 2024) and consider four task categories: 
+
+Real , Rephrase , Easy , and Hard . Concretely, Real denotes tasks already covered by the offline data. Rephrase keeps the same underlying task but replaces the instruction with a paraphrased natural-language description. Easy /Hard de-note unseen tasks outside the offline dataset, with Hard increasing novelty and compositional difficulty. We report both reward and success rate as the evaluation metrics. For the main experiments, we use Llama-2-7b-chat-hf as the language backbone and PPO as the Stage 2 online RL optimizer. For Stage 1 latent policy pretraining, we follow the grounding schedule of KALM and train for 10 epochs on CLEVR-Robot and 5 epochs on Meta-World. For Stage 2 online RL, we train for 1.5M environment steps on CLEVR-Robot and 20M environment steps on Meta-World. All experiments are conducted on a machine with four NVIDIA RTX A6000 GPUs. 
+
+4.2. Main Results 
+
+Table 1 summarizes the main results on CLEVR-Robot and Meta-World. Overall, LaGO consistently outperforms Vanilla PPO on both benchmarks in terms of both reward and success rate, showing that the latent policy prior pro-vides a useful learning signal for online reinforcement learn-ing in both discrete and continuous control settings. On CLEVR-Robot, LaGO improves the overall average reward from 0.076 to 0.122 and the overall average success rate from 0.151 to 0.272. On Meta-World, LaGO improves the overall average reward from 0.840 to 1.161 and the overall 4LaGO: Latent Action Guidance for Online Reinforcement Learning                                                                                                                                
+
+> Table 1. Performance comparison on CLEVR-Robot and Meta-World tasks (Last 10 steps Mean ±Std). We report reward and success rate for Vanilla PPO and LaGO. For Vanilla PPO, the Rephrase baseline reuses the corresponding Real task result because the policy is instruction-agnostic. Best results are highlighted in bold .
+> Task Method CLEVR-Robot Meta-World Reward Success Rate Reward Success Rate
+> Real Vanilla PPO 0.030 ±0.004 0.230 ±0.022 0.741 ±0.077 0.023 ±0.026
+> LaGO 0.078 ±0.003 0.413 ±0.037 1.167 ±0.023 0.233 ±0.022
+> Rephrase Vanilla PPO 0.030 ±0.004 0.230 ±0.022 0.741 ±0.077 0.023 ±0.026
+> LaGO 0.069 ±0.002 0.388 ±0.041 1.130 ±0.105 0.235 ±0.026
+> Easy Vanilla PPO 0.138 ±0.021 0.138 ±0.021 1.108 ±0.216 0.057 ±0.035
+> LaGO 0.148 ±0.014 0.148 ±0.014 1.343 ±0.038 0.082 ±0.002
+> Hard Vanilla PPO 0.106 ±0.007 0.007 ±0.005 0.768 ±0.015 0.005 ±0.006
+> LaGO 0.194 ±0.017 0.140 ±0.016 1.002 ±0.011 0.058 ±0.018
+> Overall Average Vanilla PPO 0.076 0.151 0.840 0.027
+> LaGO 0.122 0.272 1.161 0.152
+> Improvement ( ∆)+0.046 +0.121 +0.321 +0.125
+
+average success rate from 0.027 to 0.152. Moreover, these improvements are consistently observed across all four task categories. The improvements are most evident on the Real and 
+
+Rephrase categories in both benchmarks. We believe this is because these tasks are more closely aligned with the offline data used to learn the latent policy prior in Stage 1. As a result, the LLM-based prior can provide more reli-able task-relevant guidance on these in-distribution settings. However, LaGO still improves performance on the unseen 
+
+Easy and Hard categories. This suggests that the prior does not merely memorize the seen tasks but also provides a certain degree of generalization ability from the pretrained language model. Even when the target task is not covered during training, the prior can still provide a rough but useful policy bias, which helps guide the online RL policy toward better directions. In addition, from the success rates in both Vanilla PPO and LaGO, Meta-World is clearly more challenging than CLEVR-Robot. This is because Meta-World involves con-tinuous action control, whereas CLEVR-Robot has a dis-crete action space. Nevertheless, the overall gain in success rate remains remarkably similar across the two benchmarks: +0.121 on CLEVR-Robot and +0.125 on Meta-World. This suggests that the latent policy prior can still provide a useful training signal even in the more challenging continuous-control setting. 
+
+4.3. Impact of LLM Prior Quality 
+
+In this subsection, we examine the effect of LLM prior quality on the performance of LaGO. Specifically, we train two LLM priors based on Llama 2 7B and TinyLlama 1.1B within the same LaGO framework on Meta-World. This comparison allows us to assess whether a stronger pretrained  
+
+> Figure 2. Impact of LLM prior quality on Meta-World. For each task category, we report reward and success rate for the direct prior policy, Vanilla PPO, and LaGO.
+
+language model leads to a more useful latent policy prior for online RL training. Figure 2 shows the reward and success rate across task categories for three types of methods: Direct Prior Policy, Vanilla PPO, and LaGO with different LLM priors. Here, Direct Prior Policy means that the learned prior policy is directly executed in the environment without Stage 2 on-line RL training. Namely, after Stage 1 training, the prior policy is used to interact with the environment directly. A clear trend can be observed in the Direct Prior Policy. The prior learned from Llama 2 7B consistently outperforms the 5LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+prior learned from TinyLlama 1.1B in both reward and suc-cess rate across all categories. This suggests that a stronger pretrained language model preserves more task-relevant in-formation after Stage 1 training. Note that although the Direct Prior Policy performs better than PPO and LaGO, the model sizes are drastically different. The LLM backbone contains 1.1B or 7B parameters, whereas the PPO policy used in Stage 2 contains only approximately 57 thousand parameters. Thus, the direct prior achieves strong perfor-mance, but it relies on more parameters than PPO. Next, a similar trend is also shown in the online RL results. LaGO with Llama 2 7B consistently achieves the strongest overall performance among the learned policy variants. In contrast, using the prior trained from TinyLlama 1.1B leads to clear drops in both reward and success rate, and in some cases even performs worse than Vanilla PPO. This indicates that the quality of the pretrained language model has a substantial impact on the effectiveness of the learned prior. Overall, these results suggest that LaGO can effectively benefit from improvements in LLM prior quality. As the pretrained language model becomes stronger, the resulting latent prior also becomes more useful for guiding online RL training. This highlights an important advantage of LaGO: future advances in pretrained language models can be directly translated into stronger latent guidance within our framework. 
+
+# 5. Discussion 
+
+This paper investigates whether pretrained LLMs can im-prove decision-making in planning problems, not by acting as standalone controllers, but by serving as latent action pri-ors that softly guide policy optimization in online reinforce-ment learning. Across both CLEVR-Robot and Meta-World, LaGO consistently improves both reward and success rate over Vanilla PPO. These results suggest that LLMs’ knowl-edge can provide a useful inductive bias for subsequent on-line learning. Moreover, using a stronger foundation model leads to a more effective latent prior, suggesting that the quality of the pretrained LLM is an important factor in deter-mining the benefit of such guidance. Overall, our findings support a simple but important conclusion: the knowledge and generalization ability encoded in pretrained LLMs can serve as a strong prior for planning and reinforcement learn-ing. Several directions remain for future work. First, since our results show that stronger pretrained LLMs lead to better guidance, a straightforward next step is to study LaGO with more capable foundation models. Second, the current frame-work applies prior guidance throughout training, while a more adaptive design that gradually reduces the weight of the prior as the RL policy becomes stronger may further improve performance. Third, it would be valuable to eval-uate LaGO in broader and more challenging settings, such as longer-horizon tasks and more complex decision-making problems. More broadly, we believe this direction opens up a practical way to leverage pretrained language models for reinforcement learning without requiring them to generate precise actions, plans, or trajectories during interaction. 
+
+# Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here. 
+
+# Acknowledgement 
+
+This research is partially supported by the National Sci-ence and Technology Council (NSTC) of the Republic of China (Taiwan) under Grant Number NSTC 113-2221-E-001-009-MY3, NSTC 114-2634-F-A49-004, NSTC 114-2221-E-A49-005. The authors would also like to thank the anonymous reviewers for their valuable comments. 
+
+# References 
+
+Ahn, M., Brohan, A., Brown, N., Chebotar, Y., Cortes, O., David, B., Finn, C., Fu, C., Gopalakrishnan, K., Hausman, K., Herzog, A., Ho, D., Hsu, J., Ibarz, J., Ichter, B., Irpan, A., Jang, E., Ruano, R. J., Jeffrey, K., Jesmonth, S., Joshi, N. J., Julian, R., Kalashnikov, D., Kuang, Y., Lee, K.-H., Levine, S., Lu, Y., Luu, L., Parada, C., Pastor, P., Quiambao, J., Rao, K., Retting-house, J., Reyes, D., Sermanet, P., Sievers, N., Tan, C., Toshev, A., Vanhoucke, V., Xia, F., Xiao, T., Xu, P., Xu, S., Yan, M., and Zeng, A. Do as i can, not as i say: Grounding language in robotic affordances, 2022. URL 
+
+https://arxiv.org/abs/2204.01691 .Brohan, A., Brown, N., Carbajal, J., Chebotar, Y., Chen, X., Choromanski, K., Ding, T., Driess, D., Dubey, A., Finn, C., Florence, P., Fu, C., Arenas, M. G., Gopalakr-ishnan, K., Han, K., Hausman, K., Herzog, A., Hsu, J., Ichter, B., Irpan, A., Joshi, N., Julian, R., Kalashnikov, D., Kuang, Y., Leal, I., Lee, L., Lee, T.-W. E., Levine, S., Lu, Y., Michalewski, H., Mordatch, I., Pertsch, K., Rao, K., Reymann, K., Ryoo, M., Salazar, G., Sanketi, P., Sermanet, P., Singh, J., Singh, A., Soricut, R., Tran, H., Vanhoucke, V., Vuong, Q., Wahid, A., Welker, S., Wohlhart, P., Wu, J., Xia, F., Xiao, T., Xu, P., Xu, S., Yu, T., and Zitkovich, B. Rt-2: Vision-language-action models transfer web knowledge to robotic control, 2023. URL https://arxiv.org/abs/2307.15818 .Bruce, J., Dennis, M., Edwards, A., Parker-Holder, J., 6LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+Shi, Y., Hughes, E., Lai, M., Mavalankar, A., Steiger-wald, R., Apps, C., Aytar, Y., Bechtle, S., Behbahani, F., Chan, S., Heess, N., Gonzalez, L., Osindero, S., Ozair, S., Reed, S., Zhang, J., Zolna, K., Clune, J., de Freitas, N., Singh, S., and Rockt ¨aschel, T. Ge-nie: Generative interactive environments, 2024. URL 
+
+https://arxiv.org/abs/2402.15391 .Bubeck, S., Chandrasekaran, V., Eldan, R., Gehrke, J., Horvitz, E., Kamar, E., Lee, P., Lee, Y. T., Li, Y., Lund-berg, S., Nori, H., Palangi, H., Ribeiro, M. T., and Zhang, Y. Sparks of artificial general intelligence: Early experi-ments with gpt-4, 2023. URL https://arxiv.org/ abs/2303.12712 .Carta, T., Romac, C., Wolf, T., Lamprier, S., Sigaud, O., and Oudeyer, P.-Y. Grounding large language models in interactive environments with online reinforcement learning, 2026. URL https://arxiv.org/abs/ 2302.02662 .Driess, D., Xia, F., Sajjadi, M. S. M., Lynch, C., Chowdhery, A., Ichter, B., Wahid, A., Tompson, J., Vuong, Q., Yu, T., Huang, W., Chebotar, Y., Sermanet, P., Duckworth, D., Levine, S., Vanhoucke, V., Hausman, K., Toussaint, M., Greff, K., Zeng, A., Mordatch, I., and Florence, P. Palm-e: An embodied multimodal language model, 2023. URL https://arxiv.org/abs/2303.03378 .Fang, T., Zhang, H., Zhang, Z., Ma, K., Yu, W., Mi, H., and Yu, D. Webevolver: Enhancing web agent self-improvement with coevolving world model, 2025. URL 
+
+https://arxiv.org/abs/2504.21024 .Google Research. Clevr-robot environment. 
+
+https://github.com/google-research/ clevr_robot_env , 2019. Guo, D., Yang, D., Zhang, H., Song, J., Wang, P., Zhu, Q., Xu, R., Zhang, R., Ma, S., Bi, X., Zhang, X., Yu, X., Wu, Y., Wu, Z. F., Gou, Z., Shao, Z., Li, Z., Gao, Z., Liu, A., Xue, B., Wang, B., Wu, B., Feng, B., Lu, C., Zhao, C., Deng, C., Ruan, C., Dai, D., Chen, D., Ji, D., Li, E., Lin, F., Dai, F., Luo, F., Hao, G., Chen, G., Li, G., Zhang, H., Xu, H., Ding, H., Gao, H., Qu, H., Li, H., Guo, J., Li, J., Chen, J., Yuan, J., Tu, J., Qiu, J., Li, J., Cai, J. L., Ni, J., Liang, J., Chen, J., Dong, K., Hu, K., You, K., Gao, K., Guan, K., Huang, K., Yu, K., Wang, L., Zhang, L., Zhao, L., Wang, L., Zhang, L., Xu, L., Xia, L., Zhang, M., Zhang, M., Tang, M., Zhou, M., Li, M., Wang, M., Li, M., Tian, N., Huang, P., Zhang, P., Wang, Q., Chen, Q., Du, Q., Ge, R., Zhang, R., Pan, R., Wang, R., Chen, R. J., Jin, R. L., Chen, R., Lu, S., Zhou, S., Chen, S., Ye, S., Wang, S., Yu, S., Zhou, S., Pan, S., Li, S. S., Zhou, S., Wu, S., Yun, T., Pei, T., Sun, T., Wang, T., Zeng, W., Liu, W., Liang, W., Gao, W., Yu, W., Zhang, W., Xiao, W. L., An, W., Liu, X., Wang, X., Chen, X., Nie, X., Cheng, X., Liu, X., Xie, X., Liu, X., Yang, X., Li, X., Su, X., Lin, X., Li, X. Q., Jin, X., Shen, X., Chen, X., Sun, X., Wang, X., Song, X., Zhou, X., Wang, X., Shan, X., Li, Y. K., Wang, Y. Q., Wei, Y. X., Zhang, Y., Xu, Y., Li, Y., Zhao, Y., Sun, Y., Wang, Y., Yu, Y., Zhang, Y., Shi, Y., Xiong, Y., He, Y., Piao, Y., Wang, Y., Tan, Y., Ma, Y., Liu, Y., Guo, Y., Ou, Y., Wang, Y., Gong, Y., Zou, Y., He, Y., Xiong, Y., Luo, Y., You, Y., Liu, Y., Zhou, Y., Zhu, Y. X., Huang, Y., Li, Y., Zheng, Y., Zhu, Y., Ma, Y., Tang, Y., Zha, Y., Yan, Y., Ren, Z. Z., Ren, Z., Sha, Z., Fu, Z., Xu, Z., Xie, Z., Zhang, Z., Hao, Z., Ma, Z., Yan, Z., Wu, Z., Gu, Z., Zhu, Z., Liu, Z., Li, Z., Xie, Z., Song, Z., Pan, Z., Huang, Z., Xu, Z., Zhang, Z., and Zhang, Z. Deepseek-r1 incentivizes reasoning in llms through reinforcement learning. Nature , 645 (8081):633–638, 2025. ISSN 1476-4687. doi: 10.1038/ s41586-025-09422-z. URL http://dx.doi.org/ 10.1038/s41586-025-09422-z .Gurnee, W. and Tegmark, M. Language models represent space and time, 2024. URL https://arxiv.org/ abs/2310.02207 .Hao, S., Gu, Y., Ma, H., Hong, J. J., Wang, Z., Wang, D. Z., and Hu, Z. Reasoning with language model is planning with world model, 2023. URL https: //arxiv.org/abs/2305.14992 .Hu, X., Zhang, Y., Huang, F., Tu, J., Su, Y., Deng, L., Liu, Y., Liu, Y., Liu, D., and Ho, T.-Y. Occubench: Evaluating ai agents on real-world professional tasks via language environment simulation, 2026. URL https: //arxiv.org/abs/2604.10866 .Huang, W., Xia, F., Xiao, T., Chan, H., Liang, J., Florence, P., Zeng, A., Tompson, J., Mordatch, I., Chebotar, Y., Sermanet, P., Brown, N., Jackson, T., Luu, L., Levine, S., Hausman, K., and Ichter, B. Inner monologue: Embodied reasoning through planning with language models, 2022. URL https://arxiv.org/abs/2207.05608 .Jin, C. and Rinard, M. Emergent representations of program semantics in language models trained on programs, 2024. URL https://arxiv.org/abs/2305.11169 .Kim, M. J., Pertsch, K., Karamcheti, S., Xiao, T., Balakr-ishna, A., Nair, S., Rafailov, R., Foster, E., Lam, G., Sanketi, P., Vuong, Q., Kollar, T., Burchfiel, B., Tedrake, R., Sadigh, D., Levine, S., Liang, P., and Finn, C. Open-vla: An open-source vision-language-action model, 2024. URL https://arxiv.org/abs/2406.09246 .Li, K., Hopkins, A. K., Bau, D., Vi ´egas, F., Pfister, H., and Wattenberg, M. Emergent world representations: Explor-ing a sequence model trained on a synthetic task, 2024. URL https://arxiv.org/abs/2210.13382 .7LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+Lin, J., Du, Y., Watkins, O., Hafner, D., Abbeel, P., Klein, D., and Dragan, A. Learning to model the world with language, 2024. URL https://arxiv.org/abs/ 2308.01399 .OpenAI, Achiam, J., Adler, S., Agarwal, S., Ahmad, L., Akkaya, I., Aleman, F. L., Almeida, D., Altenschmidt, J., Altman, S., Anadkat, S., Avila, R., Babuschkin, I., Bal-aji, S., Balcom, V., Baltescu, P., Bao, H., Bavarian, M., Belgum, J., Bello, I., Berdine, J., Bernadett-Shapiro, G., Berner, C., Bogdonoff, L., Boiko, O., Boyd, M., Brakman, A.-L., Brockman, G., Brooks, T., Brundage, M., Button, K., Cai, T., Campbell, R., Cann, A., Carey, B., Carlson, C., Carmichael, R., Chan, B., Chang, C., Chantzis, F., Chen, D., Chen, S., Chen, R., Chen, J., Chen, M., Chess, B., Cho, C., Chu, C., Chung, H. W., Cummings, D., Cur-rier, J., Dai, Y., Decareaux, C., Degry, T., Deutsch, N., Deville, D., Dhar, A., Dohan, D., Dowling, S., Dunning, S., Ecoffet, A., Eleti, A., Eloundou, T., Farhi, D., Fedus, L., Felix, N., Fishman, S. P., Forte, J., Fulford, I., Gao, L., Georges, E., Gibson, C., Goel, V., Gogineni, T., Goh, G., Gontijo-Lopes, R., Gordon, J., Grafstein, M., Gray, S., Greene, R., Gross, J., Gu, S. S., Guo, Y., Hallacy, C., Han, J., Harris, J., He, Y., Heaton, M., Heidecke, J., Hesse, C., Hickey, A., Hickey, W., Hoeschele, P., Houghton, B., Hsu, K., Hu, S., Hu, X., Huizinga, J., Jain, S., Jain, S., Jang, J., Jiang, A., Jiang, R., Jin, H., Jin, D., Jomoto, S., Jonn, B., Jun, H., Kaftan, T., Ł ukasz Kaiser, Kamali, A., Kanitscheider, I., Keskar, N. S., Khan, T., Kilpatrick, L., Kim, J. W., Kim, C., Kim, Y., Kirchner, J. H., Kiros, J., Knight, M., Kokotajlo, D., Łukasz Kondraciuk, Kondrich, A., Konstantinidis, A., Kosic, K., Krueger, G., Kuo, V., Lampe, M., Lan, I., Lee, T., Leike, J., Leung, J., Levy, D., Li, C. M., Lim, R., Lin, M., Lin, S., Litwin, M., Lopez, T., Lowe, R., Lue, P., Makanju, A., Malfacini, K., Manning, S., Markov, T., Markovski, Y., Martin, B., Mayer, K., Mayne, A., McGrew, B., McKinney, S. M., McLeavey, C., McMillan, P., McNeil, J., Medina, D., Mehta, A., Menick, J., Metz, L., Mishchenko, A., Mishkin, P., Monaco, V., Morikawa, E., Mossing, D., Mu, T., Murati, M., Murk, O., M ´ely, D., Nair, A., Nakano, R., Nayak, R., Neelakantan, A., Ngo, R., Noh, H., Ouyang, L., O’Keefe, C., Pachocki, J., Paino, A., Palermo, J., Pantuliano, A., Parascandolo, G., Parish, J., Parparita, E., Passos, A., Pavlov, M., Peng, A., Perelman, A., de Avila Belbute Peres, F., Petrov, M., de Oliveira Pinto, H. P., Michael, Pokorny, Pokrass, M., Pong, V. H., Powell, T., Power, A., Power, B., Proehl, E., Puri, R., Radford, A., Rae, J., Ramesh, A., Raymond, C., Real, F., Rimbach, K., Ross, C., Rotsted, B., Roussez, H., Ryder, N., Saltarelli, M., Sanders, T., Santurkar, S., Sastry, G., Schmidt, H., Schnurr, D., Schulman, J., Selsam, D., Sheppard, K., Sherbakov, T., Shieh, J., Shoker, S., Shyam, P., Sidor, S., Sigler, E., Simens, M., Sitkin, J., Slama, K., Sohl, I., Sokolowsky, B., Song, Y., Staudacher, N., Such, F. P., Summers, N., Sutskever, I., Tang, J., Tezak, N., Thompson, M. B., Tillet, P., Tootoonchian, A., Tseng, E., Tuggle, P., Turley, N., Tworek, J., Uribe, J. F. C., Vallone, A., Vijayvergiya, A., Voss, C., Wainwright, C., Wang, J. J., Wang, A., Wang, B., Ward, J., Wei, J., Weinmann, C., Welihinda, A., Welinder, P., Weng, J., Weng, L., Wi-ethoff, M., Willner, D., Winter, C., Wolrich, S., Wong, H., Workman, L., Wu, S., Wu, J., Wu, M., Xiao, K., Xu, T., Yoo, S., Yu, K., Yuan, Q., Zaremba, W., Zellers, R., Zhang, C., Zhang, M., Zhao, S., Zheng, T., Zhuang, J., Zhuk, W., and Zoph, B. Gpt-4 technical report, 2024. URL https://arxiv.org/abs/2303.08774 .Pang, J.-C., Yang, S.-H., Li, K., Zhang, J., Chen, X.-H., Tang, N., and Yu, Y. Knowledgeable agents by offline reinforcement learning from large language model roll-outs, 2024. URL https://arxiv.org/abs/2404. 09248 .Reed, S., Zolna, K., Parisotto, E., Colmenarejo, S. G., Novikov, A., Barth-Maron, G., Gimenez, M., Sulsky, Y., Kay, J., Springenberg, J. T., Eccles, T., Bruce, J., Razavi, A., Edwards, A., Heess, N., Chen, Y., Hadsell, R., Vinyals, O., Bordbar, M., and de Freitas, N. A gener-alist agent, 2022. URL https://arxiv.org/abs/ 2205.06175 .Team, D., Zeng, B., Hua, D., Zhu, K., Dai, Y., Li, B., Wang, Y., Tong, C., Yang, Y., Chang, M., Zhao, J., Liu, Z., Liang, H., Ma, X., An, R., Niu, J., Meng, Z., Bai, T., Qiang, M., Zhang, H., Xiao, Z., Guo, T., Yu, Q., Zhao, R., Li, Z., Huang, X., Pan, Y., Tang, Y., Shi, Y., Ding, Y., Chen, X., Gao, H., Shi, M., Wu, J., Wang, Z., Zhang, Y., Wang, X., Wan, P., Song, Y., Shou, M. Z., and Zhang, W. Openworldlib: A unified codebase and definition of advanced world models, 2026. URL https: //arxiv.org/abs/2604.04707 .Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.-A., Lacroix, T., Rozi `ere, B., Goyal, N., Hambro, E., Azhar, F., Rodriguez, A., Joulin, A., Grave, E., and Lample, G. Llama: Open and efficient foundation lan-guage models, 2023. URL https://arxiv.org/ abs/2302.13971 .Wang, G., Xie, Y., Jiang, Y., Mandlekar, A., Xiao, C., Zhu, Y., Fan, L., and Anandkumar, A. Voyager: An open-ended embodied agent with large language models, 2023. URL https://arxiv.org/abs/2305.16291 .Xiang, J., Tao, T., Gu, Y., Shu, T., Wang, Z., Yang, Z., and Hu, Z. Language models meet world models: Embod-ied experiences enhance language models, 2023. URL 
+
+https://arxiv.org/abs/2305.10626 .Yan, X., Song, Y., Feng, X., Yang, M., Zhang, H., Ammar, H. B., and Wang, J. Efficient reinforcement learning 8LaGO: Latent Action Guidance for Online Reinforcement Learning 
+
+with large language model priors, 2024. URL https: //arxiv.org/abs/2410.07927 .Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., Zheng, C., Liu, D., Zhou, F., Huang, F., Hu, F., Ge, H., Wei, H., Lin, H., Tang, J., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J., Zhou, J., Zhou, J., Lin, J., Dang, K., Bao, K., Yang, K., Yu, L., Deng, L., Li, M., Xue, M., Li, M., Zhang, P., Wang, P., Zhu, Q., Men, R., Gao, R., Liu, S., Luo, S., Li, T., Tang, T., Yin, W., Ren, X., Wang, X., Zhang, X., Ren, X., Fan, Y., Su, Y., Zhang, Y., Zhang, Y., Wan, Y., Liu, Y., Wang, Z., Cui, Z., Zhang, Z., Zhou, Z., and Qiu, Z. Qwen3 technical report, 2025. URL https: //arxiv.org/abs/2505.09388 .Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K., and Cao, Y. React: Synergizing reasoning and act-ing in language models, 2023. URL https://arxiv. org/abs/2210.03629 .Yu, T., Quillen, D., He, Z., Julian, R., Hausman, K., Finn, C., and Levine, S. Meta-world: A benchmark and evalua-tion for multi-task and meta reinforcement learning. In 
+
+Conference on robot learning , pp. 1094–1100. PMLR, 2020. 9
