@@ -1,0 +1,592 @@
+Title: SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport
+
+URL Source: https://arxiv.org/pdf/2607.00377v1
+
+Published Time: Thu, 02 Jul 2026 00:40:04 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+Yuting Zhang 1 Yanbei Liu 2 Zhitao Xiao 2 Lei Geng 2 Yanwei Pang 3 Xiao Wang 4
+
+## Abstract 
+
+Self-supervised Continual Graph Learning (CGL) aims to successively learn from a graph sequence with different tasks without label supervision—a paradigm that has attracted widespread attention. Most existing self-supervised CGL methods rely on instance-level consistency objectives that en-force stability of individual node (or node-pair) embeddings. Due to optimizing nodes in isolation, these methods fail to maintain global relational structure, causing inter-node correspondences to progressively distort under continual learning. To this end, we propose a novel Structure-Aware Optimal Transport (SAOT) framework that ex-plicitly captures and preserves relational struc-ture within graph representations across sequen-tial tasks. Specifically, SAOT leverages optimal transport theory to capture global inter-node cor-respondences, thereby facilitating and enhancing graph representation learning. Simultaneously, SAOT incorporates a cross-task knowledge distil-lation mechanism to preserve the previous struc-tural knowledge. Extensive experiments on four CGL benchmark datasets demonstrate that SAOT outperforms existing self-supervised baselines. In particular, SAOT achieves significant perfor-mance gains, improving average accuracy by up to 5% on CoraFull-CL and over 15% on Products-CL compared with state-of-the-art methods in the Class-IL setting. 
+
+> 1
+
+School of Electronics and Information Engineering, Tiangong University, Tianjin, China 2School of Life Sciences, Tiangong University, Tianjin, China 3School of Electrical and Infomation Engineering, Tianjin University, Tianjin, China 4School of Soft-ware, Beihang University, Beijing, China. Correspondence to: Yanbei Liu <liuyanbei@tiangong.edu >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+## 1. Introduction 
+
+Graph data are ubiquitous in real-world applications, mod-eling complex systems with rich relational dependencies, such as citation networks, e-commerce systems, and bio-chemical molecules (Hamilton et al., 2017; Wu et al., 2021). Despite the remarkable progress of graph representation learning, most existing methods are designed for static set-tings, where the data distribution is assumed to be station-ary (Kipf & Welling, 2017; Veli ˇckovi ´c et al., 2018). In contrast, real-world graph data are continuously generated, with new nodes, edges, or tasks appearing over time (Wang et al., 2020). For instance, papers on new research topics continuously enter citation networks, and novel molecular properties are progressively encountered in drug discov-ery tasks (Liu et al., 2021; Zhang et al., 2022a). To cope with such evolving data, graph models are required to in-crementally acquire new knowledge while maintaining per-formance on previously learned tasks, a learning paradigm known as Continual Graph Learning (CGL) (Zhou & Cao, 2021; Zhang et al., 2022a). However, simply training mod-els sequentially on incoming data is prone to catastrophic forgetting (McCloskey & Cohen, 1989; Goodfellow et al., 2014), while retraining a model on all accumulated data is computationally expensive and often infeasible when histor-ical data are unavailable. To mitigate catastrophic forgetting, existing CGL ap-proaches generally are divided into three categories. Parame-ter isolation methods (Zhang et al., 2023; Cai et al., 2022) al-locate task-specific parameters or modules to avoid interfer-ence between tasks. Regularization-based approaches (Kirk-patrick et al., 2017; Liu et al., 2021) constrain parameter updates by penalizing changes to important parameters or outputs learned from previous tasks. Replay-based meth-ods (Zhou & Cao, 2021; Zhang et al., 2022b) explicitly store a small set of historical nodes or subgraphs and rehearse them during training to maintain past knowledge. While these approaches have demonstrated effectiveness, they typi-cally rely on explicit supervision. However, annotating com-plex graph data is often time-consuming, labor-intensive, and sometimes even impractical, especially when graphs continuously emerge in an online manner. Consequently, it is crucial to advance self-supervised con-1
+
+> arXiv:2607.00377v1 [cs.LG] 1 Jul 2026 SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport
+
+tinual graph learning, enabling models to acquire knowl-edge directly from unlabeled streaming data. Driven by the above necessity, recent studies (Sun et al., 2023; Peng et al., 2025) have explored self-supervised approaches for contin-ual graph learning scenarios. In particular, TRACE (Peng et al., 2025) provides a systematic empirical study of rep-resentative self-supervised graph representation learning paradigms in continual settings, demonstrating that self-supervised graph models (Kipf & Welling, 2016; You et al., 2020b; Bielak et al., 2022) can learn more transferable and stable representations than their supervised counterparts in the absence of label supervision. However, most existing self-supervised CGL methods rely on instance-level consistency objectives, treating each node (or node pair) as an independent learning instance to sta-bilize individual node embeddings (Sun et al., 2023; Peng et al., 2025). Although these methods effectively promote local embedding stability, they overlook a critical charac-teristic of streaming graph data: long-term knowledge is encoded not merely in isolated embeddings but in the re-lational structure within the representation space. Conse-quently, even if individual nodes embeddings remain lo-cally stable, the relationships among nodes can gradually distort—a phenomenon known as structural drift, which manifests as changes in relative distances or the overall or-ganization of node clusters across sequential tasks. Because most existing objectives do not explicitly model relational dependencies, such drift accumulates over time, ultimately impairing long-term knowledge retention. To this end, we propose a novel self-supervised continual graph learning framework based on Structure-Aware Opti-mal Transport, named SAOT. Specifically, SAOT leverages Optimal Transport (OT) theory to encode the relational struc-ture among all nodes. Within each task, SAOT constructs an optimal transport plan that jointly captures correspondences among nodes in the graph space. The plan is used as a struc-tural reference to guide the encoder to learn structure-aware, transferable node representations. To mitigate structural drift caused by sequential tasks, SAOT employs cross-task knowledge distillation to preserve the previous structural in-formation. Through the coordinated operation of the above two modules, SAOT enables the model to adapt effectively to new tasks while consolidating previously learned struc-tural knowledge, achieving an optimal balance between plasticity and stability. In summary, the main contributions of the proposed SAOT are as follows: • We propose SAOT, a novel self-supervised continual graph learning framework that leverages optimal trans-port to model and preserve relational structure in graph representations across sequential tasks. • We design a cross-task knowledge distillation mech-anism that preserves relational structure by distilling optimal transport plans defined in the representation space across tasks, thereby effectively mitigating the problem of structure drift under continual learning. • We conduct extensive experiments on four CGL bench-mark datasets under both Class-IL and Task-IL settings. Experimental results demonstrate that the proposed SAOT outperforms existing self-supervised baselines. In particular, in the Class-IL setting, SAOT achieves an improvement of up to 5% on CoraFull-CL and over 15% on Products-CL in terms of average accuracy com-pared with state-of-the-art methods. 
+
+## 2. Related Work 
+
+2.1. Continual Graph Learning 
+
+Inspired by recent advances in continual learning for com-puter vision, various methods for CGL have been proposed in recent years to address learning on streaming graph data (Babakniya et al., 2024; Lee et al., 2024). From a methodological perspective, existing CGL methods can be broadly grouped into three categories. Parameter isolation methods (Cai et al., 2022; Zhang et al., 2023) allocate task-specific parameters or network components through special-ized architectures, such as expanding networks, task-specific modules, or gated routing mechanisms, in order to prevent interference between tasks. Replay-based methods (Zhou & Cao, 2021; Zhang et al., 2022b; Liu et al., 2023; Zhang et al., 2024) mitigate catastrophic forgetting by maintain-ing a memory buffer that stores information from previ-ous tasks and replaying it during the learning of new tasks. Regularization-based methods (Kirkpatrick et al., 2017; Liu et al., 2021; Sun et al., 2023) restrict parameter updates or representation changes across tasks by imposing consis-tency constraints on model parameters, node embeddings, or output predictions. However, most existing CGL methods rely heavily on su-pervisory signals, such as node or graph labels, which limits their applicability in realistic scenarios. In contrast, re-search on unsupervised or self-supervised CGL remains relatively underexplored. More recently, a notable attempt is RieGrace (Sun et al., 2023), which proposes a unified framework that combines GNNs with CurvNet. It explic-itly handles task-specific adaptation in Riemannian space and employs a label-free Lorentz distillation mechanism to mitigate catastrophic forgetting. Inspired by the Com-plementary Learning Systems theory, TRACE (Peng et al., 2025) employs a dual-system framework to mitigate catas-trophic forgetting without external supervision. Specifically, a fast-learning system extracts key knowledge through node proxies, while a slow-learning system consolidates memory via adaptive spaced replay. 2SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+2.2. Self-Supervised Graph Learning 
+
+Self-supervised graph learning aims to learn expressive node or graph representations without relying on explicit labels by exploiting intrinsic structural and attribute-based signals. Early approaches (Kipf & Welling, 2016; Jin et al., 2020) are primarily based on generative objectives, such as graph autoencoders and variational graph autoencoders, which reconstruct node features or graph structures from latent rep-resentations. More recent methods (Veli ˇckovi ´c et al., 2019; You et al., 2020a; Zhu et al., 2020) adopt contrastive learning paradigms, where representations are learned by maximiz-ing agreement between different augmented views of the same graph while contrasting them against other samples. These approaches have demonstrated good performance on various downstream tasks. Beyond contrastive learning, redundancy-reduction and non-contrastive paradigms (Lee et al., 2022; Thakoor et al., 2022; Bielak et al., 2022) have been proposed to remove the reliance on negative samples. These methods learn invariant representations across aug-mented views by explicitly minimizing feature redundancy or aligning cross-view statistics. Nevertheless, most meth-ods are trained offline under the assumption of full data availability, which does not reflect the reality that graph data arrive sequentially over time. 
+
+## 3. Preliminaries 
+
+In this section, we briefly review optimal transport, which serve as the key technical foundation of our method. We then formally defined the studied paradigm: self-supervised continual graph learning. 
+
+3.1. Plan and Optimal Transport 
+
+The optimal transport problem was originally proposed to study the most cost-effective way of transporting the shape of one pile of sand into the shape of another (Wang et al., 2023). Specifically, it studies how to transform distribu-tion μ into another distribution ν with the minimum total transportation cost (i.e, the optimal transportation distance). This transport plan is called the optimal plan π, where the element of π describes the probability of moving mass from one position to another. Formally, given two sets of fea-tures X1 = {Xi
+
+> 1
+
+}ni=1 and X2 = {Xj
+
+> 2
+
+}mj=1 , where n and 
+
+m are the number of features, μ ∈ Rn and ν ∈ Rm are the probability distributions of the entities in the two sets, respectively. The formulation of the OT distance is 
+
+D(X1, X2) = min 
+
+> π∈Π( μ,ν )
+
+X
+
+> i∈[[ n]]
+
+X
+
+> j∈[[ m]]
+
+cX (Xi
+
+> 1
+
+, Xj
+
+> 2
+
+) · πij , (1) abbreviated as 
+
+D(X1, X2) = min 
+
+> π∈Π( μ,ν )
+
+⟨K (X1, X2), π ⟩, (2) where π ∈ Π( μ, ν ) = {π ∈ Rn×m | π1m = μ, π ⊤1n =
+
+ν} denotes all the joint distributions π with the marginal distribution μ and ν. K(X1, X2)ij = cX (Xi
+
+> 1
+
+, Xj
+
+> 2
+
+) is the cost of moving Xi 
+
+> 1
+
+to Xj
+
+> 2
+
+. The cost can be calculated by cosine distance. The 1 denotes a vector that elements are all 1, [[ n]] = {1, 2, . . . , n }, and ⟨· , ·⟩ is the inner product operator. The π ∈ Rn×m is called as transport plan. The distance D (·, ·) is also known as Wasserstein distance. In this work, we focus on the case of discrete distributions on graphs. 
+
+3.2. Problem Formulation 
+
+The setting of continual graph learning assumes a sequence of disjoint tasks T = {T 1, . . . , TT } which will be encoun-tered sequentially. Each task Tt ∈ T is defined on a graph 
+
+Gt = ( Vt, Et), where Vt and Et denote the sets of nodes and edges, respectively. The node attributes are represented by the feature matrix Xt ∈ R|V t|× d, where d is the feature di-mension. Furthermore, the topological structure of the graph is captured by the adjacency matrix At ∈ { 0, 1}|V t|×|V t|. In this work, we follow a decoupled representation–classifier paradigm (Cha et al., 2021; Gomez-Villa et al., 2022; Sun et al., 2023) for self-supervised CGL, in which representa-tion learning is explicitly separated from downstream classi-fier training. Given a sequence of graph related tasks T , we aim at learn-ing a shared graph encoder Fξ : Vt → RH across all task sequences, which maps nodes to H-dimensional representa-tion vectors, so that the encoder is able to continuously adapt new knowledge in the current tasks without catastrophically forgetting knowledge acquired from previous tasks. During the learning process, no external supervisory signals (i.e., labels) are involved. To evaluate the quality of learned representations, we follow the experimental setting in prior work on self-supervised continual learning (Sun et al., 2023; Gomez-Villa et al., 2024; Peng et al., 2025). Specifically, for the graph Gt
+
+from each task, we have training node set Vtr  
+
+> t
+
+and testing node set Vte  
+
+> t
+
+. Each node vit in Gt belongs to a category 
+
+yit ∈ Y P , where YP denotes the label set of P categories involved in all tasks. During evaluation, the parameters of the graph encoder Fξ are kept frozen, and we provide the learned embeddings across the training node set to the linear classifier for performance evaluation. We consider two different settings, i.e., Task Incremental Learning (Task-IL) and Class Incremental Learning (Class-IL). In the Task-IL setting, the model is only required to distinguish different classes within each task without considering the classes that have already appeared from existing tasks. In the Class-IL setting, the model is required to distinguish among all classes from the current and previous tasks. Obviously, Class-IL is more realistic and challenging. 3SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport Augmentation  
+
+> ＝sg
+> OT Alignment
+> Distillation
+> Update
+> Task Sequence
+> ...
+> Batch
+> Graph Space Representation Space
+
+Figure 1. Overview of SAOT. It leverages optimal transport mechanism to learn and preserve relational structure in CGL. When a new task arrives, the model learns structure-aware representations by aligning optimal transport plans in the graph and embedding spaces. Simultaneously, SAOT consolidates the learned structural knowledge from the previous model by distillation mechanism. 
+
+## 4. Methodology 
+
+This section describes the details of the proposed SAOT framework. SAOT consists of two components: (i) Graph Representation via Optimal Transport, which learns structure-aware representations within each task, and (ii) Cross-task Knowledge Distillation, which preserves rela-tional knowledge across sequential tasks. The framework details are illustrated in Figure 1. 
+
+4.1. Graph Representation via Optimal Transport 
+
+The primary objective of our framework is to maximize plas-ticity on new tasks. Specifically, we expect to fully adapt the current input graph for acquiring high-quality knowledge. To this end, we design a replay-based graph representation learning framework based on optimal transport mechanism, which explicitly aligns relational structures between the in-put graph and the learned representation space, enabling structure-aware graph embeddings. 
+
+Graph Augmentation. For task Tt, the training input data consists of the graph Gt = ( Vt, Et) and a set of historical subgraphs {G sub  
+
+> τ
+
+}t−1  
+
+> τ=1
+
+retrieved from the fixed-size memory buffer B, where τ ∈ { 1, . . . , t − 1} indexes the prior tasks. Each historical subgraph Gsub  
+
+> τ
+
+is constructed via layer-wise neighbor sampling to a fixed budget, ensuring bounded memory usage while preserving local structural information. During training, the current graph and replayed subgraphs are consolidated into batched graph Gbat  
+
+> t
+
+via the disjoint union operation. For simplicity, we omit the task index in the following and denote the batched graph as Gbat . For the batched graph Gbat , we construct two augmented views, 
+
+Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+, via a stochastic augmentation function that randomly drops edges and masks node features. Formally, we define two views as Gbat  
+
+> 1
+
+= ( A1, X1, μ ) and Gbat  
+
+> 2
+
+=(A2, X2, ν ), where μ and ν are the empirical distributions of nodes in Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+, respectively. X1 ∈ Rn×d and 
+
+X2 ∈ Rm×d denote their feature matrices. A1 ∈ Rn×n and 
+
+A2 ∈ Rm×m are adjacency matrices. The underlying graph topology provides a valuable source of structure-level supervision for representation learning. However, directly leveraging the structural signal is non-trivial. Since node embeddings and graph topology reside in different metric spaces, it is challenging to establish com-parable similarity metrics across these spaces. Optimal transport theory offers a solution for such comparison via the transport plan. In this work, we aim to find the optimal transport plan for two graphs by minimizing the transport cost (i.e.,optimal transport distance). The Wasserstein distance (Equation 1) requires the two dis-tributions to reside in the same space. But for graphs, it is difficult to measure the cost between two nodes on different graphs without node label (attribute). Even if there is some way to get the cost between nodes, the Wasserstein distance cannot consider the edge information. Therefore, we need 4SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+to take the edge information into account as follows 
+
+DGW (A1, A2) = min  
+
+> πG∈Π( μ,ν )
+
+X
+
+> i,k ∈[[ n]] 2
+
+X
+
+> j,l ∈[[ m]] 2
+
+cA(Aik  
+
+> 1
+
+, Ajl  
+
+> 2
+
+) · πik πjl ,
+
+(3) abbreviated as 
+
+DGW (A1, A2) = min   
+
+> πG∈Π( μ,ν )
+
+⟨L (A1, A2) ⊗ π, π ⟩ , (4) where L(A1, A2) is 4-D tensor and L(A1, A2)ijkl =
+
+cA(Aik  
+
+> 1
+
+, Ajl  
+
+> 2
+
+). The cost function cA is defined as 
+
+cA(Aik  
+
+> 1
+
+, Ajl  
+
+> 2
+
+) = |Aik  
+
+> 1
+
+−Ajl  
+
+> 2
+
+|, where |·| denotes the absolute value operator. [[ n]] 2 = [[ n]] × [[ n]] , ⊗ denotes the tensor-matrix multiplication. The distance DGW (·, ·) is known as the Gromov-Wasserstein distance. Then we consider the complete graph including edge structure and node features. The fused Gromov–Wasserstein distance between graphs 
+
+Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+can be defined as 
+
+DFGW (Gbat  
+
+> 1
+
+, Gbat  
+
+> 2
+
+) = min   
+
+> πG∈Π( μ,ν )
+
+σ X
+
+> ij
+
+cX (Xi
+
+> 1
+
+, Xj
+
+> 2
+
+) · πG
+
+> ij
+
++ (1 − σ) X
+
+> ijkl
+
+cA(Aik  
+
+> 1
+
+, Ajl  
+
+> 2
+
+) · πG 
+
+> ij
+
+πG
+
+> kl
+
+,
+
+(5) which is equivalent to 
+
+min   
+
+> πG∈Π( μ,ν )
+
+σ K(X1, X2) + (1 − σ) L(A1, A2) ⊗ πG , π G ,
+
+(6) where σ ∈ [0; 1] represents the trade-off parameter for ad-justing nodes and edges. 
+
+Optimal Transport Plan. In this work, we aim to learn structure-aware representations while preserving nodel-level semantic information. To this end, we integrate the node features and edge structure on the graph and design a new objective function to align the optimal transport plans de-rived from the graph space and the representation space. Specifically, the fused optimal transport plan π∗G ∈ Rn×m
+
+between the two graphs Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+above can be defined by minimizing the fused Gromov-Wasserstein distance ob-jective: 
+
+π∗G = arg min πG ∈Π( μ,ν )⟨σ K(X1, X2)+ (1 − σ) L(A1, A2) ⊗ πG , π G . (7) By tuning the parameter σ, we can control the deviation of the learned optimal transport plan between node features and edge structure. Then we use the backbone model (e.g., GNNs) to obtain the node representations of graph. We can use Equation (1) directly to calculate the optimal plan π∗Z ∈ Rn×m as 
+
+π∗Z = arg min πZ ∈Π( μ,ν ) ⟨R (Z1, Z2), π Z ⟩ , (8) where R(Z1, Z2)ij = cZ
+
+
+
+Zi
+
+> 1
+
+, Zj
+
+> 2
+
+
+
+, Z1 and Z2 denote the node representations corresponding to Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+,respectively. 
+
+Optimal Transport Alignment. Obviously, if the node embeddings learned by the encoder can preserve the rela-tional correspondences observed in the graph space, they are likely to yield more informative representations. Therefore, we force the encoder to preserve matching relationships in graph space by aligning the optimal transport plan defined on the input graphs with that computed from their node embeddings. We minimize the discrepancy between the optimal transport plans in the two spaces as the alignment loss as follows 
+
+Lmat = Θ( π∗G , π∗Z ), (9) where Θ( ·, ·) denotes a discrepancy measure, such as the KL divergence or the Frobenius norm. Additionally, to guide the encoder to learn a representation retaining the structural information of the input graph, we calibrate the cost matrix R(Z1, Z2), which captures the implicit relational structure between nodes in the represen-tation space, as follows 
+
+Lstr = Θ 
+
+
+
+σ K(X1, X2) + (1 − σ) L(A1, A2)
+
+⊗π∗G , R(Z1, Z2)
+
+
+
+.
+
+(10) As a result, the overall intra-task graph transport alignment loss is defined as 
+
+Lgta = Lmat + αLstr , (11) where α is the trade-off parameter. The alignment loss encourages the encoder to learn the relational structure of the input graph in the learned node embeddings. 
+
+4.2. Cross-task Knowledge Distillation 
+
+Continuous optimization on new tasks inevitably induces representation drift, causing the structural knowledge (i.e., relational dependencies) acquired from prior tasks to de-teriorate. To consolidate past and present knowledge, we design a cross-task knowledge distillation mechanism, reg-ulating the changes of relational structure. Formally, let 
+
+ξt−1 denote the parameters of the encoder after complet-ing task Tt−1, which is then frozen to serve as a reference teacher model Fξt−1 for the current task Tt. Given the two augmented graphs Gbat  
+
+> 1
+
+and Gbat  
+
+> 2
+
+, we compute a reference optimal transport plan πt−1,∗Z using the teacher model Fξt−1 .The cross-task structural knowledge distillation loss is de-fined as 
+
+Lskd = Θ 
+
+
+
+πt−1,∗Z , π t, ∗Z
+
+
+
+, (12) 5SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport                      
+
+> Table 1. Statistics of datasets and task splittings. Dataset CoraFull-CL Arxiv-CL Reddit-CL Products-CL # Nodes 19,793 169,343 232,965 2,449,029 # Edges 130,622 1,166,243 114,615,892 61,859,140 # Classes 70 40 40 47 # Tasks 35 20 20 23
+
+where Θ( ·, ·) denotes the divergence measure between opti-mal transport plans. To this end, the overall loss function is composed of graph transport alignment loss Lgta and distillation loss Lskd as follows 
+
+Ltotal = Lgta + βLskd = Lmat + αLstr + βLskd , (13) where β controls the strength of cross-task structural reg-ularization. Under the guidance of the overall objective function, SAOT integrates newly acquired representations with previously learned structural knowledge in the repre-sentation space, and progressively consolidates them into the model. 
+
+## 5. Experiments 
+
+5.1. Datasets 
+
+Following the Continual Graph Learning Benchmark (CGLB) (Zhang et al., 2022a), we conduct experiments on four public benchmark datasets: CoraFull-CL, Arxiv-CL, Reddit-CL, and Products-CL. For each dataset, node classes are split into a sequence of disjoint tasks with a fixed or-der, where each task contains two classes, and the original graph is accordingly split into task-specific subgraphs with-out inter-task edges. In the continual learning setting, an increasing number of tasks leads to more severe forgetting. The setting with the maximum number of tasks allows us to thoroughly assess the limitations of different CGL methods. Detailed dataset statistics and task splittings are summarized in Table 1. 
+
+5.2. Baselines 
+
+To demonstrate the effectiveness of SAOT, we compare with representative baselines from two distinct categories. Self-supervised CGL Methods: RieGrace (Sun et al., 2023) and TRACE (Peng et al., 2025) are standard self-supervised CGL models. In addition, we adapt representative self-supervised graph learning models, i.e., GAE (Kipf & Welling, 2016), DGI (Veli ˇckovi ´c et al., 2019), Graph Barlow Twins (G-BT) (Bielak et al., 2022), and various GCN con-trastive variants (GCN-Clu, GCN-Par, GCN-Comp) (You et al., 2020b) to the continual learning setting by training on each task sequentially. Supervised CGL Methods: For a comprehensive comparison, we include supervised ap-proaches, i.e, TWP (Liu et al., 2021), ER-GNN (Zhou & Cao, 2021), CaT (Liu et al., 2023), TACO (Han et al., 2024), and PUMA (Liu et al., 2025). Additionally, we perform the joint training strategy, where the model is trained on all tasks simultaneously without replay, serving as a empirical upper bound for continual learning. 
+
+5.3. Metrics and Parameter Settings 
+
+To comprehensively evaluate the performance of CGL mod-els, we follow standard evaluation metrics widely adopted in prior works (Jin et al., 2020; Zhou & Cao, 2021). We construct a performance matrix Mp ∈ RT ×T , where M pi,j 
+
+denotes the classification accuracy on task j after the model has been trained on the first i tasks. Based on Mp, we adopt two commonly used metrics: Average Performance (AP, also called average accuracy) and Average Forgetting (AF, also called backward transfer). AP measures the over-all predictive performance after completing all tasks and is defined as AP = 1
+
+> T
+
+PTi=1 M pT,i . AF quantifies the degree of catastrophic forgetting across tasks and is computed as 
+
+AF = 1 
+
+> T−1
+
+PT −1
+
+> i=1
+
+
+
+M pT,i − M pi,i 
+
+
+
+. A negative AF indi-cates severe forgetting of previously learned tasks, whereas a positive AF suggests effective knowledge retention. When models achieve similar AP, a higher AF is preferable. 
+
+Implementation Details. All experiments are imple-mented in PyTorch and conducted on NVIDIA L40S GPUs with 48GB memory. For baseline methods, we follow the experimental settings reported in their original papers. For the proposed SAOT, we employ a 2-layer GCN encoder with a hidden dimension of 512 on Arxiv-CL, CoraFull-CL, and Products-CL. We switch to a 3-layer GAT encoder with four attention heads on Reddit-CL due to its much higher edge density and extremely large neighborhoods. The re-play buffer size is set to 800 samples per task for Arxiv-CL, Products-CL, and Reddit-CL, while a smaller budget of 200 samples per task is used for CoraFull-CL. The learning rate is tuned via a ”grid-search” strategy ranging from 1e-4 to 1e-2, and all models are optimized by using Adam (Kingma & Ba, 2015). All results are averaged over five independent runs with different random seeds, and we report the mean and standard deviation. 
+
+5.4. Experimental Results 
+
+Table 2 and Table 3 summarize the overall performance of all methods under Class-IL and Task-IL settings. The best results among self-supervised methods are highlighted in bold, and the second-best are underlined. Across all datasets, SAOT consistently achieves the best AP performance while effectively mitigating catastrophic forgetting. 
+
+Class-IL Scenario. As shown in Table 2, under the chal-lenging Class-IL scenario, SAOT outperforms existing self-6SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+Table 2. Performance comparison under the Class-IL setting without inter-task edges. Type Method CoraFull-CL Arxiv-CL Reddit-CL Products-CL AP/% AF/% AP/% AF/% AP/% AF/% AP/% AF/% Full Joint 71.4 ±0.3 - 51.9 ±0.4 - 91.7 ±0.2 - 15.7 ±0.1 -Supervised  TWP 20.9 ±3.8 -73.3 ±4.1 4.9 ±0.0 -89.0 ±0.4 13.5 ±2.6 -89.7 ±2.7 3.0 ±0.7 -89.7 ±1.0 ER-GNN 3.0 ±0.1 -93.8 ±0.5 30.3 ±1.5 -54.0 ±1.3 88.5 ±2.3 -10.8 ±2.4 24.5 ±1.9 -67.4 ±1.9 CaT 68.5 ±0.9 -5.7 ±1.3 64.9 ±0.3 -12.5 ±0.8 97.7 ±0.1 -0.4 ±0.1 71.1 ±0.3 -5.4 ±0.3 TACO 54.3 ±1.0 -15.6 ±2.1 25.7 ±0.7 -19.4 ±1.7 83.7 ±0.4 -8.6 ±0.4 11.3 ±0.5 -6.6 ±0.7 PUMA 77.9 ±0.2 -4.2 ±0.9 67.0 ±0.1 -12.2 ±0.3 98.0 ±0.1 -0.3 ±0.1 74.2 ±0.4 -4.1 ±0.5 Self-Supervised GAE 58.1 ±0.2 -3.1 ±0.4 29.7 ±0.2 -21.7 ±0.1 90.6 ±0.3 -2.3 ±0.2 5.9 ±0.2 -7.0 ±0.1 DGI 6.5 ±0.4 -23.3 ±0.5 22.0 ±0.2 -22.4 ±0.1 56.8 ±0.3 -10.9 ±0.2 4.3 ±0.1 -5.3 ±0.2 G-BT 57.7 ±0.4 -0.3 ±0.8 44.5 ±1.5 -17.9 ±1.0 96.2 ±0.1 -1.1 ±0.6 25.4 ±1.6 -14.7 ±1.4 GCN-Clu 4.6 ±0.1 -49.9 ±0.4 25.4 ±0.5 -22.3 ±0.3 84.1 ±0.2 -6.7 ±0.1 7.8 ±0.2 -8.4 ±0.6 GCN-Par 10.4 ±0.1 -44.1 ±0.1 41.5 ±0.4 -24.5 ±0.6 92.8 ±0.3 -2.5 ±0.3 7.8 ±0.1 -14.2 ±0.2 GCN-Comp 6.6 ±0.3 -35.1 ±0.2 9.1 ±0.1 -28.0 ±0.2 87.5 ±0.1 -3.3 ±0.2 6.1 ±0.3 -5.3 ±0.2 RieGrace 3.3 ±0.1 -11.4 ±0.3 4.9 ±0.1 -18.0 ±0.1 4.3 ±0.1 -8.5 ±0.1 4.1 ±0.1 -4.9 ±0.1 TRACE 71.2 ±0.2 -6.2 ±0.5 47.8 ±0.1 -6.4 ±0.2 98.1 ±0.1 -0.2 ±0.1 25.6 ±0.3 -0.3 ±0.2 SAOT 76.3 ±0.3 -0.2 ±0.6 51.6 ±0.2 -17.5 ±0.4 98.5 ±0.2 -0.2 ±0.1 40.7 ±0.3 -0.6 ±0.2 
+
+Table 3. Performance comparison under the Task-IL setting without inter-task edges. Type Method CoraFull-CL Arxiv-CL Reddit-CL Products-CL AP/% AF/% AP/% AF/% AP/% AF/% AP/% AF/% Full Joint 94.5 ±0.1 - 92.6 ±0.2 - 98.5 ±0.1 - 85.9 ±0.1 -Supervised  TWP 92.2 ±0.5 -0.9 ±0.3 86.0 ±0.8 -2.8 ±0.8 87.4 ±3.8 -12.6 ±4.0 90.3 ±0.1 -0.5 ±0.1 ER-GNN 90.6 ±0.1 -3.7 ±0.1 86.7 ±0.1 11.4 ±0.9 98.9 ±0.0 -0.1 ±0.1 89.0 ±0.4 -2.5 ±0.3 CaT 93.3 ±0.4 -0.3 ±0.6 94.7 ±0.3 -0.8 ±0.3 99.3 ±0.0 -0.0 ±0.1 94.9 ±0.3 -0.5 ±0.5 TACO 94.5 ±0.6 -0.2 ±0.3 90.2 ±0.9 0.1 ±0.1 96.4 ±0.6 -0.9 ±0.2 83.1 ±0.3 -0.9 ±0.3 PUMA 95.2 ±0.3 -0.7 ±0.2 95.3 ±0.1 0.1 ±0.1 99.4 ±0.0 0.0 ±0.0 95.4 ±0.3 0.1 ±0.5 Self-Supervised GAE 92.3 ±0.2 0.3 ±0.3 90.9 ±0.5 -1.8 ±0.9 98.3 ±0.1 -0.2 ±0.2 78.5 ±0.6 -3.2 ±0.7 DGI 91.5 ±0.2 -2.4 ±0.5 90.1 ±0.2 0.2 ±0.1 93.7 ±0.1 -0.2 ±0.1 76.4 ±0.1 -0.3 ±0.2 G-BT 94.2 ±0.3 -0.4 ±0.2 93.0 ±0.4 -0.2 ±0.2 99.3 ±0.1 -0.1 ±0.2 89.3 ±0.8 -1.1 ±0.1 GCN-Clu 76.4 ±0.1 -14.9 ±0.3 91.1 ±0.3 -0.8 ±0.2 98.0 ±0.1 -0.6 ±0.1 81.1 ±0.4 -3.2 ±0.6 GCN-Par 86.7 ±0.1 -7.2 ±0.1 94.6 ±0.3 -0.8 ±0.4 98.9 ±0.3 -0.4 ±0.2 86.0 ±0.3 -6.4 ±0.2 GCN-Comp 86.7 ±0.3 -4.9 ±0.3 82.3 ±1.2 -2.7 ±0.6 96.8 ±0.4 1.8 ±0.4 79.2 ±0.4 1.2 ±0.7 RieGrace 75.5 ±0.6 0.1 ±0.2 75.4 ±0.1 -0.2 ±0.3 67.9 ±0.1 -1.1 ±0.1 73.1 ±0.3 0.0 ±0.0 TRACE 94.4 ±0.1 0.4 ±0.2 93.2 ±0.3 3.1 ±0.7 99.5 ±0.1 0.1 ±0.1 88.1 ±0.2 0.1 ±0.1 
+
+SAOT 96.6 ±0.3 1.5 ±0.1 95.4 ±0.1 -0.1 ±0.1 99.5 ±0.1 0.1 ±0.1 95.9 ±0.3 0.2 ±0.3 
+
+supervised CGL baselines on four datasets. Specifically, SAOT achieves an improvement of over 15% in terms of AP on the large-scale Products-CL dataset, where severe class imbalance and dense relational structure make cross-task structural preservation essential. SAOT improves the performance by 5% in terms of AP and achieves near-zero forgetting on CoraFull-CL. Furthermore, SAOT attains a score of 98.5% in terms of AP with minimal forgetting on Reddit-CL. Although both CoraFull-CL and Arxiv-CL are citation networks, the stronger semantic overlap and struc-tural homophily in Arxiv-CL result in more severe forgetting under continual learning. The performance matrices in Fig-ure 2 further demonstrate that SAOT sustains more stable accuracy over time and reduces performance degradation across most datasets. Notably, SAOT achieves competi-tive performance across multiple datasets and has a lower forgetting rate than most supervised learning baselines. 
+
+Task-IL Scenario. In the Task-IL setting, where task iden-tities are provided during inference, the performance differ-ences among methods typically narrow. The comparison results under the Task-IL scenario are shown in Table 3. We can observe that SAOT outperforms self-supervised baselines across four datasets. Although SAOT performs slightly worse than the TRACE method in AF on the Arxiv-CL dataset, it significantly outperforms TRACE in terms of AP. In continual learning scenarios, a desirable objective is to achieve high overall accuracy while preserving perfor-mance on previously learned tasks, which is reflected by high AP and positive AF values, as demonstrated by SAOT. 7SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport                           
+
+> Table 4. Ablation study of SAOT on CoraFull-CL under both Class-IL and Task-IL settings.
+> Variants Class-IL Task-IL AP (%) AF (%) AP (%) AF (%)
+> w/ Cosine 68.5 -3.2 96.1 1.3 w/ MSE 69.1 -3.5 96.3 1.3 w/o Optimal Transport 71.6 -3.2 95.2 0.8 w/o Cross-task Distill. 72.3 -2.2 96.2 1.1
+> SAOT (ours) 76.3 -0.2 96.7 1.5
+
+5.5. Ablation Study 
+
+We compare SAOT with its variants to validate the con-tribution of two components. The designed variants are as follows: (1) To verify the importance of cross-task structural knowledge distillation, we design a variant that removes the distillation, denoted by w/o Cross-task Distillation, where only intra-task graph transport alignment is retained. In addition, to investigate the effect of plan-level distillation compared to point-wise constraints, we design two variants that replace the transport plan distillation with embedding-level objectives based on cosine similarity (w/ Cosine) and mean squared error (w/ MSE), respectively. (2) To examine the importance of optimal transport alignment, we design a variant referred to as w/o Optimal Transport. Specifically, the variant preserves the same replay mechanism as SAOT but replaces the OT-based structural alignment objective with the Graph Barlow Twins objective (Bielak et al., 2022) for representation learning. The ablation results in Table 4 highlight two key findings: (1) Both cross-task transport-plan distillation and intra-task OT alignment are essential, as removing either component leads to clear drops in AP and more negative AF, especially under the challenging Class-IL setting. (2) Distilling rela-tional structure at the transport-plan level is more effective than point-wise feature constraints, where replacing plan-level distillation with cosine or MSE objectives consistently degrades performance. 
+
+5.6. Parameter Sensitivity Analysis 
+
+We investigate the sensitivity of hyperparameters α and β,as shown in Figure 3. Firstly, we fix the value of parameter 
+
+β and analyze the effect of parameter α on performance. We can see that as the parameter α increases, SAOT shows a clear improvement in terms of AP on CoraFull-CL. In contrast, SAOT remains relatively insensitive to α on Reddit-CL and achieves the best performance when α = 0 . These experimental results indicate limited benefits from intra-task structural calibration on large graphs. We further evaluate β with the optimal α on two datasets. SAOT achieves the best trade-off between AP and AF at  
+
+> Figure 2. Performance matrices of TRACE (top) and SAOT (bot-tom) on Arxiv-CL, CoraFull-CL, and Reddit-CL under the Class-IL setting.
+
+β = 0 .6 and β = 0 .5 on CoraFull-CL and Reddit-CL, re-spectively. These results indicate that excessively strong cross-task regularization restricts the plasticity of learning new tasks, which in turn negatively affects stability. Accord-ingly, we adopt β = 0 .6 for CoraFull-CL and β = 0 .5 for Reddit-CL. 
+
+5.7. Complexity Analysis 
+
+The computational complexity of SAOT mainly comes from graph encoding and the structure-aware optimal transport alignment module. We analyze the complexity on a sin-gle task Tt with graph Gt = ( Vt, Et). The graph encoder requires O(|V t|H2 + |E t|H), where H is the embedding dimension. For the structure-aware optimal transport align-ment, computing the pairwise transport cost over the full graph requires O(|V t|2H), while the Sinkhorn optimization introduces an additional O(K|V t|2) complexity, where K
+
+denotes the number of Sinkhorn iterations. As a result, the transport alignment module has quadratic time and memory complexity with respect to the number of graph nodes, mak-ing full-graph alignment inefficient for large-scale datasets such as Reddit-CL and Products-CL. To improve scalability, SAOT adopts a point-cloud sampling mechanism that re-stricts the number of aligned nodes to a fixed budget M . The practical complexity of the transport alignment module is reduced to O(M 2H + KM 2), where M ≪ |V t| in practice. Figure 4 shows the relation between Class-IL performance of various self-supervised methods and the average running time per task. SAOT achieves a favorable balance between effectiveness and efficiency. 
+
+## 6. Conclusion 
+
+In this paper, we propose SAOT, a novel self-supervised framework for CGL that leverages the optimal transport mechanism to capture and preserve relational structure among nodes. SAOT constructs optimal transport plans 8SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+Figure 3. Analysis of hyperparameters α and β on CoraFull-CL and Reddit-CL datasets under Class-IL setting. 0 200 400 600 800 1000         
+
+> Average Training Time per Task (sec)
+> 10
+> 20
+> 30
+> 40
+> 50
+> AP (%)
+> GAE
+> DGI
+> G-BT
+> GCN-Clu
+> GCN-Par
+> GCN-Comp
+> TRACE
+> SAOT
+> Arxiv-CL
+> 0500 1000 1500 2000 2500 3000 3500 4000
+> Average Training Time per Task (sec)
+> 80
+> 85
+> 90
+> 95
+> 100
+> AP (%)
+> GAE
+> DGI
+> G-BT
+> GCN-Clu
+> GCN-Par
+> GCN-Comp
+> TRACE
+> SAOT
+> Reddit-CL
+
+Figure 4. The trade-off between AP scores and average running time per task on Arxiv-CL and Reddit-CL datasets under Class-IL setting. 
+
+as structure-level references, guiding the encoder to learn high-quality and structure-aware representations. Simulta-neously, we incorporate cross-task knowledge distillation to mitigate structural drift caused by continual learning. Exten-sive experiments show that SAOT consistently outperforms existing self-supervised baselines in terms of AP under both Task-IL and Class-IL settings, and achieves competitive performance compared to supervised methods. 
+
+## Acknowledgements 
+
+This work is supported in part by National Natural Science Foundation of China (No. 62371340, 62322203), Tianjin Natural Science Foundation Project (No. 24JCZDJC00820, 23JCYBJC00520), Tianjin Measurement Science and Tech-nology Project (NO.2024TJMT061). 
+
+## Impact Statement 
+
+This work provides a novel self-supervised learning ap-proach for continual graph learning in real-world scenario, and it aims to promote the development of continual learn-ing in machine learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. 
+
+## References 
+
+Babakniya, S., Fabian, Z., He, C., Soltanolkotabi, M., and Avestimehr, S. A data-free approach to mitigate catas-trophic forgetting in federated class incremental learning for vision tasks. In Advances in Neural Information Pro-cessing Systems , pp. 66408–66425, 2024. Bielak, P., Kajdanowicz, T., and Chawla, N. V. Graph Barlow twins: A self-supervised representation learning framework for graphs. Knowledge-Based Systems , 256: 109631, 2022. Cai, J., Wang, X., Guan, C., Tang, Y., Xu, J., Zhong, B., and Zhu, W. Multimodal continual graph learning with neural architecture search. In Proceedings of the ACM Web Conference 2022 , pp. 1292–1300, 2022. Cha, H., Lee, J., and Shin, J. Co2L: Contrastive continual learning. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pp. 9516–9525, 2021. Gomez-Villa, A., Twardowski, B., Yu, L., Bagdanov, A. D., and de Weijer, J. V. Continually learning self-supervised representations with projected functional regularization. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pp. 3867–3877, 2022. Gomez-Villa, A., Twardowski, B., Wang, K., and de Weijer, J. V. Plasticity-optimized complementary networks for unsupervised continual learning. In Proceedings of the IEEE/CVF Winter Conference on Applications of Com-puter Vision , pp. 1690–1700, 2024. Goodfellow, I. J., Mirza, M., Xiao, D., Courville, A., and Bengio, Y. An empirical investigation of catastrophic forgetting in gradient-based neural networks. In Proceed-ings of the 2nd International Conference on Learning Representations , 2014. Hamilton, W., Ying, Z., and Leskovec, J. Inductive repre-sentation learning on large graphs. In Advances in Neural Information Processing Systems , 2017. Han, X., Feng, Z., and Ning, Y. A topology-aware graph coarsening framework for continual graph learning. In 
+
+Advances in Neural Information Processing Systems , pp. 132491–132523, 2024. Jin, W., Derr, T., Liu, H., Wang, Y., Wang, S., Liu, Z., and Tang, J. Self-supervised learning on graphs: Deep insights and new direction, 2020. Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In Proceedings of the 3rd International 
+
+9SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+Conference on Learning Representations , San Diego, CA, 2015. Kipf, T. N. and Welling, M. Variational Graph Auto-Encoders, 2016. Kipf, T. N. and Welling, M. Semi-supervised classification with graph convolutional networks. In Proceedings of the 5th International Conference on Learning Represen-tations , 2017. Kirkpatrick, J., Pascanu, R., Rabinowitz, N., Veness, J., Des-jardins, G., Rusu, A. A., Milan, K., Quan, J., Ramalho, T., Grabska-Barwinska, A., Hassabis, D., Clopath, C., Kumaran, D., and Hadsell, R. Overcoming catastrophic forgetting in neural networks. Proceedings of the Na-tional Academy of Sciences , 114(13):3521–3526, 2017. Lee, H., Cho, H., Kim, H., Kim, D., Min, D., Choo, J., and Lyle, C. Slow and steady wins the race: Maintain-ing plasticity with hare and tortoise networks. In Forty-first International Conference on Machine Learning , pp. 26416–26438, 2024. Lee, N., Lee, J., and Park, C. Augmentation-free self-supervised learning on graphs. In Proceedings of the AAAI Conference on Artificial Intelligence , pp. 7372– 7380, 2022. Liu, H., Yang, Y., and Wang, X. Overcoming catastrophic forgetting in graph neural networks. In Proceedings of the AAAI Conference on Artificial Intelligence , pp. 8653– 8661, 2021. Liu, Y., Qiu, R., and Huang, Z. CaT: Balanced continual graph learning with graph condensation. In Proceedings of the 2023 IEEE International Conference on Data Min-ing , pp. 1157–1162. IEEE, 2023. Liu, Y., Qiu, R., Tang, Y., Yin, H., and Huang, Z. PUMA: Efficient continual graph learning for node classification with graph condensation. IEEE Transactions on Knowl-edge and Data Engineering , 37(1):449–461, 2025. McCloskey, M. and Cohen, N. J. Catastrophic interference in connectionist networks: The sequential learning prob-lem. In Bower, G. H. (ed.), Psychology of Learning and Motivation , pp. 109–165. Academic Press, 1989. Peng, Z., Hua, X., Hao, J., Lin, Q., Dong, B., and Shen, C. Self-supervised continual graph learning via adaptive spaced replay on node proxies. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining , volume 2, pp. 2303–2314. Association for Computing Machinery, 2025. Sun, L., Ye, J., Peng, H., Wang, F., and Yu, P. S. Self-supervised continual graph learning in adaptive Rieman-nian spaces. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 37, pp. 4633–4642, 2023. Thakoor, S., Tallec, C., Azar, M. G., Azabou, M., Dyer, E. L., Munos, R., Veli ˇckovi ´c, P., and Valko, M. Large-scale representation learning on graphs via bootstrapping. In Proceedings of the 10th International Conference on Learning Representations , 2022. Veli ˇckovi ´c, P., Cucurull, G., Casanova, A., Romero, A., Li `o, P., and Bengio, Y. Graph attention networks. In Pro-ceedings of the 6th International Conference on Learning Representations (ICLR 2018) , Vancouver, Canada, 2018. Veli ˇckovi ´c, P., Fedus, W., Hamilton, W. L., Li `o, P., Bengio, Y., and Hjelm, R. D. Deep graph infomax. In Proceed-ings of the 7th International Conference on Learning Representations (ICLR 2019) , New Orleans, LA, USA, 2019. Wang, J., Song, G., Wu, Y., and Wang, L. Streaming graph neural networks via continual learning. In Proceedings of the 29th ACM International Conference on Information & Knowledge Management , pp. 1515–1524, 2020. Wang, Y., Zhao, Y., Wang, D. Z., and Li, L. GALOPA: Graph transport learning with optimal plan alignment. In 
+
+Advances in Neural Information Processing Systems , pp. 9117–9130, 2023. Wu, Z., Pan, S., Chen, F., Long, G., Zhang, C., and Yu, P. S. A comprehensive survey on graph neural networks. IEEE Transactions on Neural Networks and Learning Systems ,32(1):4–24, 2021. You, Y., Chen, T., Sui, Y., Chen, T., Wang, Z., and Shen, Y. Graph contrastive learning with augmentations. In 
+
+Advances in Neural Information Processing Systems , pp. 5812–5823, 2020a. You, Y., Chen, T., Wang, Z., and Shen, Y. When does self-supervision help graph convolutional networks? In In-ternational Conference on Machine Learning , pp. 10871– 10880. PMLR, 2020b. Zhang, X., Song, D., and Tao, D. CGLB: Benchmark tasks for continual graph learning. In Advances in Neural In-formation Processing Systems , pp. 13006–13021. Curran Associates, Inc., 2022a. Zhang, X., Song, D., and Tao, D. Sparsified subgraph memory for continual graph representation learning. In 
+
+Proceedings of the 2022 IEEE International Conference on Data Mining , pp. 1335–1340. IEEE, 2022b. 10 SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+Zhang, X., Song, D., and Tao, D. Hierarchical prototype net-works for continual graph representation learning. IEEE Transactions on Pattern Analysis and Machine Intelli-gence , 45(4):4622–4636, 2023. Zhang, X., Song, D., Chen, Y., and Tao, D. Topology-aware embedding memory for continual learning on expanding networks. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining ,pp. 4326–4337. Association for Computing Machinery, 2024. Zhou, F. and Cao, C. Overcoming catastrophic forgetting in graph neural networks with experience replay. In Proceed-ings of the AAAI Conference on Artificial Intelligence , pp. 4714–4722, 2021. Zhu, Y., Xu, Y., Yu, F., Liu, Q., Wu, S., and Wang, L. Deep graph contrastive representation learning, 2020. 11 SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport 
+
+## A. Datasets Details 
+
+The four benchmark datasets for continual graph learning employed in our experiments are derived from four public data sources: OGB-Arxiv, OGB-Products, Reddit, and CoraFull. 
+
+CoraFull: CoraFull is a citation network dataset extended from the original Cora dataset, covering a broader range of computer science literature. In this article, the dataset consists of 19,793 papers ( N ), 126,842 citations ( E), and 70 class categories ( C) based on research fields. The attribute information of papers is extracted as 8,710-dimensional sparse Bag-of-Words (BoW) vectors ( D). We divide the 70 classes into 35 incremental tasks ( T ) for the continual learning experiments, with each task containing 2 classes. 
+
+OGB-Arxiv: OGB-Arxiv is a directed citation network constructed from the Microsoft Academic Graph (MAG), representing Computer Science papers. This dataset consists of 169,343 papers ( N ) and 1,166,243 edges ( E). The nodes are labeled into 40 subject areas ( C) (e.g., cs.AI, cs.LG). The attribute information is represented by 128-dimensional feature vectors ( D)obtained by averaging the Word2Vec embeddings of titles and abstracts. We classify the papers into 20 tasks ( T ) according to their subject areas, where each task consists of 2 classes. 
+
+Reddit: Reddit is a social interaction graph derived from Reddit posts, where nodes represent posts and edges represent user co-interaction. A subset of Reddit which contains 227,853 posts ( N ) and approximately 114.6 million edges ( E) is extracted after filtering. The original dataset contains 41 communities; we remove one class with insufficient samples to retain 40 classes ( C). The attribute information of posts is extracted as 602-dimensional vectors ( D) from GloVe word embeddings and metadata. We divide the communities into 20 tasks ( T ) for use with experiments. 
+
+OGB-Products: OGB-Products is an undirected co-purchasing network representing products sold on Amazon. This dataset consists of 2,449,028 products ( N ) and 61,859,036 edges ( E). The products are categorized into 47 classes; we exclude one class (containing only a single node) to keep 46 classes ( C). The attribute information is 100-dimensional ( D), generated by applying PCA to bag-of-words features from product descriptions. We divide the products into 23 tasks ( T ), with each task containing 2 classes. 
+
+Data Resources: 
+
+The datasets used in this study are publicly available from the following sources: 
+
+OGB-Arxiv: Available from https://ogb.stanford.edu/docs/nodeprop/#ogbn-arxiv. 
+
+OGB-Products: Available from https://ogb.stanford.edu/docs/nodeprop/#ogbn-products. 
+
+Reddit: Available from https://archive.org/details/FullRedditSubmissionCorpus2006ThruAugust2015. 
+
+## B. Sensitivity Analysis of Replay Buffer Size 
+
+To evaluate the dependence of SAOT on the memory buffer capacity, we conduct a sensitivity analysis by varying the replay buffer size |B| across all four datasets under both Class-IL and Task-IL settings. We test buffer sizes ranging from 0 (no replay) up to 4,000 samples (depending on the dataset scale), measuring both Average Performance (AP) and Average Forgetting (AF). The results are illustrated in Figure 4 (Class-IL) and Figure 5 (Task-IL).  
+
+> Figure 5. Sensitivity analysis of buffer size under the Class-IL setting.
+
+12 SAOT: Self-Supervised Continual Graph Learning with Structure-Aware Optimal Transport  
+
+> Figure 6. Sensitivity analysis of buffer size under the Task-IL setting.
+
+Low Dependency on Explicit Memory: In most scenarios, SAOT achieves near-optimal or optimal performance with zero or minimal replay budgets (e.g., buffer sizes of 0 or 160). Especially in the Task-IL setting, the performance curves remain remarkably flat regardless of the buffer size. This indicates that the structural knowledge acquired via optimal transport alignment is intrinsically robust, mitigating forgetting without relying on the rehearsal of historical samples. 
+
+Effectiveness of Structural Alignment over Replay: In the Class-IL setting, increasing the buffer size does not consis-tently yield performance gains; for instance, on Products-CL, performance even fluctuates as the buffer size increases. This observation reinforces that the effectiveness of SAOT stems from its structure-aware design rather than rote memorization. The framework is capable of capturing and preserving essential topological structures with minimal resources, whereas excessive replay might introduce structural noise or inductive bias from the buffered subgraphs. 13
