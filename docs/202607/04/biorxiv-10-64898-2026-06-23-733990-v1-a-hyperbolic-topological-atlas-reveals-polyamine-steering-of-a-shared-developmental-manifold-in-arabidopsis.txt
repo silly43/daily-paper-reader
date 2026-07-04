@@ -1,0 +1,439 @@
+Title: A hyperbolic topological atlas reveals polyamine steering of a shared developmental manifold in Arabidopsis
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.06.23.733990v1.full.pdf
+
+Published Time: Sat, 04 Jul 2026 21:21:04 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+1A hyperbolic topological atlas reveals polyamine steering of a shared developmental 1manifold in Arabidopsis 2
+
+Jan Zdražil 1,2 , Lingping Kong 2, Emmanuel Flores-Hernández 3, Margarita Rodríguez-3
+
+Kessler 1,3 , Pavel Klimeš 1, Lukáš Spíchal 1, Nuria De Diego 1*, Václav Snášel 2*4
+
+5
+
+> 1
+
+Czech Advanced Technology and Research Institute (CATRIN), Palacký University Olomouc, 6
+
+Slechtitelů 27, 77900 Olomouc, Czech Republic. 7
+
+> 2
+
+Faculty of Electrical Engineering and Computer Science, VSB-Technical University of 8
+
+Ostrava, Ostrava, Czech Republic. 9
+
+> 3
+
+Facultad de Ciencias Químicas, Universidad Autónoma de San Luis Potosí (UASLP), Av. Dr. 10 
+
+Manuel Nava 6, Zona Universitaria, 78240 San Luis Potosí, México. 11 
+
+> 4
+
+Facultad de Ciencias, Universidad Autónoma de San Luis Potosí (UASLP), Av. Chapultepec 12 
+
+1570, Priv. del Pedregal, 78295 San Luis Potosí, México 13 
+
+14 
+
+Corresponding authors: Nuria De Diego: nuria.de@upol.cz, Václav Snášel: 15 
+
+vaclav.snasel@vsb.cz 16 
+
+17 
+
+Keywords: plant phenomics, high-throughput imaging, topological data analysis, manifold 18 learning, hyperbolic geometry, polyamines, polyamine uptake transporters 19 20 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+2
+
+Abstract 21 
+
+High-throughput plant phenotyping captures development at scale, yet image-rich screens are 22 still often reduced to static trait summaries. We tested whether nutrient availability, polyamine 23 priming, concentration, and their transport reshape Arabidopsis rosette development by 24 generating distinct morphologies or by changing residence along a common trajectory. We 25 analyzed 138,223 time-resolved rosette images from Col-0 and five mutants involved in 26 polyamine transport ( put1-5 ) primed to putrescine, spermidine, spermine, dose, and nutrient 27 regimes using a self-supervised vision backbone, Poincaré embedding, hyperbolic Mapper, and 28 manifold straightening. The data form a single connected developmental manifold with 410 29 nodes and 746 edges, organized from an early, low-nutrient-biased hub through high-30 betweenness transition corridors to two late, nutrient-enriched terminal regions. Polyamine 31 identity stratifies this manifold by developmental phase: putrescine enriches early states, 32 spermidine occupies transition corridors, and spermine marks late compact rosettes. Nutrient 33 richness and dose change distal occupancy, whereas put genotypes alter dwell time within 34 shared regions rather than producing separate topologies. Manifold straightening resolves these 35 effects into a short early lateral deflection followed by convergence, yielding two scalar 36 readouts, early transverse offset and distal occupancy, that summarize treatment action on a 37 common morphodynamic scale. The framework converts large image screens into interpretable 38 developmental geometry for image-based phenomics. 39 
+
+Introduction 40 
+
+Plant morphogenesis is a continuous process in which organ initiation, expansion, overlap, and 41 canopy closure translate genetic and environmental inputs into form. In rosette plants, high-42 throughput imaging captures these changes non-destructively, yet image time series are still 43 often reduced to isolated descriptors such as projected area, color, compactness, or growth 44 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+3rate.[1-8] Recent AI-enabled phenomics studies have expanded what researchers can extract 45 from large plant-image collections, but they also show that image acquisition alone is no longer 46 the central challenge; the challenge is to convert image-rich screens into interpretable, 47 reproducible developmental readouts.[4,5,9-11] Static traits remain valuable, but they do not 48 directly answer a central developmental question: whether a perturbation creates a new 49 morphogenetic route or changes the speed and residence of plants within states already 50 available to the species. 51 Representation learning offers a way to recover this hidden continuity from images. Self-52 supervised vision models can encode complex plant morphology without manually defined 53 traits, and manifold-learning guidance emphasizes the diagnostic interpretation of embeddings 54 rather than their use as simple cluster maps.[4,5,9,12-15]. Ordinary low-dimensional 55 projections, however, can flatten branch structure, compress transitional states, and encourage 56 overinterpretation of clusters. A developmental atlas therefore needs both local sensitivity and 57 global topology: it should preserve neighboring morphologies, retain long-range relationships, 58 and allow experimental metadata to be projected only after the morphological space has been 59 reconstructed. 60 Topological data analysis (TDA) and non-Euclidean representation learning provide that 61 framework. Mapper graphs summarize high-dimensional data as connected regions and 62 transitions; hyperbolic embeddings are well suited to hierarchies and branching progressions; 63 and graph-based straightening can convert a curved manifold into interpretable pseudotime and 64 transverse-offset coordinates.[16-20] These approaches are increasingly relevant to phenomics 65 because development is not only a sequence of sizes, but a trajectory through a structured space 66 of possible forms. 67 Polyamines provide a useful biological test case for geometry-aware analysis. Putrescine (Put), 68 spermidine (Spd), and spermine (Spm) are small cationic metabolites associated with cell 69 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+4expansion, stress tolerance, flowering, and nutrient-dependent growth control.[21] Yet 70 endpoint traits alone cannot resolve their effects on whole-rosette morphodynamics. The same 71 projected area can arise from different canopy architectures, and a single treatment can change 72 early expansion, transition timing, and terminal compactness in different ways. 73 Here we test whether nutrient status, polyamine priming, dose, and transport reorganize 74 Arabidopsis rosette development by creating distinct morphological routes or by redistributing 75 plants along a common developmental manifold. The dataset comprises 138,223 top-view 76 rosette images spanning Col-0 and five Atput(1-5) transporter knockouts encoding each 77 polyamine uptake transporter ( AtPUT ) gene family member, three polyamine priming regimes, 78 non-zero dose levels plus unprimed controls, and full- versus low-MS nutrition. The workflow 79 combines plant detection and super-resolution preprocessing with a DINOv2 feature backbone, 80 Poincaré projection, hyperbolic space partitioning, Mapper graph reconstruction, logic-driven 81 clustering, and manifold straightening (Figure 1). 82 We separated geometry from annotation. Image features defined the manifold; we then used 83 time, treatment, medium, concentration, and genotype to interpret occupancy, transitions, and 84 deviations from the centerline. This design yielded two compact, biologically interpretable 85 outputs: an early transverse offset that reports treatment-specific steering and a distal 86 occupancy score that reports residence in late rosette programs. This morphodynamic scale 87 allows complex phenotyping screens to be compared as trajectories rather than as disconnected 88 collections of traits. 89 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+590 
+
+Figure 1. High-throughput screening and geometry-aware computational workflow. (A) 91 
+
+Arabidopsis thaliana seedlings spanning polyamine priming (PUT, SPD, SPM), nutrient 92 
+
+regimes, doses, and genotypes generate 138,223 plant images. (B) Automated preprocessing 93 
+
+detects, crops, and enhances seedlings by super-resolution before self-supervised feature 94 
+
+extraction, Poincaré embedding, and logic-based clustering. (C) Dimensionality reduction and 95 
+
+manifold reconstruction convert raw phenotyping data into an interpretable developmental 96 
+
+map linking time, treatment, genotype, and nutrition to emergent rosette morphology. 97 
+
+98 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+6
+
+Results 99 
+
+A connected Mapper graph orders rosettes by developmental progression 100 
+
+Hyperbolic Mapper reconstruction generated a single connected graph of 410 nodes and 746 101 edges from 138,223 rosette images (Figure 2A-1). Coloring nodes by imaging round revealed 102 a clear developmental gradient: early samples were concentrated in a compact hub, 103 intermediate nodes formed narrow connector regions, and late samples occupied two distal 104 arms. Representative rosette images embedded in the nodes supported this ordering, 105 progressing from small, open seedlings to dense, overlapping canopies. Thus, the dominant 106 structure recovered from images was not a set of isolated treatment clusters, but a connected 107 developmental manifold with alternative late regions. 108 
+
+Polyamine identity maps onto developmental position 109 
+
+Projecting priming metadata onto the same graph revealed phase-specific enrichment without 110 breaking graph connectivity (Figure 2A-3). The effect of putrescine (Put) was concentrated in 111 the early hub, spermidine (Spd) was most frequent in connector nodes, and Spm was enriched 112 at the distal arms, regardless of the used concentration. This distribution is consistent with a 113 temporal partition of polyamine-associated morphology: Put marks early expansion states, Spd 114 marks transitional states, and Spm marks compact late states. These data therefore indicate that 115 polyamine identity changes where plants reside within a shared manifold rather than producing 116 separate morphologies. 117 Bridge structure reinforced this interpretation. Spd-enriched regions coincided with the narrow 118 corridors between the early hub and the late arms, including high-betweenness edges. Both 119 distal arms were enriched for Spm, but each was approached through a different transition 120 corridor. The graph therefore resolves two late rosette programs that share early history but 121 differ in the path by which they are reached. 122 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+7
+
+Nutrition, dose, and transporter genotype alter occupancy rather than topology 123 
+
+Nutrition modified the probability of occupying developmental regions while preserving the 124 same global topology (Figure 2A-2). The raw dataset was nearly balanced between low-MS 125 and full-MS conditions, but low-MS samples were relatively enriched in the early hub, whereas 126 full-MS samples were more frequent in distal regions. Nutrient availability therefore shifts 127 residence toward or away from late compact morphologies rather than generating a second 128 manifold. 129 Dose effects were weaker and more graded than the effect of polyamine identity (Figure 2A-130 4). Unprimed and lowest-dose samples were concentrated toward interior regions of the graph, 131 whereas higher non-zero levels appeared more often along the periphery and distal Spm-rich 132 arms. This pattern supports dose-dependent modulation of how far plants penetrate late 133 morphological states within the observed time window, although we interpret the effect as 134 secondary to priming identity and nutrition. 135 Genotype had the smallest effect on manifold geometry (Figure 2A-5). Col-0 and all five atput 136 mutants occupied the same connected structure, including the early hub, transition regions, and 137 late arms. Local enrichments were visible, with Col-0 slightly overrepresented in one distal 138 lobe, atput1/3/5 more frequent around early-to-mid connectors, and atput4 distributed broadly 139 across the graph. These differences are consistent with altered dwell times or transition 140 probabilities within shared states, rather than with genotype-specific morphotypes. 141 
+
+Manifold straightening reveals an early steering window 142 
+
+To determine whether the Mapper arms reflected persistent branching or transient lateral 143 deviations, we straightened the graph-derived manifold into a ribbon coordinate system (Figure 144 2B-1 to B-3). A minimum-spanning-tree backbone was refined into a medial centerline; each 145 plant was then described by normalized pseudotime s and signed transverse displacement y. 146 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+8The resulting ribbon was narrow for most of the trajectory and widened primarily during early 147 pseudotime, indicating that treatment-associated variation is strongest near entry into the 148 manifold and subsequently reconverges. 149 Group curves in the straightened frame localized the major effects. Put and Spm deviated 150 toward opposite shoulders during the early widened interval, Spd and unprimed controls 151 remained closer to the centerline, and genotype-specific curves largely overlapped. Nutrition 152 produced a modest early separation between low-MS and full-MS samples before convergence. 153 Thus, the ribbon representation condenses the Mapper graph into a quantitative model: early 154 transverse offset captures the initial polyamine/nutrient steering event, whereas distal 155 occupancy captures entry into late SPM-associated rosette programs. 156 Together, the graph and ribbon analyses support a shared-manifold model of rosette 157 morphodynamics. Nutrition, polyamines, dose, and lines do not create independent 158 morphological spaces; they redistribute plants along a common developmental geometry. This 159 result also defines a practical scoring strategy for future screens: new treatments can be 160 compared by their early lateral displacement and their probability of occupying distal late-state 161 regions (Figure 2 and Figure S1). 162 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+9163 164 
+
+Figure 2. Shared rosette morphodynamic manifold and ribbon representation. (A-1) Mapper 165 
+
+graph of 138,223 rosette images, organized from an early, low-MS-biased hub to two late, MS-166 
+
+enriched arms. Arrows denote major developmental directions; shaded regions mark Put-167 
+
+enriched early, Spd-enriched transition, and Spm-enriched late domains. (A-2 to A-5) Node-168 
+
+level overlays for nutrition, priming, concentration, and line show condition-specific 169 
+
+occupancy on a shared topology rather than separate developmental paths. (B-1) Schematic of 170 
+
+manifold straightening by medial-axis tracing and local coordinate-frame construction. (B-2) 171 
+
+Three-dimensional representation of the curved ribbon derived from embeddings, colored by 172 
+
+timepoint, with representative rosette images along the trajectory. (B-3) Parallel-transport 173 
+
+ribbon coordinates quantify early lateral deflections and later convergence across line, 174 
+
+priming, and nutrition. (C) Example node compositions highlight factor proportions. 175 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+10 
+
+Discussion 176 
+
+This study reframes image-based plant phenotyping from trait extraction to developmental 177 geometry. Across 138,223 Arabidopsis rosette images, the dominant organization was a shared 178 manifold rather than a collection of treatment-specific clusters. This distinction matters because 179 phenomics often conflates two questions: what morphologies exist in the dataset and how 180 experimental factors change occupancy of those morphologies. In this experiment, the 181 accessible morphological space is broadly shared; treatment and genotype act mainly by 182 shifting residence, transition, and terminal occupancy. 183 At the biological level, the map positions polyamines as time-localized modulators of rosette 184 architecture. Put enrichment in the early hub links putrescine with early expansion states. Spd 185 enrichment in connector regions suggests a role in transition between early and late 186 configurations. Spm enrichment at both distal arms links spermine with late, compact canopy 187 architecture. These assignments represent image-derived morphodynamic signatures rather 188 than direct biochemical causality; targeted metabolite profiling, temporal rescue experiments, 189 and transporter complementation will be needed to test mechanism. 190 Nutrient effects clarify the environmental component of this model. Full-MS conditions 191 increased occupancy of distal regions, whereas low-MS conditions favored early residence. 192 This pattern aligns with the expectation that nutrient availability affects developmental 193 progression, but the topology indicates that nutritional changes alter access to shared states 194 rather than create new ones. The same logic applies to concentration: dose modulates the depth 195 of progression into late regions, especially in Spm-rich areas, but does not reorganize the 196 manifold. 197 
+
+Atput mutant lines provide a genetic test of the shared-manifold hypothesis. If individual 198 transporters created unique morphogenetic programs, mutant lines would be expected to form 199 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+11 isolated graph components or genotype-specific branches. Instead, all lines occupied the same 200 connected structure. Local enrichments therefore more plausibly reflect altered rates of entry, 201 retention, or exit from shared states. This interpretation is consistent with functional 202 redundancy among transporter-family members and with the idea that polyamine transport 203 tunes progression rather than specifies an entirely new architecture. 204 Methodologically, the study demonstrates why geometry-aware analysis is valuable for large 205 phenotyping screens. Standard scalar traits summarize size or color but discard the arrangement 206 of samples in morphological space. Conventional projections can visualize this space but often 207 encourage cluster narratives that are sensitive to the choice of projection parameters.[13,14] 208 By combining self-supervised visual features, hyperbolic embedding, Mapper reconstruction, 209 and ribbon straightening, the workflow retains both global topology and local deviations. The 210 workflow produces not only a visualization but also measurable quantities that can be tested 211 across experiments. 212 Two aspects of the current analysis are especially useful for future work. First, early transverse 213 offset provides a compact signature of treatment steering before trajectories converge. Second, 214 distal occupancy quantifies how strongly a condition drives plants into late rosette programs 215 within a fixed time window. These metrics convert a high-dimensional image manifold into 216 scalar phenotypes while preserving the context of the manifold from which they were derived. 217 Several limitations constrain interpretation. The analysis is image-based and therefore cannot, 218 by itself, identify the molecular state underlying a node. Area-derived pseudotime is an 219 auxiliary descriptor, not a replacement for chronological age or lineage-resolved growth rate. 220 Mapper topology depends on embedding quality, cover design, overlap, and clustering 221 parameters, and metadata-informed hyperparameter selection requires transparent reporting. 222 Because Mapper cover sets overlap, node-level enrichments are best interpreted as occupancy 223 tendencies rather than mutually exclusive states. 224 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+12 The broader implication is that developmental phenomics can move beyond endpoint 225 comparisons toward atlases of possible form. In such atlases, perturbations are described by 226 how they bend, delay, or stabilize a trajectory through shared space. Applied to polyamine 227 biology, this view suggests that Put, Spd, and Spm are not simply growth promoters or 228 inhibitors; they bias different phases of a common morphodynamic program. Applied more 229 broadly, the same framework could support comparative screens across species, organs, stress 230 regimes, and genetic backgrounds, if imaging, metadata, validation, and mechanistic follow-231 up are reported with sufficient precision.[11,22] 232 
+
+Experimental Section 233 
+
+Plant material and experimental setup 234 
+
+Arabidopsis thaliana ecotype Columbia-0 (Col-0) and T-DNA insertion lines for members of 235 the Arabidopsis polyamine uptake transporter family [atput1-1 (GABI_890c10), atput2-1 236 (SALK_119707c), atput3-1 (SALK_206472c), atput4-1 (SAIL_1275_c06), and atput5-1 237 (SALK_007135)] were obtained from the Salk Institute Genomic Analysis Laboratory 238 (signal.salk.edu/cgi-bin/tdnaexpress). Homozygous lines were identified by PCR, and loss of 239 the corresponding transcript was assessed by qPCR (Supporting Information). 240 Seeds were surface-sterilized as described previously.[23] They were sown on square plates 241 (120 mm × 120 mm; P-Lab, Ref. 212358.2) containing half-strength Murashige and Skoog 242 (MS) medium (Phytotechlab M519), pH 5.7, supplemented with 0.6% Phytagel.[24] Priming 243 media contained putrescine (Put), spermidine (Spd), or spermine (Spm) at 0.1, 1, or 10 mM, or 244 no priming agent as a control. Plates were stratified for 3 d at 4 °C in darkness and then 245 transferred vertically to a growth chamber under long-day conditions (22 °C, 16 h/8 h light/dark 246 photoperiod, 120 μmol photons m⁻² s⁻¹ PAR). 247 248 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+13 Three-day-old seedlings of comparable size were transferred under sterile conditions to 48-249 well plates containing full-strength (1×) or low-strength (0.5×) MS medium, with one seedling 250 per well. Plates were sealed with perforated transparent foil to allow gas exchange and 251 transferred to the OloPhen platform, a PlantScreen TM XYZ system (Photon Systems 252 Instruments, Drasov, Czech Republic) installed in a controlled growth chamber. The chamber 253 was maintained under a long-day regime (22/20 °C day/night, 16 h/8 h light/dark photoperiod, 254 120 μmol photons m⁻² s⁻¹ PAR, 60% relative humidity), following the established OloPhen 255 protocol.[23] 256 
+
+Data preprocessing 257 
+
+Arabidopsis thaliana seedlings were imaged with top-view RGB cameras in 48-well plates. 258 Plate-level images were processed by a custom detection and cropping workflow, adapted from 259 previous high-throughput plate-phenotyping work, to isolate individual rosettes (Figure 260 S3).[25] A trained object-detection network localized plant centers; detections were paired with 261 reference grid positions via Hungarian assignment; and non-maximum suppression removed 262 redundant bounding boxes. The final dataset contained 138,223 single-plant images annotated 263 with imaging round, plant index, genotype, priming identity, concentration, and medium. 264 We upscaled the cropped images fourfold using a super-resolution model prior to feature 265 extraction (Figure S4).[26] This step reduced pixelation and improved leaf-edge contrast while 266 preserving the original morphology. We excluded images that could not be confidently matched 267 to a grid position before embedding. 268 We used metadata for downstream aggregation and interpretation, not to define the initial visual 269 embedding. For graph-level summaries, we interpreted overlapping Mapper memberships as 270 node occupancy rather than as mutually exclusive sample classes. 271 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+14 
+
+Latent space representation 272 
+
+To derive a compact representation of rosette morphology, we embedded all cropped images 273 using contrastive representation learning. A pre-trained DINOv2 vision-transformer backbone 274 processed each image and generated a 368-dimensional feature vector that captured shape, 275 texture, and color information relevant to rosette architecture (Figure S5).[12] 276 To adapt these features to developmental geometry, we attached a Poincaré head that projected 277 the Euclidean feature vectors into a two-dimensional hyperbolic disk. Training used a SimCLR-278 like contrastive objective to pull together augmented views of the same plant while separating 279 representations from different images.[27] 280 281 
+
+ℒ!"#$%& = − % 𝑙𝑜𝑔 exp (𝑠𝑖𝑚 (𝑢 ", 𝑣 ")/ 𝜏 ))
+
+∑ exp (𝑠𝑖𝑚 (𝑢 ", 𝑣 ')/𝜏 )(
+
+> ')*
+
+, 
+
+> (
+> ")*
+
+(1) Where 𝑠𝑖𝑚 (𝑢 , 𝑣 ) denotes the similarity (e.g., cosine similarity) between two embeddings 𝑢 282 and 𝑣 , 𝜏 is the temperature parameter and 𝑁 is the number of positive pairs (i.e., pairs of views 283 created from augmentations of the same original image). 284 The Poincaré ball is a conformal model of hyperbolic space: it preserves angles in the tangent 285 space while distances are governed by the hyperbolic metric rather than by the ambient 286 Euclidean metric. This geometry is suitable for data with hierarchical or branching 287 organization, including developmental progressions. 288 
+
+∠(𝒂 , 𝒃 ) = arccos @ 〈𝒂 , 𝒃 〉+
+
+‖𝒂 ‖+ ‖𝒃 ‖+
+
+D,
+
+(2) 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+15 Where 〈∙,∙〉 + and ‖∙‖ + denote the inner product and norm under the Poincaré metric at 𝒙 . The 289 distance between two points 𝒙 , 𝒚 𝜖 𝔹 # is defined by: 290 291 
+
+𝑑 𝔹 (𝒙 , 𝒚 ) = arcosh @1 + 2 ‖𝒙 − 𝒚 ‖-
+
+(1 − ‖𝒙 ‖-)( 1 − ‖𝒚 ‖-)D.
+
+(3) which preserves angular relationships while accommodating curvature. The Euclidean 292 embeddings 𝑒 are mapped into the hyperbolic disk through a curvature-controlled 293 transformation 294 
+
+𝜙 (𝒆 ) = 1 − 𝛼 -‖𝒆 ‖-
+
+1 + 𝛼 -‖𝒆 ‖- 𝒆 , 𝑤𝑖𝑡 ℎ ‖𝒆 ‖ < 1
+
+𝛼 . (4) 295 Where 𝒆 is the Euclidean embedding, and 𝛼 is a learnable (or fixed) curvature-related 296 parameter. This formula ensures that the norm of 𝜙 (𝒆) remains strictly less than 1, thus 297 embedding the Euclidean data within 𝔹 #. By incorporating this Poincaré transformation, we 298 adapted the hybrid approach to capitalize on the geometric advantages of hyperbolic space. 299 The hybrid DINOv2-Poincaré representation therefore captures complementary scales of 300 morphology: local visual similarity in the backbone features and broader developmental 301 hierarchy in the hyperbolic embedding. The resulting two-dimensional coordinates served as 302 the geometric substrate for Mapper graph construction and topology-aware analysis.[16-20] 303 For complementary validation, we reduced the 368-dimensional DINO embeddings to 10 304 principal-component dimensions and then applied UMAP to obtain a three-dimensional 305 representation. This analysis verified the consistency of the global manifold geometry observed 306 in the main Poincaré space (Figure 2B-2).[14,15] The comparison confirmed that the 307 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+16 hyperbolic projection preserved the same temporal ordering and treatment clustering while 308 offering clearer separation of transitional states. 309 This representation stage converts raw pixel information into a geometry-aware embedding 310 that links modern representation learning with interpretable phenotyping. 311 
+
+Hyperbolic Space Partitioning 312 
+
+After obtaining the two-dimensional embeddings in the Poincaré disk, we introduced a 313 hyperbolic-space partition that segmented the latent manifold while preserving its intrinsic 314 curvature. Conventional Euclidean approaches, such as cubical or grid-based covers, assume 315 flat geometry and can distort relationships near curved boundaries. Our method instead 316 constructed a curvature-aware tessellation that more faithfully represented complex biological 317 data. 318 We generated a regular (p,q)-tiling of the Poincaré disk, where p denotes the number of polygon 319 sides and q denotes the number of polygons meeting at each vertex. The admissible 320 configuration satisfies (p - 2)(q - 2) > 4, yielding a hyperbolic tessellation. Geodesic edges were 321 discretized by sampling points along circular arcs orthogonal to the unit boundary. 322 For every sector i, we calculate the Fréchet mean 𝜇 ̂ " of its sampled boundary points 𝑆 " by 323 minimizing the sum of squared hyperbolic distances 324 325 
+
+𝜇 ̂ " = arg min  
+
+> #∈𝔻
+
+% 𝑑 𝔻 (𝑚 , 𝑧 )-
+
+> 0∈!!
+
+, (5) where 𝑑 𝔻 (𝑥, 𝑦) is the hyperbolic distance defined in Eq. (3). Each mean 𝜇 ̂ " serves as a 326 geometric center representing its local neighborhood . We then computed a distance matrix 𝐷 =327 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+17 
+
+c𝑑 "' d, where 𝑑 "' = 𝑑 𝔻 e𝑥 ', 𝜇̂ " f measures the distance between every data point 𝑥 ' ∈ 𝔻 and 328 each sector center. 329 We assigned data points to cover sets according to their hyperbolic distance from sector centers. 330 For each point, the nearest sector defined the primary interval; the second-nearest sector 331 defined a secondary interval when its distance fell within the optimized overlap threshold. We 332 merged sparse intervals with the nearest populated interval to preserve continuity and avoid 333 biologically uninformative singleton regions. 334 These overlapping intervals formed a curvature-aware cover of the dataset. We used this cover 335 for Mapper graph construction and clustering, ensuring that partitioning respected the geometry 336 of the Poincaré disk rather than imposing a flat Euclidean grid (Figure 3). 337 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+18 338 
+
+Figure 3. Hyperbolic space partition used for Mapper construction. (A) Regular (p,q)-tiling 339 
+
+of the Poincaré disk, geodesic-boundary approximation, assignment of data points to 340 
+
+intervals based on Fréchet means, and controlled overlap between adjacent regions. (B) 341 
+
+Algorithmic workflow from disk tessellation and Fréchet mean estimation to interval 342 
+
+merging, yielding a curvature-consistent partition that underpins subsequent Mapper and 343 
+
+clustering analyses. 344 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+19 
+
+Logic-Driven Clustering in Curved Space 345 
+
+After assigning embeddings to hyperbolic intervals, we grouped plants within each interval 346 using a logic-driven clustering framework. Because standard Euclidean clustering can distort 347 distances in curved embeddings, we used a Tsetlin-machine-inspired procedure that 348 represented samples through binary, curvature-aware distance codes and refined assignments 349 by silhouette-guided feedback.[28] 350 For Euclidean features, we min-max normalized inputs and discretized them by threshold 351 encoding. For hyperbolic embeddings, we computed distances from each point to five fixed 352 landmarks in the Poincaré disk: one at the origin and four at a common boundary radius. We 353 then thresholded these distances to form binary vectors. 354 Each Tsetlin clause comprised automata controlling the inclusion or exclusion of binary literals. 355 Clauses voted for candidate cluster membership, and the procedure assigned each sample to 356 the cluster that received the strongest positive vote after silhouette-guided refinement. 357 We optimized cluster assignment using an epsilon-greedy multi-armed bandit procedure.[29] 358 The optimizer accepted proposed reassignments when they improved local silhouette beyond 359 a predefined tolerance; otherwise, it reverted the assignments. We monitored global silhouette 360 after each epoch and stopped optimization when improvement plateaued. 361 During bandit optimization, clauses that improved local silhouette were reinforced, whereas 362 clauses that reduced cohesion were weakened. This feedback updated the logical representation 363 while preserving the geometry-aware distance encoding. 364 The final clusters emerged from rule-based voting combined with geometry-aware silhouette 365 feedback. This design preserved interpretability while allowing the same framework to operate 366 on Euclidean, Poincaré, and hyperboloid representations (Figure 4). 367 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+20 368 
+
+Figure 4. Logic-driven clustering across latent geometries. (A) Example outcomes in 369 
+
+Euclidean, Poincaré disk, and hyperboloid representations. (B) Workflow showing clause-370 
+
+based voting, silhouette-guided feedback, and multi-armed-bandit refinement. The framework 371 
+
+yields cohesive, interpretable clusters across distinct geometric representations of the latent 372 
+
+space. 373 
+
+374 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+21 
+
+Area-Derived Pseudotime 375 
+
+To obtain an independent descriptor-based developmental score, we reused the trained visual 376 backbone with a lightweight segmentation head. We fine-tuned the head on 3,500 manually 377 annotated rosette masks and applied it to all images. For each plant, we defined rosette area as 378 the number of foreground pixels in the largest rosette component after debris removal. 379 We computed area-derived pseudotime from the log-transformed foreground area of each plant. 380 We ranked rosettes by area from smallest to largest and linearly scaled the ranks to a 0-1 381 interval, with values near 0 representing the smallest rosettes and values near 1 representing 382 the largest rosettes. We obtained early, mid, and late summaries by splitting this global 383 pseudotime distribution into tertiles (Figure S1). 384 
+
+Multiobjective Hyperparameter Optimization 385 
+
+We selected hyperparameters with a multiobjective NSGA-II sampler that balanced local 386 clustering quality and global topological coherence.[30] We checked local partitions with 387 silhouette-type cohesion and Davies-Bouldin separation diagnostics.[31] Because the objective 388 functions included metadata, we interpret this stage as metadata-informed model selection 389 rather than as a fully unsupervised training step. We subsequently interpreted the selected graph 390 by projecting time, line, concentration, nutrition, and priming metadata onto the fixed topology. 391 We selected the final model after 100 optimization trials. The hyperbolic cover used an overlap 392 threshold of 0.253, a minimum interval size of 64 samples, a regular four-sided, ten-at-a-vertex 393 tiling, and four tiling layers. The logic-driven clustering stage used 312 clauses, 171 automaton 394 states, a specificity setting of 3.9, a voting threshold of 15, 300 bandit-refinement steps, a 395 negative-silhouette tolerance of 0.01, and an exploration probability of 0.3. 396 These jointly optimized parameters balanced local cohesion, global topological integrity, and 397 computational efficiency, yielding the final configuration used throughout the study. 398 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+22 
+
+Contrastive Learning Configuration 399 
+
+For contrastive learning, we normalized the complete image set using channel-wise statistics 400 from the training data. We generated two augmented views per image using random resized 401 cropping, horizontal flipping, color jitter, and Gaussian blur. 402 Training used the Adam optimizer for the DINOv2 backbone and Riemannian Adam for the 403 Poincaré head to maintain curvature-consistent updates.[32] The head comprised Poincaré-404 linear layers, Poincaré batch normalization, and a final Poincaré-linear output layer producing 405 two-dimensional embeddings within the hyperbolic disk. 406 Optimization used an InfoNCE-type contrastive loss with temperature parameter τ, following 407 the SimCLR-style training configuration described above.[27] Training proceeded for up to 408 200 epochs and stopped early when validation performance plateaued. 409 
+
+Acknowledgements 410 
+
+This work was funded by the European Regional Development Fund (ERDF) Programme 411 Johannes Amos Comenius (CZ.02.01.01/00/23_021/0008909) and Ciencia Básica y de 412 Frontera (CBF-2025-I-3650) funded by Secretaría de Ciencia, Humanidades, Tecnología e 413 Innovación (SECIHTI). 414 
+
+Conflict of Interest 415 
+
+The authors declare no conflict of interest. 416 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+23 
+
+Author Contributions 417 
+
+Jan Zdražil: Conceptualization, Investigation, Formal analysis, Writing original draft, 418 Visualization. LingPing Kong: Investigation, Formal analysis. Emmanuel Flores-419 
+
+Hernández: Investigation, Formal analysis. Margarita Rodríguez-Kessler: Investigation, 420 Formal analysis, Resources, Funding acquisition. Pavel Klimeš: Data curation, Investigation. 421 
+
+Lukáš Spíchal: Conceptualization, Writing – review & editing, Resources, Funding 422 acquisition. Nuria De Diego: Conceptualization, Data curation, Formal analysis, Writing – 423 original draft, Writing review & editing, Resources, Funding acquisition. Václav Snášel: 424 
+
+Conceptualization, Investigation, Writing review & editing, Resources, Funding acquisition. 425 
+
+Data Availability Statement 426 
+
+The source code used for image preprocessing, embedding, and manifold analysis will be 427 deposited in a public repository or provided as Supporting Information prior to submission. 428 The raw and processed image datasets generated and analyzed during the current study are 429 available from the corresponding author on reasonable request, subject to institutional data-430 transfer requirements. 431 
+
+References 432 
+
+[1] F. Fiorani, U. Schurr, Annu. Rev. Plant Biol. 2013, 64, 267. 433 [2] A. Zavafer, H. Bates, C. Mancilla, P. J. Ralph, Trends Plant Sci. 2023, 28, 1004. 434 [3] W. Yang, H. Feng, X. Zhang, J. Zhang, J. H. Doonan, W. D. Batchelor, L. Xiong, J. 435 Yan, Mol. Plant 2020, 13, 187. 436 [4] K. M. Murphy, E. Ludwig, J. Gutierrez, M. A. Gehan, Annu. Rev. Plant Biol. 2024, 437 75, 771. 438 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+24 [5] G. D. Tan, U. Chaudhuri, S. Varela, N. Ahuja, A. D. B. Leakey, J. Exp. Bot. 2024, 75, 439 6683. 440 [6] L. Yu, H. Sussman, O. Khmelnitsky, M. R. Ishka, A. Srinivasan, A. D. L. Nelson, M. 441 M. Julkowska, Plant Physiol. 2024, 196, 810. 442 [7] M. C. Heuermann, D. Knoch, A. Junker, T. Altmann, Nat. Commun. 2023, 14, 5783. 443 [8] D. Hobby, H. Tong, M. Heuermann, A. J. Mbebi, R. A. E. Laitinen, M. Dell'Acqua, T. 444 Altmann, Z. Nikoloski, Nat. Plants 2025, 11, 1018. 445 [9] A. L. Harfouche, F. Nakhle, A. H. Harfouche, O. G. Sardella, E. Dart, D. Jacobson, 446 Trends Plant Sci. 2023, 28, 154. 447 [10] X. Li, C. Xie, L. Cheng, H. Tong, R. Bock, Q. Qian, W. Zhou, Trends Biotechnol. 448 2025, 43, 2479. 449 [11] F. Chen, I. Stogiannidis, A. Wood, D. Bueno, D. Williams, F. Macfarlane, B. D. 450 Grieve, D. Wells, J. A. Atkinson, M. J. Hawkesford, S. A. Rolfe, T. Lawson, T. Pridmore, S. 451 A. Tsaftaris, M. V. Giuffrida, Nat. Commun. 2026, DOI 10.1038/s41467-026-71090-y. 452 [12] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, 453 D. Haziza, F. Massa, A. El-Nouby, M. Assran, N. Ballas, W. Galuba, R. Howes, P.-Y. Huang, 454 S.-W. Li, I. Misra, M. Rabbat, V. Sharma, G. Synnaeve, H. Xu, H. Jégou, J. Mairal, P. 455 Labatut, A. Joulin, P. Bojanowski, Trans. Mach. Learn. Res. 2024. 456 [13] M. Meilă, H. Zhang, Annu. Rev. Stat. Appl. 2024, 11, 393. 457 [14] J. Healy, L. McInnes, Nat. Rev. Methods Primers 2024, 4, 82. 458 [15] M. Greenacre, P. J. F. Groenen, T. Hastie, A. I. D'Enza, A. Markos, E. Tuzhilina, Nat. 459 Rev. Methods Primers 2022, 2, 100. 460 [16] A. Klimovskaia, D. Lopez-Paz, L. Bottou, M. Nickel, Nat. Commun. 2020, 11, 2966. 461 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+25 [17] Y. Xu, Z. Zang, B. Hu, J. Xia, S. Z. Li, Brief. Bioinform. 2025, 26, bbae687. 462 [18] P. Mettes, M. Ghadimi Atigh, M. Keller-Ressel, J. Gu, S. Yeung, Int. J. Comput. Vis. 463 2024, 132, 3484. 464 [19] K. R. Moon, D. van Dijk, Z. Wang, S. Gigante, D. B. Burkhardt, W. S. Chen, K. Yim, 465 A. van den Elzen, M. J. Hirn, R. R. Coifman, N. B. Ivanova, G. Wolf, S. Krishnaswamy, Nat. 466 Biotechnol. 2019, 37, 1482. 467 [20] M. Saggar, O. Sporns, J. Gonzalez-Castillo, P. A. Bandettini, G. Carlsson, G. Glover, 468 A. L. Reiss, Nat. Commun. 2018, 9, 1399. 469 [21] M. A. Blázquez, Annu. Rev. Plant Biol. 2024, 75, 95. 470 [22] J. E. Politsch, A. González-Delgado, K. Wabnik, Curr. Opin. Biotechnol. 2026, 97, 471 103428. 472 [23] N. De Diego, T. Fürst, J. F. Humplík, L. Ugena, K. Podlešáková, L. Spíchal, Front. 473 Plant Sci. 2017, 8, 1702. 474 [24] T. Murashige, F. Skoog, Physiol. Plant. 1962, 15, 473. 475 [25] J. Zdražil, L. Kong, P. Klimeš, F. I. Jasso-Robles, I. Saiz-Fernández, F. Güder, L. 476 Spíchal, V. Snášel, N. De Diego, Comput. Electron. Agric. 2025, 235, 110390. 477 [26] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, B. Ommer, in Proc. IEEE/CVF Conf. 478 Comput. Vis. Pattern Recognit. (CVPR), IEEE, Piscataway, NJ 2022, pp. 10684-10695. 479 [27] T. Chen, S. Kornblith, M. Norouzi, G. Hinton, in Proc. Int. Conf. Mach. Learn., 480 PMLR 2020, pp. 1597-1607. 481 [28] L. Jiao, X. Zhang, O.-C. Granmo, K. D. Abeyrathna, IEEE Trans. Pattern Anal. Mach. 482 Intell. 2023, 45, 6072. 483 [29] P. Auer, N. Cesa-Bianchi, P. Fischer, Mach. Learn. 2002, 47, 235. 484 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+26 [30] K. Deb, A. Pratap, S. Agarwal, T. Meyarivan, IEEE Trans. Evol. Comput. 2002, 6, 485 182. 486 [31] D. L. Davies, D. W. Bouldin, IEEE Trans. Pattern Anal. Mach. Intell. 1979, PAMI-1, 487 224. 488 [32] G. Bécigneul, O.-E. Ganea, in Proc. Int. Conf. Learn. Represent. (ICLR), 2019. 489 490 
+
+Table of Contents Text 491 
+
+High-throughput images of Arabidopsis rosettes are converted into a hyperbolic topological 492 atlas. Across nutrient regimes, polyamine treatments, doses, and Atput transporter mutants, 493 plants occupy a shared developmental manifold rather than separate morphologies. Putrescine, 494 spermidine, and spermine bias early, transition, and late states, enabling compact metrics for 495 morphodynamic phenotyping. 496 
+
+Supporting Information 497 
+
+498 499 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+27 500 
+
+Figure S1. Area-derived pseudotime summaries by polyamine identity, nutrition, genotype, and 501 
+
+dose. (a-d) Each point represents one rosette image; black dots mark group means and the 502 
+
+dashed grey line marks the global mean across approximately 138,000 plants. Put-primed 503 
+
+rosettes shift toward earlier pseudotime, Spm-primed rosettes shift toward later states, and Spd 504 
+
+remains near the global mean. Low-MS medium biases plants toward earlier values, whereas 505 
+
+full MS shifts them later; the five Atput mutant lines and Col-0 span a narrow shared range. 506 
+
+Dose effects are detectable but modest compared with polyamine identity or nutrition. (e-g) 507 
+
+Stacked bars show the fraction of plants in early, mid, and late tertiles of area-based 508 
+
+pseudotime for polyamine identity, nutrition, and dose. These descriptor-based summaries 509 
+
+support the conclusion that treatments modulate residence along a shared morphodynamic 510 
+
+trajectory rather than generating distinct developmental routes. 511 
+
+512 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+28 513 
+
+Figure S2. Two-dimensional Poincaré embeddings obtained from the filter function, 514 
+
+visualized by line, nutrition, priming, and concentration. The substantial overlap and 515 
+
+hierarchical structure across conditions highlight the complexity of the dataset. Violin plots 516 
+
+after further reduction from two dimensions to one dimension by UMAP show strong overlap, 517 
+
+motivating the use of topology-aware analyses rather than simple projection-based 518 
+
+summaries. 519 
+
+520 
+
+> .CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint
+
+29 521 
+
+Figure S3. Representative RGB image of the 48-plant plate configuration used for data 522 
+
+acquisition. Each well contains a single Arabidopsis thaliana seedling imaged under controlled 523 
+
+illumination and camera geometry, forming the raw dataset used in downstream analyses. 524 
+
+525 
+
+526 
+
+.CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint 30 527 
+
+Figure S4. Original cropped plant images extracted from the detection pipeline and 528 
+
+corresponding outputs after super-resolution processing. The enhanced images show sharper 529 
+
+leaf edges and improved image fidelity while preserving rosette morphology. 530 
+
+531 
+
+532 533 
+
+.CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint 31 534 
+
+Figure S5. Representative cropped plants used as input examples and their corresponding high-535 
+
+dimensional DINOv2 embeddings visualized by PCA projection. 536 
+
+537 
+
+.CC-BY 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted June 29, 2026. ;https://doi.org/10.64898/2026.06.23.733990 doi: bioRxiv preprint

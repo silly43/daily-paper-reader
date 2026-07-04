@@ -1,0 +1,1781 @@
+Title: WattmaMod enables high-resolution and extensible RNA modification profiling for nanopore direct RNA sequencing
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.07.02.735990v1.full.pdf
+
+Published Time: Sat, 04 Jul 2026 21:21:04 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+# WattmaMod enables high-resolution and extensible RNA 1
+
+# modification profiling for nanopore direct RNA sequencing 2
+
+## Bin Yu 1,2,†,∗, Xinghui Sun 1,3,†, Xiao Li 4, Junhai Qi 3, Ting Yu 3, Xin Gao 5,∗, Renmin Han 3,∗
+
+> 3
+> 1
+
+School of Data Science, Qingdao University of Science and Technology, Qingdao 266061, China; 4
+
+> 2
+
+School of Artificial Intelligence and Data Science, University of Science and Technology of China, Hefei 230027, China; 5
+
+> 3
+
+Research Center for Mathematics and Interdisciplinary Sciences, Shandong University, Qingdao 266237, China; 6
+
+> 4
+
+School of Computer Science and Technology, University of Science and Technology of China, Hefei 230027, China; 7
+
+> 5
+
+Computational Bioscience Research Center (CBRC), Computer, Electrical and Mathematical Sciences and Engineering Division, King Abdullah University of Science and Technology (KAUST), Thuwal 23955, Saudi Arabia. 
+
+> 8
+
+Abstract 9
+
+Nanopore direct RNA sequencing enables direct profiling of RNA modifications on native transcripts, but accurate 10 
+
+multi-modification detection remains limited by non-stationary signals and heterogeneity across chemistries. Here, 11 
+
+we develop WattmaMod, a deep learning framework for multi-modification detection from nanopore direct RNA se-12 
+
+quencing data. It combines self-supervised pretraining, supervised contrastive fine-tuning, and low-label incremental 13 
+
+adaptation to improve representation learning and support e ffi cient extension to low-resource modification types. The 14 
+
+framework further incorporates wavelet-guided multi-scale encoding and dynamic cross-attention fusion to model 15 
+
+raw signals and event-level features. Results show that WattmaMod achieves robust detection of multiple RNA mod-16 
+
+ifications, including m6A, m5C, m1A, A-to-I, m7G, hm5C, m1 Ψ, f5C, ac4C, m5U and Ψ. It also extends e ffi ciently 17 
+
+to low-resource modification types with minimal labeled data, generalizes across sequencing chemistries and species, 18 
+
+and predicts potential higher-order local organization among distinct RNA modifications. WattmaMod thus provides 19 
+
+a scalable framework for high-resolution epitranscriptome profiling and expands RNA modification analysis beyond 20 
+
+single-site prediction to coordinated multi-modification characterization. 21 
+
+> †
+
+These authors contributed equally. 
+
+> ∗
+
+Corresponding authors: Renmin Han (hanrenmin@sdu.edu.cn); Xin Gao (xin.gao@kaust.edu.sa); Yu Bin (yubin@qust.edu.cn). 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint Dynamic RNA modifications regulate RNA processing, stability and translation 1–6 , and their dysregulation contributes 22 
+
+to cancer initiation and progression 7–9 . However, it remains challenging to systematically profile the distribution and 23 
+
+crosstalk of multiple modifications on native RNA molecules 10–12 . Conventional techniques, including MeRIP-seq 13 ,24 
+
+miCLIP 14 , m6ACE-Seq 15 , GLORI 16 rely on antibody enrichment or chemical conversion and typically require RNA 25 
+
+fragmentation, thereby disrupting long-range transcript information and molecular heterogeneity. Nanopore direct 26 
+
+RNA sequencing (DRS) enables real-time, amplification-free sequencing of native RNA 17 , o ff ering the potential to 27 
+
+profile multiple modifications on single molecules 18–20 . Quantitative deconvolution of distinct modifications from raw 28 
+
+current signals remains a bottleneck for broader nanopore DRS applications 21,22 .29 
+
+Computational methods for nanopore DRS modification detection largely fall into two paradigms. Compara-30 
+
+tive statistical tools, including xPore 23 , DRUMMER 24 and Nanocompore 25 , identify candidate sites by comparing 31 
+
+signal distributions between conditions, but their performance depends on well-matched designs and high coverage, 32 
+
+limiting single-sample analyses and robustness to batch e ff ects. In parallel, supervised deep-learning models such 33 
+
+as m6Anet 26 , DENA 27 and SingleMod 28 enable single-nucleotide prediction for m6A, motivating extensions toward 34 
+
+multi-modification detection. However, existing multi-modification models, such as TandemMod 29 , CHEUI 30 , Di-35 
+
+rectRM 31 , and the recently proposed ORCA 32 , still face practical challenges in cross-chemistry generalization and 36 
+
+in high-precision extension to novel modification types. Notably, although ORCA supports multi-modification detec-37 
+
+tion, further improvement is still needed in its detection accuracy and extensibility to additional modification types. 38 
+
+These limitations underscore the need for a unified framework supporting multiple chemistries, extensible to new 39 
+
+modification types and robust across domains. 40 
+
+To detect RNA modifications, deep learning models must move beyond designed event features to extract robust 41 
+
+multiscale representations directly from raw signals, thereby decoupling subtle modification-induced perturbations 42 
+
+from background noise 33–36 . The architecture must remain extensible across nanopore chemistries and invariant to 43 
+
+sequence context, enabling e ffi cient adaptation to new modification types or experimental settings 37 . While RNA004 44 
+
+delivers superior signal quality, the paucity of curated, labeled training data for this new iteration poses a substantial 45 
+
+bottleneck to e ff ective model optimization. Furthermore, the framework should generate multi-granular quantitative 46 
+
+outputs at both single-molecule and site-specific levels, facilitating the robust synthesis of per-read probabilities into 47 
+
+site-wise modification scores. 48 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+Here we present WattmaMod, a label-e ffi cient and lightweight framework for single-molecule nanopore DRS 49 
+
+analysis that integrates wavelet-based multi-scale decomposition with contrastive pretraining and task-specific fine-50 
+
+tuning. By combining self-supervised representation learning on large-scale unlabeled signals with low-label super-51 
+
+vised adaptation, WattmaMod is designed to capture transferable modification-associated patterns under limited anno-52 
+
+tation. To test its robustness and scalability for multi-modification detection, we systematically evaluated WattmaMod 53 
+
+across RNA002 and RNA004 chemistries and diverse modification types. Specifically, under minimal labeled data 54 
+
+conditions, WattmaMod achieves strong discriminative ability with an average AUC of 0.95 across seven RNA modifi-55 
+
+cation types, outperforming existing methods by an average of 10% and by up to 30% for specific types, demonstrating 56 
+
+robust ranking performance even in low-resource settings. Further analyses in human cell lines, perturbation systems 57 
+
+and cross-species settings suggested model-inferred potential co-occurrence patterns among RNA modifications, pro-58 
+
+viding hypotheses for future experimental validation of coordinated RNA modification organization. These results 59 
+
+establish WattmaMod as a scalable framework for accurate and extensible RNA modification profiling from nanopore 60 
+
+DRS data. 61 
+
+## Results 62 
+
+Overview of WattmaMod 63 
+
+To achieve accurate RNA modification detection from nanopore direct RNA sequencing (DRS) for both RNA002 and 64 
+
+RNA004 chemistries, we developed WattmaMod, a unified learning framework that jointly models ionic current-level 65 
+
+and event-level evidence. WattmaMod integrates raw current traces with event-level statistics—including mean, stan-66 
+
+dard deviation, median, and dwell time—together with base-call quality scores and local sequence context to form a 67 
+
+complementary representation for each candidate nucleotide site (Fig. 1a). This design directly targets two practical 68 
+
+bottlenecks in DRS-based RNA modification detection: the often subtle modification-induced current perturbations 69 
+
+and the long-range dependencies that are di ffi cult to capture with single-scale signal representations. By coupling 70 
+
+multi-scale signal encoding with sequence-context modeling, WattmaMod increases the separability of modified ver-71 
+
+sus unmodified signals and improves robustness across datasets and chemistries (Fig. 1b,d). To further address limited 72 
+
+supervision in many settings, we adopt a contrastive learning–based training strategy that combines self-supervised 73 
+
+pretraining with supervised fine-tuning. This scheme yields more stable optimization and stronger generalization in 74 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+Basecaller  Alignment  Re -squiggle 
+
+a Data preprocessing 
+
+sam/bam 
+
+Reference 
+
+FAST5 / POD5 FAST5 / POD5  FASTQ 
+
+A T T G C
+
+FASTQ 
+
+A T T G C
+
+Reference 
+
+Reads 
+
+Reference 
+
+Reads 
+
+Current features 
+
+Bi -LSTM Bi -LSTM 
+
+b Model 
+
+> Proj -Head
+> Mamba
+
+Training 
+
+Pipeline 
+
+Training 
+
+Pipeline 
+
+Fine -
+
+tuning 
+
+Pre -
+
+training 
+
+Training 
+
+Pipeline 
+
+Fine -
+
+tuning 
+
+Pre -
+
+training 
+
+Self -sup Time -Fre Aug 
+
+... ... 
+
+Time Domain 
+
+Sample 
+
+... ... 
+
+Frequency Domain 
+
+Sample 
+
+Self -sup Time -Fre Aug 
+
+... 
+
+Time Domain 
+
+Sample 
+
+... 
+
+Frequency Domain 
+
+Sample 
+
+Sup Time Aug 
+
+Positive 
+
+sample 
+
+Negative 
+
+sample 
+
+> . . . . . .
+> . . . . . .
+
+Sup Time Aug 
+
+Positive 
+
+sample 
+
+Negative 
+
+sample 
+
+> . . .
+> . . .
+
+◎ Motif 
+
+◎ Mean 
+
+◎ Std 
+
+◎ Median 
+
+◎ Dwell 
+
+◎ Base quality 
+
+◎ Motif 
+
+◎ Mean 
+
+◎ Std 
+
+◎ Median 
+
+◎ Dwell 
+
+◎ Base quality 
+
+Currents 
+
+feature 
+
+Events 
+
+feature 
+
+WSCN WSCN WSCN 
+
+Gated Cross -Attention Gated Cross -Attention 
+
+> Fusion Features
+
+Bi -LSTM 
+
+b Model 
+
+> Proj -Head
+> Mamba
+
+Training 
+
+Pipeline 
+
+Fine -
+
+tuning 
+
+Pre -
+
+training 
+
+Self -sup Time -Fre Aug 
+
+... 
+
+Time Domain 
+
+Sample 
+
+... 
+
+Frequency Domain 
+
+Sample 
+
+Sup Time Aug 
+
+Positive 
+
+sample 
+
+Negative 
+
+sample 
+
+> . . .
+> . . .
+
+◎ Motif 
+
+◎ Mean 
+
+◎ Std 
+
+◎ Median 
+
+◎ Dwell 
+
+◎ Base quality 
+
+Currents 
+
+feature 
+
+Events 
+
+feature 
+
+WSCN 
+
+Gated Cross -Attention 
+
+> Fusion Features
+
+... ... 
+
+Event features 
+
+> 0.534
+> 0.379
+> 0.267
+> Mean
+> 0.059
+> 0.165
+> 0.172
+> Std
+> 0.626
+> 0.399
+> 0.223
+> Med
+> 22
+> 19
+> 36
+> Dwell
+> 7
+> 24
+> 13
+> Quality
+> A
+> G
+> G
+> Motif
+> 0.534
+> 0.379
+> 0.267
+> Mean
+> 0.059
+> 0.165
+> 0.172
+> Std
+> 0.626
+> 0.399
+> 0.223
+> Med
+> 22
+> 19
+> 36
+> Dwell
+> 7
+> 24
+> 13
+> Quality
+> A
+> G
+> G
+> Motif
+
+... ... 
+
+Event features 
+
+> 0.534
+> 0.379
+> 0.267
+> Mean
+> 0.059
+> 0.165
+> 0.172
+> Std
+> 0.626
+> 0.399
+> 0.223
+> Med
+> 22
+> 19
+> 36
+> Dwell
+> 7
+> 24
+> 13
+> Quality
+> A
+> G
+> G
+> Motif
+
+c Contrastive learning loss 
+
+similar to 
+
+dissimilar to 
+
+similar to 
+
+dissimilar to 
+
+similar to 
+
+dissimilar to 
+
+Self -sup contrastive: 
+
+Sup contrastive: 
+
+c Contrastive learning loss 
+
+similar to 
+
+dissimilar to 
+
+Self -sup contrastive: 
+
+Sup contrastive: 
+
+d Train  strategies 
+
+Stage 1:  Self -sup  pre -training 
+
+> Trainable layers
+
+Unlabeled 
+
+dataset 
+
+Self -sup contrastive 
+
+loss 
+
+model 
+
+Stage 1:  Self -sup  pre -training 
+
+> Trainable layers
+
+Unlabeled 
+
+dataset 
+
+Self -sup contrastive 
+
+loss 
+
+model 
+
+Stage  2: Full  Fine -tuning 
+
+> RNA002 Chemistry
+
+m6A 
+
+m5C 
+
+m1A 
+
+Sup con loss 
+
+> RNA004 Chemistry
+
+m6A 
+
+m5C 
+
+Ψ
+
+Stage  3: Partial  Fine -tuning 
+
+Sup con loss 
+
+> RNA002 Chemistry
+
+Inosine f5C 
+
+Ψ m1 Ψ
+
+hm5C m5U 
+
+m7G 
+
+> RNA004 Chemistry
+
+m5U 
+
+m1 Ψ
+
+hm5C 
+
+ac4C 
+
+> Classifier Classifier
+> Frozen layers
+> Classifier
+> Frozen layers
+
+Stage  3: Partial  Fine -tuning 
+
+Sup con loss 
+
+> RNA002 Chemistry
+
+Inosine f5C 
+
+Ψ m1 Ψ
+
+hm5C m5U 
+
+m7G 
+
+> RNA004 Chemistry
+
+m5U 
+
+m1 Ψ
+
+hm5C 
+
+ac4C 
+
+> Classifier
+> Frozen layers
+> Classifier
+> Trainable layers
+> Classifier
+> Trainable layers
+
+c Contrastive learning loss 
+
+similar to 
+
+dissimilar to 
+
+Self -sup contrastive: 
+
+Sup contrastive: 
+
+d Train  strategies 
+
+Stage 1:  Self -sup  pre -training 
+
+> Trainable layers
+
+Unlabeled 
+
+dataset 
+
+Self -sup contrastive 
+
+loss 
+
+model 
+
+Stage  2: Full  Fine -tuning 
+
+> RNA002 Chemistry
+
+m6A 
+
+m5C 
+
+m1A 
+
+Sup con loss 
+
+> RNA004 Chemistry
+
+m6A 
+
+m5C 
+
+Ψ
+
+Stage  3: Partial  Fine -tuning 
+
+Sup con loss 
+
+> RNA002 Chemistry
+
+Inosine f5C 
+
+Ψ m1 Ψ
+
+hm5C m5U 
+
+m7G 
+
+> RNA004 Chemistry
+
+m5U 
+
+m1 Ψ
+
+hm5C 
+
+ac4C 
+
+> Classifier
+> Frozen layers
+> Classifier
+> Trainable layers
+
+Fig. 1 | Overview of WattmaMod and data processing workflow. a Data preprocessing pipeline. Raw FAST5 and POD5 files are first basecalled to generate FASTQ sequences and aligned to the reference genome. Resquiggle /alignment is applied to obtain calibrated current signals and event-level features, including base identity, mean, standard deviation, median, dwell time, and base-call quality. b Schematic of the WattmaMod model architecture. The inputs, including normalized current signals and event descriptors, are processed by the WSCN and BiLSTM modules, fused via a gated cross-attention mechanism, and passed to a Mamba-based encoder for deep representation modeling. A projection head produces final embeddings for both pretraining and fine-tuning. c Contrastive learning losses. Self-supervised contrastive learning constructs positive and negative pairs through augmentation, while supervised contrastive learning leverages label information to promote intra-class compactness and inter-class separation. d Three-stage training strategy. Stage 1: Self-supervised pre-training on unlabeled data. Stage 2: joint full fine-tuning on abundant modifications from both RNA002 and RNA004 chemistries (RNA002: m6A, m5C, m1A; RNA004: m6A, m5C, Ψ). Stage 3: partial fine-tuning with encoder layers frozen for rare modification types (RNA002: inosine, Ψ, hm5C, m7G, f5C, m1 Ψ, m5U; RNA004: m5U, m1Y, hm5C, ac4C). 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint few-shot regimes, with additional gains when paired with data augmentation (Fig. 1c,d; see Methods). 75 
+
+To determine the optimal training configuration for RNA002, we benchmarked high-confidence in vitro resources, 76 
+
+including the Curlcake synthetic sequence dataset 38,39 , the ELIGOS in vitro transcription (IVT) dataset 40 , and the in 77 
+
+vitro epitranscriptomics (IVET) dataset derived from plant cDNA libraries 29 . IVET with 5-mers achieved the best 78 
+
+overall performance (Supplementary Fig. 4a,d,e), while training-resource choice strongly a ff ected transferability: 79 
+
+models trained on IVT reached ROC–AUC = 0.987 on matched data but dropped to 0.829 on IVET (Supplementary 80 
+
+Fig. 4b,c), indicating that biological representativeness critically influences cross-dataset generalization. We there-81 
+
+fore selected IVET with 5-mers as the default RNA002 configuration. For RNA004, the same 5-mer configuration 82 
+
+was adopted considering the model architecture and training strategy, and Curlcake in vitro transcripts were further 83 
+
+incorporated to provide higher-confidence supervision and test extensibility to the RNA004 chemistry 41 . These re-84 
+
+sults establish the training configuration used for subsequent WattmaMod evaluation and support its capacity to learn 85 
+
+transferable modification-associated signals. 86 
+
+Interpretable signal–feature remodeling driven by RNA modifications 87 
+
+To define the signal signatures captured by WattmaMod for modification discrimination, we systematically com-88 
+
+pared paired modified and unmodified reads from the IVT benchmark by jointly analyzing raw ionic current profiles, 89 
+
+event-level statistics and feature attribution patterns. Across motifs, including the m6A-associated ACACU and the 90 
+
+m5C-associated AACAG, modified reads were consistently separated from their unmodified counterparts in ionic cur-91 
+
+rent space, showing clear shifts in mean current and altered fluctuation patterns (Fig. 2a,b; Supplementary Fig. 6g). 92 
+
+This perturbation extended beyond raw signals, modified reads exhibited reduced base-calling quality across multiple 93 
+
+modification types, including m6A, m1A, m5C, hm5C, Ψ, m7G and inosine (Fig. 2c). At the event level, modification 94 
+
+states were further associated with substantial reorganization of feature relationships, including distinct mean-variance, 95 
+
+dwell-time and intensity coupling patterns under m5C and m6A, as well as modification-specific changes in variance 96 
+
+and dwell time in A-centered contexts (Fig. 2d,f; Supplementary Fig. 2a). Feature attribution identified sequence 97 
+
+context and base-calling quality as dominant predictors, with dwell time and signal mean providing additional sup-98 
+
+port (Fig. 2e; Supplementary Fig. 2b). Because modified and unmodified IVT reads were generated from matched 99 
+
+templates, the high attribution of sequence context is not primarily driven by sequence-composition imbalance, but 100 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+instead reflects k-mer-dependent current perturbations, together with the contribution of base-calling quality to model 101 
+
+weighting. Similar separation between modified and unmodified reads was maintained across datasets and modifica-102 
+
+tion types at the representation level (Supplementary Fig. 3), indicating that WattmaMod learns stable and coordinated 103 
+
+signatures of RNA modification. 104 
+
+WattmaMod generalizes robustly across independent transcriptomes 105 
+
+WattmaMod generalized robustly across independent datasets and was further strengthened by interval-based dual-106 
+
+threshold confidence filtering under heterogeneous signal distributions 30,42 . To test this, we evaluated the model 107 
+
+on a non-overlapping IVET transcriptome. On the external IVET set, WattmaMod achieved ROC–AUC /PR–AUC 108 
+
+values of 0.956 /0.953 for m6A, 0.972 /0.971 for m5C and 0.885 /0.894 for m1A (Fig. 3a-c), improving m6A and 109 
+
+m5C detection by approximately 2 percentage points over models trained under the same setting. F1 scores also 110 
+
+remained consistently high across datasets under the default threshold (Supplementary Fig. 5a-e; Supplementary 111 
+
+Fig. 6h). When dual-threshold confidence filtering was applied, performance further increased to 0.981 /0.985 for 112 
+
+m6A, 0.992 /0.993 for m5C and 0.955 /0.965 for m1A, while retaining approximately 75%, 81% and 63% of reads, 113 
+
+respectively, at upper /lower thresholds of 0.9 /0.3 (Fig. 3f). This gain was consistent with the clear bimodal separation 114 
+
+of predicted probabilities between modified and unmodified reads (Fig. 3e). Read-length stratification further showed 115 
+
+that performance increased from ∼0.87-0.89 in the 0-200 nt group to ∼0.93-0.97 for reads longer than 600 nt (Fig. 3d; 116 
+
+Supplementary Fig. 5f), indicating stable behavior across read-length regimes. Compared with classical statistical and 117 
+
+conventional machine-learning baselines, including logistic regression, GaussianNB, decision trees, random forests, 118 
+
+KNN, SVM, XGBoost and multilayer perceptron, WattmaMod achieved the highest accuracy for both m5C (0.965) 119 
+
+and m6A (0.913) (Supplementary Fig. 6i-j). 120 
+
+WattmaMod accurately detects multiple RNA modifications and quantifies stoichiometry 121 
+
+WattmaMod showed a clear overall advantage over existing tools across detection and stoichiometry benchmarks. 122 
+
+To test this, we compared its performance in three settings, multi-modification benchmarking on IVT data, native-123 
+
+sample evaluation in K562 cells, and stoichiometry estimation using controlled mixing series. On the IVT benchmark, 124 
+
+WattmaMod achieved the strongest overall performance across m6A, Ψ, m5C, inosine, m7G and m1A, with gains 125 
+
+of ∼1 percentage point for m6A and up to ∼30 percentage points for hm5C relative to competing methods, although 126 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+a b
+
+c d
+
+e fFig. 2 | Distinct perturbation patterns induced by RNA modifications in DRS signals a Comparison of normalized current signals for the 5-mer sequence ACACU between m6A-modified and unmodified adenosines. b Smoothed current profiles for the 5-mer sequence AACAG using a sliding window of 10 samples, showing amplitude deviations associated with m5C modification. c Ridge plots showing base quality distributions for modified nucleotides (m6A, m1A, m5C, hm5C, Ψ, m7G, inosine) and their unmodified counterparts (A, C, G, U). The x-axis denotes quality scores and the y-axis represents density. d Pearson correlation heatmaps of five event-level features, including mean, standard deviation, intensity, dwell time and base-calling quality, for m5C-modified samples (left) and m6A-modified samples (right). Correlations were calculated independently for each modification type, and color intensity indicates correlation strength. e SHAP summary bar plot showing the relative importance of five extracted features for distinguishing A, m6A and m1A. f Combined violin and box plots comparing dwell time and standard deviation for three adenosine modifications (m6A, m1A, A-to-I) versus unmodified A in the ELIGOS dataset. Statistical significance was assessed using two-sided Welch’s t-test (* p < 0.05, ** p < 0.01, *** p < 0.001). 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint f
+
+a
+
+c
+
+e
+
+b
+
+dFig. 3 | Cross dataset performance and confidence based improvement of WattmaMod a–c ROC and PR curves for m6A ( a), m5C ( b), and m1A ( c) classification on the IVET test set using models trained on IVET. Di ff erent colors indicate di ff erent interval based dual threshold settings (0.5 /0.5, 0.6 /0.4, 0.7 /0.3, 0.8 /0.2, 0.9 /0.1, 0.9 /0.2, 0.9 /0.3). d ROC and PR performance of m6A detection across read length intervals (0–200, 200–400, 400–600, 600–800, 800–1000 and 1000–1200 nt) in the IVET dataset. e Density distributions of predicted probabilities for modified and unmodified reads under dual threshold confidence filtering. Probability separation is shown for m6A, m1A and m5C across the IVT, IVET and Curlcake datasets. Dashed lines indicate confidence thresholds, and precision is shown in each panel. f Retention rates of m6A, m5C and m1A under di ff erent dual threshold settings. Colors indicate di ff erent modification type and dataset combinations, and each segment shows the proportion of reads retained at the corresponding threshold. 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint 00.2 0.4 0.6 0.8 10.0 0.2 0.4 0.6 0.8 1.0 modification stoichiometry Pearson’s 𝑟        
+
+> tombo 0.570 xpore 0.801 TandemMod 0.895 WattMamba 0.953 Performance of tools on m5C (Synthetic dataset) 00.2 0.4 0.6 0.8 1.0
+> 0.0 0.2 0.4 0.6 0.8 1.0 modification stoichiometry Performance of tools on m6A (ELIGOS dataset) Pearson’s 𝑟
+> xpore 0.798 TandemMod 0.897 WattMamba 0.932
+
+a bc dFig. 4 | Comparison of WattmaMod and existing tools for RNA modification detection and stoichiometry estimation a Radar plots summa-rizing detection performance across multiple tools on the ELIGOS in vitro benchmark for di ff erent RNA modification types, including m6A, m5C, m1A, m7G, hm5C, Ψ and Inosine. ROC-AUC values are shown on the left and PR-AUC values on the right. b Site level evaluation in K562 cells using MeRIP-seq as orthogonal reference. ROC curves (left) and PR curves (right) are shown for m6A prediction by WattmaMod and representative methods. The diagonal dashed line indicates random performance. c Quantitative stoichiometry estimation on a synthetic m5C dataset. Predicted stoichiometries are shown across ground truth stoichiometry bins for Tombo, xPore, TandemMod and WattmaMod. Box plots show the interquartile range with the median as the center line, and points indicate individual predictions. Pearson’s correlation coe ffi cien ( r) is shown to assess agreement with the ground truth. d Quantitative stoichiometry estimation on the ELIGOS m6A dataset for xPore, TandemMod, and WattmaMod. Pearson’s correlation coe ffi cient ( r) indicates the consistency between predicted and true stoichiometries. 
+
+performance on m1A was slightly lower in selected settings (Fig. 4a). In transcriptome-wide native K562 nanopore 127 
+
+DRS evaluation, where experimentally supported m6A-positive sites from MeRIP-seq 43 were greatly outnumbered 128 
+
+by the vast background of non-modified transcriptomic sites, WattmaMod achieved a PR-AUC of 0.402, surpassing 129 
+
+competing methods by 0.01 (Fig. 4b), indicating superior precision under biologically realistic class-imbalanced 130 
+
+conditions. For quantitative stoichiometry estimation, WattmaMod achieved Pearson correlations of r = 0.952 for 131 
+
+m5C and r = 0.932 for m6A (Fig. 4c-d), surpassing the best competing methods by ∼0.06 and ∼0.03, respectively. 132 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint Multi-stage training enables low-label expansion across multiple RNA modifications and sequencing chemistries 133 
+
+We next investigated whether the multi-stage training strategy enables WattmaMod to achieve accurate low-label ex-134 
+
+pansion across diverse RNA modifications and nanopore sequencing chemistries, including RNA002 and RNA004. To 135 
+
+do this, we evaluated the model on RNA002 and RNA004 using only 3,000 positive and 3,000 negative samples per 136 
+
+modification for fine-tuning. Under RNA002, WattmaMod achieved strong performance across multiple modification 137 
+
+types, with PR-AUC values of 0.968 for f5C, 0.929 for hm5C, 0.998 for inosine, 0.946 for m1A, 0.921 for m5U, 138 
+
+0.968 for m7G and 0.989 for Ψ, while also maintaining similarly strong performance for m5U and m1 Ψ in Curlcake 139 
+
+(Fig. 5a). Lift analysis further showed that the top-ranked 10-30% of read segments recovered most true sites (Sup-140 
+
+plementary Fig. 8), indicating e ff ective prioritization even with minimal labeled data. We further evaluated whether 141 
+
+this multi-modification capability could be retained under RNA004. In this setting, modified and unmodified reads 142 
+
+remained clearly separable, F1 scores exceeded 0.94 across most coverage strata (Fig. 5b; Supplementary Fig. 9), 143 
+
+and false positive rates remained low across modification types in both RNA002 (0.042–0.127) and RNA004 (0.038– 144 
+
+0.114) (Supplementary Fig. 20a). Dorado RNA004 modified-base calling was further included as a reference on the 145 
+
+Curlcake synthetic data, using matched modified and unmodified samples to generate PR curves for m6A, m5C and Ψ146 
+
+(Supplementary Fig. 20c). After fine-tuning on the RNA-modbase IVT dataset to adapt to the shorter e ff ective signal 147 
+
+context of RNA004, WattmaMod achieved ROC-AUC values of 0.983-0.999 and PR-AUC values of 0.976-0.999 for 148 
+
+m6A, inosine, Ψ and m5C (Supplementary Fig. 12b,d), indicating that the model is readily transferable beyond a 149 
+
+single sequencing chemistry. The benefit of multi-stage training was further supported by training analyses. Fine-150 
+
+tuning with 3,000 samples yielded the best overall performance (Supplementary Fig. 19), and pretraining modestly 151 
+
+improved all validation metrics (Supplementary Fig. 20b). t-SNE showed clearer separation between modified and 152 
+
+unmodified reads after fine-tuning (Fig. 5c; Supplementary Fig. 6a-f), and pretraining provided an additional ∼1-2 153 
+
+percentage-point gain in validation accuracy together with faster convergence (Fig. 5d). Overall, multi-stage training 154 
+
+improved low-label adaptation e ffi ciency. 155 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+a
+
+c d
+
+b 
+
+> Pretrain m5C
+
+Fig. 5 | Multi stage training enables low label expansion across multiple RNA modifications and nanopore chemistries a ROC and PR curves showing detection performance across multiple RNA modification types, including hm5C, inosine, Ψ, f5C, m5U, m1A, m6A, m1 Ψ and m7G. ROC-AUC, PR-AUC and optimal F1 scores are shown for each modification. b Performance of RNA modification detection on the RNA004 Curlcake in vitro transcription dataset, shown as a ROC strip heatmap (top) and an AUPR heatmap (bottom). c t-SNE visualization of embedding representations learned during self supervised pretraining (left) and after supervised fine tuning (right), showing improved separation between modified and unmodified reads after fine tuning. d Line plots show the training loss for the pretrained and fine tuned model (orange) and the directly supervised model without pretraining (blue). Shaded regions indicate validation accuracy during training 
+
+Conserved and cell line specific epitranscriptomic landscapes across human cell lines 156 
+
+We next assessed whether WattmaMod can accurately characterize RNA modification landscapes across heterogeneous 157 
+
+human cell lines. To do this, we analyzed six tumor cell lines (A549, HCT116, MCF7, HEPG2, K562 and HEYA8) 158 
+
+together with H9 embryonic stem cells and HEK293T. High-confidence m6A sites predicted by WattmaMod were 159 
+
+strongly enriched in the canonical DRACH motif, with GGACT and AGACT as the dominant 5-mer contexts (Fig. 160 
+
+6a; Supplementary Fig. 20a). WattmaMod also identified non-DRACH high-confidence sites, including GGACG 161 
+
+and AGACG, whose relative abundance varied across cell types. Predicted m6A sites were further enriched near the 162 
+
+CDS–3 ′UTR junction and across the 3 ′UTR, with a broad signal extending ∼1,000 nt upstream of transcript ends 163 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint (Supplementary Fig. 10a,b). These patterns indicate that WattmaMod recapitulates known m6A sequence and posi-164 
+
+tional features in complex transcriptomes. Comparison with HepG2 m6A-seq data showed that 70% of the 5,680 genes 165 
+
+predicted by WattmaMod were supported by independent experimental evidence (Fig. 6c). In HEYA8 cells, most 166 
+
+modified transcripts contained a single high-confidence modification site (Fig. 6b). Among randomly selected genes, 167 
+
+ACTB, PTMA, RPLP1 and RPS13 showed relatively high m6A levels, whereas FTL, Hsp70 and RPS26 displayed 168 
+
+cell-line-dependent patterns (Fig. 6e), consistent with known m6A transcriptome landscapes 44–46 . In H9 embryonic 169 
+
+stem cells, gene-level profiling revealed highly regulated loci consistent with canonical m6A regulation (Supplemen-170 
+
+tary Fig. 22). In HEK293T, m6A-modified genes were significantly enriched in RNA processing, splicing, RNA 171 
+
+transport and ubiquitin-related pathways (Supplementary Fig. 10d; Supplementary Fig. 11). WattmaMod also en-172 
+
+abled characterization of multiple RNA modification types. Motif maps recovered expected sequence contexts for 173 
+
+m6A in HEYA8 and for m5C in WT /NSUN2-KO HeLa cells, while motif-logo analysis across ten RNA modifications 174 
+
+revealed distinct sequence preferences in mRNA and non-coding RNA contexts (Supplementary Fig. 21b-d). 175  
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint HCT116
+> A549
+> K562
+> MCF7
+> HEPG2
+> HEYA8
+> AGACA
+> AGACC
+> TGACT
+> GGACC
+> GGACA
+> AGACT
+> GGACT
+> TCAGA
+> GTAGA
+> GGAGA
+> CTAGT
+> TGAGA
+> ATAGA
+> CTAGC
+> AGAGA
+> CGAAT
+> ACAGA
+> AGACG
+> GGACG
+> TCACT m6A Ratio
+
+0.00 0.10 0.21 Motif feature DRACH Non-DRACH Cell-specific ACTB ARPC3 ATP5MF EEF1G ENO1 FTH1 FTL Hsp70 NDUFB4 NPM1 PTMA RPL10 RPL13A RPL37A RPL4 RPL41 RPL8 RPLP1 RPS11 RPS13 RPS19 RPS20 RPS23 RPS24 RPS26 RPS27 RPS3A RPS8 SMAD2 A549 HCT116 HEPG2 K562 MCF7 Modification rate   
+
+> 0.00
+> 0.05
+> 0.10 5600 2940 5680
+> HEPG2 gene m6A-seq prediction
+> Inosine hm5c psu m5u m7g f5c m5c m6a m1a m1y
+
+Inosine hm5c psu m5u m7g f5c m5c m6a m1a m1y Jaccard overlap (100 nt) 
+
+> 0.2 0.4 0.6 0.8 1.0
+
+a b c       
+
+> 23456789 >10 sites 0200 400 Number of genes
+
+edFig. 6 | Transcriptome wide RNA modification landscapes across human cancer cell line a Top 10 enriched m6A associated 5-mer motifs across six human cancer cell lines, including MCF7, K562, HCT116, HEPG2, A549 and HEYA8. b Distribution of the number of modified sites per gene in HEYA8 cells. c Overlap between the m6A modified gene set predicted by WattmaMod and the gene set identified by m6A-seq. Blue indicates genes detected by m6A-seq, red indicates genes predicted by WattmaMod, and the overlapping region indicates genes identified by both methods. d
+
+Predicted local co-modification landscape of ten RNA modification types in HEYA8 cells, quantified by pairwise Jaccard overlap within a ±100-nt window. The heatmap shows pairwise overlap between inosine, hm5C, Ψ, m5U, m7G, f5C, m5C, m6A, m1A and m1 Ψ site sets. Two sites were considered co localized when their transcript coordinates were within ±100 nt. Darker colors indicate higher overlap, and the diagonal indicates self overlap. e Bubble plot showing the distribution of m6A modification levels in 30 randomly selected genes across five human cancer cell lines. Circle size indicates modification intensity, and color denotes cell line identity. 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint Cross-species perturbation-responsive RNA modification dynamics and predicted higher-order multi-modification 176 
+
+organization 177 
+
+A key strength of WattmaMod is that it sensitively captures biologically expected RNA modification changes across 178 
+
+species and perturbation settings, extending its applicability beyond static single-condition detection. To evaluate 179 
+
+this, we tested WattmaMod in genetic perturbation datasets from human, Arabidopsis, and yeast. Across all set-180 
+
+tings, WattmaMod consistently recovered the expected direction of change, including a marked reduction of m6A in 181 
+
+METTL3-KO HEK293T cells (median: 0.11 to 0.06; Fig. 7a) and a decrease of m5C in NSUN2-KO HeLa cells 182 
+
+(median: 0.13 to 0.08; Supplementary Fig. 13). Similar perturbation-associated shifts were also detected for m6A 183 
+
+in Arabidopsis mutants /vir-c and for modification variation in yeast rRNA (Fig. 7b; Supplementary Fig. 14;Sup-184 
+
+plementary Fig. 17a-d). In addition, WattmaMod showed high technical reproducibility, with cross-replicate Pearson 185 
+
+correlations of 0.996 in H9 and 0.954 in HEYA8 (Supplementary Fig. 18). 186 
+
+A notable application of WattmaMod is its ability to generate model-based inferences of potential local co-187 
+
+occurrence patterns among distinct RNA modifications, moving beyond conventional site-by-site prediction. Meta-188 
+
+gene analysis across ten RNA modifications supported transcript-level spatial characterization within a unified ana-189 
+
+lytical framework (Fig. 7c). Among them, the m1A distribution should be interpreted with caution because m1A 190 
+
+prediction showed lower reliability than other modifications and may be partially a ff ected by m6A-related signal in-191 
+
+terference. Notably, the model predicted a potential local co-occurrence pattern involving Inosine, hm5C, and Ψ in 192 
+
+HEYA8, with multiple pairwise Jaccard indices greater than 0.2 within a ±100-nt window (Fig. 6d). A similar but 193 
+
+weaker pattern was also observed in wild-type HEK293T, where local overlap values were around 0.1 (Supplementary 194 
+
+Fig. 15), suggesting that this predicted three-modification association may recur across cellular contexts. In Populus 195 
+
+tridentata , we further detected substantial m6A /m1A site overlap (Jaccard = 0.375) despite negligible rate-level cor-196 
+
+relation ( R2 = 0.01), indicating that strong local spatial association can exist even in the absence of global quantitative 197 
+
+concordance (Supplementary Fig. 16). Based on these observations, we refer to such localized regions of recurrent 198 
+
+multi-modification overlap as putative multi-modification hubs. 199 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+ba
+
+c
+
+d e fFig. 7 | Cross-species validation of perturbation-responsive RNA modification patterns and spatial organization. a Violin plots of m6A modification probabilities in wild type and METTL3 knockout HEK293T cells. Embedded box plots indicate the median, interquartile range and whiskers extending to (1.5 ×IQR). b Site level distributions of m6A modification rates in Arabidopsis wild type Col-0, the VIR mutant vir-1 and the complemented line vir-c. c Metagene density profiles of ten RNA modifications across normalized transcript regions (5 ′UTR, CDS and 3 ′UTR). Shading indicates the CDS, and vertical lines mark region boundaries. d Violin plots comparing site level m5C modification rates in wild type HeLa cells and NSUN2 knockout cells. e Structural classification of high confidence m6A sites on Saccharomyces cerevisiae 15S, 18S, 21S and 25S rRNAs as loop or stem regions based on RNAfold predicted secondary structures. Bar plots show loop and stem proportions, and P values were calculated using two tailed binomial tests under the null hypothesis of equal loop and stem proportions. f Nearest neighbor distance distributions of high confidence m6A sites on Saccharomyces cerevisiae rRNAs (orange) compared with randomly sampled control sites from the same transcripts (blue). 
+
+Orthogonal structural analysis further supported the biological plausibility of the modification landscapes identi-200 
+
+fied by WattmaMod. To examine whether predicted sites were consistent with known structural preferences, we aligned 201 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint site-level predictions with RNA secondary structure annotation in yeast rRNA. RNAfold-based analysis 47 showed that 202 
+
+high-confidence m6A sites were significantly enriched in loop regions and displayed stronger local clustering than 203 
+
+randomized controls ( P = 0.027 to 5 .6 × 10 −5; Fig. 7f,g; Supplementary Fig. 17e). These results provide independent 204 
+
+support that WattmaMod-derived modification patterns are consistent with established structural constraints. 205 
+
+## Discussion 206 
+
+To address major challenges in DRS-based modification detection—including limited high-confidence labels, hetero-207 
+
+geneous data quality, the di ffi culty of jointly profiling multiple modification types, and limited interpretability—we 208 
+
+present WattmaMod, a deep-learning framework for RNA modification detection. With supervised fine-tuning on only 209 
+
+250,000 labeled single-molecule reads, WattmaMod outperforms widely used methods in both detection accuracy and 210 
+
+inference throughput, while substantially accelerating GPU execution and reducing computational cost. Owing to 211 
+
+its label-e ffi cient and few-shot adaptability, WattmaMod maintains stable cross-dataset generalization and supports 212 
+
+diverse modification types. 213 
+
+WattmaMod adopts multiscale signal encoding guided by discrete wavelet transform (DWT), where low-frequency 214 
+
+components capture background and steady-state structures and high-frequency components emphasize transient per-215 
+
+turbations introduced by modified bases, enabling selective extraction of modification-related cues across frequency 216 
+
+bands. Dynamic cross-attention further leverages event-derived priors to adaptively reweight multi-scale channels. 217 
+
+In addition, the state-space module integrates long-range context, allowing signal and sequence features to form a 218 
+
+context-aware joint representation. Training follows a two-stage contrastive paradigm: self-supervised pretraining 219 
+
+constructs time–frequency–enhanced positive /negative pairs to obtain noise-robust embeddings, followed by super-220 
+
+vised contrastive fine-tuning with limited labels, where amplitude and temporal perturbations improve class separa-221 
+
+tion and generalization. Together, band decomposition, prior-guided adaptive modulation, SSM-enabled long-range 222 
+
+dependency modeling, and self-supervised initialization contribute to improved robustness, generalization and overall 223 
+
+detection performance relative to baseline approaches. 224 
+
+Across multiple in vitro benchmarks, WattmaMod shows improved detection performance across diverse modifi-225 
+
+cation types compared with existing tools. It further demonstrates stable cross-species generalization in human tumour 226 
+
+cell lines, poplar, Arabidopsis and Saccharomyces cerevisiae . The model enables high-precision single-molecule de-227 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+tection and reliably captures changes in modification levels across genetic perturbation backgrounds, indicating that 228 
+
+WattmaMod learns transferable biophysical signal patterns rather than dataset-specific noise. 229 
+
+Despite these strengths, several limitations remain. First, some training and evaluation resources—such as Curl-230 
+
+cake long transcripts generated under RNA004 chemistry and RNA-modbase synthetic oligonucleotides with BED-231 
+
+defined modification sites—deviate from native transcriptomes in biological context, structural complexity and read-232 
+
+length distributions. Combined with reduced signal-to-noise near fragment ends and less stable event alignment, these 233 
+
+factors partially impair performance on short reads. In practice, longer reads should be prioritized during inference, to-234 
+
+gether with stringent coverage filtering to obtain higher-confidence sites. Second, model performance depends strongly 235 
+
+on training representativeness. IVET-trained models show markedly improved cross-species and cross-platform gen-236 
+
+eralization compared with IVT-trained counterparts, suggesting that diversity of modification contexts and sequence 237 
+
+environments is often more important than simply scaling dataset size. Third, the current model does not explicitly 238 
+
+incorporate secondary-structure priors during inference, which is known to modulate modification accessibility and 239 
+
+signal manifestation, particularly for structure-sensitive marks. Incorporating structure-aware features (for example, 240 
+
+pairing probability, accessibility, or loop /stem annotations derived from RNAfold-like predictors) may further improve 241 
+
+site resolution and robustness in complex transcriptomic contexts. Future work will incorporate broader species and 242 
+
+tissue sources to build a more neutral and representative foundation dataset, while integrating secondary-structure 243 
+
+priors to mitigate synthetic bias and enhance biological fidelity when interpreting real samples. 244 
+
+WattmaMod also provides a scalable basis for a unified multi-task framework. Such a framework could enable 245 
+
+parallel detection of dozens of modifications within a single model, while integrating spatiotemporal visualization and 246 
+
+rule extraction to characterize competitive and cooperative relationships and further improve interpretability. From 247 
+
+an application perspective, WattmaMod allows rapid adaptation to specific sample types or target marks using only a 248 
+
+small set of validated sites, enabling e ffi cient high-throughput inference for identifying disease-associated or condition-249 
+
+specific RNA modification programs. 250 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+## Methods 251 
+
+Data and preprocessing 252 
+
+For direct RNA sequencing (DRS) data generated with the RNA002 kit, reads were basecalled using Guppy v6.1.5 253 
+
+with the RNA high-accuracy model. Multi-read FAST5 files were then converted to single-read FAST5 format using 254 
+
+ont fast5 api v4.0.0. The basecalled reads were aligned to the reference transcriptome using minimap2 v2.22 48 . Raw 255 
+
+current signals were subsequently processed with the resquiggle procedure in Tombo v1.5.1 49 to obtain event-level 256 
+
+segmentation and accurate signal-to-reference alignments. 257 
+
+For RNA004 chemistry, POD5 files were basecalled using Dorado v0.9.6 50 . Raw current signals and sequences 258 
+
+were then jointly aligned to the reference transcriptome using Uncalled4 v4.1.0 51 , producing BAM files annotated 259 
+
+with signal index tags (ul and ur). On this basis, we implemented custom scripts to extract raw signal values at single-260 
+
+nucleotide resolution by combining BAM alignments with signal index tags. When the alignment model produced 261 
+
+invalid signal indices (e.g. ul = 0), we applied a forward-filling strategy that replaces them with the nearest preceding 262 
+
+valid index, thereby preserving continuity of the signal–base mapping without introducing substantial bias. Insertions 263 
+
+and deletions in the CIGAR string were handled by inserting gap characters (“-”) into the reference or read sequences, 264 
+
+respectively, and padding the associated signal segments to maintain a one-to-one positional correspondence between 265 
+
+aligned bases and signal samples. Command-line options for these steps are in Supplementary Table 1. 266 
+
+During signal feature construction, we normalized the raw current traces to reduce systematic bias, segmented 267 
+
+signals using Tombo or Uncalled4, and spline-interpolated each segment to a fixed length of 500 samples. For each 268 
+
+event, we computed the mean, standard deviation, median, dwell time, and base-call quality. We then used a 5-mer 269 
+
+window centered on the target nucleotide to aggregate the event-level statistics with the normalized signal features, 270 
+
+forming the input to the deep learning model(Fig. 1a). 271 
+
+Training strategy for models 272 
+
+Direct end-to-end supervised training is prone to overfitting when confronted with multiple RNA modification types 273 
+
+and sparse annotations, which in turn limits the quality of learned representations. We adopt a multi-stage training 274 
+
+strategy. We first perform self-supervised pretraining on a blended RNA002 dataset using only unlabeled, read-level 275 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+samples ( 2.5 million) from real HEK293T data. Through instance-wise contrastive learning, the model learns general 276 
+
+biological representations without relying on annotation labels. 277 
+
+After obtaining the general encoder, the second stage conducts supervised fine-tuning on labeled read-level data 278 
+
+using a distance-based supervised contrastive objective to establish stable discriminative boundaries. We performed 279 
+
+full-parameter supervised fine-tuning across the primary modifications in both chemical systems (RNA002: m6A, 280 
+
+m5C, m1A; RNA004: m6A, m5C, Ψ). This stage-wise grouping was defined mainly according to the availability, 281 
+
+scale, and reliability of high-confidence labeled training data for each modification type under each nanopore chem-282 
+
+istry, with biological abundance considered as an additional factor influencing data accessibility. 283 
+
+The third stage targets low-resource and hard-to-obtain modification types by unfreezing the terminal projection 284 
+
+layer and classification head while keeping the backbone encoder parameters unchanged, enabling rapid incremental 285 
+
+adaptation for each new classification task. RNA002 focuses on Inosine (A-to-I), Ψ, hm5C, m7G, f5C, m1 Ψ, and 286 
+
+m5U; RNA004 focuses on m5U, m1 Ψ, hm5C, and ac4C. 287 
+
+Self-supervised contrastive learning in the time–frequency domain 288 
+
+During unlabeled pretraining, we constructed dual-view contrastive samples in the time and frequency domains and 289 
+
+optimized their consistency using the NT-Xent 52 objective. This strategy encouraged the model to learn representations 290 
+
+robust to signal non-stationarity and spectral perturbation. To broaden the coverage of augmentation, we combined 291 
+
+standard time-domain transformations with frequency-domain perturbation operators, thereby improving robustness 292 
+
+to local distortion, spectral variation and background noise in nanopore signals. 293 
+
+For each input signal xi, one time-domain augmentation was randomly selected from dynamic jitter, amplitude 294 
+
+scaling and local temporal reordering to generate the time-domain view vT , whereas the frequency-domain view vF295 
+
+for the same sample was defined as: 296 
+
+vF =
+
+
+
+F −1 F (xi) ⊙ Mm
+
+, zi = 1,
+
+F −1 F (xi) + Ma ⊙ α ⊙ eiϕ, zi = 0,
+
+(1) where F and F −1 denote the Fourier transform and its inverse, respectively. Here, zi ∈ { 0, 1} is a random indicator for 297 
+
+spectral masking or spectral perturbation. Specifically, Mm ∼ Bernoulli(1 − pm) denotes the frequency-retention mask, 298 
+
+Ma ∼ Bernoulli( pa) denotes the frequency-addition mask, ϕ ∼ U (0 , 2π) controls the phase, and α ∼ U  0, 0.1 |F (xi)|
+
+> 299
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+controls the perturbation magnitude. 300 
+
+To leverage unlabeled RNA sequencing data under limited annotation, the time-domain and frequency-domain 301 
+
+views ( vT , vF ) generated from the same sample were treated as a positive pair, whereas views from other samples 302 
+
+within the same mini-batch were treated as negative pairs, and the model was optimized using the NT-Xent loss with 303 
+
+temperature τ = 0.15: 304 
+
+LNT -Xent = − 12B
+
+> 2B
+
+X
+
+> i=1
+
+log exp  si,i+ /τ P2Bj=1, j,i exp  si, j/τ  , (2) where si j denotes the cosine similarity between samples i and j, i+ denotes the positive counterpart of sample i, and 305 
+
+B is the batch size. This objective encouraged the model to learn stable representations from unlabeled signals and 306 
+
+provided robust initialization for subsequent supervised fine-tuning (Supplementary Fig. 7a,d). 307 
+
+Composite augmentation for supervised fine-tuning 308 
+
+During supervised fine-tuning, we applied composite augmentation to labeled samples to mimic amplitude fluctuation 309 
+
+and nonlinear temporal distortion in nanopore signals, thereby improving robustness while generating multiple views 310 
+
+for contrastive supervision. For each input signal x(t), we first placed K+2 control points {tk}K+1 
+
+> k=0
+
+uniformly over the 311 
+
+time domain, with the default setting K=2. Amplitude scaling factors {αm}K+1 
+
+> m=0
+
+were then independently sampled at 312 
+
+these control points from αm ∼ N (1 , σ 2
+
+> m
+
+), and cubic-spline interpolation converted them into a continuous modulation 313 
+
+curve gc(t), whose pointwise multiplication with x(t) produced an amplitude-warped signal y(t). At the same control-314 
+
+point locations, temporal scaling factors {βm}K+1 
+
+> m=0
+
+were independently sampled from βm ∼ N (1 , σ 2
+
+> τ
+
+), and cubic-spline 315 
+
+interpolation yielded a continuous temporal scaling curve βc(t). To preserve the valid signal range and the original 316 
+
+sequence length, we defined the normalized temporal mapping as: 317 
+
+τc(t) = clip t βc(t)
+
+βc(T − 1) , 0, T − 1
+
+!
+
+, (3) where T denotes the sequence length. The final augmented signal ˜ x(t) was obtained by linearly resampling y(t) along 318 
+
+τc(t) (Supplementary Fig. 7b,e). In this way, the augmentation sequence first applied amplitude warping and then 319 
+
+temporal warping, which more closely mimicked gain drift and temporal stretching in practical nanopore signals. 320 
+
+The augmented samples were further used to construct supervised contrastive pairs during fine-tuning. Specifi-321 
+
+cally, samples with the same label were treated as positive pairs, whereas samples with di ff erent labels were treated as 322 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+negative pairs, and the embeddings were optimized using a pairwise distance-based contrastive loss: 323 
+
+Lcontra = 1
+
+N(N − 1) 
+
+X 
+
+> i,j
+
+hIi j · d2 
+
+> i j
+
++  1 − Ii j 
+
+ · max  0, m − di j 
+
+2i , (4) where Ii j = 1 if samples i and j share the same label and Ii j = 0 otherwise, di j denotes the cosine distance between 324 
+
+their embeddings, and m > 0 is the margin imposed on negative pairs. Positive pairs were therefore pulled together by 325 
+
+the quadratic term, whereas negative pairs were pushed apart by the hinge term. 326 
+
+The final optimization objective combined the cross-entropy loss with the supervised contrastive term and was 327 
+
+written as: 328 
+
+L = Lce + λ Lcontra , (5) where λ was set to 0 .8 and Lce denotes the cross-entropy loss. This objective improved discrimination while main-329 
+
+taining robustness to amplitude and temporal perturbations as well as batch-level variation. 330 
+
+Wavelet-guided multi-scale learnable encoder 331 
+
+To capture the non-stationary characteristics of nanopore sequencing signals across multiple temporal scales, we em-332 
+
+ployed discrete wavelet decomposition using the Daubechies-4 wavelet with J = 4 levels, followed by learnable chan-333 
+
+nel reweighting and one-dimensional convolution for feature integration. For an input signal x ∈ RB×T , the wavelet 334 
+
+transform W Jdb 4 produced a set of approximation and detail coe ffi cients: 335 
+
+n  a( j), d( j)o Jj=1 = W Jdb 4(x) , (6) where a(J) denotes the low-frequency approximation component and {d( j)}Jj=1 denote the detail components at di ff erent 336 
+
+scales (Supplementary Fig. 7c). 337 
+
+To preserve the physical characteristics of di ff erent frequency bands while enabling unified downstream process-338 
+
+ing, each scale component was resampled to a fixed length L∗ = 200. Specifically, first-order linear interpolation was 339 
+
+applied to the low-frequency component to obtain ˜ a, whereas nearest-neighbor interpolation was applied to each high-340 
+
+frequency component to obtain ˜ d( j), thereby preserving abrupt local changes without introducing additional smoothing. 341 
+
+The resampled components were then concatenated along the channel dimension to form the multi-scale representation 342 
+
+M =  ˜a, ˜d(1) , . . . , ˜d(J).343 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+To adaptively model the relative contributions of di ff erent frequency bands, we introduced a learnable channel 344 
+
+reweighting module, which produced a reweighted representation M′ as: 345 
+
+M′ = M ⊙ σ
+
+ϕ
+
+ 1
+
+L
+
+> L
+
+X
+
+> l=1
+
+Mb,:,l W1 + b1
+
+ W2 + b2
+
+ , (7) where ϕ and σ denote the ReLU and Sigmoid functions, respectively, W1 ∈ RC×d and W2 ∈ Rd×C are learnable 346 
+
+projection matrices, with C = 5 and d = 16, and the resulting channel-wise weights were broadcast along the tem-347 
+
+poral dimension. In this way, the model dynamically emphasized informative scales while suppressing less relevant 348 
+
+components. 349 
+
+The reweighted tensor M′ was then fed into a convolutional encoder composed of two one-dimensional convo-350 
+
+lutional layers and one max-pooling layer with ReLU activations, yielding the signal feature representation Xsig ∈351 
+
+RB×D×L′
+
+for downstream modules. Boundary handling was implemented using the wavelet zero mode to avoid reflec-352 
+
+tion artifacts, and both the multi-scale decomposition and channel reweighting remained fully di ff erentiable during 353 
+
+training. 354 
+
+Dynamic cross-attention and sequence modeling 355 
+
+To address the conflicts and noise introduced by simple feature concatenation, we used an adaptive fusion strategy to 356 
+
+integrate heterogeneous modalities and thereby combine local signal details with global event-level regularities. After 357 
+
+BiLSTM encoding, the event-level statistical features were represented as Xstats . We then used Xsig as the query and 358 
+
+Xstats as the key and value, so that the signal representation could selectively retrieve complementary information from 359 
+
+the statistical branch. The fused representation was defined as: 360 
+
+Yt = Xsig + σ Wg[Xsig ; Xstats ] + bg
+
+ ⊙ Xstats , (8) where Wg and bg denote the learnable parameters of the gating network. This design enabled context-aware feature 361 
+
+modulation by enhancing discriminative cues in high-confidence regions while preserving signal fidelity in low-SNR 362 
+
+regions. 363 
+
+To model long-range dependencies, we further introduced Mamba with state-space model parameters Θ =364 
+
+{A, B, C, D, ∆}, where A ∈ Rd×d, B ∈ Rd, C ∈ Rd, D ∈ R, and ∆ denotes the step size. Discretization of the state-space 365 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+model produced a one-dimensional causal kernel kΘ, and the sequence output was computed as: 366 
+
+Z = kΘ ∗ Y (depthwise 1D causal convolution) , Z ∈ RB×T ×D, (9) where ∗ denotes channel-wise independent causal convolution. This operation reduced the sequence modeling com-367 
+
+plexity from O(T 2) to O(T d s) while strengthening both local and long-range interactions through convolutional ex-368 
+
+pansion. In our implementation, the Mamba module used dstate = 16 and dconv = 2. The encoded features were then 369 
+
+globally pooled and fed into the classifier to obtain the modification prediction ˆ p or ˆ y. Algorithm 1 summarizes the 370 
+
+complete workflow of the proposed model. 371 
+
+Model hyperparameter settings and evaluation 372 
+
+During the model training process, we used the AdamW 53 optimizer, with an initial learning rate of 0.001 and a 373 
+
+batch size of 512. A dynamic learning rate adjustment strategy (ReduceLROnPlateau) was employed, which reduces 374 
+
+the learning rate by a factor of 0.1 when the validation metric plateaued for 3 consecutive epochs, with a minimum 375 
+
+learning rate of 1 ×10 −6. To prevent overfitting, early stopping was enabled to terminate training if no improvement was 376 
+
+observed over a certain period. All training was conducted on an NVIDIA A10 GPU. Detailed training hyperparameter 377 
+
+settings are summarized in Supplementary Table 3. 378 
+
+We uniformly split each dataset into training and testing sets at a 4:1 ratio. RNA002 undergoes cross-training 379 
+
+and validation between IVET, Curlcake (RNA002), and IVT. The RNA004 dataset is based on Curlcake (RNA004) 380 
+
+(long sequences) and the rna-modbase in vitro transcription dataset constructed from BED tags (short sequences). The 381 
+
+self-supervised pre-training stage ran for 40 epochs, with each epoch lasting approximately 4 minutes to su ffi ciently 382 
+
+capture the distributional characteristics of large-scale data. The supervised fine-tuning was divided into two phases. 383 
+
+Phase I: Parameter tuning on 250,000 labeled samples for each modification type, trained for 15 epochs, with each 384 
+
+epoch lasting about 2 minutes. Phase II: Partial parameter fine-tuning on 3,000 labeled samples per type, lasting about 385 
+
+3 s per epoch. 386 
+
+Classification performance was evaluated using the true positive rate (TPR, equivalent to recall), false positive 387 
+
+rate (FPR), precision, ROC–AUC and PR–AUC. The corresponding definitions were: 388 
+
+TPR = Recall = TP TP + FN , (10)  
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint Table 1: Algorithm 1 — WattmaMod: integrated representation learning framework
+
+Input (x1, x2): augmented sample pair; y: label (optional); lr : learning rate; E: number of epochs 
+
+θ: encoder parameters; ϕ: classifier parameters; τ: temperature; m: contrastive margin 
+
+μ: signal mean; σ: signal std; I: intensity; d: dwell time; q: base quality 
+
+Output Trained encoder θ∗, classifier ϕ∗, and latent representation f
+
+1. Initialize encoder fθ ← WattmaMod( θ), classifier gϕ
+
+2. for x ∈ { x1, x2} do 
+
+3. x ← reshape( x) : permute 4. z ← WSCN( x) : DWT1D( x) → [yL, yH1−4] → interpolate → concat → attention → Conv1D 5. s ← concat(Embed( k), μ, σ, I, d, q)6. (o, h) ← BiLSTM( s); h ← h[: , None , :] 7. z ← z + σ(W2 · ReLU( W1 · [z : h])) 8. z ← Mamba( z)9. f ← ProjectionHead([ z[: , −1, :] , o, mean( z)]) 10. end for 
+
+11. if Self-supervised pre-training: 12. L = 12 [NTXent( f1, f2, τ ) + NTXent( f2, f1, τ )] 13. ∇L → update θ
+
+14. elif supervised fine-tuning: 15. ˆy = gϕ( f ); LCE = − 1
+
+> B
+
+P y · log(ˆ y); LCTR = Contrast( f, y, m)16. L = LCE + 0.8 · L CTR 
+
+17. ∇L → clip( ∥∇∥ ≤ 1.0) → update θ, ϕ 
+
+18. end if 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint 389
+
+FPR = FP FP + TN , (11) 
+
+> 390
+
+Precision = TP TP + FP , (12) where TP, FP, TN and FN denote the numbers of true positives, false positives, true negatives and false negatives, 391 
+
+respectively. Details of the test and analysis datasets are provided in Supplementary Table 2. 392 
+
+Data availability 393 
+
+Published DRS datasets used in this study were obtained from the work of Novoa lab in the National Center for 394 
+
+Biotechnology Information (NCBI) under accession numbers GSE124309 38 and PRJNA563591 54 , and from the work 395 
+
+of Intawat Nookaew under accession number SRP166020 40 . Published Arabidopsis and Populus trichocarpa DRS 396 
+
+datasets are available through ENA and NCBI SRA under accession numbers PRJEB32782 55 and PRJNA517295 56 ,397 
+
+respectively. Published Saccharomyces cerevisiae direct RNA sequencing (DRS) datasets are available through ENA 398 
+
+under accession number PRJEB37798. Direct RNA sequencing datasets for multiple human cancer cell lines are pub-399 
+
+licly available in ENA under project accession PRJEB44348. Direct RNA sequencing data of HEK293T wild-type and 400 
+
+METTL3-knockout samples are publicly available in ENA under project accession PRJEB40872. The In Vitro Epi-401 
+
+transcriptome (IVET) dataset generated by ONT direct RNA sequencing is publicly available in GEO under accession 402 
+
+number GSE227087. Direct RNA sequencing datasets for HeLa wild-type and NSUN2-knockout are publicly avail-403 
+
+able in NCBI under project accession PRJNA872027. RNA004 curlcake synthetic direct RNA sequencing datasets are 404 
+
+available from ENA under project accessions PRJEB61874 and PRJEB82528. The RNA004 rna-modbase validation 405 
+
+dataset (rna-modbase-validation 2025.03), with defined RNA modifications, is available from the Oxford Nanopore 406 
+
+Technologies open-data repository at https://ont-open-data.s3.amazonaws.com/index.html . The processed 407 
+
+data generated in this study, including read-level prediction outputs, site-level modification rates, benchmark summary 408 
+
+tables, have been deposited in Zenodo: https://doi.org/10.5281/zenodo.18998046 . Source data are provided 409 
+
+with this paper. 410 
+
+Code availability 411 
+
+The source code of the WattmaMod is available for research purposes at Github: https: // github.com /YuBinLab-412 
+
+QUST /WattmaMod /.413 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint
+
+## References 414 
+
+1. Batista, P. J. et al. m6a rna modification controls cell fate transition in mammalian embryonic stem cells. Cell Stem Cell 15 , 707–719 (2014). 415 
+
+2. Kmietczyk, V. et al. m6a-mrna methylation regulates cardiac gene expression and cellular growth. Life Sci. Alliance 2, e201800233 (2019). 416 
+
+3. Roundtree, I. A., Evans, M. E., Pan, T. & He, C. Dynamic rna modifications in gene expression regulation. Cell 169 , 1187–1200 (2017). 417 
+
+4. Lewis, C. J., Pan, T. & Kalsotra, A. Rna modifications and structures cooperate to guide rna–protein interactions. Nat. Rev. Mol. Cell Biol. 18 , 202–210 (2017). 418 
+
+5. Zaccara, S., Ries, R. J. & Ja ff rey, S. R. Reading, writing and erasing mrna methylation. Nat. Rev. Mol. Cell Biol. 20 , 608–624 (2019). 419 
+
+6. Jiang, X. et al. The role of m6a modification in the biological functions and diseases. Signal Transduct. Target. Ther 6, 74 (2021). 420 
+
+7. Chen, Z. et al. Ythdf2 promotes atp synthesis and immune evasion in b cell malignancies. Cell 188 , 331–351 (2025). 421 
+
+8. Zhang, Y. et al. Dhx36 binding induces rna structurome remodeling and regulates rna abundance via m6a reader ythdf1. Nat. Commun. 15 , 9890 (2024). 422 
+
+9. Nombela, P., Miguel-L´ opez, B. & Blanco, S. The role of m6a, m5c and ψ rna modifications in cancer: Novel therapeutic opportunities. Mol. Cancer 20 , 18 (2021). 423 
+
+10. Netzband, R. & Pager, C. T. Epitranscriptomic marks: Emerging modulators of rna virus gene expression. Wiley Interdiscip. Rev. RNA 11 , e1576 (2020). 424 
+
+11. Motorin, Y. & Helm, M. General principles and limitations for detection of rna modifications by sequencing. Acc. Chem. Res. 57 , 275–288 (2023). 425 
+
+12. Zhang, Y., Lu, L. & Li, X. Detection technologies for rna modifications. Exp. Mol. Med. 54 , 1601–1616 (2022). 426 
+
+13. Dominissini, D. et al. Topology of the human and mouse m6a rna methylomes revealed by m6a-seq. Nature 485 , 201–206 (2012). 427 
+
+14. Linder, B. et al. Single-nucleotide-resolution mapping of m6a and m6am throughout the transcriptome. Nat. Methods 12 , 767–772 (2015). 428 
+
+15. Koh, C. W., Goh, Y. T. & Goh, W. S. Atlas of quantitative single-base-resolution n 6-methyl-adenine methylomes. Nat. Commun. 10 , 5636 (2019). 429 
+
+16. Liu, C. et al. Absolute quantification of single-base m6a methylation in the mammalian transcriptome using glori. Nat. Biotechnol. 41 , 355–366 (2023). 430 
+
+17. Garalde, D. R. et al. Highly parallel direct rna sequencing on an array of nanopores. Nat. Methods 15 , 201–206 (2018). 431 
+
+18. Lu, H., Giordano, F. & Ning, Z. Oxford nanopore minion sequencing and genome assembly. Genomics Proteomics Bioinformatics 14 , 265–279 (2016). 432 
+
+19. Tan, L. et al. Analysis of bacterial transcriptome and epitranscriptome using nanopore direct rna sequencing. Nucleic Acids Res. 52 , 8746–8762 (2024). 433 
+
+20. Cruciani, S. & Novoa, E. M. The new era of single-molecule rna modification detection through nanopore base-calling models. Nat. Rev. Mol. Cell Biol. 1–9 434 
+
+(2025). 435 
+
+21. Katopodi, X.-L., Begik, O. & Novoa, E. M. Toward the use of nanopore rna sequencing technologies in the clinic: challenges and opportunities. Nucleic Acids 436 
+
+Res. 53 , gkaf128 (2025). 437 
+
+22. Spangenberg, J. et al. The rmap challenge of predicting rna modifications by nanopore sequencing. Commun. Chem. 8, 115 (2025). 438 
+
+23. Pratanwanich, P. N. et al. Identification of di ff erential rna modifications from nanopore direct rna sequencing with xpore. Nat. Biotechnol. 39 , 1394–1402 (2021). 439 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint 24. Abebe, J. S. et al. Drummer—rapid detection of rna modifications through comparative nanopore sequencing. Bioinformatics 38 , 3113–3115 (2022). 440 
+
+25. Leger, A. et al. Rna modifications detection by comparative nanopore direct rna sequencing. Nat. Commun. 12 , 7198 (2021). 441 
+
+26. Hendra, C. et al. Detection of m6a from direct rna sequencing using a multiple instance learning framework. Nat. Methods 19 , 1590–1598 (2022). 442 
+
+27. Qin, H. et al. Dena: training an authentic neural network model using nanopore sequencing data of arabidopsis transcripts for detection and quantification of n 443 
+
+6-methyladenosine on rna. Genome Biol 23 , 25 (2022). 444 
+
+28. Xie, Y.-Y. et al. Single-molecule direct rna sequencing reveals the shaping of epitranscriptome across multiple species. Nat. Commun. 16 , 5119 (2025). 445 
+
+29. Wu, Y. et al. Transfer learning enables identification of multiple types of rna modifications using nanopore direct rna sequencing. Nat. Commun. 15 , 4049 (2024). 446 
+
+30. Acera Mateos, P. et al. Prediction of m6a and m5c at single-molecule resolution reveals a transcriptome-wide co-occurrence of rna modifications. Nat. Commun. 447 
+
+15 , 3899 (2024). 448 
+
+31. Zhang, Y. et al. Directrm: integrated detection of landscape and crosstalk between multiple rna modifications using direct rna sequencing. Nat. Commun. 16 , 9450 449 
+
+(2025). 450 
+
+32. Dong, H. et al. Comprehensive mapping of rna modification dynamics and crosstalk via deep learning and nanopore direct rna-sequencing. Nat. Commun. (2026). 451 
+
+33. Zou, Y. et al. A comparative evaluation of computational models for rna modification detection using nanopore sequencing with rna004 chemistry. Brief. 452 
+
+Bioinform. 26 , bbaf404 (2025). 453 
+
+34. Liu-Wei, W. et al. Sequencing accuracy and systematic errors of nanopore direct rna sequencing. BMC genomics 25 , 528 (2024). 454 
+
+35. Luo, T., Xu, M., Wang, M., Chen, F. & Shi, J. Systematic evaluation of computational tools for multitype rna modification detection using nanopore direct rna 455 
+
+sequencing. Nat. Methods 1–13 (2025). 456 
+
+36. Kang, X., Goyon, A., Stephenson, W. & Zhang, K. Direct rna modification mapping: Technological advances, gaps, and emerging trends. Trends Analyt Chem 457 
+
+118465 (2025). 458 
+
+37. Zou, Y. et al. A comparative evaluation of computational models for rna modification detection using nanopore sequencing with rna004 chemistry. Brief. 459 
+
+Bioinform. 26 , bbaf404 (2025). 460 
+
+38. Liu, H. et al. Accurate detection of m6a rna modifications in native rna sequences. Nat. Commun. 10 , 4079 (2019). 461 
+
+39. Diensthuber, G. et al. Enhanced detection of rna modifications and read mapping with high-accuracy nanopore rna basecalling models. Genome Res. 34 , 1865– 462 
+
+1877 (2024). 463 
+
+40. Jenjaroenpun, P. et al. Decoding the epitranscriptional landscape from native rna sequences. Nucleic Acids Res. 49 , e7–e7 (2021). 464 
+
+41. Cruciani, S. et al. De novo basecalling of rna modifications at single molecule and nucleotide resolution. Genome Biol 26 , 38 (2025). 465 
+
+42. Yuen, Z. W.-S. et al. Systematic benchmarking of tools for cpg methylation detection from nanopore sequencing. Nat. Commun. 12 , 3438 (2021). 466 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint 43. Dou, X. et al. Rbfox2 recognizes n 6-methyladenosine to suppress transcription and block myeloid leukaemia di ff erentiation. Nat. Cell Biol. 25 , 1359–1368 467 
+
+(2023). 468 
+
+44. Cheng, W. et al. Parallel functional assessment of m6a sites in human endodermal di ff erentiation with base editor screens. Nat. Commun. 13 , 478 (2022). 469 
+
+45. Tegowski, M., Flamand, M. N. & Meyer, K. D. scdart-seq reveals distinct m6a signatures and mrna methylation heterogeneity in single cells. Mol. Cell 82 ,470 
+
+868–878 (2022). 471 
+
+46. Xuan, J. et al. Rmbase v3.0: decode the landscape, mechanisms and functions of rna modifications. Nucleic Acids Res. 52 , D273–D284 (2024). 472 
+
+47. Lorenz, R. et al. Viennarna package 2.0. Algorithms Mol Biol 6, 26 (2011). 473 
+
+48. Li, H. Minimap2: pairwise alignment for nucleotide sequences. Bioinformatics 34 , 3094–3100 (2018). 474 
+
+49. GitHub - nanoporetech /tombo. oxford nanopore technologies. https://github.com/nanoporetech/tombo (2024). 475 
+
+50. Github - nanoporetech /dorado. oxford nanopore’s basecaller. https://github.com/nanoporetech/dorado/ (2024). 476 
+
+51. Kovaka, S. et al. Uncalled4 improves nanopore dna and rna modification detection via fast and accurate signal alignment. Nat. Methods 1–11 (2025). 477 
+
+52. Chen, T., Kornblith, S., Norouzi, M. & Hinton, G. A simple framework for contrastive learning of visual representations. In International conference on machine 478 
+
+learning , 1597–1607 (PmLR, 2020). 479 
+
+53. Loshchilov, I. & Hutter, F. Decoupled weight decay regularization. arXiv abs /1711.05101 (2017). 480 
+
+54. Zhang, M. et al. Quantitative profiling of pseudouridylation landscape in the human transcriptome. Nat. Chem. Biol. 19 , 1185–1195 (2023). 481 
+
+55. Parker, M. T. et al. Nanopore direct rna sequencing maps the complexity of arabidopsis mrna processing and m6a modification. Elife 9, e49658 (2020). 482 
+
+56. Gao, Y. et al. Quantitative profiling of n 6-methyladenosine at single-base resolution in stem-di ff erentiating xylem of populus trichocarpa using nanopore direct 483 
+
+rna sequencing. Genome Biol 22 , 22 (2021). 484 
+
+## Acknowledgements 485 
+
+This work was supported by the National Natural Science Foundation of China (No. 62172248), the Natural Science 486 
+
+Foundation of Shandong Province of China (No. ZR2021MF098), and the King Abdullah University of Science and 487 
+
+Technology (KAUST) O ffi ce of Research Administration (ORA) under Award No REI /1/5234-01-01, REI /1/5414-01-488 
+
+01, REI /1/5289-01-01, REI /1/5404-01-01, REI /1/5992-01-01, URF /1/4663-01-01. 489 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 2, 2026. ;https://doi.org/10.64898/2026.07.02.735990 doi: bioRxiv preprint Author contributions 490 
+
+R.H. conceived the study, and provided project supervision and resource support. B.Y. and X.S. jointly designed and 491 
+
+developed the research framework, and made the major intellectual contributions to the work. X.S. carried out the 492 
+
+principal data processing, model development, experimental implementation, performance evaluation, and drafted the 493 
+
+manuscript. X.L., J.Q., and T.Y. provided assistance in data preparation and partial experimental validation. X.G. 494 
+
+contributed to guidance on manuscript preparation. All authors reviewed and approved the final manuscript. 495 
+
+## Competing interests 496 
+
+The authors declare no competing interests. 497 
+
+## Supplementary information 498 
+
+Supplementary information is available in the online version of the paper. 499
