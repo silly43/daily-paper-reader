@@ -1,0 +1,656 @@
+Title: Improving Patient Subtyping on Longitudinal Data using Representations from Mamba-based Architecture
+
+URL Source: https://arxiv.org/pdf/2606.28623v1
+
+Published Time: Tue, 30 Jun 2026 00:16:07 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# Improving Patient Subtyping on Longitudinal Data using Representations from Mamba-based Architecture 
+
+## MD MOZAHARUL MOTTALIB, University of Delaware, USA 
+
+## RAHMATOLLAH BEHESHTI, University of Delaware, USA 
+
+Effective sub-typing (also known as grouping or clustering) of patients using their electronic health record (EHR) data can greatly inform precision medicine efforts. However, subtyping temporal EHR datasets is known to be challenging due to inherent EHR issues, including complexity and irregularity. In this study, we propose a self-supervised Mamba-based model that learns effective EHR representations and enables enhanced patient subtyping. We evaluate the proposed model on public and private real-world EHR datasets to classify the data based on the available labels and subtype patients based on the representations learned from the model. Through an extensive set of experiments, we demonstrate that our model’s design choices lead to better performance compared to competitive baseline models for prediction. Moreover, we evaluate several clustering techniques to demonstrate that our findings offer valuable insights into subtyping patients based on temporal records from EHR models 1.CCS Concepts: • Computing methodologies → Learning latent representations .Additional Key Words and Phrases: Patient subtyping, Self-supervised Learning, Electronic health records, Mamba 
+
+1 Introduction 
+
+Physicians rely on comprehensive medical histories, including laboratory results, procedures, medications, and diagnoses, to determine appropriate therapeutic interventions. Beyond individual clinical decision making, researchers utilize these longitudinal records and demographic data to identify cohort patterns, evaluate medication efficacy, and analyze disease prognosis. A critical methodology in this domain is patient subtyping, which seeks to identify groups of patients with shared disease progression pathways to address inherent heterogeneity and facilitate precision medicine. By identifying shared characteristics within complex longitudinal trajectories, these models can reveal hidden patterns of disease [ 29 , 32 , 37 ], significantly enhancing the personalization of treatment plans and the prediction of early disease onset [ 12 , 25 ]. Effectively categorizing these trajectories is not merely a predictive exercise but a functional requirement for improving clinical outcomes through targeted intervention. Notwithstanding the critical importance of the task, subtyping temporal datasets is exceptionally challenging due to the inherent nature of healthcare data, which is characterized by missingness, extreme sparsity, and irregular sampling. While transformer-based models have seen success in clinical prediction [ 24 , 28 , 29 , 34 , 36 , 38 , 39 ], their quadratic computational complexity ( 𝑂 (𝐿 2)) creates a critical bottleneck [ 44 ]. This scaling property effectively limits the context length, the amount of history the model can ingest, forcing a choice between truncating valuable patient records or adopting computationally prohibitive discretization methods like binning or imputation [ 6 , 40 ]. Such limitations are particularly detrimental to subtyping, which relies on capturing long-range healthcare dynamics to identify subtle transitions in a patient’s state. 
+
+> 1Our implementations are available at https://github.com/healthylaife/triplet_mamba. Authors’ Contact Information: Md Mozaharul Mottalib, University of Delaware, Newark, Delaware, USA, mmmdip@udel.edu; Rahmatollah Beheshti, University of Delaware, Newark, Delaware, USA, rbi@udel.edu.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+
+1
+
+> arXiv:2606.28623v1 [cs.LG] 26 Jun 2026
+
+2 Mottalib et al. To address these challenges, we propose Triplet-Mamba , a self-supervised architecture designed for longitudinal representation learning and enhanced patient subtyping. Our model transitions from the traditional transformer to a Mamba-based backbone, utilizing a selective State Space Model (SSM) to achieve linear-time complexity ( 𝑂 (𝐿 ))[ 15 ]. This shift is a functional necessity for processing the long patient trajectories required to define robust clinical phenotypes without exceeding memory constraints [ 15 ]. The SSM backbone acts as an efficient continuous-time filter, which is uniquely suited for the non-uniform sampling rates inherent in EHR data. Unlike prior methods that discretize data, Triplet-Mamba handles irregular sampling natively by embedding continuous timestamps and measured values directly. By training these representations with a self-supervised forecasting objective, the model learns a structured latent space that captures genuine disease progression rather than simple predictive memorization. We demonstrate through extensive experiments on public [ 23 , 41 ] and private datasets that this design yields more coherent and clinically relevant patient subtypes than competitive baseline models [24, 43]. The main contributions of our work can be summarized as follows: 
+
+• A novel Mamba-based architecture, Triplet-Mamba , which addresses the requirement of extensive context lengths to effectively capture longitudinal healthcare dynamics. 
+
+• The design of an input representation for this architecture that embeds continuous timestamps and measured values, preserving fine-grained information. 
+
+• A novel patient subtyping pipeline that learns patient time series representation through a self-supervised forecasting task and categorizes time series into meaningful subtypes. 
+
+Generalizable Insights about Machine Learning in the Context of Healthcare 
+
+This study illustrates that effective and efficient patient subtyping in healthcare depends critically on learning scalable, temporally expressive representations that align with the structure of longitudinal EHR data. By prioritizing linear-time sequence models and self-supervised objectives over task-specific supervision alone, the study demonstrates that long, irregular patient trajectories can be modeled without sacrificing computational feasibility or clinical fidelity. A central insight is that robust representation learning that is supported by principled event-level encodings and self-supervised forecasting yields latent spaces that enable more coherent, stable, and clinically meaningful patient subtypes across datasets and clustering methods. More broadly, the work emphasizes that advances in patient stratification arise from jointly considering efficiency, temporal structure, and evaluation focused on subtype quality, reinforcing subtyping as a foundational, representation-driven problem in machine learning for healthcare. 
+
+2 Related Work 
+
+Transformers to State Space Models. The success of the transformer architecture in natural language processing spurred its adoption for clinical data, and models like STraTS [ 43 ] and DuETT [ 24 ] made significant strides by designing specialized input representations and attention mechanisms. Despite their power, a critical bottleneck of Transformer-based models is the quadratic computational complexity [ 44 ] of the self-attention mechanism, which limits the length of patient histories that can be efficiently processed [ 28 , 37 , 45 ]. This limitation could be significant in healthcare, as a longer context often improves clinical prediction performance [46]. This challenge has motivated the development of sub-quadratic architectures, most notably State Space Models (SSMs) [ 8, 13 , 16 , 35 ]. The recent introduction of Mamba [ 15 ], a selective SSM, has achieved performance competitive with Transformers but with linear-time complexity, making it highly efficient for very long sequences. Mamba’s potential in Improving Patient Subtyping 3healthcare is actively being explored [ 33 ]. For instance, EHRMamba [ 10 ] adapts the architecture for EHR forecasting tasks, and ClinicalMamba [ 47 ] has been developed as a foundation model pre-trained on large corpora of clinical notes. Our work builds on this momentum, leveraging Mamba’s efficiency for learning from long patient trajectories. 
+
+Learning Representations for Patient Subtyping. A primary clinical application for these powerful representations is patient subtyping—the unsupervised grouping of patients into clinically meaningful phenotypes based on their disease progression. Effective subtyping can inform precision medicine and reveal novel insights into complex diseases. Recent computational approaches [ 14 , 22 ] have proven instrumental in elucidating and validating novel phenotypes, enabling patient stratification based on both static, cross-sectional snapshots and dynamic, longitudinal trajectories. A variety of deep learning techniques have been applied to this problem. Early works used Recurrent Neural Networks, such as the Time-Aware LSTM (T-LSTM) [ 5 ], to learn patient representations for clustering. Other approaches have utilized autoencoders [ 21 ], sometimes enhanced with attention mechanisms [ 26 , 27 ], to learn similarity measures for subtyping from time-series information. More recently, research has also explored multi-modal data; for example, M-ClustEHR [ 3] employs a multi-modal autoencoder to learn comprehensive representations from diverse EHR data for sepsis subtyping. X-DEC model validated a Deep Embedded Clustering model and its adaptation for integrating mixed datatypes with an X-shaped variational autoencoder [ 9 ]. Med-ROAR [ 4 ] hierarchically partitions data by encoding it into multi-level discrete representations, employing a modified self-attention mechanism for identifying homogeneous patients. Our model, Triplet-Mamba , synthesizes these threads of research. We utilize the architectural efficiency of Mamba to effectively model long and irregular patient histories, combined with a specialized triplet input representation designed to capture fine-grained temporal details. By training these powerful representations with a self-supervised objective, we aim to produce more coherent and clinically relevant patient subtypes than those achieved by prior methods. 
+
+3 Methods 
+
+Problem Definition. Consider a dataset structure that corresponds to typical EHR records for patients. For each patient, the record contains a time series of events corresponding to irregular patient observations, such as vitals and lab results, and a set of static variables that do not change over time, such as demographics. This can be represented as a sparse irregular time series dataset of the form D = {(∫ 𝑘 , T 𝑘 , 𝑦 𝑘 )} 𝑁 𝑘 =1 consisting of 𝑁 labeled samples, where the 𝑘 -th sample contains a static vector ∫𝑘 ∈ R𝑛 𝑠 of 𝑛 𝑠 static variables, a multivariate time-series T 𝑘 = (𝑡 𝑘  
+
+> 1
+
+, 𝑡 𝑘  
+
+> 2
+
+, · · · , 𝑡 𝑘 𝑛 𝑘 ) of variable length 𝑛 𝑘 and a corresponding binary label 𝑦 𝑘 ∈ { 0, 1} for predefined task, e.g. mortality or condition prevalence. Each event 𝑡 𝑘 𝑖 is an observation triplet, formally defined as a triplet (𝑡, 𝑓 , 𝑣 ), where 𝑡 ∈ R≥0 represents the time, 
+
+𝑓 ∈ F denotes the feature or variable, and 𝑣 ∈ R signifies the value of the observation, for example, [72.9 days, body_weight, 153lbs] . Omitting 𝑘 for the 𝑘 -th patient, a multivariate time-series T of length 𝑛 is thus defined as a set of 𝑛 observation triplets, i.e., T = {( 𝑡 𝑖 , 𝑓 𝑖 , 𝑣 𝑖 )} 𝑛 𝑖 =1. The underlying set of time-series variables, denoted by F , may include vital signs (such as temperature), lab measurements (such as hemoglobin levels, body weight, etc.), and input/output events (such as fluid intake and urine output). Thus, for a patient 𝑝 the target aims at predicting 𝑦 𝑝 given (∫ 𝑝 , T 𝑝 ), the static variables ∫𝑝 and multivariate time series T 𝑝 .
+
+3.1 Model Architecture 
+
+The architecture of our model, Triplet-Mamba , is illustrated in Figure 1. We define the input as a set of observation triplets, where each observation triplet in the input is embedded using an Initial Triplet Embedding module . The initial 4 Mottalib et al.   
+
+> Fig. 1. Triplet-Mamba architecture
+
+triplet embeddings are then passed through a Contextual Triplet Embedding module, which utilizes the Mamba blocks to encode the context for each triplet. The Fusion Self-attention module then combines these contextual embeddings via a self-attention mechanism to generate an embedding for the input time-series, which is concatenated with a static (demographics) embedding and passed through a prediction layer to make the final prediction. We introduce subtyping as a downstream task from learned representations. 
+
+3.1.1 Initial Triplet Embedding. An Initial Triplet Embedding maps each of the 𝑛 triplets of the input sequence T =
+
+{( 𝑡 𝑖 , 𝑓 𝑖 , 𝑣 𝑖 )} 𝑛 𝑖 =1 into a 𝜏 -dimensional vector 𝑒 𝑖 ∈ R𝜏 , where 𝜏 is a hyperparameter for the dimension of the mapped variables. The vector 𝑒 𝑖 is calculated by summing all embeddings into a single embedding, such that 𝑒 𝑖 = 𝑒 𝑓 𝑖 +𝑒 𝑣 𝑖 +𝑒 𝑡 𝑖 ∈ R𝜏 .The embedding for the variable, 𝑒 𝑓 𝑖 , is found using a look-up table mechanism similar to word embeddings. For the continuous value and time embeddings, 𝑒 𝑣 𝑖 and 𝑒 𝑡 𝑖 , one-to-many Feed Forward Networks (FFN) with learnable Improving Patient Subtyping 5parameters are used to calculate each embedding: 𝑒 𝑣 𝑖 = 𝐹 𝐹 𝑁 𝑣 (𝑣 𝑖 ) and 𝑒 𝑡 𝑖 = 𝐹 𝐹 𝑁 𝑡 (𝑡 𝑖 ). Both FFNs have a single input and a 𝜏 -dimension output, with one hidden layer containing √𝜏  nodes and a 𝑡𝑎𝑛ℎ (·) activation function. Unlike sinusoidal encoding with fixed frequencies [ 48 ], this approach enhances flexibility by enabling end-to-end learning of continuous value and time embeddings. While in EHRMamba [ 10 ] event tokens are represented with seven embeddings with certain embedding repetitions due to their type, such as age embedding, we adapted the method of representing events in terms of triplets [ 20 , 43 , 46 ]. This allows for adaptive representations that capture the complexities of the data, thereby improving performance in patient clustering and forecasting tasks. 
+
+3.1.2 Contextual Triplet Embedding. The initial triplet embeddings {𝑒 1, 𝑒 2, ..., 𝑒 𝑛 } are then passed to the Contextual Triplet Embedding module, which consists of 𝑀 blocks with ℎ Mamba layers. Each block takes 𝑛 input embeddings 
+
+E ∈ R𝑛 ×𝜏 and applies normalization using root mean square normalization (RMS normalization). Then, the tensor is expanded through two linear projections, one of which undergoes a convolution followed by a Sigmoid Linear Unit (SiLU) activation, and its output is processed by the discretized state space model (SSM) to filter relevant information. The other projection is directly passed through a SiLU activation and combined with the outputs from the SSM using a multiplicative gate. This combined output is then passed through another linear projection and summed with the initial input E, resulting in the final output embeddings C𝑒𝑚𝑏 ∈ R𝑛 ×𝜏 . For additional details about the SSM unit, we refer to Appendix A. 
+
+3.1.3 Fusion Self-Attention. From the last Mamba block, the output, C𝑒𝑚𝑏 = {𝑐 1, 𝑐 2, . . . , 𝑐 𝑛 }, is passed to the Fusion Self-attention . Here, an FFN is applied to every contextual embedding 𝑐 𝑖 , followed by a softmax to calculate attention weights, 𝛼 𝑖 . The final embedding for the time-series can then be computed by a weighted sum of the contextual triplet embeddings and the attention weights, using the following process, 
+
+𝑎 𝑖 = u𝑇 𝑎 tanh (W𝑎 c𝑖 + b𝑎 ) (1) 
+
+𝛼 𝑖 = exp (𝑎 𝑖 )
+
+Í𝜏 𝑗 =1 exp (𝑎 𝑗 ) ∀𝑖 = 1, . . . , 𝜏 (2) 
+
+𝑧 𝑇 =
+
+> 𝜏
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛼 𝑖 c𝑖 , (3) where, W𝑎 ∈ R𝑑 1 ×𝜏 , b𝑎 ∈ R𝑑 𝑎 , u𝑎 ∈ R𝑑 𝑎 are the weights of this attention network, which has 𝑑 𝑎 neurons in the hidden layer. For the static (i.e., demographic) variables, the embedding, 𝑧 𝑑 , is generated using an FFN with 2 hidden layers, each containing (2 × 𝑑 ) nodes, where 𝑑 is the hyperparameter controlling the size of the embedded demographic variable vector. We then encode variable-length time-series to a fixed-length vector, 𝑧 𝐸 , concatenating demographic variable embeddings 𝑧 𝑑 and time variable embeddings 𝑧 𝑇 ,
+
+𝑧 𝐸 =
+
+"𝑧 𝑑 
+
+𝑧 𝑇 
+
+#
+
+∈ R𝑑 𝑒𝑚𝑏 (4) where 𝑑 𝑒𝑚𝑏 = 𝜏 + 𝑑 , represents the sum of dimensions for the time embeddings 𝜏 and demographic embeddings 𝑑 .
+
+3.2 Training 
+
+The model is trained in two phases, described below. 6 Mottalib et al. 
+
+3.2.1 Self-supervised pre-training. Our model incorporates forecasting as a self-supervision task using a bigger dataset with 𝑁 ′ ≥ 𝑁 samples given by D′ = {( s𝑘 , T𝑘 , m𝑘 , X𝑘 )} 𝑁 ′
+
+> 𝑘 =1
+
+. Here, m𝑘 ∈ { 0, 1}| F | is the forecast mask which indicates whether each variable was observed in the forecast window and X𝑘 ∈ R| F | contains the corresponding variable values when observed. Also, F is the underlying set of time-series variables. The forecast mask plays a crucial role by enabling the exclusion of unobserved forecasts during the training process, ensuring that only relevant data informs the loss function. The forecasting task uses the learned patient representation ˜X,
+
+˜X = 𝑤 𝑠 
+
+"𝑧 𝑑 
+
+𝑧 𝑇 
+
+#
+
++ 𝑏 𝑠 ∈ R| F | , (5) obtained from passing the concatenated embeddings through a dense layer with weights 𝑤 𝑠 ∈ R| F | , 𝑏 𝑠 ∈ R. The masked MSE loss is used for training on the forecasting task to account for missing values in the forecast outputs. Thus, the loss for self-supervised forecasting can be given by, 
+
+L𝑠𝑠 = 1
+
+|𝑁 ′ | 
+
+> 𝑁 ′
+
+∑︁ 
+
+> 𝑘 =1
+> | F |
+
+∑︁ 
+
+> 𝑗 =1
+
+𝑚 𝑘 𝑗 ( ˜X𝑘 𝑗 − X 𝑘 𝑗 )2, (6) where 𝑚 𝑘 𝑗 ∈ { 0, 1}, based on the ground truth forecast X 𝑗 𝑘 unavailability or availability respectively for 𝑗 -th variable in 
+
+𝑘 -th sample. 
+
+3.2.2 Fine-tuning. During fine-tuning, we use the patient representation 𝑧 𝐸 extracted from the fusion self-attention and attach heads tailored to the downstream tasks. The final prediction for the target task is obtained by passing the concatenated embeddings through a dense layer with weights 𝑤 𝑇 𝑜 ∈ R𝑑 𝑒𝑚𝑏 , 𝑏 𝑜 ∈ R and a sigmoid activation: 
+
+˜𝑦 = 𝑠𝑖𝑔𝑚𝑜𝑖𝑑 (𝑤 𝑇 𝑜 
+
+"𝑧 𝑑 
+
+𝑧 𝑇 
+
+#
+
++ 𝑏 𝑜 ). (7) The model is trained on the target using cross-entropy loss for the target task of binary classification. 
+
+4 Experiments 
+
+In this section, we present a comparative analysis of the performance of our model and illustrate its effectiveness for subtyping. 
+
+4.1 Cohort 
+
+We evaluated our proposed model on three EHR datasets. In particular, we used two widely used EHR datasets: PhysioNet challenge [ 41 ] and MIMIC-IV [ 1 , 18 , 23 ]. PhysioNet challenge is a standardized public dataset with the task of predicting in-hospital mortality after the first 48 hours of patient stays in the ICU, with 14 .2% of positive labels. For MIMIC-IV, we evaluated tasks on a derived ICU dataset following prior work by Labach et al . [24] , containing 53 , 150 patients with 
+
+69 , 211 admissions. Furthermore, we evaluated our model on a private pediatric weight management dataset extracted from the EHR of a large pediatric healthcare system providing primary, specialty, inpatient, and emergency care to pediatric patients across five US states. The detailed descriptions about the dataset can be found in Appendix C. Improving Patient Subtyping 7
+
+4.2 Baseline Methods 
+
+Among the nine baseline models evaluated, we discuss the top three performers, distinguished by their superior performance metrics. A comprehensive table detailing the results of all the baseline models, along with their complete performance statistics, is present in Appendix D. 
+
+4.2.1 STraTS : The Self-supervised Transformer for Time-Series [ 43 ]. uses a continuous value embedding technique to encode continuous time and variable values without discretization, featuring a Transformer component with multi-head attention layers. 
+
+4.2.2 EHR-Mamba [10 ]. encodes EHR data in a combination of seven different embeddings and uses stacked Mamba blocks for mapping input sequence to output tensor for downstream forecasting or predicting tasks. 
+
+4.2.3 DuETT : The Dual Event Time Transformer for Electronic Health Records [ 24 ]. extends transformers to exploit both time and event modalities of EHR data. Each DuETT layer consists of two transformer sub-layers that attend and process along the event and time dimensions, respectively. 
+
+4.3 Evaluation Metrics 
+
+Model performance for the binary predictive tasks was evaluated using the Area Under the Receiver Operating Charac-teristic Curve (AUROC) and the Area Under the Precision-Recall Curve (AUPRC). Experiments were independently conducted 10 times with distinct randomized seeds. The reported performance metrics represent the average and standard deviation across these repetitions. Statistical significance of the results was assessed using independent two-sample t-tests. For pairwise comparison of the models, we refer to Appendix F. For the unsupervised task of patient subtyping, which involves partitioning the data into 𝑘 distinct clusters, the quality of the resulting clusters was quantitatively measured using Silhouette scores. We employed three prominent clustering methods for assigning cluster labels to the samples: 𝐾 -means, Spectral clustering, and Gaussian Mixture Models (GMM). The determination of the optimal number of clusters, 𝑘 , was achieved by identifying the minimum value derived from the Elbow method, a heuristic approach commonly used to find a suitable number of clusters. Furthermore, in a separate case study utilizing the pediatric dataset, we leveraged the predefined obesity categories as ground truth assignments. Patients were grouped in Class I Obesity : BMI at or above the 95 th percentile, but less than 120% of the 95 th percentile, Class II Obesity : BMI at or above 120% but less than 140% of the 95 th percentile and 
+
+Class III Obesity : A BMI at or above 140% of the 95 th percentile [ 19 ]. The agreement between our derived clustering assignments and the true assignments was then analyzed using the Adjusted Rand Index (ARI), with a value of +1,indicating complete agreement between the predicted cluster label and the ground truth. 
+
+4.4 Implementation Details 
+
+We trained the models using a fixed batch size of 32 with the Adam optimizer and training stopped after no improvement in evaluation metrics for 10 epochs with hyperparameter tuning, hyperparameter values provided in Appendix L. All the implementations are adapted from the official codes of the models to PyTorch modules. Preprocessing and overall customizations were adapted from a publicly available code base [ 43 ]. For subtyping methods, we repurposed the notebooks from https://github.com/helgeingvart/phenotypeTrajectories. The experiments were conducted on a single Tesla T4 tensor core GPU on the Amazon Web Services (AWS) Sagemaker platform. We present the training time for 8 Mottalib et al. both transformer-based and sub-quadratic models using the Pediatric dataset (the dataset having the longest sequence) in Appendix B. 
+
+5 Results 5.1 Subtyping Evaluation 
+
+To assess the efficacy of the learned representations for patient subtyping, we conducted a comprehensive evaluation of clustering quality across various methods and datasets. The primary internal validation metric employed was the Silhouette score, which quantifies the compactness and separation of clusters. 
+
+> Table 1. Silhouette scores for different clustering methods [SC: Spectral Clustering, GMM: Gaussian Mixture Model]
+
+Model 𝐾 -Means SC GMM PhysioNet 2012 : mortality prediction 
+
+STraTS .367 ± .06 .175 ± .03 .137 ± .08 
+
+EHR-Mamba .323 ± .02 .273 ± .06 .295 ± .01 
+
+DuETT .361 ± .02 .234 ± .03 .195 ± .01 
+
+Triplet-Mamba .402 ± .02 .342 ± .01 .586 ± .09 
+
+MIMIC-IV : mortality prediction 
+
+STraTS .227 ± .03 .093 ± .05 .129 ± .02 
+
+EHR-Mamba .239 ± .09 .155 ± .03 .212 ± .03 
+
+DuETT .331 ± .09 .134 ± .04 .239 ± .06 
+
+Triplet-Mamba .363 ± .03 .274 ± .01 .343 ± .03 
+
+Pediatric : weight-loss prediction 
+
+STraTS .468 ± .05 .283 ± .07 .541 ± .05 
+
+EHR-Mamba .378 ± .09 .234 ± .06 .289 ± .10 
+
+DuETT .471 ± .09 .261 ± .10 .543 ± .03 
+
+Triplet-Mamba .499 ± .08 .274 ± .06 .683 ± .05             
+
+> Table 2. Performance comparison against the baselines. Mean ±STD. Boldface is best, and second-best is underlined. ∗denotes
+> 𝑝 <0.05 ,∗∗ denotes 𝑝 <0.005 compared to Triplet-Mamba
+
+.Metric STraTS EHR-Mamba DuETT Triplet-Mamba 
+
+PhysioNet 2012 : mortality prediction AUROC .838 ± .01 ∗ .844 ± .01 .857 ± .02 .851 ± .02 AUPRC .487 ± .01 .534 ± .03 .598 ± .06 .590 ± .17 MIMIC-IV : mortality prediction AUROC .842 ± .01 ∗∗ .881 ± .02 ∗∗ .852 ± .01 ∗∗ .896 ± .01 
+
+AUPRC .595 ± .02 .637 ± .09 .605 ± .05 .639 ± .04 
+
+Pediatric : weight-loss prediction AUROC .692 ± .01 ∗∗ .704 ± .01 ∗∗ .654 ± .01 ∗∗ .724 ± .01 
+
+AUPRC .295 ± .01 .284 ± .01 .257 ± .05 .301 ± .01 
+
+Table 1 presents the Silhouette scores on clustering from the embeddings learned from the top-4 predictive performing models: STraTS, EHR-Mamba, DuETT, and our method, Triplet-Mamba , across the PhysioNet 2012, MIMIC-IV, and Improving Patient Subtyping 9Pediatric Weight datasets. Clusters generated from the representations learned by our proposed Triplet-Mamba 
+
+consistently achieved higher Silhouette scores, indicating its superior ability to generate embedded representations that yield more coherent and well-separated patient subtypes. Beyond these internal validation metrics, the quality of clustering for this dataset was further corroborated using ARI, and for the pediatric weight management case study, the predefined obesity categories served as ground truth assignments, allowing the ARI to provide an objective measure of how well the learned clusters align with established clinical classifications. Table 3 provides a comparison of the ARI scores, where it is evident that clustering on the representations from our model Triplet-Mamba has a higher score respectively for 𝐾 -means, Spectral clustering, and GMM. The consistent outperformance of Triplet-Mamba across both internal (Silhouette) and external (ARI for pediatric dataset) validation metrics highlights its effectiveness in learning meaningful and clinically relevant patient subtypes from complex EHR data. 
+
+> Table 3. Adjusted Rand Index (ARI) of different clustering methods using learned representations [SC: Spectral Clustering, GMM: Gaussian Mixture Model]
+
+Model K-means SC GMM 
+
+DuETT 0.632 ± 0.02 0.612 ± 0.04 0.701 ± 0.03 
+
+EHR-Mamba 0.621 ± 0.03 0.611 ± 0.02 0.691 ± 0.02 
+
+Triplet-Mamba 0.683 ± 0.05 0.631 ± 0.02 0.722 ± 0.05 
+
+To evaluate the reliability and robustness of the discovered patient subtypes, we performed a bootstrap stability analysis ( 𝐵 = 100 ) on the Pediatric Weight Management dataset. This procedure involved re-training the Triplet-Mamba model on resampled versions of the cohort to ensure the learned manifold and resulting partitions were not artifacts of specific data subsets. We quantified the stability of the cluster assignments by calculating the mean Jaccard Similarity and the bootstrap-based ARI. Details on the stability test are given in Appendix G. We analyzed the clusters generated by the Gaussian Mixture Model (GMM) method to discern their characteristics. Table 4 below provides a condensed version of the analysis, detailing the average maximum percentage of weight loss as well as the average duration of anti-obesity drug administration. The patients in cluster 3 exhibited the lowest average duration of treatment and the least weight loss. Further investigation revealed that the majority of patients in cluster 3 were prescribed Phentermine and similar drugs, while those in cluster 4 received GLP-1 type medications and achieved the highest weight loss. 
+
+> Table 4. Analysis of clusters from Pediatric dataset
+
+Mean Cluster 1 Cluster 2 Cluster 3 Cluster 4 
+
+% of weight loss 4.68 4.92 3.94 5.74 
+
+Duration (days) 195 .54 237 .48 172 .18 204 .91 
+
+5.2 Predictive Performance Evaluation 
+
+We present the prediction performance of baseline models and our model, averaged over the 10 runs in Table 2. Our model, Triplet-Mamba , achieves the best performance on MIMIC-IV and pediatric dataset tasks while coming close 10 Mottalib et al. second place in the PhysioNet-2012 challenge task. Specifically, in the case of mortality prediction in the PhysioNet-2012, our model falls short of the best result of DuETT [ 24 ] by 0.006 in AUROC. However, our model boasts a 1.7% increase in AUROC and a 0.31% increase in AUPRC compared to the next best results for the task of mortality prediction on the MIMIC-IV dataset. Our model also outperforms other baseline models on the task of predicting maximum weight loss of 5% in the pediatric weight loss dataset. It achieved a 2.8% increase in AUROC and a 2.03% increase in AUPRC. EHR-Mamba [ 10 ]performed consistently in all the cases, achieving competitive results. However, for longer sequenced pediatric datasets as well as in the PhysionNet-2012 dataset, transformer-based STraTS performed better than the other transformer-based model DuETT [24]. 
+
+5.3 Ablation Study 
+
+To ascertain the individual contributions of key components within our proposed Triplet-Mamba model, an ablation study was conducted. This involved systematically removing specific architectural elements from the full model and evaluating the resultant performance (AUROC) on the binary predictive tasks. Three distinct ablation scenarios were investigated: removal of the triplet embedding module, exclusion of the fusion attention layer, and absence of self-supervised pretraining.                                        
+
+> Table 5. Performance analysis with ablations (AUROC).
+> Ablations PhysioNet 2012 MIMIC-IV Pediatric Weight
+> w/o Triplet embedding .749 ±.02 .802 ±.09 .654 ±.03 w/o Attention fusion .815 ±.06 .858 ±.09 .638 ±.02 w/o Self-supervised Pretraining .801 ±.01 .826 ±.05 .577 ±.05
+> Triplet-Mamba .851 ±.02 .896 ±.01 .724 ±.01
+
+The results, summarized in Table 5, indicate that both the triplet embedding and the self-supervised pretraining greatly contribute to the model’s overall performance. Their removal consistently led to a noticeable decline in AUROC across all datasets, highlighting their importance in learning robust and effective representations. Crucially, the fusion-attention layer plays a decisive role in maximizing this potential by effectively synthesizing the learned contextual embeddings; its removal resulted in a consistent decline in AUROC across all datasets, confirming its necessity in aggregating temporal dependencies for the final prediction. These findings underscore the critical role of triplet embeddings and self-supervised pretraining in the superior performance achieved by our model. 
+
+6 Discussion 
+
+The key contribution of this work is the utility of the learned embeddings for patient subtyping. The subtyping evaluation in Table 1 demonstrates that Triplet-Mamba produces a more structured latent space than baseline architectures. The higher Silhouette scores and strong ARI on external pediatric datasets indicate that our triplet embedding and self-supervised training objective effectively regularize the manifold, ensuring that clinically similar patients are mapped to proximal coordinates. These findings suggest that Triplet-Mamba transcends superficial label memorization, instead encoding a structured latent representation that effectively captures the longitudinal dynamics of clinical disease progression. Improving Patient Subtyping 11 The results of subtype stability tests demonstrate high partition consistency across resampling iterations. Triplet-Mamba 
+
+achieved a mean Jaccard Index of 0.814 ± 0.03 , significantly exceeding the standard 0.75 threshold typically indicative of stable clinical phenotyping. Furthermore, the ARI between the reference clustering and bootstrap runs remained high and consistent ( 0.738 ± 0.04 ). This stability is particularly notable given that the subtyping was performed using only lab readings and vital signs, excluding the weight measurements used for ground-truth definitions. Our model demonstrated significantly higher stability than baselines on the MIMIC-IV and Pediatric cohorts (global 𝑝 < 0.001 ). Post-hoc tests confirmed this statistical superiority ( 𝑝 < 0.01 ), indicating that the Mamba backbone provides a more robust latent space for longitudinal subtyping than traditional attention-based architectures. Our experimental results also validate the efficacy of Triplet-Mamba as a robust framework for long-sequence clinical modeling. As evidenced in Table 2, Triplet-Mamba achieves competitive performance across diverse clinical tasks. In comparison, the marginal AUROC gap in the PhysioNet-2012 mortality task suggests that traditional attention mechanisms still perform well on shorter, high-density benchmarks. Triplet-Mamba ’s superior generalizability across irregular datasets highlights its resilience to noise and data sparsity. The model’s ability to capture intricate temporal dependencies suggests that the State Space Model (SSM) backbone effectively acts as a continuous-time filter, which is particularly suited for the non-uniform sampling rates inherent in EHR data. We recognize, however, that situating these findings within the broader landscape of high-performing traditional methods will strengthen the work, and we present the performance comparison of our model against traditional methods on PhysioNet-2012 and MIMIC-IV datasets in Appendix E. The ablation study (Table 5) confirms that the synergy between triplet embeddings and self-supervised pretraining is the primary driver of performance. We observe that: 1) Triplet Embeddings provide the necessary contrastive signal to distinguish between subtle clinical state transitions. 2) Self-supervised Pretraining allows the model to build a robust prior from unlabeled sequences, addressing the relatively smaller data problem common in specialized clinical domains. 3) Unlike Transformer-based models that suffer from 𝑂 (𝐿 2) complexity, the underlying SSM in Triplet-Mamba 
+
+scales linearly ( 𝑂 (𝐿 )) with sequence length. This computational efficiency is not just an optimization but a functional requirement for processing long-term patient histories that could otherwise exceed the memory constraints of standard attention blocks. 
+
+Limitations. Despite the performance gains, certain challenges remain. The fusion attention layer, while theoret-ically sound for multi-modal integration, showed a moderate contribution in our current ablation, suggesting that more complex fusion strategies (e.g., cross-mamba blocks) could be explored. Furthermore, while Triplet-Mamba 
+
+captures long-range dependencies, the interpretability of its hidden states—unlike the direct visualization of attention maps—remains an open research question. Our model embeds EHR events in observation triplets while combining static variables, such as demographics, separately with the temporal encoding through concatenation. Due to the unavailability of special types of events, such as procedures and diagnoses, in the PhysioNet-2012 dataset, our model only encoded the measurement values from the EHR. For the pediatric weight management dataset, we only considered lab readings and measurement values for predicting weight loss. However, the original dataset contains records of procedures, diagnoses, medications, etc., which we expect to incorporate in our future work. With more available information about patient records, our long-context sub-quadratic model will presumably understand patient condition progression and identify latent subgroups among them. In its present form, the proposed model does not include text or imaging data. Nonetheless, integrating multi-modal information into this model would further enhance its generalizability and potentially its performance. 12 Mottalib et al. 
+
+References 
+
+[1] Farzana Islam Adiba, Varsha Danduri, Fahmida Liza Piya, Ali Abbasi, Mehak Gupta, and Rahmatollah Beheshti. 2026. A Multimodal Data Processing Pipeline for MIMIC-IV Dataset. arXiv:2601.11606 [cs.LG] https://arxiv.org/abs/2601.11606 [2] Shaojie Bai, J Zico Kolter, and Vladlen Koltun. 2018. An empirical evaluation of generic convolutional and recurrent networks for sequence modeling. 
+
+arXiv preprint arXiv:1803.01271 (2018). [3] Maria Bampa, Ioanna Miliou, Braslav Jovanovic, and Panagiotis Papapetrou. 2024. M-ClustEHR: A multimodal clustering approach for electronic health records. Artificial Intelligence in Medicine 154 (2024), 102905. [4] William Baskett, Benjamin Black, Adnan I Qureshi, and Ch-Ren Shyu. 2025. Identifying homogenous patient subgroups using transformer based hierarchical clustering of heterogeneous Mixed-Modality medical data. Journal of Biomedical Informatics (2025), 104878. [5] Inci M Baytas, Cao Xiao, Xi Zhang, Fei Wang, Anil K Jain, and Jiayu Zhou. 2017. Patient subtyping via time-aware LSTM networks. In Proceedings of the 23rd ACM SIGKDD international conference on knowledge discovery and data mining . 65–74. [6] Zhengping Che, Sanjay Purushotham, Kyunghyun Cho, David Sontag, and Yan Liu. 2018. Recurrent neural networks for multivariate time series with missing values. Scientific reports 8, 1 (2018), 6085. [7] Junyoung Chung, Caglar Gulcehre, KyungHyun Cho, and Yoshua Bengio. 2014. Empirical evaluation of gated recurrent neural networks on sequence modeling. arXiv preprint arXiv:1412.3555 (2014). [8] Tri Dao, Daniel Y Fu, Khaled K Saab, Armin W Thomas, Atri Rudra, and Christopher Ré. 2023. Hungry Hungry Hippos: Towards Language Modeling with State Space Models. In Proceedings of the 11th International Conference on Learning Representations (ICLR) .[9] Jip WTM de Kok, Frank van Rosmalen, Jacqueline Koeze, Frederik Keus, Sander MJ van Kuijk, José Castela Forte, Ronny M Schnabel, Rob GH Driessen, Thijs TW van Herpt, Jan-Willem EM Sels, et al . 2024. Deep embedded clustering generalisability and adaptation for integrating mixed datatypes: two critical care cohorts. Scientific Reports 14, 1 (2024), 1045. [10] Adibvafa Fallahpour, Mahshid Alinoori, Arash Afkanpour, and Amrit Krishnan. 2024. EHRMamba: Towards Generalizable and Scalable Foundation Models for Electronic Health Records. arXiv preprint arXiv:2405.14567 (2024). [11] Hamed Fayyaz, Mehak Gupta, Alejandra Perez Ramirez, Claudine Jurkovitz, H. Timothy Bunnell, Thao-Ly T. Phan, and Rahmatollah Beheshti. 2025. An Interoperable Machine Learning Pipeline for Pediatric Obesity Risk Estimation. In Proceedings of the 4th Machine Learning for Health Symposium (Proceedings of Machine Learning Research, Vol. 259) , Stefan Hegselmann, Helen Zhou, Elizabeth Healey, Trenton Chang, Caleb Ellington, Vishwali Mhasawade, Sana Tonekaboni, Peniel Argaw, and Haoran Zhang (Eds.). PMLR, 308–324. https://proceedings.mlr.press/v259/fayyaz25a.html [12] Helge Fredriksen, Per Joel Burman, Ashenafi Zebene Woldaregay, Karl Oyvind Mikalsen, and Stale Nymo. 2024. Categorization of phenotype trajectories utilizing transformers on clinical time-series. In Proceedings of the 2024 9th International Conference on Machine Learning Technologies .311–316. [13] Daniel Y Fu, Elliot L Epstein, Eric Nguyen, Armin W Thomas, Michael Zhang, Tri Dao, Atri Rudra, and Christopher Ré. 2023. Simple hardware-efficient long convolutions for sequence modeling. In International Conference on Machine Learning . PMLR, 10373–10391. [14] Aditya Gorla, Jonathan Witonsky, Zeyuan Johnson Chen, Jennifer R Elhawary, Joel Mefford, Javier Perez-Garcia, Anne-Marie Madore, Scott Huntsman, Donglei Hu, Celeste Eng, et al . 2025. Epigenetic patient stratification reveals a sub-endotype of type 2 asthma with altered B-cell response. medRxiv (2025), 2025–08. [15] Albert Gu and Tri Dao. 2024. Mamba: Linear-Time Sequence Modeling with Selective State Spaces. In First Conference on Language Modeling .[16] Albert Gu, Tri Dao, Stefano Ermon, Atri Rudra, and Christopher Ré. 2020. Hippo: Recurrent memory with optimal polynomial projections. Advances in neural information processing systems 33 (2020), 1474–1487. [17] Albert Gu, Karan Goel, and Christopher Re. 2022. Efficiently Modeling Long Sequences with Structured State Spaces. In International Conference on Learning Representations .[18] Mehak Gupta, Brennan Gallamoza, Nicolas Cutrona, Pranjal Dhakal, Raphael Poulain, and Rahmatollah Beheshti. 2022. An Extensive Data Processing Pipeline for MIMIC-IV. In Proceedings of the 2nd Machine Learning for Health symposium (Proceedings of Machine Learning Research, Vol. 193) , Antonio Parziale, Monica Agrawal, Shalmali Joshi, Irene Y. Chen, Shengpu Tang, Luis Oala, and Adarsh Subbaswamy (Eds.). PMLR, 311–325. https://proceedings.mlr.press/v193/gupta22a.html [19] Sarah E Hampl, Sandra G Hassink, Asheley C Skinner, Sarah C Armstrong, Sarah E Barlow, Christopher F Bolling, Kimberly C Avila Edwards, Ihuoma Eneli, Robin Hamre, Madeline M Joseph, et al . 2023. Clinical practice guideline for the evaluation and treatment of children and adolescents with obesity. Pediatrics 151, 2 (2023). [20] Max Horn, Michael Moor, Christian Bock, Bastian Rieck, and Karsten Borgwardt. 2020. Set functions for time series. In International Conference on Machine Learning . PMLR, 4353–4363. [21] Dino Ienco and Roberto Interdonato. 2020. Deep multivariate time series embedding clustering via attentive-gated autoencoder. In Advances in Knowledge Discovery and Data Mining: 24th Pacific-Asia Conference, PAKDD 2020, Singapore, May 11–14, 2020, Proceedings, Part I 24 . Springer, 318–329. [22] Xilin Jiang, Martin Jinye Zhang, Yidong Zhang, Arun Durvasula, Michael Inouye, Chris Holmes, Alkes L Price, and Gil McVean. 2023. Age-dependent topic modeling of comorbidities in UK Biobank identifies disease subtypes with differential genetic risk. Nature genetics 55, 11 (2023), 1854–1865. [23] Alistair Johnson, Lucas Bulgarelli, Tom Pollard, Steven Horng, Leo Anthony Celi, and Roger Mark. 2020. Mimic-iv. PhysioNet. Available online at: https://physionet. org/content/mimiciv/1.0/(accessed August 23, 2021) (2020), 49–55. Improving Patient Subtyping 13 
+
+[24] Alex Labach, Aslesha Pokhrel, Xiao Shi Huang, Saba Zuberi, Seung Eun Yi, Maksims Volkovs, Tomi Poutanen, and Rahul G Krishnan. 2023. DuETT: dual event time transformer for electronic health records. In Machine Learning for Healthcare Conference . PMLR, 403–422. [25] Changhee Lee and Mihaela Van Der Schaar. 2020. Temporal phenotyping using deep predictive clustering of disease progression. In International conference on machine learning . PMLR, 5767–5777. [26] Deyi Li, Aditi Shukla, Sravani Chandaka, Bradley Taylor, Jie Xu, and Mei Liu. 2025. Autoencoder-Based Representation Learning for Similar Patients Retrieval From Electronic Health Records: Comparative Study. JMIR Medical Informatics 13 (2025), e68830. [27] Xiaoyu Li, Taosheng Xu, Jinyu Chen, Jun Wan, and Wenwen Min. 2023. Multimodal attention-based variational autoencoder for clinical risk prediction. In 2023 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) . IEEE, 1260–1265. [28] Yikuan Li, Mohammad Mamouei, Gholamreza Salimi-Khorshidi, Shishir Rao, Abdelaali Hassaine, Dexter Canoy, Thomas Lukasiewicz, and Kazem Rahimi. 2022. Hi-BEHRT: hierarchical transformer-based model for accurate prediction of clinical events using multimodal longitudinal electronic health records. IEEE journal of biomedical and health informatics 27, 2 (2022), 1106–1117. [29] Yikuan Li, Shishir Rao, José Roberto Ayala Solares, Abdelaali Hassaine, Rema Ramakrishnan, Dexter Canoy, Yajie Zhu, Kazem Rahimi, and Gholamreza Salimi-Khorshidi. 2020. BEHRT: transformer for electronic health records. Scientific reports 10, 1 (2020), 7155. [30] Rupa Makadia and Patrick B Ryan. 2014. Transforming the premier perspective ® hospital database into the observational medical outcomes partnership (omop) common data model. Egems 2, 1 (2014), 1110. [31] Md Mozaharul Mottalib, Rahmatollah Beheshti, Karthik Viswanathan, H. Timothy Bunnell, and Thao-Ly T. Phan. 2026. Pre-dicting Weight Outcomes From Obesity Medications in a Paediatric Population. Pediatric Obesity 21, 2 (2026), e70089. arXiv:https://onlinelibrary.wiley.com/doi/pdf/10.1111/ijpo.70089 doi:10.1111/ijpo.70089 e70089 IJPO-2025-0189. [32] Md Mozaharul Mottalib, Jessica C Jones-Smith, Bethany Sheridan, and Rahmatollah Beheshti. 2023. Subtyping patients with chronic disease using longitudinal BMI patterns. IEEE Journal of Biomedical and Health Informatics 27, 4 (2023), 2083–2093. [33] Md Mozaharul Mottalib, Thao-Ly T Phan, and Rahmatollah Beheshti. 2025. HyMaTE: A Hybrid Mamba and Transformer Model for EHR Representation Learning. In Proceedings of the 16th ACM International Conference on Bioinformatics, Computational Biology, and Health Informatics .1–9. [34] Chao Pang, Xinzhuo Jiang, Krishna S Kalluri, Matthew Spotnitz, RuiJun Chen, Adler Perotte, and Karthik Natarajan. 2021. CEHR-BERT: Incorporating temporal information from structured EHR data to improve prediction tasks. In Machine Learning for Health . PMLR, 239–260. [35] Michael Poli, Stefano Massaroli, Eric Nguyen, Daniel Y Fu, Tri Dao, Stephen Baccus, Yoshua Bengio, Stefano Ermon, and Christopher Ré. 2023. Hyena hierarchy: Towards larger convolutional language models. In International Conference on Machine Learning . PMLR, 28043–28078. [36] Raphael Poulain and Rahmatollah Beheshti. 2024. Graph transformers on EHRs: Better representation improves downstream performance. In The Twelfth International Conference on Learning Representations .[37] Alvin Rajkomar, Eyal Oren, Kai Chen, Andrew M Dai, Nissan Hajaj, Michaela Hardt, Peter J Liu, Xiaobing Liu, Jake Marcus, Mimi Sun, et al . 2018. Scalable and accurate deep learning with electronic health records. NPJ digital medicine 1, 1 (2018), 1–10. [38] Laila Rasmy, Yang Xiang, Ziqian Xie, Cui Tao, and Degui Zhi. 2021. Med-BERT: pretrained contextualized embeddings on large-scale structured electronic health records for disease prediction. NPJ digital medicine 4, 1 (2021), 86. [39] Maurice Rupp, Oriane Peter, and Thirupathi Pattipaka. 2023. Exbehrt: Extended transformer for electronic health records. In International Workshop on Trustworthy Machine Learning for Healthcare . Springer, 73–84. [40] Satya Narayan Shukla and Benjamin Marlin. 2019. Interpolation-Prediction Networks for Irregularly Sampled Time Series. In International Conference on Learning Representations .[41] Ikaro Silva, George Moody, Daniel J Scott, Leo A Celi, and Roger G Mark. 2012. Predicting in-hospital mortality of icu patients: The phys-ionet/computing in cardiology challenge 2012. In 2012 computing in cardiology . IEEE, 245–248. [42] Huan Song, Deepta Rajan, Jayaraman Thiagarajan, and Andreas Spanias. 2018. Attend and diagnose: Clinical time series analysis using attention models. In Proceedings of the AAAI conference on artificial intelligence , Vol. 32. [43] Sindhu Tipirneni and Chandan K Reddy. 2022. Self-supervised transformer for sparse and irregularly sampled multivariate clinical time-series. 
+
+ACM Transactions on Knowledge Discovery from Data (TKDD) 16, 6 (2022), 1–17. [44] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. Advances in neural information processing systems 30 (2017). [45] Qingsong Wen, Tian Zhou, Chaoli Zhang, Weiqi Chen, Ziqing Ma, Junchi Yan, and Liang Sun. 2023. Transformers in time series: a survey. In 
+
+Proceedings of the Thirty-Second International Joint Conference on Artificial Intelligence . 6778–6786. [46] Michael Wornow, Suhana Bedi, Miguel Angel Fuentes Hernandez, Ethan Steinberg, Jason Alan Fries, Christopher Re, Sanmi Koyejo, and Nigam Shah. 2025. Context Clues: Evaluating Long Context Models for Clinical Prediction Tasks on EHR Data. In The Thirteenth International Conference on Learning Representations .[47] Zhichao Yang, Avijit Mitra, Sunjae Kwon, and Hong Yu. 2024. ClinicalMamba: A Generative Clinical Language Model on Longitudinal Clinical Notes. In Proceedings of the 6th Clinical Natural Language Processing Workshop . 54–63. [48] Changchang Yin, Ruoqi Liu, Dongdong Zhang, and Ping Zhang. 2020. Identifying sepsis subphenotypes via time-aware multi-modal auto-encoder. In Proceedings of the 26th ACM SIGKDD international conference on knowledge discovery & data mining . 862–872. 14 Mottalib et al. 
+
+A Mamba block and SSM unit 
+
+> Fig. 2. Mamba block
+
+SSM unit. The Mamba block (shown at the right section of figure 2 consists of a SSM unit which maps an input sequence 𝑥 (𝑡 ) ∈ R to an output sequence 𝑦 (𝑡 ) ∈ R using an implicit hidden state ℎ(𝑡 ) ∈ R𝜓 with 𝜓 being the state size. The mapping is defined by the following linear differential equations: 
+
+ℎ′ (𝑡 ) = Aℎ(𝑡 ) + B𝑥 (𝑡 ) (8) 
+
+𝑦 (𝑡 ) = Cℎ(𝑡 ) (9) Here, A ∈ R𝜓 ×𝜓 , B ∈ R𝜓 ×1, and C ∈ R1×𝜓 are learnable matrices. For multidimensional sequences, this system is applied independently to each dimension [ 17 ]. To apply SSMs to discrete sequences, the system is discretized using a Improving Patient Subtyping 15 step size Δ:
+
+ℎ𝑡 = Aℎ𝑡 −1 + B𝑥 𝑡 (10) 
+
+𝑦 𝑡 = Cℎ𝑡 (11) The discrete parameters (A, B) are derived using the zero-order hold (ZOH) rule [15, 17]: 
+
+A = exp (ΔA) (12) 
+
+B = (ΔA)−1 (( exp (ΔA) − I) · ΔB (13) The model uses a global convolution kernel 𝐾 to enable parallel sequence processing and scaling training following the equation [15]: 
+
+𝐾 = (𝐶 B, 𝐶 AB , . . . , 𝐶 A𝑘 B, . . . ) (14) 
+
+𝑦 = 𝑥 ∗ 𝐾 (15) 
+
+B Training Time 
+
+We present the training time for both transformer-based and sub-quadratic models using the Pediatric dataset (the dataset having the longest sequence): 
+
+> Table 6. Model training time comparison
+
+Model Average Training Time (minutes) 
+
+STraTS 26 .17 ± 1.2
+
+DuETT 30 .83 ± 2.5
+
+EHR-Mamba 13 .46 ± 1.4
+
+Triplet-Mamba 5.25 ± 2.8
+
+C Extended cohort description 
+
+• PhysioNet challenge is a publicly available standardized dataset with the task of predicting in-hospital mortality after the first 48 hours of patient stays in the ICU, with 14 .2% of positive labels. The dataset consists of 11 , 988 
+
+patients with 42 different variables, including 37 time series event-types. We process the data according to the previous work [ 43 ] for predicting mortality. The set of observation windows is defined (in hours) as the first 48 hours of the patient’s stay in ICU for forecasting windows and the prediction window is the 2-hour period following the observation window. The data from set-b and set-c together is split into training and validation 
+
+(80 : 20 ) while set-a is used for testing purposes. 
+
+• MIMIC-IV is a public dataset containing retrospective, de-identified data patients at the Beth Israel Deaconess Medical Center. We evaluated tasks on a derived ICU dataset, containing 53 , 150 patients with 69 , 211 admissions. We followed prior work [ 24 ] in defining mortality prediction in the ICU dataset, where we use the first 48 hours of the patient stay as the input time window, predicting whether death occurs later during the hospital stay. We use a patient-level 60% : 20% : 20% split between the training, validation, and test sets. 
+
+• Pediatric weight management dataset was extracted from the EHR of Nemours Children’s Health, which is a large pediatric healthcare system providing primary, specialty, inpatient, and emergency care to pediatric 16 Mottalib et al. patients across five US states. The EHR data was available as a de-identified dataset using the pediatric-specific Common Data Model (CDM) is anchored by patients and their encounters with the health system and is based on the Observational Medical Outcomes Partnership (OMOP) [ 30 ] model. The target task is designed to predict 
+
+5% maximum weight loss using anti-obesity medications. With 18 .7% positive labels and a maximum time series of 8, 654 events and 7, 183 days, this dataset contains 14 , 392 individual pediatric records [11, 31]. 
+
+D Extended Baseline Models 
+
+Here is a complete list of all 9 baseline models used for evaluation with results in Table 13. 
+
+Gated Recurrent Unit (GRU). [7] Hourly aggregated variables are packed into a time-series matrix for input and the final hidden state is transformed by a dense layer to generate output. 
+
+Temporal Convolutional Network (TCN). [2 ] Input similar to GRU which is passed through a stack of temporal convolution layers with residual connections. The representations from the last time step of the last layer is transformed by a dense layer to generate output. 
+
+Simply Attend and Diagnose (SaND). [42 ] This model utilizes an input representation identical to that of the GRU. The input is processed through a Transformer that employs causal attention, followed by a dense interpolation layer. 
+
+GRU with trainable Decays (GRU-D). [ 6] The GRU-D cell processes a vector of variable values at each time step, modifying the standard GRU cell. It decays unobserved values to global means and adjusts the hidden state based on the time since the last observation of each variable. 
+
+Interpolation-prediction Network (InterpNet). [ 40 ] This model features a semi-parametric interpolation network that estimates all variables at regular, predefined time intervals, followed by a prediction network based on a GRU. Additionally, it employs a reconstruction loss to enhance the performance of the interpolation network. 
+
+Set Functions for Time Series (SeFT). [20 ] This model is designed to process a set of observation triplets. It incorporates sinusoidal encoding to effectively embed temporal information. Additionally, the deep network employed to integrate the observation embeddings is structured as a set function, utilizing a simplified yet efficient variation of multi-head attention. 
+
+Self-supervised Transformer for Time-Series (STraTS). [43 ] The model uses a continuous value embedding technique to encode continuous time and variable values without discretization. It features a Transformer component with multi-head attention layers, allowing it to learn contextual triplet embeddings while avoiding issues related to recurrence and vanishing gradients found in recurrent architectures. 
+
+EHR-Mamba. [10 ] This model encodes EHR data in a combination of seven different embeddings and uses stacked Mamba blocks for mapping input sequence to output tensor for downstream forecasting or predicting tasks. 
+
+DuETT. [ 24 ] This architecture extends transformers to exploit both time and event modalities of EHR data. Each DuETT layer is made up of two Transformer sub-layers that attend along the event and time dimensions, respectively. The representation learned from the time and event embeddings is used for downstream tasks by attaching respective task heads. Improving Patient Subtyping 17 
+
+E Performance comparison against traditional methods. 
+
+The predictive performance of the models, including all nine baseline models, is shown in Table 7.   
+
+> Table 7. Performance comparison of Triplet-Mamba against traditional methods with cross-validation. Best results are highlighted with bold face.
+
+Dataset Model AUROC 
+
+PhysioNet Logistic Regression 0.838 ± 0.017 
+
+Gaussian Naïve Bayes 0.783 ± 0.025 
+
+SVM 0.817 ± 0.054 
+
+Decision Tree 0.793 ± 0.068 
+
+Random Forest 0.848 ± 0.032 
+
+AdaBoost 0.783 ± 0.023 
+
+Triplet-Mamba (ours) 0.851 ± 0.021 
+
+MIMIC-IV Logistic Regression 0.844 ± 0.023 
+
+Gaussian Naïve Bayes 0.834 ± 0.024 
+
+SVM 0.860 ± 0.054 
+
+Decision Tree 0.852 ± 0.018 
+
+Random Forest 0.861 ± 0.038 
+
+AdaBoost 0.878 ± 0.036 
+
+Triplet-Mamba (ours) 0.896 ± 0.013 
+
+F Statistical Evaluation 
+
+We conducted independent experiments to evaluate the significance of the results. Independent two-sample t-test results for pairwise comparison of our model against other baseline results are shown in Table 8. 
+
+G Subtype stability analysis. 
+
+The one-way Analysis of Variance (ANOVA) table summarizes the statistical evaluation of clustering stability across 100 bootstrap resampling iterations. In this analysis, the model architecture serves as the categorical independent variable, while the ARI constitutes the dependent measure of representation reliability. The global 𝑝 -value assesses the null hypothesis that all models exhibit equivalent stability under data perturbation. Significant results ( 𝑝 < 0.05 ) indicate that architectural design choices fundamentally impact the consistency of discovered phenotypes, while subsequent pairwise post-hoc tests provide a rigorous mathematical basis for identifying the statistical superiority of specific models in capturing robust clinical trajectories, shown in Table 9. 
+
+H Cluster evaluations 
+
+Below are the distribution and balance statistics for the discovered GMM clusters across all evaluation cohorts. 
+
+I Clinical validity of clusters 
+
+To establish true clinical validity and confirm our partitions are well-distributed, we performed post-hoc statistical variance testing across several continuous and categorical clinical features. The following tables present a subset of 18 Mottalib et al.     
+
+> Table 8. Statistical test results comparing Triplet-Mamba against baseline models. ∗denotes that the individual comparison is statistically significant.
+
+Model comparison Group 1 mean AUROC Group 1 mean AUROC t-statistics p-value PhysioNet 2012 
+
+Triplet-Mamba vs STraTS 0.851 0.838 2.5465 0.01012 ∗
+
+Triplet-Mamba vs EHR-Mamba 0.851 0.844 1.0203 0.16056 
+
+Triplet-Mamba vs DueTT 0.851 0.857 0.1651 0.43535 
+
+MIMIC-IV 
+
+Triplet-Mamba vs STraTS 0.896 0.842 12 .5150 < 0.00001 ∗
+
+Triplet-Mamba vs EHR-Mamba 0.896 0.881 3.3883 0.00164 ∗
+
+Triplet-Mamba vs DueTT 0.896 0.852 9.9323 < 0.00001 ∗
+
+Pediatric Dataset 
+
+Triplet-Mamba vs STraTS 0.724 0.692 5.3954 0.00002 ∗
+
+Triplet-Mamba vs EHR-Mamba 0.724 0.704 3.9952 0.00042 ∗
+
+Triplet-Mamba vs DueTT 0.724 0.654 14 .8695 < 0.00001 ∗
+
+> Table 9. One-way ANOVA and Post-hoc Pairwise Comparisons of Clustering Stability (ARI) across 100 Bootstrap Iterations.
+
+Dataset Global ANOVA ( 𝑝 -value) vs. STraTS vs. EHR-Mamba vs. DuETT PhysioNet 2012 𝑝 = 0.122 𝑝 > 0.05 𝑝 > 0.05 𝑝 > 0.05 
+
+MIMIC-IV 𝑝 < 0.001 𝑝 < 0.01 𝑝 = 0.198 𝑝 < 0.01 
+
+Pediatric 𝑝 < 0.001 𝑝 < 0.01 𝑝 < 0.01 𝑝 < 0.01 
+
+> Table 10. Cluster distribution and dominant characteristics
+
+Cluster ID Count (%) Dominant characteristics PhysioNet (N= 11 , 988 )
+
+Cluster 1 5, 215 (43 .5% ) Low variance in lab measurements, baseline risk tier Cluster 2 4, 615 (38 .5% ) Elevated BUN, serum creatinine and fluctuating potassium trajectories Cluster 3 2, 158 (18 .0% ) Highly elevated heart rates, depressed oxygen saturation, high mortality rate 
+
+MIMIC-IV (N= 69 , 211 )
+
+Cluster 1 31 , 837 (46 .0% ) Lower mortality endpoint incidence Cluster 2 24 , 520 (35 .4% ) High variance in blood pressure parameters, elevated pulse, frequent cardiac unit assignment Cluster 3 12 , 854 (18 .6% ) Extreme lab value missingness rates, acute physiological derangement 
+
+Pediatric (N= 14 , 392 )
+
+Cluster 1 4, 821 (33 .5% ) Gradual BMI progression tracking closer to baseline percentiles Cluster 2 4, 246 (29 .5% ) Moderate long-term trajectory variations Cluster 3 2, 950 (20 .5% ) Extreme lab value missingness rates, acute physiological derangement Cluster 4 2, 375 (16 .5% ) Highest initial BMI parameters, longer treatment durations, maximum weight loss outcomes Improving Patient Subtyping 19 continuous and categorical features selected based on their clinical relevance to critical care and high statistical variance (all 𝑝 < 0.001 ) across the groups. 
+
+> Table 11. Clinical Characteristics Across Clusters for Different Datasets
+
+PhysioNet Metric Cluster 1 Cluster 2 Cluster 3 Test Stat 
+
+# Heart rate (bpm) 81.4 ± 10.2 88.6 ± 12.4 104.2 ± 15.8 F = 214.5 
+
+# 𝑂 2 saturation (%) 98.2 ± 1.1 96.4 ± 2.3 91.8 ± 4.6 F = 189.3 Serum Creatinine (mg/dL) 0.92 ± 0.21 2.41 ± 0.85 1.65 ± 0.72 F = 342.1 In-hospital mortality (%) 3.2% (167) 15.4% (711) 38.3% (826) 𝜒 2 = 1842.6 
+
+MIMIC-IV Metric Cluster 1 Cluster 2 Cluster 3 Test Stat 
+
+# Systolic BP (mmHg) 118.5 ± 9.4 138.2 ± 18.6 94.1 ± 14.2 F = 412.8 Blood Glucose (mg/dL) 112.4 ± 15.1 145.8 ± 32.4 188.2 ± 45.6 F = 189.3 In-hospital mortality (%) 4.1% (1,305) 12.0% (2,940) 29.5% (3,688) 𝜒 2 = 4811.2 
+
+Pediatric Weight Management Metric C1 C2 C3 C4 Test Stat 
+
+# Weight Loss (%) 4.68 ± 1.1 4.92 ± 1.3 3.94 ± 0.9 5.74 ± 1.8 F = 143.2 Duration (days) 195.5 ± 34 237.4 ± 41 172.2 ± 28 204.9 ± 38 F = 98.6 
+
+J Performance on different sequence lengths 
+
+We present the mean AUROC on weight loss prediction in Pediatric data set stratified by sequence lengths in table 12. It is to be noted that the number of samples with 4K-8K length were minimal yet the AUROC did not degrade too much. 
+
+> Table 12. Effect of different sequence length on AUROC
+
+Sequence length Mean AUROC 
+
+< 500 0.717 ± 0.02 500 − 1𝐾 0.726 ± 0.01 1𝐾 − 2𝐾 0.738 ± 0.02 2𝐾 − 4𝐾 0.723 ± 0.01 4𝐾 − 8𝐾 0.715 ± 0.02 
+
+Overall 0.724 ± 0.01 20 Mottalib et al. 
+
+K Performance comparison against all models. 
+
+The predictive performance of the models, including all nine baseline models, is shown in Table 13. 
+
+> Table 13. Predictive performance comparison. The results show the mean and standard deviation of the metrics with 10 repeated experiments. Best results are highlighted with bold face, second best results are underlined.
+
+Dataset : Task Model AUROC AUPRC 
+
+PhysioNet-2012 : mortality prediction GRU 0.818 ± 0.009 0.407 ± 0.007 
+
+TCN 0.801 ± 0.002 0.433 ± 0.004 
+
+SAnD 0.801 ± 0.011 0.404 ± 0.019 
+
+GRU-D 0.843 ± 0.006 0.451 ± 0.007 
+
+InterpNet 0.803 ± 0.005 0.402 ± 0.015 
+
+SeFT 0.812 ± 0.008 0.464 ± 0.012 
+
+STraTS 0.838 ± 0.009 0.487 ± 0.001 
+
+EHR-Mamba 0.844 ± 0.006 0.534 ± 0.026 
+
+DuETT 0.857 ± 0.018 0.598 ± 0.056 
+
+Triplet-Mamba (ours) 0.851 ± 0.021 0.590 ± 0.168 
+
+MIMIC-IV : mortality prediction GRU 0.818 ± 0.025 0.558 ± 0.016 
+
+TCN 0.823 ± 0.023 0.584 ± 0.026 
+
+SAnD 0.816 ± 0.016 0.578 ± 0.021 
+
+GRU-D 0.824 ± 0.045 0.592 ± 0.064 
+
+InterpNet 0.823 ± 0.051 0.587 ± 0.021 
+
+SeFT 0.848 ± 0.021 0.573 ± 0.071 
+
+STraTS 0.842 ± 0.003 0.595 ± 0.012 
+
+EHR-Mamba 0.881 ± 0.021 0.637 ± 0.095 
+
+DuETT 0.852 ± 0.007 0.605 ± 0.048 
+
+Triplet-Mamba (ours) 0.896 ± 0.004 0.639 ± 0.042 
+
+Pediatric : weight-loss prediction GRU 0.653 ± 0.002 0.280 ± 0.011 
+
+TCN 0.654 ± 0.005 0.219 ± 0.015 
+
+SAnD 0.661 ± 0.012 0.279 ± 0.005 
+
+GRU-D 0.644 ± 0.001 0.271 ± 0.003 
+
+InterpNet 0.612 ± 0.082 0.251 ± 0.027 
+
+SeFT 0.644 ± 0.007 0.288 ± 0.001 
+
+STraTS 0.692 ± 0.002 0.295 ± 0.002 
+
+EHR-Mamba 0.704 ± 0.006 0.284 ± 0.012 
+
+DuETT 0.654 ± 0.008 0.257 ± 0.051 
+
+Triplet-Mamba (ours) 0.724 ± 0.004 0.301 ± 0.014 
+
+L Implementation details 
+
+Table 14 lists the hyperparameters used in the experiments for all models across all the datasets. Improving Patient Subtyping 21 
+
+Table 14. Hyperparameters used for our experiments in this study. 
+
+Model PhysioNet-2012 MIMIC-IV Pediatric weight 
+
+GRU units = 48 , rec d/o = 0.2, output d/o = 0.2, lr = 0.0001 
+
+units = 48 , rec d/o = 0.2, output d/o = 0.2, lr = 0.0001 
+
+units = 60 , rec d/o = 0.2, output d/o = 0.2, lr = 0.0001 
+
+TCN layers = 4, filters = 64 , kernel size = 
+
+4, d/o = 0.5
+
+layers = 4, filters = 64 , kernel size = 
+
+4, d/o = 0.5
+
+layers = 6, filters = 128 , kernel size = 4, d/o = 0.5
+
+SAnD N = 4, r = 24 , M = 12 , d/o = 0.3, d = 
+
+64 , h = 4
+
+N = 4, r = 24 , M = 12 , d/o = 0.3, d = 
+
+64 , h = 4
+
+N = 4, r = 24 , M = 12 , d/o = 0.3, d = 
+
+64 , h = 4
+
+GRU-D units = 48 , rec d/o = 0.2, output d/o = 0.2, lr = 0.00001 
+
+units = 48 , rec d/o = 0.2, output d/o = 0.2, lr = 0.00001 
+
+units = 60 , rec d/o = 0.2, output d/o = 0.2, lr = 0.00001 
+
+SeFT lr = 0.00005 , n_phi_layers = 4,phi_width = 128 , phi_dropout = 
+
+0.2, n_psi_layers = 2, psi_width = 64 , psi_latent_width = 128 ,dot_prod_dim = 128 , n_heads = 4, attn_dropout = 0.5, la-tent_width = 32 , n_rho_layers = 
+
+2, rho_width = 512 , rho_dropout = 0.0, max_timescale = 100 .0,n_positional_dims = 4
+
+lr = 0.00005 , n_phi_layers = 4,phi_width = 128 , phi_dropout = 
+
+0.2, n_psi_layers = 2, psi_width = 64 , psi_latent_width = 128 ,dot_prod_dim = 128 , n_heads = 4, attn_dropout = 0.5, la-tent_width = 32 , n_rho_layers = 
+
+2, rho_width = 512 , rho_dropout = 0.0, max_timescale = 100 .0,n_positional_dims = 4
+
+lr = 0.0001 , n_phi_layers = 4,phi_width = 128 , phi_dropout = 
+
+0.2, n_psi_layers = 2, psi_width = 64 , psi_latent_width = 128 ,dot_prod_dim = 128 , n_heads = 4, attn_dropout = 0.5, la-tent_width = 32 , n_rho_layers = 
+
+2, rho_width = 512 , rho_dropout = 0.0, max_timescale = 100 .0,n_positional_dims = 4
+
+InterpNet ref_points = 96 , units = 100 , input dim = 0.2, rec dim = 0.2, lr = 0.001 
+
+ref_points = 96 , units = 100 , input dim = 0.2, rec dim = 0.2, lr = 0.001 
+
+ref_points = 192 , units = 100 , input dim = 0.2, rec dim = 0.2, lr = 0.001 
+
+STraTS d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M= 4, h = 8, dropout = 0.2, lr = 0.0005 
+
+EHR-Mamba d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+DueTT d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+d = 32 , M = 4, h = 8, dropout = 0.2,lr = 0.0005 
+
+Triplet-Mamba 𝜏 = 8, M = 2, h = 2, dropout = 0.1, lr = 0.0005 
+
+𝜏 = 8, M = 2, h = 2, dropout = 0.1, lr = 0.0005 
+
+𝜏 = 8, M = 2, h = 2, dropout = 0.1, lr = 0.0005

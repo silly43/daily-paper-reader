@@ -6,32 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-04
-- 运行时间：2026-07-04 21:21:26 UTC
+- 最新运行日期：2026-07-05
+- 运行时间：2026-07-05 21:32:21 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：1
+- 本次总论文数：5
+- 精读区：2
 - 速读区：3
 
 ### 今日简报（AI）
-今日推荐4篇论文，精读1篇聚焦分布式自监督学习对非独立同分布数据的鲁棒性，速读涉及植物发育图谱、RNA修饰谱和语音带宽扩展。最值得关注的是《Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data》，其8.0高分揭示了非IID场景下的关键韧性机制；植物发育图谱中的多胺调控方向也颇具启发性。下一步可优先精读该分布式学习论文以理解实际部署中的抗噪能力，或根据兴趣深入植物发育与RNA修饰的生物学新工具。
-- 详情：[/202607/04/README](/202607/04/README)
+今日精读2篇、速读3篇，重点聚焦脑连接组自监督学习与Mamba架构的医学应用。最值得关注的是《Connectome-scale》通过自监督表征发现超越经典标签的神经元组织，以及《Improving Patient Subtyping》用Mamba模型提升纵向患者分型效果。建议优先精读这两篇高分论文，理解前沿表征学习如何突破领域现有认知。
+- 详情：[/202607/05/README](/202607/05/README)
 
 ### 精读区论文标签
-1. [Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data](/202607/04/2607.02447v1-understanding-the-robustness-of-distributed-self-supervised-learning-frameworks-against-non-iid-data)  
+1. [Connectome-scale self-supervised representation learning reveals neuronal organization beyond canonical labels](/202607/05/biorxiv-10-64898-2026-06-30-735468-v1-connectome-scale-self-supervised-representation-learning-reveals-neuronal-organization-beyond-canonical-labels)  
+   标签：评分：9.0/10、query:ssl
+   evidence：在连接组尺度上使用对比学习的自监督表示学习
+2. [Improving Patient Subtyping on Longitudinal Data using Representations from Mamba-based Architecture](/202607/05/2606.28623v1-improving-patient-subtyping-on-longitudinal-data-using-representations-from-mamba-based-architecture)  
    标签：评分：8.0/10、query:ssl
-   evidence：分布式自监督学习在非独立同分布数据下的鲁棒性理论分析
+   evidence：用于患者亚型的自监督Mamba模型
 
 ### 速读区论文标签
-1. [A hyperbolic topological atlas reveals polyamine steering of a shared developmental manifold in Arabidopsis](/202607/04/biorxiv-10-64898-2026-06-23-733990-v1-a-hyperbolic-topological-atlas-reveals-polyamine-steering-of-a-shared-developmental-manifold-in-arabidopsis)  
+1. [Hierarchical Predictive Processing during Natural Reading](/202607/05/biorxiv-10-64898-2026-06-24-734402-v1-hierarchical-predictive-processing-during-natural-reading)  
+   标签：评分：7.0/10、query:world-models
+   evidence：阅读中的预测编码与预测错误信号
+2. [Multi-modality Graph Representation Learning for Malignant Cell Identification from scRNA-seq using DeepMalignant](/202607/05/biorxiv-10-64898-2026-06-29-734828-v1-multi-modality-graph-representation-learning-for-malignant-cell-identification-from-scrna-seq-using-deepmalignant)  
    标签：评分：7.0/10、query:ssl
-   evidence：使用自监督视觉骨干进行植物表型分析
-2. [WattmaMod enables high-resolution and extensible RNA modification profiling for nanopore direct RNA sequencing](/202607/04/biorxiv-10-64898-2026-07-02-735990-v1-wattmamod-enables-high-resolution-and-extensible-rna-modification-profiling-for-nanopore-direct-rna-sequencing)  
-   标签：评分：7.0/10、query:ssl
-   evidence：使用自监督预训练和对比微调
-3. [VeRe-Flow: Guiding Flow Matching toward Clean Speech via Velocity Contrastive Regularization and Representation Alignment for Noise-Robust Bandwidth Expansion](/202607/04/2606.29450v1-vere-flow-guiding-flow-matching-toward-clean-speech-via-velocity-contrastive-regularization-and-representation-alignment-for-noise-robust-bandwidth-expansion)  
+   evidence：使用无监督图注意力自编码器作为生成式自监督模型
+3. [SemHash-LLM: A Multi-Granularity Semantic Hashing Framework for Document Deduplication](/202607/05/2607.01601v1-semhash-llm-a-multi-granularity-semantic-hashing-framework-for-document-deduplication)  
    标签：评分：6.0/10、query:ssl
-   evidence：引入速度对比正则化引导流匹配生成干净语音
+   evidence：文档去重中的对比边界学习
 
 
 <div class="dpr-home-promo-card">
