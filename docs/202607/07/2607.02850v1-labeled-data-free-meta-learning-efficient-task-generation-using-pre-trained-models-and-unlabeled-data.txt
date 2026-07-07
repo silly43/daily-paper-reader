@@ -1,0 +1,439 @@
+Title: Labeled-Data-Free Meta-Learning: Efficient Task Generation Using Pre-trained Models and Unlabeled Data
+
+URL Source: https://arxiv.org/pdf/2607.02850v1
+
+Published Time: Tue, 07 Jul 2026 00:18:59 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# LABELED -D ATA -F REE META -L EARNING : E FFICIENT TASK 
+
+# GENERATION USING PRE -TRAINED MODELS AND UNLABELED 
+
+# DATA 
+
+A P REPRINT 
+
+Lei Sun 
+
+Division of Information Science Nara Institute of Science and Technology Nara, Japan 
+
+sun.lei.sn5@is.naist.jp 
+
+Yusuke Tanaka 
+
+NTT Communication Science Laboratories, NTT, Inc. Kyoto, Japan RIKEN Center for Advanced Intelligence Project RIKEN, Saitama, Japan 
+
+ysk.tanaka@ntt.com 
+
+Tomoharu Iwata 
+
+NTT Communication Science Laboratories, NTT, Inc. Kyoto, Japan 
+
+tomoharu.iwata@ntt.com 
+
+July 7, 2026 
+
+# ABSTRACT 
+
+Meta-learning without labeled data is crucial for real-world applications, where obtaining labeled datasets can be expensive or restricted due to privacy concerns. Data-Free Meta-Learning (DFML) addresses this challenge by leveraging pre-trained models without access to training data. However, existing DFML methods rely on model inversion to generate training data, a process that is generally difficult and computationally expensive due to the need of generating high-dimensional data matching the original distribution. To address this limitation, we propose a novel meta-learning setting that avoids model inversion by jointly leveraging pre-trained models and unlabeled data. Our method generates meta-training tasks by assigning soft labels from pre-trained models to unlabeled data. Since the quality of these tasks can vary, we introduce a task-weighting mechanism based on task confidence and class distribution balance to ensure effective meta-learning. Extensive experiments demonstrate that our approach substantially reduces computational cost and improves generalization, achieving up to 104 × speedup and 8.4%–36.4% improvements in few-shot classification accuracy compared to state-of-the-art DFML methods. 
+
+# 1 Introduction 
+
+Meta-learning, also known as “learning to learn”, enables models to leverage prior experience from solving diverse tasks, thereby facilitating the acquisition of inductive bias for the efficient learning of unseen but related tasks (Finn et al., 2017; Snell et al., 2017; Li et al., 2017; Iwata and Kumagai, 2020; Sun et al., 2024; Iwata and Kumagai, 2022). Traditional meta-learning approaches typically rely on a collection of tasks with labeled datasets. However, in many real-world scenarios, labeled data are often difficult or impossible to obtain due to concerns such as data privacy, security risks, and usage restrictions (Chen et al., 2019; Truong et al., 2021). Indeed, numerous individuals and institutions release task-specific pre-trained models on platforms like GitHub or Hugging Face, yet rarely provide access to their original training data. To address this restriction, researchers have proposed Data-Free Meta-Learning (DFML) (Hu et al., 2023a; Wei et al., 2024; Hu et al., 2023b; Wang et al., 2022). DFML aims to extract knowledge directly from a collection of pre-trained models without requiring access to their original training data, enabling adaptation to unseen tasks. However, existing 
+
+> arXiv:2607.02850v1 [cs.LG] 3 Jul 2026
+
+Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Table 1: Comparison of the proposed setting with related problem settings. We compared the settings using four items. The first item (A) indicates whether learning can be performed without labeled training data during the corresponding training or adaptation phase. The second item (B) indicates whether unlabeled data can be used. The third item (C) indicates whether pre-trained models are used as available information sources. The last item (D) indicates whether the setting supports adaptation to unseen target tasks. DFML UML SFDA KD KD-MAML Ours (A) Without labeled training data ✓ ✓ ✓ ✓ ✓
+
+(B) Unlabeled data ✓ ✓ ✓ ✓
+
+(C) Pre-trained models ✓ ✓ ✓ ✓ ✓
+
+(D) Unseen target tasks ✓ ✓ ✓ ✓
+
+DFML approaches rely on model inversion to reconstruct training distributions, which requires high computational costs and results in degraded predictive accuracy. In particular, these methods typically train generators through model inversion (Frikha et al., 2023; Patel et al., 2023) to synthesize images that approximate the original training distribution of each pre-trained model. Because this process involves generating high-dimensional data, it requires hundreds of iterative generate–forward–backward steps, resulting in an extremely time-consuming recovery process. Moreover, recovering the original training distribution through model inversion is generally difficult, as it cannot always generate high-quality data that matches the original distributions. Meta-learning with low-quality or mismatched data leads to error accumulation and degrades the performance of DFML methods. To overcome this limitation, we propose a new problem setting that avoids model inversion by leveraging both pre-trained models and unlabeled data during the meta-training phase. Figure 1 shows the proposed problem setting. Under this setting, we develop a meta-learning method that constructs meta-training tasks by assigning soft labels (i.e., probability distributions over classes), generated from multiple pre-trained models, to the unlabeled dataset. In the proposed setting, we assume that pre-trained models can be evaluated on the unlabeled instances to generate soft labels. We consider pre-trained models trained on classification tasks involving the same input modality and the same or related application domains as the target tasks, although their original training data may differ from the data used in the target tasks. The pre-trained models may also be heterogeneous in architecture, scale, and convergence levels. Due to potential variations in the training domains and convergence levels of pre-trained models, the quality of the generated soft labels may differ. Consequently, directly utilizing tasks generated by these models may introduce noise into the meta-training process. Therefore, it is necessary to quantify the quality of each meta-training task. To address this issue, we propose a task-weighting strategy that combines two factors: (i) the average negative entropy of soft labels for all samples within a task, reflecting the overall task confidence; and (ii) the entropy of the mean soft label across samples in the task, indicating how evenly samples are distributed across classes. Specifically, higher values of factor (i) reflect greater task confidence, thereby providing clearer supervisory signals and enhancing stability during meta-training. However, excessively high negative entropy could indicate a concentration of samples within only one or a few classes, potentially causing class bias and negatively impacting model generalization. Therefore, we introduce factor (ii) to quantify class distribution balance, where higher values indicate a more uniform distribution across classes. The proposed method avoids model inversion, thereby reducing computational costs, and introduces a task-weighting strategy that evaluates the usefulness of tasks generated by different pre-trained models, enabling more effective meta-training. Instead, the meta-training phase requires unlabeled data that are related, but not necessarily identical, to the target tasks. Here, “related” means that the unlabeled data come from the same input modality and application domain as the target tasks, although they may differ from the data used in the target tasks. This requirement is often practical because unlabeled data are generally easier to collect than labeled data. For example, in medical diagnosis, the target task may involve diagnosing specific diseases from only a few labeled examples, whereas hospitals can often collect large amounts of unlabeled medical images, such as X-rays or CT scans, through routine clinical practice. Although these unlabeled data may involve disease categories or patient populations different from those in the target tasks, they can still be considered related because they come from the same medical imaging domain. The main contributions of this paper are as follows. (i) We propose a meta-learning setting that enables the joint utilization of pre-trained models and unlabeled data, aligning more closely with real-world scenarios. (ii) We propose a task construction method that avoids data recovery by leveraging soft labels generated by pre-trained models from an unlabeled dataset. (iii) We propose a task-weighting mechanism that discerns the usefulness of tasks generated by various pre-trained models, resulting in effective meta-training algorithms. (iv) Extensive experiments validate the superiority of our method across multiple benchmarks. 2Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Figure 1: Illustration of the proposed setting. During the meta-training phase, only pre-trained models and unlabeled data related to the target tasks are available, while the original training datasets of the pre-trained models remain inaccessible. In the meta-testing phase, the model is adapted to target tasks using a few labeled instances. 
+
+# 2 Related works 
+
+Many meta-learning methods have been proposed (Finn et al., 2017; Snell et al., 2017; Li et al., 2017; Iwata and Kumagai, 2020; Sun et al., 2024; Iwata and Kumagai, 2022), but they typically rely on a collection of tasks with labeled datasets. In practice, labeled data are often costly or infeasible to obtain due to high costs and privacy concerns. Data-Free Meta-Learning (DFML) (Hu et al., 2023a; Wei et al., 2024; Hu et al., 2023b; Wang et al., 2022) addresses this issue by leveraging multiple pre-trained models to enable adaptation to unseen tasks without accessing original training data. However, existing DFML approaches rely on model inversion-based data recovery, which is computationally expensive and fails to effectively utilize unlabeled data often available in real-world scenarios. Unsupervised Meta-Learning (UML) (Hsu et al., 2019; Khodadadeh et al., 2019; Jang et al., 2023) constructs synthetic tasks from unlabeled data to acquire inductive bias for learning of unseen tasks. These methods typically require a large-scale, unlabeled dataset, which is difficult to obtain in practice, especially in sensitive domains like healthcare and finance, where cross-institutional data sharing is heavily restricted. Moreover, UML approaches do not make use of existing pre-trained models. Source-Free Domain Adaptation (SFDA) (Mitsuzumi et al., 2024; Karim et al., 2023; Lee et al., 2022) leverages a pre-trained model from the source domain and unlabeled data from the target domain to achieve domain adaptation. Although both SFDA and the proposed method leverage unlabeled data and pre-trained models to improve performance, existing SFDA methods are only applicable when the target task is predefined and cannot be directly extended to meta-learning frameworks. Knowledge distillation (KD) (Gou et al., 2021; Wang and Yoon, 2021; Moslemi et al., 2024) trains a student model using the predictions of a pre-trained teacher model. Although both KD and our proposed method exploit soft labels generated by pre-trained models, standard KD generally aims to train the student to match the teacher’s predictions on a predefined task, rather than to enable adaptation to unseen tasks. Some studies have incorporated KD into meta-learning frameworks, such as KD-MAML (Zhang et al., 2020), which relies on labeled data to construct meta-training tasks. By contrast, our method constructs meta-training tasks from unlabeled data and multiple pre-trained models, without requiring access to the data originally used to train those models. Table 1 summarizes the assumptions of each problem setting. 
+
+# 3 Problem formulation 
+
+At the meta-training phase, we are given a collection of pre-trained models, denoted by M = {Mt}Tt=1 , where each pre-trained model Mt : X → ∆Ct−1 performs classification over input space X by producing a probability distribution over Ct classes. Here, ∆Ct−1 denotes the set of non-negative Ct-dimensional vectors that sum to one. Note that the original training data for these models are not accessible and may differ from the data used in the target tasks. Additionally, we are given an unlabeled dataset U = {xu
+
+> n
+
+}Nn=1 , where each xu 
+
+> n
+
+∈ X denotes the n-th input instance, and N denotes the number of instances. This unlabeled dataset may differ from the data used in the target tasks, but it is assumed to come from the same input modality and application domain as the target tasks. 3Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Figure 2: Illustration of the proposed method. At the meta-training phase, we generate meta-training datasets by assigning soft labels to the unlabeled dataset using pre-trained models. Task weights are then computed based on these soft labels, and the model is trained by minimizing the weighted meta-training loss. At the meta-testing phase, the trained model predicts the label of an input instance using a few labeled data. At the meta-testing phase, we are given a dataset on a target task, denoted as the support set S = {(xs
+
+> n
+
+, y s
+
+> n
+
+)}NS
+
+> n=1
+
+,where each xs 
+
+> n
+
+∈ X denotes the n-th input instance, ys 
+
+> n
+
+represents the label corresponding to xs
+
+> n
+
+. Here, the number of instances NS is small. Our aim is to improve the test label prediction performance in target tasks. Overall, the original training data of the pre-trained models, the unlabeled data, and the data used in the target tasks are assumed to share the same input modality and to be from the same or related application domains, although they may differ from one another. 
+
+# 4 Proposed method 
+
+We propose a meta-learning method that learns from both pre-trained models and unlabeled data. Our method aims to construct a set of meta-training tasks by utilizing unlabeled data and pre-trained models. To achieve this, we generate meta-training datasets by assigning soft labels to unlabeled dataset U using pre-trained models M. The datasets for meta-training tasks are denoted by ˆU = { ˆUt}Tt=1 , where 
+
+ˆUt = {(xu
+
+> n
+
+, M t(xu
+
+> n
+
+)) }Nn=1 , (1) is the t-th meta-training dataset, and Mt(xu
+
+> n
+
+) denotes the soft label generated by the t-th pre-trained model for input xu
+
+> n
+
+and is defined as 
+
+Mt(xu
+
+> n
+
+) = 
+
+h
+
+M 1 
+
+> t
+
+(xu
+
+> n
+
+), M 2 
+
+> t
+
+(xu
+
+> n
+
+), · · · , M Ct 
+
+> t
+
+(xu
+
+> n
+
+)
+
+i
+
+. (2) Here, M ct (xu
+
+> n
+
+) denotes the predicted probability that input xu 
+
+> n
+
+belongs to class c according to the t-th pre-trained model, with P 
+
+> c∈Ct
+
+M ct (xu
+
+> n
+
+) = 1 and M ct (xu
+
+> n
+
+) ≥ 0 for all c.Tasks generated by multiple pre-trained models vary in usefulness for meta-training. To quantify this, we introduce the following task weights based on the soft labels: 
+
+wt = exp −α 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+H(Mt(xu
+
+> n
+
+)) + βH ( 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+Mt(xu
+
+> n
+
+)) 
+
+!
+
+, (3) where H(·) is the entropy, α and β are hyperparameters that balance the contributions of two entropy-based components in the weight computation, and α, β ∈ R≥0. Our task-weighting strategy computes each task weight by combining two factors: (i) the negative entropy of soft labels averaged over all samples, which measures predictive uncertainty; and (ii) the entropy of the mean soft label across all samples in the task, which measures how uniformly the unlabeled samples are distributed across classes. Specifically, for (i), a higher average negative entropy indicates lower predictive uncertainty; thus, pre-trained models that are more relevant to the target task are expected to produce lower uncertainty predictions on unlabeled data. For (ii), the entropy of the mean soft label quantifies how uniformly samples are distributed across classes. Under the assumption that the target task maintains a balanced class distribution, this term reflects class-distribution alignment. Based on these two factors, we assign higher weights to tasks exhibiting both lower predictive uncertainty and a more uniform predicted class distribution, as these tasks are more likely to align with the target task. We consider model f (·; ψ, θ ) with task-shared parameters θ and task-specific parameters ψ, which is trained by a bi-level optimization framework. Task-shared parameters θ are optimized during the outer optimization, task-specific 4Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Algorithm 1 Meta-learning procedures. 
+
+Input : Pre-trained models M = {Mt}Tt=1 , unlabeled dataset U = {xn}Nn=1 , number of support instances NS, number of query instances NQ, batch size B.
+
+Output : Trained model parameters θ 
+
+> 1:
+
+Randomly initialize θ 
+
+> 2:
+
+Create meta-training datasets ˆU = { ˆUt}Tt=1 by Eq. (1) using U and M. 
+
+> 3:
+
+Compute weight {wt}Tt=1 by Eq. (3) using ˆU 
+
+> 4:
+
+while not done do  
+
+> 5:
+
+Initialize loss J ← 0 
+
+> 6:
+
+Randomly sample a batch of tasks B from {1, . . . , T } 
+
+> 7:
+
+for t ∈ B do  
+
+> 8:
+
+Randomly sample support set S with size NS from ˆUt 
+
+> 9:
+
+Randomly sample query set Q with size NQ from ˆUt \ S  
+
+> 10:
+
+Obtain task-specific parameter ψS via inner optimization: ψS = arg min  
+
+> ψ
+
+Linner (S, f (·; ψ, θ ))  
+
+> 11:
+
+Calculate weighted outer loss by Eq. (5) and wt , J ← J + wtLouter (Q, f (·; ψS , θ ))  
+
+> 12:
+
+end for  
+
+> 13:
+
+Update model parameters θ using gradient of loss J/B  
+
+> 14:
+
+end while 
+
+parameters ψ are adapted through the inner optimization. Model f (x; ψ, θ ) outputs the Ct-dimensional probability distribution over classes for input x. Once the meta-training tasks and their corresponding weights are determined, the objective to be minimized is the following expected weighted test error: 
+
+min  
+
+> θ
+
+E ˆUt∼ ˆU
+
+h
+
+wtE(S,Q)∼ ˆUt Louter (Q, f (·, ψ S , θ )) 
+
+i
+
+, s.t. ψS = arg min  
+
+> ψ
+
+Linner (S, f (·, ψ, θ )) , (4) where E denotes the expectation. Linner (S, f (·, ψ, θ )) is the inner loss used to adapt ψ on support set S, while 
+
+Louter (Q, f (·, ψ, θ )) is the outer loss used to evaluate the generalization performance of θ on query set Q. The support and query sets are subsets of ˆUt and are disjoint, i.e., S ∩ Q = ∅. Each set contains pairs of input instances and soft labels, which are randomly sampled from ˆUt. When the meta-training tasks constructed from unlabeled data and pre-trained models are related to the target tasks, training the task-shared parameters using bi-level optimization on these tasks can enhance the model’s performance on the target tasks. However, due to variations among pre-trained models, the quality of soft labels in the generated meta-learning tasks may be inconsistent. To address this, our proposed task-weighting mechanism can assign weights to each task based on task confidence and class balance, enabling the model to discern the relative usefulness of different tasks. By minimizing the weighted meta-test error defined in Eq. (4) ,our approach achieves more effective meta-training. In outer optimization, we use the following loss: 
+
+Louter (Q, f (·; ψS , θ )) = 1
+
+NQ
+
+X
+
+> (x,M t(x)) ∈Q
+
+KL (Mt(x), f (x; ψS , θ )) , (5) where KL (·) is the Kullback-Leibler divergence. By formulating the outer objective as the discrepancy between the predictions generated by the pre-trained models and those produced by model f , task-shared knowledge can be effectively transferred from pre-trained models to model f .In inner optimization, we find task-specific parameters adapted to the support set with soft labels. As soft labels carry more informative content than hard labels, their use in inner optimization enables the learning of more effective task-specific parameters. The overall meta-training procedure of our model is summarized in Algorithm 1. In practice, the model parameters can be trained using various meta-learning algorithms (Vinyals et al., 2016; Bertinetto et al., 2019). In the following paragraph, we use Prototypical Networks (Snell et al., 2017) as an illustrative example of the optimization process. In the meta-testing phase, the meta-learned model f is adapted to the target task through inner optimization with the support set S, after which the adapted model is employed to predict the labels of the query instances. Figure 2 illustrates the proposed method. 
+
+Illustrative example based on Prototypical Networks. In Prototypical Networks, the outer optimization aims to learn an embedding function ϕ(·; θ) with task-shared parameters θ, and task-specific parameters ψ = {ψc}Ct 
+
+> c=1
+
+are a set 5Labeled-Data-Free Meta-Learning A P REPRINT 
+
+of prototype for each class. Specifically, model f is defined by 
+
+f c(x; ψS , θ ) = exp  − 12 || (ϕ(x; θ) − ψc 
+
+> S
+
+)|| 2P
+
+> c′
+
+exp  − 12 || (ϕ(x; θ) − ψc′ 
+
+> S
+
+)|| 2 . (6) Each prototype ψc 
+
+> S
+
+adapted to the support set is computed as the weighted mean of the embedded support instances, where the weights correspond to the soft label probabilities of those instances belonging to class c:
+
+ψc 
+
+> S
+
+= arg min 
+
+> ψc
+
+"
+
+− X
+
+> x∈S
+
+M ct (x) log N (ϕ(x; θ); ψc, I )
+
+#
+
+=
+
+P
+
+> x∈S
+
+M ct (x)ϕ(x; θ)
+
+P
+
+> x∈S
+
+M ct (x) , (7) where the weighted negative log likelihood with Gaussian is used as the inner loss, and N (·; ψc, I ) is the probability density function of a multivariate Gaussian distribution with mean vector ψc and identity covariance matrix I.
+
+# 5 Experiments 
+
+5.1 Datasets and pre-trained models 
+
+We conducted experiments on three widely-used few-shot learning benchmark datasets: Omniglot (Lake et al., 2011), miniImageNet (Vinyals et al., 2016), and tieredImageNet (Ren et al., 2018). Following standard splits (Wertheimer et al., 2021), we split each dataset into the meta-training, meta-validation, and meta-testing subsets with disjoint label spaces. Here, we further divided the meta-testing dataset into two subsets with disjoint label spaces: one for sampling unlabeled data used during meta-training, and the other for evaluation during meta-testing. This ensured that the unlabeled data were drawn from tasks that are distinct from those used during meta-testing. For the pre-trained models, we followed the DFML assumption that the meta-training data are inaccessible. For miniImageNet and tieredImageNet, following prior work (Hu et al., 2023a; Wei et al., 2024; Hu et al., 2023b; Wang et al., 2022), we collected 100 pre-trained models, each trained on an N -way classification task sampled from the meta-training subset. For Omniglot, we first meta-trained the models using MAML (Finn et al., 2017) on the meta-training subset and subsequently fine-tuned them on N-way classification tasks sampled from the same subset. This results in 100 fine-tuned pre-trained models. Through this procedure, we collected a pool of pre-trained models covering a broad range of accuracies on each dataset. The miniImageNet pool had an average accuracy of 78.3%, with a minimum of 31.0% and a maximum of 92.4%, and included 3 models with accuracies below 50%. The tieredImageNet pool averaged 72.5% accuracy, ranging from 29.2% to 89.6%, and contained 7 models below 50%. For Omniglot (5-way), the pool had an average accuracy of 90.7%, with accuracies between 59.7% and 99.1%, and 0 models fell below 50%. For Omniglot (20-way), the pool averaged 75.3%, with a minimum of 47.2% and a maximum of 94.2%, and included one model with accuracies below 50%. In the multi-domain scenario, we evaluated the proposed method on the CUB (Wah et al., 2011) and CIFAR-FS (Bertinetto et al., 2019) datasets. The data splits were kept consistent with the standard scenario. The key difference was that, in the multi-domain setting, we collected a total of 100 pre-trained models, with 50 trained on miniImageNet and the other 50 trained on CUB or CIFAR-FS. 
+
+5.2 Implementation details 
+
+For the model architecture, we adopted Conv4 (Finn et al., 2017; Snell et al., 2017) as the architecture of the meta-learner and the pre-trained models for a fair comparison with existing works. For hyperparameters, batch size B was set to 100, Adam (Kingma and Ba, 2014) was used as the optimizer, with the learning rate set to 0.001, and balance factors α and 
+
+β were set to 0.5 and 0.5. The experimental results under varying hyperparameters are shown in the following sections. Number of instances N in unlabeled dataset U was set to 100 for the 5-way setting and 400 for the 20-way setting. In each meta-training task constructed according to Eq. (1) , the support set contained 25 samples, and the query set contained 75 samples for the 5-way setting, and 100 and 300 samples for the 20-way setting, respectively. The samples for the support and query sets were randomly selected from the dataset constructed according to Eq. (1) . Results are averaged over five independent runs with different unlabeled datasets and model initializations. Each run is evaluated on 600 meta-test tasks. We report the mean ± standard error. All methods are evaluated under the same meta-test protocol and using the same support/query splits. All training times were measured using an NVIDIA TITAN RTX GPU. 6Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Table 2: Average accuracies (%) on the Omniglot dataset. Results are averaged over five independent runs with different unlabeled datasets, with standard errors reported. Methods without unlabeled data report only average accuracies. Bold 
+
+indicates the best and statistically comparable results according to the paired t-test ( p = 0 .05 ). Omniglot (way, shot) Method (5,1) (5,5) (20,1) (20,5) Random 50.2 73.6 23.9 43.8 K-nearest neighbors (embedded) 41.5 52.3 36.4 52.8 K-nearest neighbors (pixel) 44.1 67.1 25.2 47.1 Best pre-trained model 59.8 79.5 55.3 73.1 PsCo 54.9 ± 0.2 65.9 ± 0.2 31.2 ± 0.5 43.4 ± 0.7 FREE 41.3 55.4 32.1 48.9 KD-MAML 58.8 ± 0.6 72.4 ± 2.7 55.2 ± 0.9 66.1 ± 1.3 Ours 72.5 ± 0.7 87.5 ± 1.8 65.1 ± 1.3 85.3 ± 0.7 
+
+Table 3: Average accuracies (%) on the miniImageNet and tieredImageNet dataset. Results are averaged over five independent runs with different unlabeled datasets, with standard errors reported. Methods without unlabeled data report only average accuracies. Bold indicates the best and statistically comparable results according to the paired t-test (p = 0 .05 ). miniImageNet (way, shot) tieredImageNet (way, shot) Method (5,1) (5,5) (5,1) (5,5) Random 28.1 37.2 29.6 38.2 K-nearest neighbors (embedded) 28.8 39.2 31.7 32.7 K-nearest neighbors (pixel) 27.7 30.4 25.7 29.2 Best pre-trained model 24.5 31.6 23.7 28.5 PsCo 31.7 ± 0.4 38.5 ± 1.8 30.2 ± 0.2 30.5 ± 0.4 FREE 25.2 35.8 23.7 35.1 KD-MAML 28.3 ± 1.7 36.3 ± 2.2 28.5 ± 1.9 33.1 ± 1.2 Ours 33.6 ± 1.2 48.7 ± 0.9 34.8 ± 0.7 48.1 ± 0.6 5.3 Comparative methods 
+
+We compared the proposed method with the following baselines and competing methods. (i) Random: model parameters were randomly initialized and optimized from scratch using only the support set of each meta-test task. (ii) K-nearest neighbors (embedded): samples were embedded using the pre-trained model with the highest validation accuracy on the original training task, and query labels were predicted by nearest-neighbor classification based on Euclidean distances in the embedding space. (iii) K-nearest neighbors (pixel): query labels were predicted by nearest-neighbor classification using Euclidean distances computed directly in the raw pixel space without embedding. 
+
+(iv) Best pre-trained model: the pre-trained model was selected according to its validation accuracy on the original training task, fine-tuned on the support set of each meta-test task, and then used to predict the query labels. (v) Pseudo-supervised contrastive learning (PsCo) (Jang et al., 2023): a state-of-the-art unsupervised meta-learning method based on contrastive learning with a momentum network. (vi) Fast and better data-free meta-learning (FREE) (Wei et al., 2024): a state-of-the-art data-free meta-learning method that recovers meta-training tasks from pre-trained models and employs gradient alignment for meta-training. (vii) Knowledge distillation for model-agnostic meta-learning (KD-MAML) (Zhang et al., 2020): A meta-learning method based on knowledge distillation. Since the original method requires labeled data during the meta-training phase, we adapted it to our setting by training it on the meta-training tasks constructed via Eq. (1) . Under this task construction, KD-MAML was treated as optimizing Eq. (4) without task weighting, while the inner-loop optimization was performed using hard pseudo-labels. Methods (i)–(iv) did not involve meta-training and used only the support set of each meta-test task for task-specific adaptation or prediction. Method (v) used only the unlabeled dataset for meta-training, while Method (vi) used only the pre-trained models. Method (vii) was trained using both the unlabeled dataset and the pre-trained models. The proposed method (Ours) was trained under the same setting as in Method (vii). 
+
+5.4 Results 
+
+Tables 2 and 3 presented the average accuracies (%) of different methods under various task settings, along with the standard errors when using different unlabeled datasets; for methods that do not utilize unlabeled data, only the average 7Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Table 4: Training computational time in hours on miniImageNet under the 5-way 1-shot setting. FREE PsCo KD-MAML Ours 10.4 ± 0.1 1.5 ± 0.1 0.3 ± 0.0 0.1 ± 0.0 Table 5: Average accuracies (%) on CUB and CIFAR-FS in the multi-domain scenario. Results are averaged over five independent runs with different unlabeled datasets, with standard errors reported. Methods without unlabeled data report only average accuracies. Bold indicates the best and statistically comparable results according to the paired t-test (p = 0 .05 ). CUB (way, shot) CIFAR-FS (way, shot) Method (5,1) (5,5) (5,1) (5,5) PsCo 31.8 ± 1.7 36.1 ± 0.9 32.5 ± 0.5 39.8 ± 1.1 FREE 24.5 34.0 26.2 37.6 KD-MAML 30.0 ± 1.5 35.1 ± 1.2 31.6 ± 2.3 40.5 ± 2.5 Ours 34.7 ± 1.3 44.8 ± 1.4 35.3 ± 1.2 45.1 ± 0.1 
+
+accuracy is reported. Bold numbers indicated results that are not statistically different from the best-performing method on each dataset at the 5% level according to a paired t-test. The proposed method achieved the highest accuracy. For most methods, accuracy increased reasonably as the support set size grew. The proposed method outperformed non-meta-learning baselines (Random, K-nearest neighbors, and Best pre-trained model). This result indicated the importance of sharing knowledge across tasks, and it is difficult to perform well with only a small number of training samples. The accuracy of the existing unsupervised meta-learning method (PsCo) was lower than that of the proposed method. This result implies that leveraging pre-trained models to construct diverse and target-relevant tasks is effective. The data-free meta-learning method (FREE) performed worse than the proposed method. Together with the training time results shown in Table 4, this indicates that incorporating unlabeled data related to the target tasks not only improves performance but also avoids costly data recovery, thereby achieving substantial speed-ups. Although KD-MAML also leverages pre-trained models and unlabeled data for meta-learning, it ignores the differences in soft label quality and relies on hard-label updates in the inner loop, resulting in inferior performance compared to the proposed method. This further demonstrated that the performance improvements of the proposed method are not only due to the newly introduced setting but also attributable to the effectiveness of the method itself. In practical applications, publicly available pre-trained models often originate from domains that are not perfectly aligned with the target domain, due to resource diversity and selection constraints. To reflect this realistic scenario, we conducted experiments under a more challenging multi-domain setting. In this setting, the pool of pre-trained models included not only those trained on the target domain (CUB or CIFAR-FS) but also models trained on a different domain (miniImageNet). This setting requires algorithms to extract useful knowledge while demonstrating robust generalization across multiple domains. As shown in Table 5, the proposed method achieved the highest accuracy. The results showed that, even when pre-trained models are drawn from multiple domains, our method can effectively leverage them for robust meta-learning. By incorporating the proposed task-weighting mechanism, our method discerns the usefulness of tasks generated from different models, thereby enabling efficient meta-learning across domains. In real-world applications, the diversity of publicly available resources often leads to pre-trained models that differ in both architecture and scale. To evaluate this scenario, we further assessed our method in a cross-architecture setting, where each pre-trained model adopted a different architecture. Specifically, the architecture of each model was randomly selected from Conv4, Conv5 (Finn et al., 2017; Snell et al., 2017), ResNet-10, and ResNet-18 (He et al., 2016). As shown in Table 6, our method achieved the best performance among all comparative approaches and could be directly applied to cross-architecture scenarios without modification. These results demonstrated that our method effectively learns across heterogeneous model architectures. This robustness arises because our method makes no assumptions regarding the architecture or scale of the pre-trained models. We also conducted ablation studies to further investigate how each key component contributed to the performance of the proposed method. We first evaluated the effectiveness of the task-weighting mechanism. As illustrated in Table 7 (w/o weight), removing this mechanism results in a decline in meta-testing performance, demonstrating its capability to accurately identify the usefulness of tasks generated by various pre-trained models, thereby enhancing performance on unseen tasks. We also examined the contributions of two factors within the task-weighting mechanism. Table 7 showed that removing either component ( α = 0 , β = 1 or α = 1 , β = 0 ) leads to reduced meta-testing performance compared to the proposed method (Ours). This highlighted the significance of both components in effectively discerning the usefulness of various meta-training tasks. Next, we assessed the impact of modifying the inner optimization. Specifically, soft labels in the support set were converted into hard labels via argmax, and prototypes were computed as 8Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Table 6: Average accuracies (%) on miniImageNet under cross-architecture scenario. Results are averaged over five independent runs with different unlabeled datasets, with standard errors reported. Methods without unlabeled data report only average accuracies. Bold indicates the best and statistically comparable results according to the paired t-test (p = 0 .05 ). Method (5-way, 1-shot) (5-way, 5-shot) FREE 24.1 33.9 KD-MAML 27.0 ± 0.9 32.6 ± 1.2 Ours 33.1 ± 2.3 48.1 ± 2.0 
+
+Table 7: Ablation study. Average accuracies and standard errors (%) under miniImageNet 5-way 1-shot setting. We compare the proposed method (ours) with the following variants: removing factor (i) in task-weighting ( α = 0 , β = 1 ), removing factor (ii) ( α = 1 , β = 0 ), removing both factors (w/o weight) and replace soft labels with hard labels in the support (inner hard), query (outer hard). w/o weight α = 0 , β = 1 α = 1 , β = 0 inner hard outer hard Ours 31.0 ± 2.9 31.9 ± 3.1 32.7 ± 2.5 31.1 ± 3.3 29.1 ± 2.4 33.6 ± 1.2 
+
+the mean of sample embeddings for each class. As shown in Table 7 (inner hard), using hard labels leads to a decrease in accuracy. This is because converting soft to hard labels may result in insufficient samples for some classes, and prototypes calculated by a few examples are typically less robust. Moreover, since hard labels contain less information than soft labels, this may also lead to a degradation in performance. Finally, we evaluated the effect of modifying the query loss (Eq. (5) ) by replacing soft labels in the query set with hard labels and computing the loss using cross-entropy. As shown in Table 7 (outer hard), this change results in degraded performance. The reason is that soft labels contain richer information than hard labels, a well-established finding in the knowledge distillation (Gou et al., 2021; Phuong and Lampert, 2019; Hinton et al., 2015). We conducted experiments under the 1-shot setting to analyze the sensitivity of the proposed task-weighting mechanism to the balance factors α and β, where β = 1 − α. As shown in Figure 3, using both entropy-based factors achieved better or comparable performance than using either factor alone, i.e., α = 0 or α = 1 , in most cases across Omniglot, miniImageNet, and tieredImageNet. These results indicate that both factors in Eq. (3) are important for improving generalization to unseen tasks. To further analyze the effectiveness of the weighting mechanism, we conducted experiments on miniImageNet under the 5-way setting. Specifically, we randomly sample 200 meta-training tasks from those constructed by Eq. (1) , compute the cross-entropy between the soft labels and ground-truth labels for each task, and calculate the corresponding task weight using Eq. (3) . A lower cross-entropy loss indicates that the soft labels are more consistent with the ground-truth labels. Note that ground-truth labels are not accessible during the meta-training phase. We then visualize the relationship between task weights and cross-entropy and compute their correlation coefficient. As shown in Figure 5(c), the task weight is negatively correlated with cross-entropy, with a correlation coefficient of -0.56. This suggests that tasks with higher weights tend to have soft labels more consistent with the ground-truth labels. These results validate the effectiveness of our weighting strategy: tasks with more accurate soft labels provide clearer supervision signals and more balanced class distributions, both of which are essential for the meta-training process. Additionally, we compare the same correlation under α = 1 , β = 0 and α = 0 , β = 1 . Although correlation is observed in both cases, the absolute values of the correlation coefficients are substantially lower than those obtained with α = 0 .5, β = 0 .5, further highlighting the necessity of incorporating both factors in Eq. (3). We also evaluated the effect of varying the number of pre-trained models, each independently trained on miniImageNet under the 5-way 1-shot setting. As shown in Figure 4a, meta-testing accuracies improved progressively with the number of pre-trained models, up to approximately 700. This is because a larger pool of pre-trained models enables the construction of more diverse and target-relevant meta-training tasks. This helps the model acquire a more robust inductive bias, facilitating faster and more effective adaptation to unseen tasks. In practical applications, the diversity of publicly available resources often leads to the inclusion of low-quality models. To investigate the impact of low-quality models, we evaluated the effect of varying their proportion in the pre-trained model pool under the miniImageNet 5-way 1-shot setting. As described in Section 5.1, the miniImageNet pool already contained 3 low-quality models (with accuracies below 50%). To further adjust the proportion of low-quality models, we replaced a subset of the pool with models initialized with random parameters. As Figure 4b showed, meta-testing accuracy decreased as the proportion of low-quality models increased. Nevertheless, accuracy remained relatively stable at around 33–34% when the number of low-quality models ranged between 3 and 30. Once the number exceeded 60, performance began to decline. As expected, accuracy dropped sharply when most of the pre-trained models were low-9Labeled-Data-Free Meta-Learning A P REPRINT   
+
+> (a) Omniglot 5-way (b) Omniglot 20-way
+> (c) miniImageNet (d) tieredImageNet
+
+Figure 3: Analysis of the balance factors α and β in the proposed task-weighting mechanism under the 1-shot setting. Meta-testing accuracies are reported by varying α with β = 1 − α on (a) Omniglot 5-way, (b) Omniglot 20-way, (c) miniImageNet 5-way, and (d) tieredImageNet 5-way tasks. Bars indicate the standard error. Table 8: Average accuracy (%) and standard error on miniImageNet under 5-way 1-shot and 5-way 5-shot settings. Ours-ProtoNet and Ours-MAML denote two instantiations of the proposed framework based on Prototypical Networks (Snell et al., 2017) and MAML (Finn et al., 2017), respectively. 
+
+Method (5-way, 1-shot) (5-way, 5-shot) PsCo 31.7 ± 0.4 38.5 ± 1.8 FREE 25.2 35.8 KD-MAML 28.3 ± 1.7 36.3 ± 2.2 Ours-ProtoNet 33.6 ± 1.2 48.7 ± 0.9 Ours-MAML 32.7 ± 1.6 48.1 ± 1.1 quality (close to 100), as reliable soft labels were difficult to obtain under such conditions. These results demonstrated that, even with a substantial proportion of low-quality models, the proposed task-weighting mechanism can effectively identify the usefulness of tasks generated from pre-trained models, thereby enabling efficient meta-learning. We further evaluated whether the proposed framework is tied to a specific meta-learning algorithm. As shown in Table 8, although Ours-ProtoNet achieved slightly higher average accuracies than Ours-MAML on miniImageNet under both the 5-way 1-shot and 5-way 5-shot settings, the differences were not statistically significant. In addition, Ours-MAML outperformed all baseline methods, indicating that the proposed framework can also improve a gradient-based meta-learning algorithm such as MAML. Since Ours-MAML and KD-MAML used the same meta-learning algorithm, the improvements of Ours-MAML over KD-MAML further demonstrated the effectiveness of the proposed soft-label task construction and task-weighting mechanism, rather than being attributable to ProtoNets alone. 10 Labeled-Data-Free Meta-Learning A P REPRINT  
+
+> (a) Number of pre-trained models (b) Number of low-quality models
+
+Figure 4: Effect of the number of pre-trained models and the number of low-quality models under the miniImageNet 5-way 1-shot setting. (a) Meta-testing accuracies with different numbers of pre-trained models. (b) Meta-testing accuracies with different numbers of low-quality pre-trained models. Bars indicate the standard error.         
+
+> (a) (α, β ) = (0 ,1) , PCC: -0.15 (b) (α, β ) = (1 ,0) , PCC: -0.33 (c) (α, β ) = (0 .5,0.5) , PCC: -0.56
+
+Figure 5: (a–c) Relationship between task weights (computed using Eq. (3) ) and cross-entropy with ground-truth labels for meta-training tasks constructed by Eq. (1) . Each point represents a single task. Pearson correlation coefficients (PCC) are also reported. 
+
+# 6 Conclusion 
+
+We proposed a meta-learning setting that leverages both pre-trained models and unlabeled data. In this setting, our method constructs meta-training tasks by assigning soft labels from pre-trained models to unlabeled data, thereby avoiding the high computational cost and difficulties of data recovery. To further ensure effective meta-learning, we introduce a task-weighting mechanism based on confidence and class balance. We believe this work is an important step for learning from diverse information sources, and future research may extend this framework to broader tasks such as regression and reinforcement learning. 
+
+# Funding statement 
+
+This work was supported by JST SPRING, Grant Number JPMJSP2140, Japan. 
+
+# References 
+
+Bertinetto, L., Henriques, J.F., Torr, P., Vedaldi, A., 2019. Meta-learning with differentiable closed-form solvers, in: In-ternational Conference on Learning Representations. URL: https://openreview.net/forum?id=HyxnZh0ct7 .11 Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Chen, H., Wang, Y., Xu, C., Yang, Z., Liu, C., Shi, B., Xu, C., Xu, C., Tian, Q., 2019. Data-free learning of student networks, in: Proceedings of the IEEE/CVF international conference on computer vision, pp. 3514–3522. Finn, C., Abbeel, P., Levine, S., 2017. Model-agnostic meta-learning for fast adaptation of deep networks, in: International conference on machine learning, PMLR. pp. 1126–1135. Frikha, A., Chen, H., Krompaß, D., Runkler, T., Tresp, V., 2023. Towards data-free domain generalization, in: Asian Conference on Machine Learning, PMLR. pp. 327–342. Gou, J., Yu, B., Maybank, S.J., Tao, D., 2021. Knowledge distillation: A survey. International Journal of Computer Vision 129, 1789–1819. He, K., Zhang, X., Ren, S., Sun, J., 2016. Deep residual learning for image recognition, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 770–778. Hinton, G., Vinyals, O., Dean, J., 2015. Distilling the knowledge in a neural network. arXiv preprint arXiv:1503.02531 .Hsu, K., Levine, S., Finn, C., 2019. Unsupervised learning via meta-learning, in: International Conference on Learning Representations. URL: https://openreview.net/forum?id=r1My6sR9tX .Hu, Z., Shen, L., Wang, Z., Liu, T., Yuan, C., Tao, D., 2023a. Architecture, dataset and model-scale agnostic data-free meta-learning, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 7736–7745. Hu, Z., Shen, L., Wang, Z., Wu, B., Yuan, C., Tao, D., 2023b. Learning to learn from apis: Black-box data-free meta-learning, in: International Conference on Machine Learning, PMLR. pp. 13610–13627. Iwata, T., Kumagai, A., 2020. Meta-learning from tasks with heterogeneous attribute spaces. Advances in Neural Information Processing Systems 33, 6053–6063. Iwata, T., Kumagai, A., 2022. Sharing knowledge for meta-learning with feature descriptions. Advances in Neural Information Processing Systems 35, 16637–16649. Jang, H., Lee, H., Shin, J., 2023. Unsupervised meta-learning via few-shot pseudo-supervised contrastive learning, in: The Eleventh International Conference on Learning Representations. URL: https://openreview.net/forum? id=TdTGGj7fYYJ .Karim, N., Mithun, N.C., Rajvanshi, A., Chiu, H.p., Samarasekera, S., Rahnavard, N., 2023. C-sfda: A curriculum learning aided self-training framework for efficient source free domain adaptation, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 24120–24131. Khodadadeh, S., Boloni, L., Shah, M., 2019. Unsupervised meta-learning for few-shot image classification. Advances in neural information processing systems 32. Kingma, D.P., Ba, J., 2014. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980 . Lake, B.M., Salakhutdinov, R., Gross, J., Tenenbaum, J.B., 2011. One shot learning of simple visual concepts, in: 33rd Annual Meeting of the Cognitive Science Society: Expanding the Space of Cognitive Science, CogSci 2011, The Cognitive Science Society. pp. 2568–2573. Lee, J., Jung, D., Yim, J., Yoon, S., 2022. Confidence score for source-free unsupervised domain adaptation, in: International conference on machine learning, PMLR. pp. 12365–12377. Li, Z., Zhou, F., Chen, F., Li, H., 2017. Meta-sgd: Learning to learn quickly for few-shot learning. arXiv preprint arXiv:1707.09835 . Mitsuzumi, Y., Kimura, A., Kashima, H., 2024. Understanding and improving source-free domain adaptation from a theoretical perspective, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 28515–28524. Moslemi, A., Briskina, A., Dang, Z., Li, J., 2024. A survey on knowledge distillation: Recent advancements. Machine Learning with Applications 18, 100605. Patel, G., Mopuri, K.R., Qiu, Q., 2023. Learning to retain while acquiring: Combating distribution-shift in adversarial data-free knowledge distillation, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 7786–7794. Phuong, M., Lampert, C., 2019. Towards understanding knowledge distillation, in: International conference on machine learning, PMLR. pp. 5142–5151. Ren, M., Ravi, S., Triantafillou, E., Snell, J., Swersky, K., Tenenbaum, J.B., Larochelle, H., Zemel, R.S., 2018. Meta-learning for semi-supervised few-shot classification, in: International Conference on Learning Representations. URL: https://openreview.net/forum?id=HJcSzz-CZ .12 Labeled-Data-Free Meta-Learning A P REPRINT 
+
+Snell, J., Swersky, K., Zemel, R., 2017. Prototypical networks for few-shot learning. Advances in neural information processing systems 30. Sun, L., Tanaka, Y., Iwata, T., 2024. Meta-learning under task shift. Transactions on Machine Learning Research . Truong, J.B., Maini, P., Walls, R.J., Papernot, N., 2021. Data-free model extraction, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 4771–4780. Vinyals, O., Blundell, C., Lillicrap, T., Wierstra, D., et al., 2016. Matching networks for one shot learning. Advances in neural information processing systems 29. Wah, C., Branson, S., Welinder, P., Perona, P., Belongie, S., 2011. The Caltech-UCSD Birds-200-2011 Dataset. Technical Report CNS-TR-2011-001. California Institute of Technology. Wang, L., Yoon, K.J., 2021. Knowledge distillation and student-teacher learning for visual intelligence: A review and new outlooks. IEEE transactions on pattern analysis and machine intelligence 44, 3048–3068. Wang, Z., Wang, X., Shen, L., Suo, Q., Song, K., Yu, D., Shen, Y., Gao, M., 2022. Meta-learning without data via wasserstein distributionally-robust model fusion, in: Uncertainty in Artificial Intelligence, PMLR. pp. 2045–2055. Wei, Y., Hu, Z., Wang, Z., Shen, L., Yuan, C., Tao, D., 2024. Free: Faster and better data-free meta-learning, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 23273–23282. Wertheimer, D., Tang, L., Hariharan, B., 2021. Few-shot classification with feature map reconstruction networks, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 8012–8021. Zhang, M., Wang, D., Gai, S., 2020. Knowledge distillation for model-agnostic meta-learning, in: ECAI 2020. IOS Press, pp. 1355–1362. 13

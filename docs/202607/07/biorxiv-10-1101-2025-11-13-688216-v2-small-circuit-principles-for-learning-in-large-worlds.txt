@@ -1,0 +1,903 @@
+Title: Small circuit principles for learning in large worlds
+
+URL Source: https://www.biorxiv.org/content/10.1101/2025.11.13.688216v2.full.pdf
+
+Published Time: Tue, 07 Jul 2026 22:00:53 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# Small circuit principles for learning in large worlds 
+
+## Dhruva V. Raman ∗1, Christopher R. Dunne 1, Katie Davyson 1, and Timothy O’Leary †21Department of Informatics, University of Sussex, Brighton BN1 9QT, United Kingdom 
+
+> 2
+
+## Department of Engineering, University of Cambridge, Cambridge CB2 1PZ, United Kingdom July 6, 2026 
+
+# Abstract 
+
+Animals must learn and make predictions in a world that is not only uncertain, but shaped by unmodelled contingencies: ’unknown unknowns’. Despite this, cur-rent theories of how this is achieved are based on op-timal (Bayesian) strategies in simple settings, where it is possible to fully represent a model of the world and infer its state based on sensory data. This could be impractical in situations where an animal has limited prior experience and cognitive capacity, particularly in short-lived animals with small brains. Using the neu-ral circuitry of Drosophila as inspiration, we derive a learning framework, which we call ‘Hetlearn’, for cop-ing in such situations. Hetlearn sacrifices asymptotic optimality on idealised inference tasks, making it less fragile to abrupt changes in environmental statistics and providing more accurate state information than standard Bayesian procedures when data are limited. Hetlearn explains key physiological and anatomical fea-tures of the Drosophila Mushroom body (MB), and predicts behavioural features of learning that are con-served across species, such as second-order condition-ing and reversal learning. 
+
+# Introduction 
+
+Animals learn from experience to predict future events. Existing theory frames this as state inference: up-dating a probabilistic map of relevant aspects of the environment, called states , and predicting how these states evolve as a function of time, context, actions and external events [35, 7, 15]. Simple, familiar sit-uations such as repeated laboratory tasks can pro-vide a mathematically tractable environment where an agent can represent all possible states, actions, and consequences, allowing for optimal probabilistic rea-soning [14, 19, 31]. Despite their utility in establishing normative prin-ciples for reasoning and decision making, idealised tasks whose causal structure can be fully modelled and learned occupy what is known as a ‘Small World’ [43]. This contrasts with the real world, or ‘Large World’: a messy reality of unforeseen contingencies (”unknown unknowns”), and open-ended state spaces where opti-
+
+> ∗d.raman@sussex.ac.uk
+> †timothy.oleary@eng.cam.ac.uk
+
+mal inference is intractable. Animal brains operate in the Large World setting [29]: they inhabit the real world, and even simpler, restricted situations (such as laboratory tasks) may present ani-mals with too little data to perform optimal inference. Under these conditions, an optimal Small World learn-ing procedure may be less relevant for understanding biological learning, particularly if the optimal proce-dure is fragile to violations in modelling assumptions [22]. Using well-established features of Drosophila learning circuitry and behaviour, we devised a novel learning al-gorithm ‘Hetlearn’ (for heterologous learners) designed for rapid, approximate inferences that are robust to un-modelled causes. Hetlearn incorporates a key feature of the mushroom body: parallel, associative learning modules that operate independently on fast and slow timescales. This feature addresses a well-known issue with Bayesian inference by effectively mitigating am-biguities between stochasticity and volatility [6, 41]. Remarkably, in a low to moderate data regime of hun-dreds of samples, Hetlearn outperforms asymptotically optimal, Bayesian algorithms despite being suboptimal in the long run. This regime is likely relevant to ani-mals making decisions with little data in volatile envi-ronments. Hetlearn recreates Drosophila behaviour across sev-eral chosen tasks: second-order, extinction, and re-versal conditioning. It explains both behaviour and the heterologous dynamics of dopaminergic signalling in the mushroom body. Furthermore, it provides new, testable hypotheses on the roles of poorly-understood inter-compartmental mushroom body interactions dur-ing these tasks. More abstractly, it provides a nor-mative principle for learning in truly novel environ-ments where there is uncertainty in the values of rep-resented states (as in probabilistic inference), but also uncertainty in which states to represent in a cognitive map. 
+
+# Results 
+
+## State inference in a Large World 
+
+We first motivate Hetlearn abstractly, using the stan-dard probabilistic inference framework as a compari-son. In doing so, we will expose two well-known issues 1
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+with probabilistic inference which can be detrimental to biological learning in naturalistic settings, and that Hetlearn addresses. A learner undertaking probabilistic state inference at time t holds and updates a probability distribution 
+
+P [xt, θ |y1: t] on dynamic states xt and static parame-ters θ that collectively represent the environment, given an observation history y1: t. The optimal update for this distribution uses Bayes’ rule, which requires a pre-specified generative model (or cognitive map [5]) of the environment comprising probability distributions for state evolution: Px(xt|xt−1, θ ), and observation: 
+
+Py (yt|xt, θ ). This generative model is variously as-sumed to be learned from a mixture of prior experi-ence and developmental processes that embed innate assumptions about the world. Generative models provide probabilistic outcomes. This is assumed to account for the effects of count-less unmodelled ‘large-world’ factors zt, which collec-tively make the future unpredictable from the per-spective of the learner. Specifically, we could specify ground-truth models of state update and observation as xt = f (xt−1, z t), and yt = g(xt, z t). Probabilistic inference assumes that 
+
+f (xt−1, z t) ∼ Px(xt|xt−1, θ ) (1a) 
+
+g(xt, z t) ∼ Py (yt|xt, θ ), (1b) where the distributions Px and Py are known ahead of time as part of the generative model, and the parame-ters θ are learnt during the task. This theoretical framework raises two profound ques-tions that form the theoretical motivation for Hetlearn. First, even if the generative model specified in Eqs. 1 accurately reflects ground-truth, its use in state esti-mation may be inherently fragile to approximation er-rors, particularly in situations where data to calibrate states is limited. This is inevitable for algorithms im-plemented in biological circuits, and could leave an an-imal with a predictive model that is both algorithmi-cally complicated and poorly performing. There may be algorithmic tricks by which an inherently subopti-mal, simpler inference can yield predictions that are more accurate in the short-term. Hetlearn implements these tricks. Second, systematic ‘large-world’ changes in the envi-ronment can fundamentally invalidate the animal’s in-ternal generative model. If the true data-generating process shifts, the animal’s cognitive map and prior assumptions are decoupled from reality. Consequently, the theoretical guarantees underpinning the reliability of Bayesian inference (such as the evidence lower bound [52]) cease to apply, as they remain tied to an outdated representation of the world. Again, there is no ques-tion that animals can fail to adapt their behaviour to new ecological niches. However, a simple algorithmic means of minimising the fragility of an animal’s predic-tive model to Large World effects would clearly offer a reproductive advantage. Hetlearn offers a means of achieving this. We will next construct and analyse a simple example that illustrates how Hetlearn addresses the first issue by outperforming a Bayesian inference procedure in the low-data regime. Later sections will tackle abrupt changes to generative models. 
+
+## Basic Hetlearn algorithm for learning via prediction errors 
+
+Many models of learning posit that animals update state estimates from prediction errors (PEs) [45]. States are taken to represent physical or abstract vari-ables, from properties of visual stimuli to reward. No-table examples of learning algorithms that are pro-posed to model biological state estimation are Kalman filtering [11, 25, 20] and temporal difference reinforce-ment learning [44, 46, 39, 9]. A common dilemma faced by any learning algorithm is that there is a tradeoff in deciding to what extent a PE is attributable to stochas-tic fluctuations that should be ignored, versus system-atic changes (often known as volatility) that should be adapted to. We first propose a simple algorithm for updating to PEs and claim it has advantages over classical proba-bilistic inference in biologically relevant scenarios: low data, limited algorithmic resources. Our setting is a learner attempting to infer a single state from ambigu-ous observations over repeated trials. For concreteness, we consider the state as a reward r∗ 
+
+> t
+
+associated with that state. The received reward at time t, rt, takes the form: 
+
+rt = r∗ 
+
+> t
+
++ Cm(zt) (2a) 
+
+r∗ 
+
+> t+1
+
+− r∗ 
+
+> t
+
+= Cp(zt), (2b) This models a general situation where large-world causes of systematic change (volatility, Cp(zt)) and un-systematic, noisy fluctuations (stochasticity, Cm(zt)) both affect rt. The learner holds a state estimate ˆ rt,with estimation error: et = r∗ 
+
+> t
+
+− ˆrt. This estimate is updated from prediction errors: δt+1 = rt+1 −ˆrt.ˆrt+1 − ˆrt
+
+| {z }
+
+> change in estimate
+
+= αt
+
+|{z} 
+
+> learning rate
+
+× δt+1 
+
+|{z} 
+
+> PE
+
+.
+
+An excessive learning rate ( αt ≈ 1) erases valuable accumulated experience by overreacting to stochastic fluctuations. An insufficient learning rate ( αt ≈ 0) cannot keep up with systematic volatility, or reduce a large estimation error. The truly optimal learning rate (zero estimation error on trial t + 1, see SI S1) is 
+
+α∗ 
+
+> t
+
+= Cp(zt) + et
+
+Cm(zt+1 ) + Cp(zt) + et
+
+. (3) This learning rate in inaccessible to any learning algorithm: Cm, C p, and et will fluctuate on each timestep, and their values cannot be disambiguated from the scalar PE signal which sums their individual effects. 2
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+To deal with this, and in agreement with neural cir-cuit properties that we discuss in detail later, we pro-pose the learner maintains multiple parallel valence es-timates (sublearners), each with intrinsic, fixed guesses of α∗ within extremal values of 0 and 1. To form an estimate, the learner weights the sublearners according to their recent predictive performance. 
+
+## A Hetlearn strategy for learning from prediction errors 
+
+We formulate a simple Hetlearn strategy for PE up-dates: Take n parallel sublearners, each with their own estimates: {ˆr(1)  
+
+> t
+
+, . . . , ˆr(n) 
+
+> t
+
+}. The ith learner re-ceives a prediction error δ(i) 
+
+> t
+
+, and updates its estimate as: ˆr(i) 
+
+> t+1
+
+= ˆ r(i) 
+
+> t
+
++ α(i)δ(i) 
+
+> t
+
+,
+
+where α(i) is fixed and heterogeneous across sublearn-ers. The overall prediction is a weighted vote: ˆrt =
+
+Pni=1 ˆr(i) 
+
+> t
+
+w(i) 
+
+> t
+
+, where w(i) 
+
+> t
+
+is the weight assigned to the 
+
+ith sublearner. To determine the weights, the agent uses an estimate of recent error for each sublearner. One simple estimate is: ˆe(i) 
+
+> t+1
+
+= τ ∥δ(i)
+
+> t+1
+
+∥22 + (1 − τ ) ˆ e(i) 
+
+> t
+
+:a moving average of PE magnitude, with recency bias 0 ≤ τ ≤ 1. Weights are then w(i) 
+
+> t
+
+∝ 1ˆe(i)
+
+> t
+
+, normalised so that P 
+
+> i
+
+w(i) 
+
+> t
+
+= 1. The free parameters in this strategy are the learning rates α(i) of each sublearner, and the recency bias τ .Hetlearn differs importantly from probabilistic infer-ence, where large-world effects must be modelled as probability distributions to infer learning rate (Eq. (1)). We now demonstrate this on a simple didactic example, where we compare Hetlearn to the Kalman Filter (KF): a popular model for how animals learn from prediction errors [11, 25, 20], with biologically plausible neural circuit implementations [12, 54]. The KF assumes fixed Gaussian distributions: 
+
+Cm(zt) ∼ N (0 , σ 2
+
+> m
+
+) (stochasticity) (4a) 
+
+Cp(zt) ∼ N (0 , σ 2 
+
+> p
+
+) (volatility) (4b) 
+
+et ∼ N (0 , c t) (estimation error) . (4c) With these assumptions, baseline reward is a Gaus-sian distribution whose mean updates with a dynamic, Bayes-optimal learning rate. The learning rate calcu-lation, however, requires knowledge of σ2
+
+> m
+
+, σ2 
+
+> p
+
+, and c0
+
+as part of its generative model (Methods, (7)). We can say that these form part of the fixed ‘small-world’ structure assumed by the model. In Figure 1, we simulate a large-world where σ2
+
+> m
+
+, σ2 
+
+> p
+
+,and c0 change abruptly, halfway through the simula-0.0 0.5 1.0         
+
+> Environmental statistics
+> large-world change 0100 200 300 400 500 600
+> Cumulative squared RPE
+> large-world change trials 0500 1000 0.0 0.5 1.0
+> large-world change trials 0500 1000 0200 400
+> large-world change stochasticity σ²ₘ
+> volatility σ²ₚ
+> Kalman Filter Hetlearn stochasticity σ²ₘ
+> volatility σ²ₚ
+> Kalman Filter Hetlearn
+
+Figure 1: The Kalman Filter requires seeding with values for reward stochasticity/volatility. It is seeded with the ini-tial values, for which it is statistically optimal. When the values change due to unmodelled, unrepresentable large-world effects, it performs poorly. A Bayes-optimal learner can be fragile to large-world effects that break its founda-tional assumptions. Hetlearn is suboptimal for any par-ticular, fixed reward stochasticity/volatility, but robust to changes. 
+
+tion (trial 500). The KF is seeded with initially cor-rect values for these parameters. Hetlearn doesn’t re-quire or use knowledge of these parameters, and is thus slightly suboptimal in the first half of the simulation. This parsimony makes it more robust to the abrupt large-world change, to the extent that its cumulative error over the entire simulation is markedly lower than the KF. More generally, any KF requires direct access to the correct stochasticity/volatility values, which stretches the plausibility of a biological implementation. Con-sequently, studies that propose the KF as a model of biological learning often hardcode guesses into a model [11, 12, 20]. Figure 1 suggests that a non-optimal, non-probabilistic strategy could be prefer-able where such guesses, which form part of the gen-erative model structure, are unreliable or subject to change. The standard KF deployed in Figure 1 could be im-proved by incorporating stochasticity and volatility as parameters to be concurrently estimated. More gen-erally, generative models can be improved by adding flexibility through more parameters. Previous work has thus proposed algorithms that learn stochasticity and volatility online [6, 41]. This clearly results in greater algorithmic complexity. More importantly, we claim that it necessarily results in worse short-term perfor-mance than Hetlearn. To demonstrate, we first implemented an (augmented) Kalman learner that additionally estimates σ2 
+
+> p
+
+and σ2
+
+> m
+
+from historical rewards, using the state-of-the-art Au-tocovariance Least Squares (ALS) method [38]. ALS regresses point-estimates of σ2 
+
+> m
+
+and σ2 
+
+> p
+
+from the his-tory of reward prediction errors (see Methods). The usage of ALS means the learner is undertaking approx-imate Bayesian inference: updating complete probabil-ity distributions of stochasticity and volatility Bayes-optimally is analytically intractable. Meanwhile we 3
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint trial 0 500 1000 estimate 0.0 0.5 1.0 1.5 2.0               
+
+> A
+> trial 0500 1000 weight 0.0 0.2 0.4 0.6 0.8 B
+> volatility 1.2 1.4 1.6 1.8 2.0 stochasticity 0.6 0.8 1.0
+> C
+> trial 0500 1000 MSE 0.6 0.7 0.8 0.9
+> D
+> trial 0500 1000
+> Δ cumulative MSE
+> −10 010
+> E
+> trial 0500 1000 learning rate 0.2 0.4 0.6 0.8 1.0 F
+> stochasticity volatility slow learner medium learner fast learner R²=0.48 Kalman learner Hetlearn Kalman learner Hetlearn Kalman learner Hetlearn ground truth
+
+Figure 2: A: Convergence of ALS algorithm’s stochasticity and volatility estimates over time, compared to their (dot-ted) true values. One run plotted for illustration. B: Faster convergence of the weightings of Hetlearn sublearners over time. One run plotted for illustration C: 100 samples of the final ALS estimates of stochasticity and volatility, af-ter 1000 timesteps. Estimation errors are anticorrelated. 
+
+D: Mean MSE of Kalman learner vs Hetlearn over 100 re-peats. Bands represent standard error. E: Mean trajectory (100 repeats) of the difference in cumulative MSE for the Kalman learner and Hetlearn. Green (positive) values indi-cate that the Kalman learner had higher cumulative MSE than Hetlearn, while purple (negative) values indicate the opposite. F: Learning rate of the two algorithms as com-pared to the optimal formula of Eq. (3) over a single trial. 
+
+provide c0 explicitly to the learner. The performance of the Kalman learner is shown in Figure 2. For over 100 trials, Hetlearn markedly out-performs in mean-square prediction error, with cumu-lative error lower for Hetlearn until past the 500th trial. Hetlearn superiority is also robust to choices of the (fixed) recency bias parameter, τ (see SI S5). In the long run, as expected, the Kalman learner converges on the true stochasticity/volatility values (Figure 2A,C), and asymptotically approaches Bayes-optimal perfor-mance. Hetlearn possesses a key property that provides ro-bustness to changing conditions and limited data. The (expected) estimated error of a sublearner with fixed learning rate α converges to its asymptotic value E[e2
+
+> ∞
+
+]according to 
+
+∥E[e2
+
+> ∞
+
+] − E[e2
+
+> t+1
+
+]∥ < (1 − α)2∥E[e2
+
+> ∞
+
+] − E[e2 
+
+> t
+
+]∥, (5) during any period of constant stochasticity and volatil-ity (see SI S6). This exponential convergence means that traces of previous environmental conditions are quickly washed out. Consequently sublearner weights (which are calculated from these estimated errors) con-verge exponentially fast to reasonable values, as seen in the first few timesteps of Figure 2B. Remaining weight-ing inaccuracy is caused by fluctuations around the ex-pectations in (5), as seen in later timesteps of Figure 2B. The exponential convergence of Hetlearn weightings stands in contrast to the slow convergence of stochas-ticity/volatility estimates (Figure 2A and C), which re-sult in poor initial performance of the Kalman learner. This slow convergence is due to the fact that stochas-ticity and volatility explain each other away [42]: acontribution from either noise term has the same ef-fect on PE magnitude on any given trial. Only long-term patterns of PE autocorrelations can disambiguate the two, which is precisely how the ALS algorithm estimates them. More generally, good estimates of second-order statistics are inherently data-hungry to accurately estimate. Overall imprecise approximates of the stochasticity/volatility distributions (such as the point-estimate provided by ALS), are far worse in the low-data regime. Biological implementations of such Bayesian procedures, which are inevitably approx-imate, would likely suffer more. 
+
+## Competing sublearners should stay sim-ple 
+
+We now strengthen the claims of Figure 1: that Het-learn gains robustness to unmodelled environmental changes by assuming less of the environment. To do so, we compare Hetlearn against the algorithm proposed in [42], which we call the ‘Piray learner’. This belongs to a class of probabilistic algorithms known as parti-cle filters, but was specifically formulated to address state inference under conditions of changing stochas-ticity and volatility. Like Hetlearn, they use parallel sublearners with different beliefs, weighted on predic-tive performance. Unlike Hetlearn, each sublearner es-timates stochasticity and volatility: necessary for sta-tistically optimal reward prediction. Specifically, each sublearner (/particle) is a Kalman Filter, with stochas-ticity/volatility estimates that stochastically diffuse to track changing environments. We use a test environment similar to the previous sec-tion, in that the state follows Eqs. (2) and stochas-ticity/volatility are Gaussian ((4)). However, the vari-ances of the (Gaussian) Cm(zt) and Cp(zt) change over time, following the schedules in Figure 3 (top row). These model a variety of large-world changes that can’t be predicted by the learner. Hetlearn outperformed the Piray learner both in over-all predictive performance (Figure 3E), and in tracking the correct learning rate over time (Figure 3D). Fur-thermore, Hetlearn used fewer sublearners (3, versus 10 for Piray). The previously mentioned issues of stochastic-ity/volatility taking lots of data to estimate accurately 
+
+compound in a situation where they can drift. Note that estimating the state as a probability distribution 4
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint 0246810 12 A          
+
+> 0.0 0.5 1.0 B
+> 0.0 0.5 1.0 C
+> MSE
+> D
+> trial 0500 1000 MSE
+> EABCD
+> trial 0500 1000
+> EABCD
+> trial 0500 1000
+> EABCD
+> trial 0500 1000
+> E
+> volatility stochasticity Hetlearn ground truth Piray & Daw ground truth Hetlearn Piray & Daw ground truth Hetlearn Piray & Daw ground truth A. Environment
+> B. Hetlearn learning rate
+> C. Piray and Daw learning rate
+> D. Cumulative learning rate error
+> E. Cumulative prediction error
+
+Figure 3: A: Volatility and stochasticity for four differ-ent environments not encompassed by a single generative model. B: Hetlearn (top) and Piray et al (bottom) tracking the the optimal learning rate across all four environments. C: Cumulative error over 10 trials for Hetlearn and Piray et al. D: Cumulative mean squared error (MSE) over 10 trials for Hetlearn and Piray et al. For B, C, and D, and the average of 10 runs were plotted for Hetlearn and Piray et al. 
+
+requires this estimation. Hetlearn, by avoiding it, can-not be reformulated as a probabilistic inference algo-rithm (see SI S4). Inferring a hidden state subject to unmodelled changes that could be both first-order (i.e. from stochasticity and volatility) and second-order (i.e. from changes to stochasticity/volatility) is a generic problem. It is rele-vant for animals that incompletely model their environ-ments due to environmental novelty or neural circuit limitations. Figure 3 demonstrates that chasing opti-mal probabilistic inference is not a sensible approach in these circumstances, and that Hetlearn is a simple, superior alternative. 
+
+## Relating Hetlearn to Drosophila learn-ing circuitry 
+
+We now discuss the connection between the circuitry and physiology of the Drosophila Mushroom Body (MB) and Hetlearn (Figure 4C). This will enable us to test whether Hetlearn recapitulates known features of biological learning in the final section of the Re-sults. The MB contains several compartments, which individually make predictions, and adapt their internal prediction errors with intrinsic, compartment-specific characteristics. Different compartments have different intrinsic learning rates, and are weighted dynamically. More detailed aspects of circuitry are considered in a subsequent section. Sensory representations in the MB are formed in the Kenyon Cell (KC) population which receives inputs from sensory projection neurons (Figure 4A). Tun-ing curves of the ( ≈ 2000) KCs are input-selective and sparse [50], suggesting an architecture optimised for decorrelating representations of similar sensory in-puts [8, 28]. Conversely, KC outputs converge onto only 34 MB output neurons (MBONs), arranged in 16 compartments [3, 27] (Figure 4B). MBON responses to similar sensory inputs, unlike KCs, are highly correlated [23]. Conversely, inputs that carry opposing valence (aversive vs appetitive) are well separated in MBON responses [23]. This suggests that MBON activity reflects the behavioral value of a stim-ulus rather than its low level features. Indeed, pho-toactivation/suppression of specific MBONs leads to attraction or avoidance behavior [40, 3]. Behavioral changes can occur via associative learning that updates the valence of a stimulus or set of behav-ioral states. These changes are driven by plasticity in the KC-MBON synapses, which is in turn induced by a ‘teaching signal’ from Dopaminergic Modulatory neu-ron (DAN) activity (Figure 4A,C) that communicates perceived reward or value. The architecture of the MB constrains the abstract learning mechanisms its neural circuitry implements. Individual KC axons traverse and connect to multi-ple distinct compartments. In contrast, each of the 20 DAN types innervates only one or two compart-ments (Figure 4B). The instructive role of the DAN input to these compartments was demonstrated by [2], by photoactivating specific DANs, in conjunction with an olfactory stimulus, to induce appetitive condition-ing. Subsequent behavioural changes could thus be at-tributed to a specific combination of teaching signals, compartments and stimuli, extracting the physiologi-cal chain of events leading to a conditioned stimulus (CS). Differences in behaviour produced by activating differ-ent compartments were then compared, by observing the flies’ subsequent preference for the CS over time. The consequent mechanistic effects mirror the Hetlearn algorithm: 
+
+• Compartments can bi-directionally update the va-lences they attribute to conditioned stimuli, even through modulation of the same DAN (Uncondi-tioned Stimulus / US). 
+
+• Compartments exhibited intrinsic heterogeneity in the degree and manner they updated their va-lence estimates of stimuli in response to new ex-periences. In particular, different compartments had intrinsically different learning rates, and held memories for different amounts of time. 5
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+B α3 α′3      
+
+> α′2
+> α′1α1
+> β1β2
+> β′2
+> γ5γ4γ3γ2
+> pedc
+> β′1
+> γ1
+> Glutamate
+> GABA
+> Acetylcholine
+> α/β
+> α′/β′
+> γ
+> Vertical lobes (α,α′)
+> Horizontal
+> lobes
+> (β,β′,γ)
+> Kenyon
+> cells
+> Anterior paired
+> lateral neuron
+> DAN
+> MBON
+> (Projection neuron)
+> Input Output
+
+A
+
+# +
+
+# -
+
+> Projection
+> neurons
+> Stimulus
+> DAN
+> DAN
+> Teaching
+> signal
+> MBON
+> compartments
+> Weighted vote of
+> compartmental valences
+
+C
+
+> DAN
+> α2
+> MBON
+> Kenyon
+> cells
+> Kenyon
+> cells
+
+A B
+
+CFigure 4: A: Schematic of an individual MBON com-partment. The effect of sensory representations, trans-mitted through KC axons, on MBON activity, is adapted through plasticity induced by co-occurring DAN activation. Adapted from Figure 1A of [34]. B: Topology of the 16 compartments comprising the MB. KC axons arising from the three KC cell types ( α/β , α′/β , γ) are depicted as blue lines, segregated according to anatomical layer. Example MBON and DAN included. Adapted from Figure 1C of [3] 
+
+C: Schematic of proposed qualitative mechanism. Sepa-rate MBON compartments receive highly overlapping sen-sory representations from KCs. However, their valences are different, and are updated by anatomically and function-ally distinct DAN teaching signals. Overall valence is a weighted sum of the individual compartments’ opinions. 
+
+• The contribution of the memories of different mod-ules to overall behaviour is dynamic: they ‘vote’, but the importance of different voters changes over time. Co-activating DANs to the (appetitive) α1and (aversive) γ1 − pedc compartments with an odour resulted in an odour valence that was ini-tially strongly aversive, and then appetitive after one day. This is consistent with the known feature of slower memory decay in the α1 compartment. Moreover, the initially strongly aversive response implied a nonlinear, dynamic summation of the compartmental valences. 
+
+## Hetlearn for complex conditioning ex-periments 
+
+So far we have considered how learning-rate parallelism aids inference of a single state from observations di-rectly pertaining to the state. We now consider how adding parallelism on an alternative dimension aids learning when animals are faced with a continuous stream of stimuli. Here, a surprising outcome could be due to an as-yet unidentified pattern in preceding stimuli, or a fundamentally unidentifiable large-world effect. This difficulty is highlighted in three standard conditioning experiments (see Figure 6A,B,C), involv-ing stimuli S1 and S2, a reward R and a punishment 
+
+P :
+
+Extinction: An initial association (e.g. {S1 → R}
+
+repeated), is subsequently extinguished ( {S1 → ∅} 
+
+repeated). 
+
+Reversal (e.g. [57, 32]): Flipping between repeated bouts of {S1 → R} and {S1 → P }.
+
+Second-order conditioning (e.g. [49]): Initial Pavlovian conditioning (e.g. {S1 → R} repeated) is followed by unrewarded presentation of asimilar stimulus: ( {S2 → S1 → ∅} repeated). The abrupt environmental changes in extinction and reversal conditioning are due to unsensed large-world effects that hold for a limited (reversal) or indefinite (extinction) period. Conversely in second-order condi-tioning, prediction errors arise from an initially defi-cient predictive model: the animal initially has no way of knowing that S2 signals a context where S1 is un-rewarded. Once this knowledge is acquired, a learner can perfectly predict rewards from stimuli. Many experiments have shown that Drosophila cache adaptations to different large prediction errors in sep-arate engrams, which each possess unique dynamics. We propose that this serves a purpose: the organism can ‘hedge their bets’ on the appropriate adaptation to prediction errors through parallelism. We now provide a Hetlearn model of MB that enacts this goal, while explaining organismal behaviour and making testable mechanistic predictions. Our model first projects presented stimuli into a high-dimensional representation modelling the Kenyon-cell layer, denoted xt at the tth presentation. Representa-tions decay on a slower timescale than stimulus pre-sentation. Hence, the representation x2 after experi-encing S2 → S1 holds traces of the S2 representation. Each representation xt is normalised, e.g. by the re-current inhibitory action of the APL neuron on the KC layer. Our model learns to predict the current xt by adapt-ing a matrix A representing linear, recurrent Kenyon-cell connections. This adaptation follows the simple online-least-mean-squares rule, which can be imple-mented with Hebbian plasticity [53]: 
+
+δt = xt+1 − Ax t
+
+At+1 = At + αx tδTt .
+
+We use the learning rate α = 0 .4. Biologically, struc-tural changes in the calyx, presynaptic to Kenyon cells, do accompany the consolidation of olfactory condi-tioned memories [10, 4]. Conditioned valences are held in parallel engrams, which form in the KC-MBON connections. The ith 
+
+engram is defined by a ‘template’: e(i) = xt−1, corre-sponding to the Kenyon cell representation that maxi-mally activates it, and a binary effect v(i), which is ±1for an appetitive/aversive valence. The engram has fast 6
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint and slow components held in different MBON compart-ments, and defined by intrinsic learning rates, which we set as αf = 0 .6, αs = 0 .2. Each component has a dynamic strength s(i) 
+
+> f
+
+and s(i) 
+
+> s
+
+, with overall strength 
+
+s(i) = s(i)  
+
+> f+s(i)
+> s
+> 2
+
+.On each stimulus presentation, the system makes a pre-diction ˆ yt+1 of the next unconditioned stimuli. These are later compared against a vector of experienced un-conditioned stimuli yt, represented in separate circuits such as the lateral horn. The prediction sums engram activations: ˆyt+1 = X
+
+> i
+
+s(i)⟨e(i), x t⟩v(i).
+
+If the PE ∥yt+1 − ˆyt+1 ∥2 exceeds a threshold ( > T 1 =0.3) and all extant engram activations ⟨e(i), x t⟩ are low (< T 2 = 0 .3), then a new engram is formed with tem-plate xt. If the PE was an unsystematic fluke, this en-gram will not contribute constructively to future pre-dictions and will die (described later). If not, it will crystallise without interfering with different existing engrams. Engram strengths adapt to each PE. To minimise in-terference of each adaptation with different conditioned responses, engrams compete to claim and adapt to er-rors, a process we call belief competition . We take belief as 
+
+b(i) 
+
+> t
+
+= σ(⟨e(i), x t⟩), (6) where σ(x)i = e−βx i  
+
+> P
+> je−βx j
+
+is the softmax function. We took β = 10. Strengths then update as 
+
+s(i) 
+
+> f
+
+→ s(i) 
+
+> f
+
++ ( αf b(i) 
+
+> t
+
+v(i))( yt − ˆyt)
+
+s(i) 
+
+> s
+
+→ s(i) 
+
+> s
+
++ ( αsb(i) 
+
+> t
+
+v(i))( yt − ˆyt).
+
+Slow strengths only update once the fast strength has crossed a threshold ( Tf = 0.4) replicating the re-peated conditioniong required to form engrams in slow-learning MBON compartments such as α1. If a fast strength dips below 0 .1 before a slow strength has ac-tivated, the engram is extinguished. In reinforcement learning, the value of an environmen-tal state is the long-term predicted reward, which in-corporates the reward obtained at future states likely to be visited. Correspondingly, our model values a KC representation xt by evolving the representation through the recurrent matrix A, which predicts future representationas as ˆ xt+j = Aj xt. The synaptic output of these dynamics are integrated over time against dif-ferent engrams, determining the engram-specific value contribution. Mathematically, 
+
+V (i)(xt) = 
+
+> ∞
+
+X
+
+> j=0
+
+s(i) 
+
+> s
+
+⟨e(i), A j xt⟩,
+
+with overall value V (xt) = P 
+
+> i
+
+V (i)(xt). These dy-namics soon die out biologically, and in the model (as Engram 1 
+
+> (appetitive)
+> MBON
+> compartments
+> Engram 1
+> (Fast/slow)
+
+A  
+
+> Competition
+> Engram 2 (aversive)
+> γ5
+> β′2
+> Kenyon
+> cells xt
+> α/βα′/β′
+> γ
+> Slow α1
+> Fast
+> Kenyon
+> cells
+> SMPs
+> Fast
+
+B
+
+> Kenyon
+> cells
+> α/β
+> α′/β′
+> γ
+> γ5
+> β′2
+> SMP 108
+> SMP
+> 353/354
+> DANs
+> (appetitive)
+> α1
+> Kenyon
+> cells
+> Teacher
+
+C
+
+> Teaching signal
+> Student
+
+# vs  
+
+> Engram 2
+> (Fast/slow)
+> ∑
+> Prediction  ̂ yt
+
+- Unconditioned             
+
+> stimulus yt
+> yt−̂yt
+> Plasticity
+> ()sf,ss
+> Activation ⟨e(1),xt⟩
+> Activation ⟨e(2),xt⟩
+> Competition
+> (interneurons)
+> σ
+> Make new
+> engram?
+> DANs
+> Feedback A
+> Value V(xt)
+
+Figure 5: A: Hetlearn model for behavioural condition-ing in Drosophila. Different engrams strengths compete to update from a prediction error, reducing interference with previously learned information. Predictions themselves do not invoke this competition, allowing the system to make rich, context-dependent predictions that make use of the representional capacity of multiple engrams. B: Proposed model of mechanism underlying second order conditioning. Compare to C: Mechanisms underlying second-order con-ditioning as proposed in [58] 
+
+∥Aj+1 ∥ < ∥Aj ∥), so we terminate the integration at 
+
+j = 3. Overall our model relies on simple computations: soft-max, correlation, and recurrent linear dynamics, which can all be enacted with biologically plausible learning rules. 
+
+## Hetlearn explains and recreates multiple behaviours and their mechanistic under-pinnings 
+
+In Drosophila, extinction of a conditioned memory is supported by the acquisition of an entirely new mem-ory towards the conditioned stimulus, which competes with the initial memory to govern extinction [17, 18]. Similarly, our model added a new, punishing engram at the onset of extinction (Figure 6C), whose increas-ing strength induced extinction. The original, reward-ing engram is stably maintained meanwhile. As such, if extinction were a one-off fluke, or a temporary cir-cumstance, it does not corrupt the original, rewarding memory. Analogously, our model created four parallel memories during reversal conditioning protocols, as depicted in Figure 6B. The preference index of Figure 6 demon-strates how the speed of initial learning was governed by the slow/fast learning compartments within a con-7
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint text. Conversely, the speed of switching preferences during reversals was governed by competition between 
+
+contexts, leading to changing degrees of condition-ing across reversal blocks. The first reversal resulted in a weaker memory, while subsequent reversals built stronger memories, in agreement with experimental findings (e.g. Figure 1A of [56]). Context 1     
+
+> S2
+> 20s
+> 1 min 1 min 2 min 2 min
+> DAN
+> activation
+> Drosophila Hetlearn
+> 2OC
+> First-order conditioning (S2)
+> Context 1
+> Preference Index
+> Context 2
+> Second-order conditioning (S2)
+> S1
+> Extinction protocol Reversal protocol
+
+x 2 
+
+x 1,3,5,7,9 x 1,3,5,7,9    
+
+> 1
+> 0.0
+> 0.4
+> 0.8
+> 3579
+
+x 9 
+
+x 10 
+
+A
+
+C
+
+D
+
+B
+
+x 10                                  
+
+> S2 S1 S1 S1 S1
+> S2
+> Test S1 S2 S1
+> S2
+> Test
+> Prefer
+> S2
+> Prefer
+> S1
+> SMP108
+> knockout
+> Stimulus reversal
+> (context 2)
+> First-order (S1) Second-order (S2)
+> S1
+> 10s
+> S1
+> 10s
+> S2
+> 20s
+> DAN
+> activation 1234
+> V(S2) − V(S1)
+> −0.2
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> PreferS2
+> PreferS1
+> Parallel
+> memory
+> formed
+> Predicted Valence
+> V(S 2) - V(S 1)
+> -0.8
+> -0.4
+> 0.0
+> -0.2
+> -0.6
+> -0.2
+> 0.0
+> 0.2
+> 0.1
+> -0.1
+> 135791357913579
+> 123451234
+
+A B
+
+C
+
+D
+
+Figure 6: Model predictions vs behavioural experiments 
+
+A: Extinction protocol adapted from [18]: S1 is associated with punishment (reward of −1) 30 times, followed by 30 punishment omissions. Stimulus preference of the model to 
+
+S1 over time is graphed, along with the time at which the first (rewarding) and second (omitting) contexts are auto-matically formed in the model. B: Reversal protocol taken from [56]. Each block depicts ten pairings of S1 or S2 with punishment (reward of −1) or omission. Bar plot depicts difference between valences for S1 and S2 at the end of each block. C: Experimental protocol used in [58], and our model, for second-order conditioning. We modelled DAN activation as a reward on the timestep after the stimulus was presented. In context 2, S2 and S1 were presented on successive timesteps. D: Drosophila preference to S1
+
+and S2 over time. Experimental data (Figure 1H of [58]) on leftmost pane, depicting preference index. Our model graphs valence on other panes, depicting (left) standard conditioning, (centre) conditioning under SMP108 knock-out, and (right) conditioning when S1 is presented before 
+
+S2 in context 2. 
+
+Finally, our model recreated the behavioural dynam-ics observed in second-order conditioning.The valence of S2 initially rose due to an association formed with 
+
+S1, whose representation formed the template of a re-warding context. A punishing context was formed to account for reward omission after S2 → S1, whose increasing strength accounted for slower-timescale ex-tinction of this initially positive valence. These be-havioural dynamics are highly conserved across animal phyla [21], and we provide a mechanistic and functional explanation. We can test our model on mechanistic and behavioural data provided in [58], and contrast it against a dif-ferent computational model of second-order condition-ing provided in the same paper (Figure 5D) to capture parallel engram recruitment. There, a slow, rewarding compartment (MBON-α1) learns the first order associ-ation between S1 and reward. It then acts as a ‘teacher’ to ‘student’ compartments ( γ5 and β′2a) that learn the second order association. The transience of this second-order memory therefore reflects the intrinsic 
+
+fast learning/forgetting nature of these student com-partments, rather than competition between engrams, as in our model, or in extinction condtioning. Teacher-to-student instruction occurs via the critical SMP108 interneuron, which forms part of a 2-hop connection recurrently connecting these two compartments. How-ever, two key experimental observations are inconsis-tent with the Yamada student-teacher model. First, the putative student compartments were able to act as teachers. The authors observed that co-activation of the DANs PAM-γ5 and PAM β′2a with the S1 stimulus implanted a first order memory (Figure 2B of [58]). Subsequent behavioural conditioning then allowed for a second order association. The flexibility of the underlying circuit is thus more consistent with bidirectional signalling between fast and slow learners, and also the connectivity of SMP108. Secondly, the student-teacher model predicts complete 
+
+elimination of second-order conditioning if the link be-tween student and teacher is lost. However, optoge-netic inactivation of the SMP108 interneuron halves, but doesn’t eliminate, second-order conditioning from the MBON-α1 implanted memory (Figure 6D, pane 3/4). Our model requires belief competition across MBON compartments. We propose that SMP108 enacts this competition. This is consistent with its status as an anatomical hub for bidirectional connections between MBON compartments [58]. As such, we modelled SMP108 inactivation as the cessation of belief competi-tion, by removing the softmax in Eq. (6). This halved second-order conditioning (Figure 6, Pane 3/4), con-sistent with experimental data. Overall, while both models account for basic second-order conditioning, our alternative account of the role of SMP108 explains additional artefacts of behaviour and mechanism that are inconsistent with the Ya-mada model. It also makes distinct, testable predic-tions: 
+
+• SMP108 inactivation should have less of an ef-fect on second-order conditioning during its early phases, when S2 → S1 → ∅ has been presented fewer times, and the strength of the punishing en-gram is thus weak. 8
+
+(which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint • SMP108 inactivation should reduce the preference to S1 after a bout of second-order conditioning. The lack of belief competition increases the adap-tation of the rewarding engram to reward omission after S2 → S1, thus reducing its strength more. 
+
+# Discussion 
+
+In this work we introduced a biologically motivated de-sign principle, Hetlearn, for learning in scenarios where the causes of systematic environmental change can nei-ther be represented, nor treated as noise. This pro-vided a model of learning that recreates, interprets, and predicts Drosophila neurophysiology and behaviour higher-order conditioning experiments, without per-experiment tuning. Notably, Hetlearn trades asymp-totic optimality for performance in low-data regimes and robustness to unmodelled, ‘Large world’ deviations in environmental statistics. We first considered a fundamental component of learn-ing across animal species: updating estimates of model states of the world through prediction errors. Exist-ing work bases animal learning strategies on Kalman Filtering [25, 1], and Reinforcement learning [44, 37]. Here, the learning rate (i.e. sensitivity to prediction errors) is a key parameter determining estimation per-formance. Across tasks, both the optimal and actual values can vary dynamically. As such, neuroscientists have long considered how animals could approximate a Bayes-optimal learning rate [11, 25, 20]. In the simplest setting, two factors: stochasticity and volatility, must be estimated to set an optimal learn-ing rate, and to represent the state as a probability distribution. Extensive literature proposes how this es-timation might be performed across species [30, 33, 36, 41, 42, 47]. However, we showed that optimal learn-ing strategies are fragile to two inevitable scenarios: drift in environmental stochasticity/volatility, and ap-proximation error when estimating these factors from limited data. We therefore propose that the costs of Hetlearn, both in terms of anatomical parallelism and asymptotic sub-optimality, are more than compensated by its robust-ness to unmodelled environmental change and its su-perior performance in the low-data regime. State inference through parallelism is well known en-gineering principle, underpinning algorithms such as mixture-of-experts [24] and particle filtering [13]. Pre-vious work proposed learning rate parallelism for the prediction error-based learning we considered [55]. A key difference in Hetlearn is that it avoids aspecific generative model of environmental change (e.g. through abrupt, discontinuous changepoints, as in [55]) and instead incorporates recency bias in sub-learner weighting. This feature is shared with existing algorithms that deal with nonstationary large-world drift for classification problems [16] and means that weightings remain reactive to unmodelled environmen-tal changes indefinitely. The basic Hetlearn algorithm justified the core idea of using parallelism to implicitly infer environmental quantities that are speedily constrained by data (i.e. learning rate to PEs). This is superficially consistent with detailed Drosophila MB circuitry, which displays intrinsically heterogeneous learning rates in compart-ments that learn behavioural valence from prediction errors. Future work could explore whether detailed cir-cuit models strongly constrain circuitry to operate in a manner consistent with Hetlearn, though degeneracy and gaps in neurophysiological data would make this extremely challenging. We proposed a simple, high-level model of MB learning that used parallelism to cache adaptations to surpris-ing prediction errors before they could be confidently attributed to fluke or systematic, large-world environ-mental change. Our model recreated Drosophila be-haviour (which is shared across phylla [21]) on key con-ditioning tasks where surprises arose either from fun-damentally unpredictable large-world effects (extinc-tion, reversal) or insufficient information on the rela-tionship between observable stimuli (second-order con-ditioning), without requiring task-specific calibration. Given the emergence of these traits from a minimal model, we propose they reflect functional constraints on learning that enable animals to cope with truly novel situations. Our model is qualitatively distinct from reinforcement learning algorithms, which are often used to describe conditioning [44, 48]. An RL-algorithm requires a pre-formed, fixed subdivision of the entire environment into behaviourally relevant states, whether these cor-respond directly to stimuli or emerge from pre-trained neural network [26, 51]. It then holds and updates val-ues for each state. Our model instead spawns and re-moves states (i.e. engrams in the KC–MBON synapses) dynamically, after episodic experiences involving re-ward or punishment. This reflect parsimonious use of circuitry because there are fewer engrams to assign value to. It is also flexible, because it enables contex-tual modifiers of reward (such as S2 in second-order conditioning) on a biological timescale. Many organisms, including mice and humans, share with Drosophila both behaviour on the conditioning tasks we considered, and the normative difficulty of flexibly building and acting on environmental repre-sentations in a truly novel environments. Our model ties these together through a simple, non-probabilistic algorithm exploiting parallelism for multiple purposes. While our algorithm had a plausible implementation in the mushroom body, the generality of the prob-lems it mitigates and the behaviours it explains sug-gests its relevance to neural circuit computations across species. 9
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+# Methods 
+
+## Kalman Filter equations 
+
+The Kalman Filter updates valences from observed PEs 
+
+δt according to the following equations: 
+
+vt+1 = vt + αtδt+1 (7a) 
+
+ct+1 = (1 − αt)( ct + σ2
+
+> p,t
+
+) (7b) 
+
+αt = ct + σ2
+
+> p,t
+
+ct + σ2 
+
+> p,t
+
++ σ2
+
+> m,t
+
+. (7c) This requires seeding with c1 = E[( r∗ 
+
+> 1
+
+− v1)2]: the ini-tial covariance. Although ethologically inaccessible, we seeded all our simulations with the correct value of c1,giving an unfair advantage over Hetlearn. This also requires seeding with σ2 
+
+> m,t
+
+and σ2
+
+> p,t
+
+. In Fig-ure 2, they were assumed constant, and we used the ALS method for estimation. In Figure 3 they changed, and we used the Algorithm from [42] for inference. We describe these below: 
+
+ALS Inference 
+
+ALS requires a separate learner that updates from PEs with a fixed learning rate α ∈ (0 , 1). We set α = 0 .5 in all simulations. So vt+1 = vt + 0 .5δt+1 .A hyperparameter is the lag j, which we set at j = 10. A large lag requires a longer burn-in before inference can occur. A smaller lag reduces best-case inference accuracy. Let Yt = rt − vt be the reward estimation error of this ‘fixed learner’. Note the difference from the PE: δt+1 =
+
+rt+1 − vt. Yt is observable. The ALS method builds estimates ˆ σ2
+
+> m,t
+
+, ˆ σ2 
+
+> p,t
+
+by solving the following regression problem: 
+
+A
+
+ ˆσ2
+
+> p,t
+
+ˆσ2
+
+> m,t
+
+
+
+= b, where (8a) 
+
+Aj, • = (1 − α)j−1
+
+α(2 − α)
+
+1 − α −α2 (8b) 
+
+bj = 1
+
+t − j
+
+> t−j
+
+X
+
+> t′=1
+
+Yt+j Yt. (8c) Here, Aj, • represents the jth row of A, and bj represents the sample estimate of E[Yt+j Yt]. For t < j , the ALS method cannot provide the Kalman learner with estimates. For these first 10 timepoints, we used α = 0 .5. After, the Kalman learner updated according to the optimal equations of Eq. (7), using the ALS-derived estimates of σ2 
+
+> p,t
+
+and σ2
+
+> m,t
+
+.
+
+Piray et al implementation 
+
+We implemented the particle filtering algorithm de-scribed in [42]. Each particle (/sublearner) updates valences according to the Kalman Filter (Eqs. (7)), but has private estimates of σ2 
+
+> p,t
+
+and σ2
+
+> m,t
+
+. We additionally provided each learner with the correct value of c1, as for the Kalman learner. Private estimates of stochasticity and volatility update stochastically and identically. For volatility, the update equation is: (σ2
+
+> p,t
+
+)−1 = η−1 
+
+> p
+
+ϵt(σ2
+
+> p,t −1
+
+)−1,
+
+where 
+
+• ηp ∈ [0 , 1] is a constant hyperparameter. Larger values indicate less change per trial. 
+
+• ϵt ∼ β(0 .5ηp(1 − ηp)−1, 0.5) ∈ [0 , 1] (a beta distri-bution) 
+
+• E[( σ2
+
+> p,t
+
+)−1] = ( σ2
+
+> p,t −1
+
+)−1.The ith particle calculates probabilities for the next reward by assuming 
+
+rt ∼ N (ˆ vit, ˆcit + σ2 
+
+> p,t i
+
++ σ2
+
+> m,t i
+
+). (9) When an actual reward arrives, the relative weights of the particles are taken as 
+
+wit ∝ P[rt|ˆvit].
+
+So particles whose probabilistic model predicted the ac-tual reward with higher probability are weighted more. The weights are then normalised so that P 
+
+> i
+
+wit = 1. Thus the weights represent a probability distribution over particles: Pp, where the probability of the ith par-ticle is wi. The state of the overall particle collection is the expectation over this distribution: 
+
+E[ˆ vt] = 
+
+> N
+
+X
+
+> i=1
+
+wit ˆvit. (10) We follow [42] in using the Systematic Resampling pro-cedure, to resample particles (deleting low-probability particles and duplicating high-probability particles) if their weight inequality exceeds 0 .5. 
+
+## Code availability 
+
+All code for simulations in this work can be obtained at the public repositories: https://github.com/ VRaman-Lab/HetlearnComplexConditioningModel. git (For Figures 1 , 2, and 3) https://github.com/ VRaman-Lab/HetlearnRewardPrediction.git 
+
+# References 
+
+[1] J Yu Angela and Peter Dayan. Uncertainty, neu-romodulation, and attention. Neuron , 46(4):681– 692, 2005. [2] Yoshinori Aso and Gerald M Rubin. Dopaminer-gic neurons write and update memories with cell-type-specific rules. Elife , 5:e16135, 2016. 10 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+[3] Yoshinori Aso, Divya Sitaraman, Toshiharu Ichi-nose, Karla R Kaun, Katrin Vogt, Ghislain Belliart-Gu´ erin, Pierre-Yves Pla¸ cais, Alice A Ro-bie, Nobuhiro Yamagata, Christopher Schnait-mann, et al. Mushroom body output neurons en-code valence and guide memory-based action se-lection in drosophila. Elife , 3:e04580, 2014. [4] Lothar Baltruschat, Luigi Prisco, Philipp Ranft, J Scott Lauritzen, Andr´ e Fiala, Davi D Bock, and Gaia Tavosanis. Circuit reorganization in the drosophila mushroom body calyx accompanies memory consolidation. Cell reports , 34(11), 2021. [5] Timothy EJ Behrens, Timothy H Muller, James CR Whittington, Shirley Mark, Alon B Baram, Kimberly L Stachenfeld, and Zeb Kurth-Nelson. What is a cognitive map? organiz-ing knowledge for flexible behavior. Neuron ,100(2):490–509, 2018. [6] Timothy EJ Behrens, Mark W Woolrich, Mark E Walton, and Matthew FS Rushworth. Learning the value of information in an uncertain world. 
+
+Nature neuroscience , 10(9):1214–1221, 2007. [7] Matthew Botvinick, Jane X Wang, Will Dabney, Kevin J Miller, and Zeb Kurth-Nelson. Deep re-inforcement learning and its neuroscientific impli-cations. Neuron , 107(4):603–616, 2020. [8] N Alex Cayco-Gajic, Claudia Clopath, and R An-gus Silver. Sparse synaptic connectivity is re-quired for decorrelation and pattern separation in feedforward networks. Nature communications ,8(1):1–11, 2017. [9] Will Dabney, Zeb Kurth-Nelson, Naoshige Uchida, Clara Kwon Starkweather, Demis Hassabis, R´ emi Munos, and Matthew Botvinick. A distributional code for value in dopamine-based reinforcement learning. Nature , 577(7792):671–675, 2020. [10] Ronald L Davis. Learning and memory using drosophila melanogaster: a focus on advances made in the fifth decade of research. Genetics ,224(4):iyad085, 2023. [11] Peter Dayan and Sham Kakade. Explaining away in weight space. Advances in neural information processing systems , 13, 2000. [12] Sophie Deneve, Jean-Ren´ e Duhamel, and Alexan-dre Pouget. Optimal sensorimotor integration in recurrent cortical networks: a neural implemen-tation of kalman filters. Journal of neuroscience ,27(21):5744–5756, 2007. [13] Arnaud Doucet, Adam M Johansen, et al. Atutorial on particle filtering and smoothing: Fif-teen years later. Handbook of nonlinear filtering ,12(656-704):3, 2009. [14] Kenji Doya. Bayesian brain: Probabilistic ap-proaches to neural coding . MIT press, 2007. [15] Maria K Eckstein, Linda Wilbrecht, and Anne GE Collins. What do reinforcement learning models measure? interpreting model parameters in cogni-tion and neuroscience. Current opinion in behav-ioral sciences , 41:128–137, 2021. [16] Ryan Elwell and Robi Polikar. Incremental learn-ing of concept drift in nonstationary environ-ments. IEEE transactions on neural networks ,22(10):1517–1531, 2011. [17] Johannes Felsenberg, Oliver Barnstedt, Paola Cognigni, Suewei Lin, and Scott Waddell. Re-evaluation of learned information in drosophila. 
+
+Nature , 544(7649):240–244, 2017. [18] Johannes Felsenberg, Pedro F Jacob, Thomas Walker, Oliver Barnstedt, Amelia J Edmondson-Stait, Markus W Pleijzier, Nils Otto, Philipp Schlegel, Nadiya Sharifi, Emmanuel Perisse, et al. Integration of parallel opposing memories under-lies memory extinction. Cell , 175(3):709–722, 2018. [19] Karl Friston. The free-energy principle: a uni-fied brain theory? Nature reviews neuroscience ,11(2):127–138, 2010. [20] Samuel J Gershman. A unifying probabilistic view of associative learning. PLoS computational biol-ogy , 11(11):e1004567, 2015. [21] Jonathan C Gewirtz and Michael Davis. Us-ing pavlovian higher-order conditioning paradigms to investigate the neural substrates of emotional learning and memory. Learning & Memory ,7(5):257–266, 2000. [22] Gerd Gigerenzer and Wolfgang Gaissmaier. Heuristic decision making. Annual review of psy-chology , 62(2011):451–482, 2011. [23] T. Hige, Y. Aso, G. M. Rubin, and G. C. Turner. Plasticity-driven individualization of ol-factory coding in mushroom body output neurons. 
+
+Nature , 526(7572):258–262, 2015. [24] Robert A Jacobs, Michael I Jordan, Steven J Nowlan, and Geoffrey E Hinton. Adaptive mix-tures of local experts. Neural computation ,3(1):79–87, 1991. [25] Konrad P Kording, Joshua B Tenenbaum, and Reza Shadmehr. The dynamics of memory as a consequence of optimal adaptation to a changing body. Nature neuroscience , 10(6):779–786, 2007. [26] Dharshan Kumaran, Demis Hassabis, and James L McClelland. What learning systems do intelligent agents need? complementary learning systems theory updated. Trends in cognitive sciences , 20(7):512–534, 2016. [27] Feng Li, Jack W Lindsey, Elizabeth C Marin, Nils Otto, Marisa Dreher, Georgia Dempsey, Ildiko Stark, Alexander S Bates, Markus William Plei-jzier, Philipp Schlegel, et al. The connectome of 11 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+the adult drosophila mushroom body provides in-sights into function. Elife , 9:e62576, 2020. [28] Ashok Litwin-Kumar, Kameron Decker Harris, Richard Axel, Haim Sompolinsky, and LF Abbott. Optimal degrees of synaptic connectivity. Neuron ,93(5):1153–1164, 2017. [29] Shenghua Luan, Lael J Schooler, and Gerd Gigerenzer. A signal-detection analysis of fast-and-frugal trees. Psychological review , 118(2):316, 2011. [30] Christoph Mathys, Jean Daunizeau, Karl J Fris-ton, and Klaas E Stephan. A bayesian foundation for individual learning under uncertainty. Fron-tiers in human neuroscience , 5:39, 2011. [31] Yutaka Matsuo, Yann LeCun, Maneesh Sahani, Doina Precup, David Silver, Masashi Sugiyama, Eiji Uchibe, and Jun Morimoto. Deep learning, reinforcement learning, and world models. Neural Networks , 152:267–275, 2022. [32] Lauren Y McCurdy, Preeti Sareen, Payam ADavoudian, and Michael N Nitabach. Dopamin-ergic mechanism underlying reward-encoding of punishment omission during reversal learning in drosophila. Nature Communications , 12:1115, 2021. [33] Joseph T McGuire, Matthew R Nassar, Joshua I Gold, and Joseph W Kable. Functionally disso-ciable influences on learning rate in a dynamic en-vironment. Neuron , 84(4):870–881, 2014. [34] Mehrab N Modi, Yichun Shuai, and Glenn C Turner. The drosophila mushroom body: from architecture to algorithm in a learning circuit. An-nual review of neuroscience , 43:465–484, 2020. [35] Genela Morris, Alon Nevet, David Arkadir, Eilon Vaadia, and Hagai Bergman. Midbrain dopamine neurons encode decisions for future action. Nature neuroscience , 9(8):1057–1063, 2006. [36] Matthew R Nassar, Robert C Wilson, Benjamin Heasly, and Joshua I Gold. An approximately bayesian delta-rule model explains the dynam-ics of belief updating in a changing environ-ment. Journal of Neuroscience , 30(37):12366– 12378, 2010. [37] Yael Niv. Reinforcement learning in the brain. 
+
+Journal of Mathematical Psychology , 53(3):139– 154, 2009. [38] Brian J Odelson, Murali R Rajamani, and James B Rawlings. A new autocovariance least-squares method for estimating noise covariances. 
+
+Automatica , 42(2):303–308, 2006. [39] John P O’Doherty, Peter Dayan, Karl Friston, Hugo Critchley, and Raymond J Dolan. Temporal difference models and reward-related learning in the human brain. Neuron , 38(2):329–337, 2003. [40] David Owald, Johannes Felsenberg, Clifford B Talbot, Gaurav Das, Emmanuel Perisse, Wolf Huetteroth, and Scott Waddell. Activity of de-fined mushroom body output neurons underlies learned olfactory behavior in drosophila. Neuron ,86(2):417–427, 2015. [41] Payam Piray and Nathaniel D Daw. A simple model for learning in volatile environments. PLoS computational biology , 16(7):e1007963, 2020. [42] Payam Piray and Nathaniel D Daw. A model for learning based on the joint estimation of stochas-ticity and volatility. Nature communications ,12(1):1–16, 2021. [43] Leonard J Savage. The foundations of statistics .Courier Corporation, 1954. [44] Wolfram Schultz, Peter Dayan, and P Read Mon-tague. A neural substrate of prediction and re-ward. Science , 275(5306):1593–1599, 1997. [45] Wolfram Schultz and Anthony Dickinson. Neu-ronal coding of prediction errors. Annual review of neuroscience , 23(1):473–500, 2000. [46] Elizabeth E Steinberg, Ronald Keiflin, Josiah R Boivin, Ilana B Witten, Karl Deisseroth, and Pa-tricia H Janak. A causal link between prediction errors, dopamine neurons and learning. Nature neuroscience , 16(7):966–973, 2013. [47] GW Story, Z Kurth-Nelson, M Moutoussis, K Iigaya, G-J Will, TU Hauser, B Blain, I Vlaev, and RJ Dolan. Discounting future reward in an uncertain world. Decision , 2023. [48] Richard S Sutton and Andrew G Barto. Rein-forcement learning: An introduction . MIT press, 2018. [49] Christopher J Tabone and J Steven de Belle. Second-order conditioning in drosophila. Learn-ing & memory , 18(4):250–253, 2011. [50] Glenn C Turner, Maxim Bazhenov, and Gilles Laurent. Olfactory representations by drosophila mushroom body neurons. Journal of neurophysi-ology , 99(2):734–746, 2008. [51] Jane X Wang, Zeb Kurth-Nelson, Dharshan Ku-maran, Dhruva Tirumala, Hubert Soyer, Joel Z Leibo, Demis Hassabis, and Matthew Botvinick. Prefrontal cortex as a meta-reinforcement learn-ing system. Nature neuroscience , 21(6):860–868, 2018. [52] Halbert White. Maximum likelihood estimation of misspecified models. Econometrica: Journal of the econometric society , pages 1–25, 1982. [53] Bernard Widrow, Marcian E Hoff, et al. Adaptive switching circuits. In IRE WESCON convention record , volume 4, pages 96–104. New York, 1960. 12 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 6, 2026. ;https://doi.org/10.1101/2025.11.13.688216 doi: bioRxiv preprint
+
+[54] Robert Wilson and Leif Finkel. A neural imple-mentation of the kalman filter. Advances in neural information processing systems , 22, 2009. [55] Robert C Wilson, Matthew R Nassar, and Joshua I Gold. A mixture of delta-rules approxi-mation to bayesian inference in change-point prob-lems. PLoS computational biology , 9(7):e1003150, 2013. [56] Ying Wu, Qian Ren, Hao Li, and Aike Guo. The gabaergic anterior paired lateral neurons facilitate olfactory reversal learning in drosophila. Learning & Memory , 19(10):478–486, 2012. [57] G Wustmann, K Rein, R Wolf, and M Heisen-berg. A new paradigm for operant conditioning of drosophila melanogaster. Journal of Comparative Physiology A , 179:429–436, 1996. [58] Daichi Yamada, Daniel Bushey, Feng Li, Karen L Hibbard, Megan Sammons, Jan Funke, Ashok Litwin-Kumar, Toshihide Hige, and Yoshinori Aso. Hierarchical architecture of dopaminer-gic circuits enables second-order conditioning in drosophila. Elife , 12:e79042, 2023. 13
