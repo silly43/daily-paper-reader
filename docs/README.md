@@ -6,82 +6,62 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-07
-- 运行时间：2026-07-07 22:03:04 UTC
+- 最新运行日期：2026-07-08
+- 运行时间：2026-07-08 21:55:22 UTC
 - 运行状态：成功
-- 本次总论文数：20
-- 精读区：9
-- 速读区：11
+- 本次总论文数：14
+- 精读区：8
+- 速读区：6
 
 ### 今日简报（AI）
-今天精读9篇、速读11篇，其中两篇世界模型论文获满分推荐，速读涵盖图度量学习、半监督分割和时间序列基础模型。
-最值得关注的是世界模型的两个前沿方向：降阶建模（Reduced-Order Models）和智能体探索结合结构化建模（Agentic Exploration & Structured Modeling），均获10/10评分。
-建议优先精读这两篇满分论文，它们可能为构建更高效、任务驱动的世界模型提供关键范式。
-- 详情：[/202607/07/README](/202607/07/README)
+今日精选14篇论文，重点精读世界模型与环境探测相关研究。值得关注的是《Learning Task-Sufficient World Models》提出结合智能体探索的结构化建模方法，以及《Ask the World Before Acting》通过环境探测校准智能体世界模型。建议优先阅读这两篇精读论文，深入理解世界模型与环境交互的协同机制。
+- 详情：[/202607/08/README](/202607/08/README)
 
 ### 精读区论文标签
-1. [Reduced-Order Models: The Mother of World Models](/202607/07/2607.03198v1-reduced-order-models-the-mother-of-world-models)  
+1. [Learning Task-Sufficient World Models by Synergizing Agentic Exploration and Structured Modeling](/202607/08/2607.04409v1-learning-task-sufficient-world-models-by-synergizing-agentic-exploration-and-structured-modeling)  
    标签：评分：10.0/10、query:world-models
-   evidence：直接论述世界模型是降阶模型
-2. [Learning Task-Sufficient World Models by Synergizing Agentic Exploration and Structured Modeling](/202607/07/2607.04409v1-learning-task-sufficient-world-models-by-synergizing-agentic-exploration-and-structured-modeling)  
-   标签：评分：10.0/10、query:world-models
-   evidence：世界模型结合智能体探索与结构化建模
-3. [MoP-JEPA: Hard-Assigned Predictor Mixtures for Stochastic JEPA World Models](/202607/07/2607.05238v1-mop-jepa-hard-assigned-predictor-mixtures-for-stochastic-jepa-world-models)  
-   标签：评分：10.0/10、query:world-models
-   evidence：随机JEPA世界模型，硬分配预测器混合，规划
-4. [WorldBagel: Uncovering the Power of Unified Multimodal Models for Vision-Language-Action-World Modeling](/202607/07/2607.03461v1-worldbagel-uncovering-the-power-of-unified-multimodal-models-for-vision-language-action-world-modeling)  
+   evidence：直接解决学习任务充分的世界模型，用于决策与智能体探索
+2. [Ask the World Before Acting: Environment Probing for Calibrated Agent World Models](/202607/08/2606.31422v2-ask-the-world-before-acting-environment-probing-for-calibrated-agent-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：直接关于世界模型和VLAW建模
-5. [SiamJEPA: On the Role of Siamese Student Encoders in JEPA](/202607/07/2607.04044v1-siamjepa-on-the-role-of-siamese-student-encoders-in-jepa)  
+   evidence：智能体世界模型通过环境探测校准信念
+3. [Reduced-Order Models: The Mother of World Models](/202607/08/2607.03198v1-reduced-order-models-the-mother-of-world-models)  
+   标签：评分：9.0/10、query:world-models
+   evidence：论证世界模型本质上是控制理论中的降阶模型
+4. [HALO-WA: Hybrid-Attention Latent-Guided Online Reinforcement Learning for World-Action Models](/202607/08/2607.04265v1-halo-wa-hybrid-attention-latent-guided-online-reinforcement-learning-for-world-action-models)  
+   标签：评分：9.0/10、query:world-models
+   evidence：面向世界动作模型的在线强化学习用于机器人操作
+5. [Breaking Spurious Correlations via Generative Randomization and Cross-Variant Self-Supervised Learning](/202607/08/2607.05850v1-breaking-spurious-correlations-via-generative-randomization-and-cross-variant-self-supervised-learning)  
    标签：评分：9.0/10、query:ssl
-   evidence：使用孪生编码器的JEPA自监督学习
-6. [HALO-WA: Hybrid-Attention Latent-Guided Online Reinforcement Learning for World-Action Models](/202607/07/2607.04265v1-halo-wa-hybrid-attention-latent-guided-online-reinforcement-learning-for-world-action-models)  
+   evidence：跨变体自监督学习用于背景不变表示
+6. [MoWorld: A Flash World Model](/202607/08/2607.06216v1-moworld-a-flash-world-model)  
    标签：评分：9.0/10、query:world-models
-   evidence：提出了结合混合注意力潜在引导强化学习的world-action模型
-7. [HASSL: Hierarchy-Aware Self-Supervised Learning Framework for Single Cell Microscopy](/202607/07/2607.04353v1-hassl-hierarchy-aware-self-supervised-learning-framework-for-single-cell-microscopy)  
+   evidence：面向高帧率推理的闪电世界模型
+7. [InsideSSL: Understanding Self-Supervised Speech Representations using a Model-Centric Perspective](/202607/08/2607.06392v1-insidessl-understanding-self-supervised-speech-representations-using-a-model-centric-perspective)  
    标签：评分：9.0/10、query:ssl
-   evidence：面向显微图像的视觉自监督表示学习
-8. [Operator-on-F complements value-equivalence: a planning-time diagnostic for latent world models](/202607/07/2607.04464v1-operator-on-f-complements-value-equivalence-a-planning-time-diagnostic-for-latent-world-models)  
+   evidence：以模型为中心研究自监督语音表征
+8. [A Definition and Roadmap for World Models](/202607/08/2607.06401v1-a-definition-and-roadmap-for-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：提出了模型基强化学习中潜在世界模型的诊断方法，直接涉及用于强化学习的潜在世界模型
-9. [Geographic Diversity Beats Data Volume for Cross-Domain Generalization in Zero-Label JEPA Driving World Models](/202607/07/2607.04500v1-geographic-diversity-beats-data-volume-for-cross-domain-generalization-in-zero-label-jepa-driving-world-models)  
-   标签：评分：9.0/10、query:world-models
-   evidence：JEPA驾驶世界模型
+   evidence：定义了世界模型并提供了发展路线图
 
 ### 速读区论文标签
-1. [MABLE: Masked Autoencoding with Bi-Lipschitz Decoding for Embeddings and Graph Metric Learning](/202607/07/2607.02990v1-mable-masked-autoencoding-with-bi-lipschitz-decoding-for-embeddings-and-graph-metric-learning)  
+1. [SiamJEPA: On the Role of Siamese Student Encoders in JEPA](/202607/08/2607.04044v1-siamjepa-on-the-role-of-siamese-student-encoders-in-jepa)  
    标签：评分：8.0/10、query:ssl
-   evidence：掩码自编码用于图度量学习
-2. [PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation](/202607/07/2607.03068v1-pixcon-clean-positive-contrastive-learning-for-foundation-model-semi-supervised-segmentation)  
+   evidence：研究JEPA自监督表示学习架构中的孪生学生编码器角色
+2. [SurgAM: Surgical Affordance Map Prediction with Multimodal Feature Fusion for Robot Autonomy](/202607/08/2607.04378v1-surgam-surgical-affordance-map-prediction-with-multimodal-feature-fusion-for-robot-autonomy)  
    标签：评分：8.0/10、query:ssl
-   evidence：半监督分割中的对比学习
-3. [Modular Foundation Models for Time-Series Perception in Digital Twins](/202607/07/2607.03585v1-modular-foundation-models-for-time-series-perception-in-digital-twins)  
+   evidence：使用自监督视觉Transformer编码器进行语义理解
+3. [Scalable Perturbation Learning for Online Self-Supervised Echo State Networks](/202607/08/2607.06079v1-scalable-perturbation-learning-for-online-self-supervised-echo-state-networks)  
    标签：评分：8.0/10、query:ssl
-   evidence：利用自监督学习构建模块化时间序列感知
-4. [Masked Generative-Contrastive Representation Learning for Cross-Dataset EEG-Based Emotion Recognition](/202607/07/2607.04139v1-masked-generative-contrastive-representation-learning-for-cross-dataset-eeg-based-emotion-recognition)  
-   标签：评分：8.0/10、query:ssl
-   evidence：提出掩码生成-对比表示学习，一种针对EEG情感识别的自监督框架
-5. [Geometric Reciprocity: Unlocking Self-Supervision for Stereoscopic Video Generation](/202607/07/2607.05354v1-geometric-reciprocity-unlocking-self-supervision-for-stereoscopic-video-generation)  
-   标签：评分：8.0/10、query:ssl
-   evidence：首个基于循环一致性的自监督立体视频生成框架
-6. [Small circuit principles for learning in large worlds](/202607/07/biorxiv-10-1101-2025-11-13-688216-v2-small-circuit-principles-for-learning-in-large-worlds)  
-   标签：评分：8.0/10、query:world-models
-   evidence：受果蝇启发，提出Hetlearn框架用于在大型不确定世界中学习世界模型
-7. [Steering Optimisation Trajectories in Diffusion Representation Learning](/202607/07/2607.05319v1-steering-optimisation-trajectories-in-diffusion-representation-learning)  
+   evidence：提出了基于扰动的在线自监督回声状态网络学习规则
+4. [Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning](/202607/08/2607.03143v1-text-as-partial-constraint-core-residual-alignment-for-robust-vision-language-learning)  
    标签：评分：7.0/10、query:ssl
-   evidence：扩散自编码器用于表示学习
-8. [Unifying the Electron Microscopy Multiverse through a Large-scale Foundation Model](/202607/07/biorxiv-10-1101-2025-04-13-648639-v5-unifying-the-electron-microscopy-multiverse-through-a-large-scale-foundation-model)  
-   标签：评分：7.0/10、query:ssl
-   evidence：电子显微镜的自监督视觉表示学习
-9. [Representational geometry as a fidelity metric for connectome-constrained networks: evidence from the Drosophila visual system](/202607/07/biorxiv-10-64898-2026-06-10-731214-v10-representational-geometry-as-a-fidelity-metric-for-connectome-constrained-networks-evidence-from-the-drosophila-visual-system)  
-   标签：评分：7.0/10、query:world-models
-   evidence：连接组约束网络中的内部表示
-10. [Labeled-Data-Free Meta-Learning: Efficient Task Generation Using Pre-trained Models and Unlabeled Data](/202607/07/2607.02850v1-labeled-data-free-meta-learning-efficient-task-generation-using-pre-trained-models-and-unlabeled-data)  
+   evidence：通过核心残差对齐进行自监督表征学习
+5. [$C^3$ASD: Multi-Level Consistency-Driven Representation Learning](/202607/08/2607.03018v2-c3asd-multi-level-consistency-driven-representation-learning)  
    标签：评分：6.0/10、query:ssl
-   evidence：利用预训练模型和无标签数据生成任务，与自监督学习方法相关
-11. [FAMUS: A Few-Shot Learning Framework for Large-Scale Protein Annotation](/202607/07/biorxiv-10-64898-2026-03-08-710366-v2-famus-a-few-shot-learning-framework-for-large-scale-protein-annotation)  
-   标签：评分：6.0/10、query:ssl
-   evidence：用于蛋白质注释的有监督对比学习
+   evidence：提出了多级一致性驱动的表示学习框架，包含模态间和序列级约束，与自监督表示学习相关
+6. [Uncovering internal states with a robust shared-state multi-neuron GLM-HMM framework](/202607/08/biorxiv-10-64898-2026-06-27-734988-v1-uncovering-internal-states-with-a-robust-shared-state-multi-neuron-glm-hmm-framework)  
+   标签：评分：6.0/10、query:world-models
+   evidence：从神经群体活动中发现潜在内部状态，类似于学习智能体的内部世界模型
 
 
 <div class="dpr-home-promo-card">
