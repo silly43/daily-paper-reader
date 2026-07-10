@@ -1,0 +1,1007 @@
+Title: Fast Rates for Semi-Supervised Learning via Data-Augmentation Graph Regularization
+
+URL Source: https://arxiv.org/pdf/2607.07513v1
+
+Published Time: Thu, 09 Jul 2026 01:03:50 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# Fast Rates for Semi-Supervised Learning via Data-Augmentation Graph Regularization 
+
+Adam M. Oberman 
+
+adam.oberman@mcgill.ca 
+
+Department of Mathematics and Statistics, McGill University Mila, Quebec AI Institute LawZero 
+
+Thursday 9 th July, 2026 
+
+Abstract 
+
+Self-supervised learning matches supervised accuracy from a fraction of the labels, but the labeled-sample efficiency behind this has lacked a theoretical explanation. We provide one. Data augmentation induces a similarity graph on the unlabeled data, so downstream learning on that graph is graph-Laplacian-regularized learning. We prove a fast transductive rate, O(1 /n L) in the number of labels, in place of the supervised O(1 /√nL), by carrying the leave-one-out stability apparatus of Johnson and Zhang (JMLR 2007) over to the augmentation graph, and without the unrealistic assumptions of limit-based analyses (exact kernel, generalizing features). The bound makes augmentation quality explicit: the expected error is at most C/n L + RDA (y), where the data-augmentation alignment error RDA (y) is the graph-cut mass of augmentations that cross a label boundary, so good augmentations let few labels suffice. The analysis uses a streamlined loss that drops the projector, negative-sample, and orthogonality overhead of standard objectives yet still recovers the top-K ideal features in the infinite-data limit, the augmentation-kernel eigenspace studied by Zhai et al. The result explains the observed accuracy-versus-label-count curve rather than only bounding a generalization gap. 
+
+Keywords: semi-supervised learning, data augmentation, graph Laplacian regularization, algo-rithmic stability, fast rates 
+
+# 1 Introduction 
+
+Self-supervised learning matches supervised accuracy from a small fraction of the labels. Sim-CLR [Chen et al., 2020a] matches a supervised ResNet-50 from a linear probe and is strong at 1% and 10% of ImageNet labels; SimCLRv2 [Chen et al., 2020b] reaches 80 .9% top-1 with only 10% of the labels, an order-of-magnitude label saving; and CPC v2 [H´ enaff et al., 2020] named the “data-efficient” framing with two to five times fewer labels. This accuracy-versus-label-count curve is one of the most reported empirical facts about representation learning, yet it remains theoretically under-explained. The feature-learning side of the story is by now well understood. Different self-supervised losses (spectral contrastive, contrastive and non-contrastive, kernel-PCA) all recover the leading eigenfunctions of the augmentation similarity kernel kDAF . But that theory lives in the infinite-data limit: it characterizes the features a method would learn from unlimited unlabeled data, and says nothing about the finite labeled -sample behavior downstream, which is exactly what the curve 1arXiv:2607.07513v1 [cs.LG] 8 Jul 2026 above measures. Two assumptions used there are also unrealistic for the few-augmentation regime: that the expectation kernel is learned exactly, and that the factoring features generalize to unseen points. This paper supplies the missing labeled-sample guarantee. The data augmentations define a similarity graph on the unlabeled data, so downstream learning on that graph is graph-Laplacian-regularized learning. For that setting a transductive fast rate is already available: Johnson and Zhang [2007] bound the transductive error of Laplacian-regularized multi-class graph learning by leave-one-out algorithmic stability and obtain an O(1 /n ) rate in the labeled count under balanced components, governed by a learning-theoretic graph cut. Our rate results (Theorems 6 and 9) are that apparatus, specialized and reinterpreted for the augmentation graph; the contribution is not a new rate mechanism but its placement. Read on the augmentation graph, the cut becomes an augmentation-quality term RDA (y), the number of graph components becomes a property of the augmentation distribution, and the bound turns into a statement about how few labels a good augmentation buys, in place of the supervised O(1 /√nL). The applied companion to this work (the NeurIPS 2024 paper of Ghosh et al., showing 2 × less pretraining data empirically) is the motivation on the pretraining axis; here we explain, with rates, why the downstream labeled-sample efficiency holds. 
+
+Contributions. 
+
+• A fast transductive rate on the augmentation graph (Theorem 6). We carry the Johnson–Zhang leave-one-out stability apparatus over to the augmentation graph: an 
+
+O(1 /n L) oracle inequality for labels propagating from the labeled set to the unlabeled nodes. We claim no novelty in the stability mechanism itself; the point is its setting. Relative to the feature-learning limit theory, the argument also avoids two unrealistic assumptions: it never requires the kernel to be learned exactly, and it bounds the error on the actual unlabeled sample rather than assuming features generalize. 
+
+• Augmentation quality enters the bound (Theorem 9). The expected error is bounded by C/n L + RDA (y), where the data-augmentation alignment error RDA (y) is the graph-cut mass of augmentations that cross a label boundary. This term explains accuracy: better augmentations shrink it, so fewer labels suffice. 
+
+• A streamlined loss (Theorem 12). Dropping the projector-dimension, negative-sample, and orthogonality / non-collapse overhead (one label per class already prevents collapse) costs nothing in the limit: the streamlined loss is algorithmically stable and still recovers the top-K
+
+ideal features. 
+
+# 2 Setup and notation 
+
+We study vector classification on a data domain X ⊂ Rd0 with label set Y = {1, . . . , K }. A score function g : X → RK is followed by the argmax one-hot classifier; we write ey for the one-hot vector of label y. The training loss is a standard classification loss ℓ(g, z ), and for z = ( x, y ) we abbreviate 
+
+ℓ(g, z ) = ℓ(g(x), y ). 
+
+Assumption 1 (σ-admissible loss) . The loss ℓ(·, y ) is convex in its first argument and σℓ-Lipschitz on a bounded domain Dℓ:
+
+|ℓ(f, y ) − ℓ(g, y )| ≤ σℓ ∥f − g∥, ∀f, g ∈ Dℓ, ∀y ∈ Y .
+
+2This holds for the standard score-based losses (cosine-similarity, cross-entropy on a bounded do-main, regularized least squares); see Appendix A. 
+
+Transductive data. Let SU = {x1, . . . , x m} be the unlabeled sample of m points. A subset of 
+
+nL ≤ m of them is labeled, giving SL = {z1, . . . , z nL } with zj = ( xj , y j ); throughout, SL ⊂ SU
+
+(revealing a label does not add a point). The labeled training loss is 
+
+L(g, S L) = 1
+
+nL
+
+X 
+
+> zj∈SL
+
+ℓ(g, z j ).
+
+The setting is transductive : error is measured on the unlabeled nodes of the fixed sample SU , not on a fresh draw. 
+
+2.1 The data-augmentation graph 
+
+Data augmentations are random maps M : X → X . Writing p(z | x0) = P(z = M (x0)) for the probability of reaching z from a seed x0, the (forward) data-augmentation covariance kernel is 
+
+kDAF (x, z ) = Ex0∼ρX [ p(x | x0) p(z | x0) ] , (1) together with its symmetric degree-normalized version. Writing d(x) = Ez∼ρX
+
+kDAF (x, z ) for the augmentation mass (degree) at x, the normalized kernel is 
+
+k(x, z ) = kDAF (x, z )
+
+pd(x) pd(z) . (2) On the sample SU this gives the weighted graph G = ( SU , W ) with raw weights wij = kDAF (xi, x j ) ≥
+
+0, degrees Sj = deg j (G) = P 
+
+> j′
+
+wj,j ′ , and normalized adjacency W = S−1/2 [wij ] S−1/2, so that 
+
+Wij = k(xi, x j ). Convolution against W realizes the integral operator TK on ρX : applied to fea-tures on SU , W f (SU ) = TK f , recovering the ideal RKHS picture in the large-sample limit. The degrees Sj are exactly the scaling factors of the S-normalized Laplacian used below. The symmetric normalization W = S−1/2[wij ]S−1/2 is the geometric mean of the two random-walk normalizations 
+
+S−1[wij ] and [ wij ]S−1, which encode the forward chain (augment a seed and ask where the view lands) and the backward chain (given a view, ask which seed produced it); the two are adjoint, share the spectrum of W , and the data-augmentation error RDA (y) of Section 4 is measured in this symmetric normalization. 
+
+2.2 The regularizer and the combined objective 
+
+Let K ∈ Rm×m be a symmetric positive-definite kernel matrix derived from the augmentation graph 
+
+G (and from a fixed backbone f0), so that K depends on neither the labels nor the trained score 
+
+g. The quadratic regularizer penalizes each class score separately, 
+
+Q(g, S U ) = 
+
+> K
+
+X
+
+> k=1
+
+g⊤·,k K−1 g·,k , g·,k = ( g1,k , . . . , g m,k )⊤. (3) The graph realization (used in Section 4) takes K−1 = α S−1+LS(G), where LS(G) = S−1/2L(G) S−1/2
+
+is the S-normalized graph Laplacian and α > 0 keeps K strictly positive definite; then 
+
+Q(g, S U ) = 
+
+> K
+
+X
+
+> k=1
+
+
+
+α X
+
+> j
+
+S−1 
+
+> j
+
+g2
+
+> j,k
+
+| {z }
+
+> ridge
+
++ 12
+
+X
+
+> j,j ′
+
+wj,j ′
+
+ S−1/2 
+
+> j
+
+gj,k − S−1/2 
+
+> j′
+
+gj′,k 
+
+2
+
+| {z }
+
+> Laplacian energy
+
+
+
+. (4) 3The second term is the invariance-to-augmentation energy. It is a weighted sum of squared dif-ferences of the degree-normalized score across edges of the augmentation graph: an edge weight 
+
+wj,j ′ is large precisely when xj and xj′ are likely to arise as augmentations of a common seed, so a small Laplacian energy means the score varies little between points the augmentations identify, i.e. the score is approximately invariant to data augmentation. This is the standard manifold / label-propagation prior: minimizing (4) pushes each class score toward functions that are smooth along the augmentation graph, while the ridge term contributes the αS−1 that keeps K strictly positive definite and the regularizer proper. Evaluating this energy at the label indicator is exactly what yields the graph cut RDA (y) of Section 4, the channel through which augmentation quality enters the rate. 
+
+Definition 2 (SSL algorithm) . Given (SL, S U ), the algorithm returns the regularized empirical minimizer 
+
+f = A(SL, S U ) = arg min 
+
+> g
+
+n
+
+L(g, S L) + λ Q (g, S U )
+
+o
+
+, λ > 0. (5) 
+
+Remark 3 (No collapse term needed) . Because K is built from the unlabeled graph and is inde-pendent of g and of the labels, the objective (5) carries no projector-dimension, negative-sample, or orthogonality/non-collapse penalty. With at least one label per class the supervised term already prevents feature collapse; this is the streamlined loss analyzed in Section 5. 
+
+# 3 A fast transductive rate via leave-one-out stability 
+
+The first result is an oracle inequality with a fast O(1 /n L) dependence on the number of labels. Er-ror is measured by the semi-supervised leave-one-out loss: move one labeled point to the unlabeled set, retrain, and evaluate on the held-out point, averaged over the training set. 
+
+Definition 4 (Leave-one-out loss) . For f \j = A(SL \ zj , S U ),
+
+Lloo (A, S L, S U ) = 1
+
+nL
+
+X 
+
+> zj∈SL
+
+ℓ
+
+
+
+f \j , z j
+
+
+
+.
+
+The argument rests on a one-point stability bound for the algorithm (5): removing a labeled point perturbs the fitted score at that point by only O(1 /(λn L)). 
+
+Lemma 5 (Uniform stability) . Under Assumption 1, with K symmetric positive definite and f ,
+
+f \i defined by (5) , for every i
+
+f (xi) − f \i(xi) ≤ σℓ Ki,i 
+
+2 λ n L
+
+.
+
+Theorem 6 (Transductive oracle inequality) . Consider the algorithm (5) under Assumption 1. Then, in expectation over the i.i.d. choice of which nL of the m nodes are labeled, 
+
+ESL
+
+Lloo (A, S L, S U ) ≤ min 
+
+> g
+
+n 1
+
+> m
+
+Pmi=1 ℓ(g, z i) + λ Q (g, S U )
+
+o| {z }
+
+> full-label regularized oracle
+
++ σ2
+
+> ℓ
+
+2 λ n L
+
+· 1
+
+m
+
+> m
+
+X
+
+> i=1
+
+Ki,i . (6) 4Reading the bound. The first term is the regularized risk one would obtain from labeling all 
+
+m nodes, so (6) is a genuine oracle inequality. The second term is the price of having only nL
+
+labels. With λ fixed and the graph kernel normalized so that 1
+
+> m
+
+P 
+
+> i
+
+Ki,i is bounded, that price is O(1 /n L), the improvement over the supervised O(1 /√nL) rate. The gain is transductive: it concerns label propagation across the fixed unlabeled sample, not generalization to a fresh draw. (The same stability constant also yields a high-probability O(1 /√nL) generalization-gap bound through Bousquet and Elisseeff; the fast rate above is the transductive, in-expectation statement.) 
+
+Proof idea. Lemma 5 follows by comparing the minimizers f and f \i through the Bregman divergence of Rr(g) = L(g, S L) + λQ (g, S U ): the divergence telescopes to a single loss difference, 
+
+σ-admissibility bounds that difference by σℓ|∆f (xi)|, and the Cauchy–Schwarz inequality f 2 
+
+> i
+
+≤
+
+Q(f ) Ki,i closes the loop. Feeding the lemma into ℓ(f \i, z i) ≤ ℓ(f, z i)+ σℓ|f (xi)−f \i(xi)|, averaging over SL, adding the regularizer, using minimality of f to swap in an arbitrary g, and taking expectations gives (6). The full proof is in Appendix A. 
+
+# 4 Augmentation quality controls the error 
+
+Theorem 6 bounds the loss by a regularized oracle term that still depends on the augmentation graph. We now evaluate that term to expose what makes it small: the degree to which the augmentations respect the labels. Specializing the regularizer to the graph form K−1 = α S−1 +
+
+LS(G) from Section 2, the oracle term is controlled by a single graph-cut quantity. 
+
+Definition 7 (Data-augmentation alignment error) . Partition the edges of G by whether they cross a label boundary, into different, D, and same, S,
+
+D = {(j, j ′) : yj̸ = yj′ }, S = {(j, j ′) : yj = yj′ },
+
+and define the S-normalized cut of the labeling y,
+
+cut( LS, y ) = X
+
+> (j,j ′)∈D
+
+wj,j ′
+
+2
+
+ 1
+
+Sj
+
++ 1
+
+Sj′
+
+
+
++ X
+
+> (j,j ′)∈S
+
+wj,j ′
+
+2
+
+1
+
+pSj
+
+− 1
+
+pSj′
+
+!2
+
+. (7) 
+
+The data-augmentation alignment error RDA (y) is the normalization of (7) : the mass, under the augmentation-graph edge weights, of pairs whose augmentations cross a label boundary. It is zero exactly when augmentations never mix labels. 
+
+Assumption 8 (Balanced components and bounded margin) . Two conditions, distinct in role. (i) Balanced components : in the near-zero-cut regime the augmentation graph splits into q pure components (maximal label-consistent connected pieces) of sizes m1 ≤ · · · ≤ mq whose smallest is a 
+
+Θ(1 /q ) fraction of the whole, so that m/m 1 = Θ( q). (ii) Bounded margin : the margin constant c of the admissible loss (the separation in Assumption 1 between the regions where ϕ0(·, 1) and ϕ0(·, 0) 
+
+are small) is bounded below by a universal constant, uniformly in m.
+
+The two conditions do different work. Component balance is what upgrades the graph-cut bound from the slow n−1/2 
+
+> L
+
+behavior to the fast n−1 
+
+> L
+
+rate: the Johnson–Zhang fast bound carries a factor 
+
+m/m 1 ≥ q (their Theorem 5, Johnson and Zhang, 2007), which collapses to Θ( q) exactly when the components are balanced and otherwise degrades the rate back toward pq/n L. The margin bound is a separate requirement, present at every rate: it keeps the surrogate-to-0 /1 conversion constant 
+
+b/ (ac ) from growing as the sample does. (Ordinary class balance, each label on a Θ(1 /K ) fraction of nodes, is a third and distinct condition and is not what produces the fast rate.) 5Theorem 9 (Expected loss in terms of the DA error) . Consider the algorithm (5) with the graph kernel K−1 = α S−1 + LS(G) under Assumptions 1 and 8. Then there is a sample-independent choice of λ for which the expected transductive classification error obeys 
+
+ESL [err] ≤ CnL
+
++ RDA (y), (8) 
+
+with C = C(σℓ, α, tr K) independent of nL but carrying the component-balance factor m/m 1 ≥ q of Assumption 8: under balance C = Θ( q), and without it C grows with m/m 1 and the rate degrades toward pq/n L. In particular, if the augmentation is perfectly label-consistent then RDA (y) = 0 and the error is O(q/n L), fast in the label count nL.
+
+Why this term explains accuracy. Unlike a generalization-gap bound, (8) bounds the error itself, and it factorizes the two things a practitioner controls: more labels shrink C/n L, while better augmentations shrink RDA (y). Good augmentations therefore let few labels suffice, which is the accuracy-versus-label-count behavior reported for SimCLR and SimCLRv2 (Section 1). The quantity RDA (y) is, in isolation, essentially the class-boundary edge mass α of HaoChen et al. (2021); the contribution here is that it enters a transductive, fast-rate labeled-sample bound through the graph cut and stability, rather than a slow Rademacher bound in unlabeled samples. 
+
+Proof idea. Insert the label indicator fj,k = δyj ,k into the oracle term of Theorem 6: the su-pervised loss vanishes and the regularizer evaluates to λ αs + cut( LS, y ) with s = P 
+
+> j
+
+S−1 
+
+> j
+
+, so the oracle term is the graph cut RDA (y). Optimizing λ in the Johnson–Zhang bound and taking its fast, balanced-component regime turns the in-expectation stability term of Theorem 6 into the 
+
+C/n L price, with C carrying the m/m 1 factor controlled by Assumption 8(i); the margin bound of Assumption 8(ii) then supplies the constant that passes the surrogate loss to the 0 /1 classification error without a sample-dependent constant. The full argument, with the explicit constant deferred to Johnson and Zhang [2007], is in Appendix A. 
+
+Remark 10 (Multiplicative versus additive form) . Tracking the cut through the optimization of Johnson and Zhang [2007] in fact gives the slightly tighter multiplicative statement ESL [err] ≤
+
+> CnL
+
+ 1 + RDA (y), of which the additive form (8) is the immediate corollary (since RDA (y)/n L ≤
+
+RDA (y)). We state the additive form as the headline because it cleanly separates the two levers a practitioner controls, the label budget nL and the augmentation quality RDA (y). The two forms make qualitatively different asymptotic predictions, and the controlled experiment of Section 7.1, where 
+
+λ/a and the cut are known exactly, shows the resolution is loss-dependent. The admissible surrogate the algorithm actually minimizes carries an additive floor that grows linearly with cut( LS, y ) through the origin, with slope at most λ/a , exactly as (8) predicts. The downstream 0/1 classification error, by contrast, shows no persistent floor and keeps descending with nL, the behaviour the multiplicative form describes. The additive RDA floor is thus a property of the surrogate the bound is proved for; it acts on the classification error as a soft, label-budget-dependent penalty rather than a hard ceiling. 
+
+# 5 The infinite-data limit recovers the ideal features 
+
+The previous sections fix the backbone and analyze the labeled-sample behavior of the linear score on the augmentation graph. The last result closes the loop with the feature-learning literature: the streamlined loss of Section 2 loses nothing in the limit. As the unlabeled sample grows and the augmentation graph converges to the integral operator TK of the kernel kDAF (1) on ρX , its minimizers recover the same ideal features that contrastive and non-contrastive objectives recover. 6Assumption 11 (Spectral gap) . The integral operator TK of kDAF on ρX has a positive gap after the K-th eigenvalue: ordering its eigenvalues μ1 ≥ μ2 ≥ · · · , the gap γK = μK − μK+1 > 0.
+
+Theorem 12 (Limit features) . Suppose the augmentation alignment error vanishes, RDA (y) = 0 ,and let Assumption 11 hold. As m → ∞ the normalized graph operator W converges to TK on 
+
+ρX , and the minimizer of the streamlined loss (5) converges to a map whose span equals the top-K
+
+eigenspace of TK , i.e. the leading K Mercer eigenfunctions of kDAF . The convergence of the learned subspace to the ideal one is at rate O 1/(γK
+
+√m).
+
+Remark 13 (Relation to existing equivalences) . Theorem 12 is not a new object: the same top-K
+
+spectral target is recovered by the spectral contrastive loss [HaoChen et al., 2021], by contrastive and non-contrastive losses read as global and local spectral embedding [Balestriero and LeCun, 2022], and, most generally, by the context/expectation operator of Zhai et al. [2025]. We restate it as a 
+
+consequence of the streamlined formulation to show that dropping the projector-dimension, negative-sample, and orthogonality/non-collapse overhead costs nothing in the limit. The contribution of this paper is the finite labeled-sample rate of Sections 3–4, which the limit theory does not provide. 
+
+Proof idea. With RDA (y) = 0 the supervised term selects the class-consistent directions and the Laplacian energy Q(·, S U ) orders them by the spectrum of W , so the minimizer’s span is the top-K
+
+eigenspace of W . Two classical tools then transfer this to TK : an empirical-operator concentration bound ∥W − TK ∥ = OP (1 /√m) [Rosasco et al., 2010], and the Davis–Kahan sin Θ theorem [Yu et al., 2015], which converts the operator gap γK into control of the angle between the two top-K
+
+eigenspaces. The self-contained argument is in Appendix A. 
+
+# 6 Related work 
+
+6.1 The operator and spectral view of SSL 
+
+A now-standard view holds that the various self-supervised objectives all recover the leading eigen-functions of an operator induced by the augmentation distribution, so that the apparent diversity of losses is largely cosmetic. HaoChen et al. [2021] established the canonical case: the spectral contrastive loss recovers the leading eigenvectors of the augmentation graph. Balestriero and Le-Cun [2022] unified contrastive and non-contrastive methods under a single spectral-embedding lens, with contrastive objectives implementing a global spectral embedding and VICReg- or Barlow-style objectives a local one. Johnson et al. [2023] characterized the eigenfunctions of the positive-pair Markov chain as the output of kernel PCA, the optimal basis for approximately view-invariant functions. Zhai et al. [2024] recast pretraining as RKHS approximation and regression, with SSL approximating the top-d eigenspace of the augmentation-induced kernel, and turn this picture into two model-complexity-free generalization bounds for the linear probe, decomposing its error into an RKHS-regression estimation term and an RKHS-approximation term and comparing augmenta-tions through an augmentation complexity . The most general statement to date is the Contextures framework [Zhai et al., 2025], in which supervised, self-supervised, and manifold learning all re-cover the top-d singular functions of a common context operator. We take this operator view as background: our streamlined loss recovers the top-K ideal features in the infinite-data limit, which is a consequence of this line of work rather than a new equivalence. Our contribution is not another characterization of the limit but a finite-sample guarantee in the number of labels. 76.2 Generalization rates for SSL and semi-supervised learning 
+
+The downstream generalization of representation learning was first bounded by Arora et al. [2019], whose latent-class analysis gives a slow O(1 /√M ) rate in the number M of unlabeled pairs. Lei et al. [2023] sharpened this line, removing the dependence on the number of negatives and ob-taining optimistic bounds that imply fast O(1 /n ) behaviour under a low-noise condition; their n,however, counts unlabeled contrastive tuples rather than labels, and the bound is not transductive. Fast rates in the number of labeled samples are classically available only under strong distribu-tional assumptions: Rigollet [2007] obtains them under the cluster assumption and Zhu [2020] under a parametric model, both inductively and without an augmentation graph. On the negative side, Tifrea et al. [2023] give lower bounds that delimit when unlabeled data can help at all. Ageneric transductive baseline is that of Tang and Liu [2025], whose information-theoretic bounds for transductive learning are of the standard slow O(1 /√n) order. A fast transductive O(1 /n ) labeled-sample rate is, however, already available for graph-Laplacian learning: it is precisely the result of Johnson and Zhang [2007] (see the graph-SSL subsection below), on which our rate theorems are built. What is not yet available, and what we supply, is that rate carried onto the augmentation 
+
+graph, so that the governing quantity is augmentation quality rather than a generic cut and the label-efficiency of self-supervised learning becomes the object bounded, all without a density or parametric assumption. 
+
+6.3 Stability-based generalization 
+
+Our analysis routes through algorithmic stability rather than the Rademacher-complexity machin-ery that is standard in the contrastive literature. The template is that of Bousquet and Elisseeff [2002]: a strongly convex regularized objective is uniformly stable with coefficient O(1 /(λn )), which converts into a generalization bound. The sharp high-probability versions that turn O(1 /n ) stabil-ity into a genuine fast rate are due to Feldman and Vondrak [2018, 2019] and Bousquet et al. [2020], and we use these in place of the looser classical bounds. The leave-one-out branch of our argument follows Zhang [2003]. Stability has been applied to graph and transductive learning before, and we distinguish ourselves from these precedents directly. Belkin et al. [2004] use stability to bound a graph-Laplacian-regularized SSL objective, with the bound governed by the Laplacian spectral gap; Cortes et al. [2008] give stability bounds for transductive regression with explicit Laplacian regularization; and Verma and Zhang [2019] analyze stability for graph convolutional networks. These predate the modern sharp fast-rate tools above, and none introduces an augmentation graph or an augmentation-quality term. Our novelty is precisely the combination: the sharp stability ma-chinery applied to the augmentation-graph Laplacian, with the data-augmentation error entering the bound. 
+
+6.4 Augmentation quality and graph SSL 
+
+The graph-Laplacian foundation we build on is the work of Johnson and Zhang [2007], who study transductive multi-class graph learning with Laplacian normalization and bound generalization through a learning-theoretic graph-cut quantity. Their analysis already contains the core of our rate: a leave-one-out stability argument giving a transductive oracle inequality with a 1
+
+> m
+
+P 
+
+> i
+
+Ki,i /(λn )price term, and, after optimizing the regularization into its balanced-component regime, a fast 
+
+O(1 /n ) labeled-sample rate. Our Theorems 6 and 9 are the specialization of that inequality to the augmentation graph, and we claim no novelty in the stability mechanism itself. What is new is the reading of the graph and its cut as augmentation objects: our RDA (y) is exactly their cut, now the mass of augmentation edges that cross a label boundary, i.e. a measure of augmentation 8quality. The role of label quality in a graph bound is closest to Pukdee et al. [2023], who augment classical label propagation with probabilistic prior labels and prove an error bound assembled from local edge-flow quantities (in-, between-, and out-flow, in the conductance sense of HaoChen et al. [2021]), a per-neighbourhood smoothness sk = P
+
+> i∈Nk
+
+P 
+
+> j
+
+wij |yj − yi|, and a prior-accuracy term. Their smoothness is itself a local graph cut and is the direct analogue of our RDA (y), and, as we do, they argue against the spectral (Laplacian-eigengap) bound of Belkin et al. [2004] in favour of a geometry-aware quantity. The two results nonetheless differ in kind. Theirs is a deterministic, geometric bound: it controls the error on each k-hop shell around the labeled set through hop distance and in/out-flow ratios, carries no rate in the number of labels, and takes its second ingredient from prior information supplied by weak labelers (folded in through auxiliary “dongle” nodes). Ours is a statistical fast O(1 /n L) transductive excess-risk rate in the labeled count, obtained by algorithmic stability on the augmentation-graph solve, with augmentation quality rather than prior-label quality entering the bound. The idea that an augmentation-label-crossing quantity controls downstream risk is itself established: it is the α of HaoChen et al. [2021], the labeling error of Chen et al. [2025], and the augmentation overlap of Wang et al. [2022], and in the supervised setting it appears as the misspecified-augmentation term of Yang et al. [2023]. Closest on this quality axis is the augmentation complexity of Zhai et al. [2024], which likewise compares augmentations quantitatively inside a downstream bound; theirs is an operator-level quantity in an inductive RKHS-regression generalization bound, whereas RDA (y) is an explicit graph cut inside a transductive fast O(1 /n L) labeled-sample rate. The classical graph-SSL anchors are Zhu et al. [2003] and Belkin et al. [2006]. What is new here is not the quantity but its placement: RDA (y)enters a fast labeled-sample transductive rate through a graph-cut and stability argument. 
+
+6.5 Positioning: three results to distinguish head-on 
+
+Three papers sit close enough that we differentiate from each explicitly. Dong et al. [2023] cast a distillation-based SSL method as spectral clustering on a population graph and obtain near-constant ˜O(K) labeled sample complexity; theirs is an inductive clustering-error guarantee under a cluster and eigengap assumption, whereas ours is a transductive excess-risk O(1 /n L) rate obtained through the augmentation-graph and label-propagation connection, with no separate density as-sumption. Chen et al. [2025] define a labeling error as the probability that augmentation yields a view inconsistent with the original label and bound downstream risk in terms of it, which is the on-the-nose analogue of our RDA (y); their bound is a contrastive dimensionality-reduction result, not a graph-Laplacian transductive rate, and is not fast in the labeled count. HaoChen et al. [2021] already place an augmentation-label-crossing quantity (their α) into a downstream bound, but their finite-sample term is a slow O(1 /√npretrain ) Rademacher bound in unlabeled samples obtained by an expansion analysis; we give a fast labeled-sample transductive rate, with the same crossing quantity entering through a graph-cut and stability argument. In short, each of the three does a neighbouring thing, and none combines the augmentation graph, a transductive bound on the unlabeled nodes, and a fast O(1 /n L) labeled-sample rate with augmentation quality in the bound. 
+
+# 7 Experiments 
+
+The experiments are explanatory, not a bid for state of the art. 1 The burden is split so that a referee can see the theory in the data while sidestepping the one quantity the theory leaves unpinned, the 
+
+> 1Code to reproduce all experiments is available at https://github.com/adam-oberman/fast-rates-ssl.
+
+9constant λ/a . Experiment A verifies the theorem in a controlled planted-partition model where λ/a 
+
+and the cut are known exactly: it settles the additive-versus-multiplicative question of Section 4, exhibits the 1 /n L rate at the source the proof actually uses, and shows directly how the asymptotic error scales with cut( LS, y ). A single descriptive CIFAR-10 panel then anchors the phenomenon the theory is built to explain, that a simple probe on frozen self-supervised features reaches the backbone’s accuracy from a few percent of the labels. 
+
+7.1 Experiment A: controlled verification with known constants 
+
+We draw a balanced planted-partition (stochastic block) graph on m = 6000 nodes in K = 10 equal classes, with same-class edge probability pin and a tunable cross-class probability ε p in . Balance (Assumption 8) holds by construction, and every object the theory references is known exactly from the realized graph: the labels, the weights, the normalized Laplacian LS, and hence cut( LS, y ). We run the algorithm (5) verbatim with the graph kernel K−1 = αS−1 + LS and squared loss ( a = 1), one conjugate-gradient solve per class on the transductive graph, reading error on the unlabeled nodes. Because λ is ours to choose, λ/a is known, and the floor the theorem predicts can be checked against an exact , computed value rather than a fitted one. 
+
+Cut-dependence resolves the additive/multiplicative question. Sweeping ε traces out a range of cuts; for each we compute the full-label oracle floor of Theorem 6 (label all m nodes, solve, evaluate), the exact nL → ∞ asymptote. Figure 1 (left) plots that floor against the known cut, in both the admissible surrogate the algorithm minimizes and the 0 /1 error it is graded on. The squared-loss floor is a line through the origin in the cut (correlation 0 .99 across the sweep) with slope below λ/a : exactly the additive prediction λa cut of (8), the realized slope falling below λ/a 
+
+because the oracle does at least as well as the label indicator that furnishes the bound. The 0 /1error floor, by contrast, sits at zero for every ε: with the planted classes recoverable, a handful of labels per class suffices. These are the two forms of the Remark after Theorem 9 seen side by side: the additive RDA floor is real in the surrogate, while the 0 /1 error follows the floor-free multiplicative form. 
+
+The rate, at the source the proof uses. The 1 /n L rate of Theorem 6 is built from leave-one-out algorithmic stability: the load-bearing lemma bounds the perturbation |f (xi) − f \i(xi)|
+
+by σ Kii /(2 λn L), which decays as 1 /n L. Figure 1 (centre) measures exactly this quantity as the label budget grows and finds a log-log slope of −1.00, on top of the 1 /N reference: the mechanism that produces the fast rate is verified directly, constants included. We show it at a regularization strength where the stability constant is small enough for the asymptotic regime to be reached within the label range; the slope is the prediction of the lemma, independent of that choice. 
+
+The downstream surrogate excess is a loose envelope. Figure 1 (right) plots the quantities the bound packages together: the excess squared risk above the exact oracle floor, and the 0 /1error. The classification error, the quantity (8) ultimately controls, falls faster than the supervised 1/√nL rate drawn for reference; the supervised slow-rate comparator is this reference line, not a trained net. The surrogate excess descends more slowly. This is expected and is not a failure of the rate: the stability term of Theorem 6 is an upper bound whose constant carries 1 
+
+> m
+
+tr K, which for the graph kernel is large (tr K ≈ 5 × 10 4 here), so the 1 /n L envelope sits far above the realized surrogate excess across the feasible label range and the curve never enters its asymptotic tail there. The rate is verified where it is generated (centre panel); the surrogate-excess curve is the loose 10 0 500 1000 1500 2000 2500                  
+
+> cut( S,y)
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> nL → ∞  floor
+> additive in surrogate (corr 0.992)
+> through-origin fi t
+> squared-loss fl oor
+> 0/1 floor ( ≈0) 10 210 3
+> total labels N=K n L
+> 10 −2
+> 10 −1
+> mean | f − f\i|
+> rate at its source: lemma's 1/ nL
+> stability | f−f\i| (slope -1.00)
+> 1/ Nreference 10 210 3
+> total labels N=K n L
+> 10 −3
+> 10 −2
+> 10 −1
+> excess risk / 0-1 error
+> downstream: envelope loose (large tr K)
+> excess risk (envelope)
+> 0/1 error
+> 1/ N
+> 1/ √N
+
+Figure 1: Experiment A (synthetic, known constants; m = 6000 , K = 10 ). Left: the exact nL → ∞ oracle floor against the known cut( LS, y ) as the cross-class strength ε is swept. The admissible-surrogate floor is additive, a line through the origin with slope ≤ λ/a (correlation 0.99); the 0 /1 error floor stays at zero (the multiplicative form). Centre: the leave-one-out stability 
+
+|f − f \i| the rate is built from decays at slope −1.00, on the 1 /N reference, verifying the 1 /n L
+
+mechanism directly. Right: fixing ε and sweeping the budget N = K n L, the 0 /1 error falls faster than the supervised 1 /√nL rate, while the surrogate excess above the floor is a loose upper-bound envelope, slow because the bound’s constant carries the large tr K.downstream consequence, with the looseness explained by the constant rather than by any gap in the argument. 
+
+7.2 The phenomenon on CIFAR-10: label efficiency 
+
+The theory exists to explain a real, well-known effect: self-supervised features let a few labels go a long way. Figure 2 shows it directly on CIFAR-10 with a frozen SimCLR-style ResNet [Chen et al., 2020a]. Freezing the backbone fixes the features and isolates the labeled axis exactly as the transductive theory assumes; we then run the graph-regularized probe (5) and a ridge linear-probe reference over an nL sweep, reading transductive accuracy on the unlabeled pool. Both probes reach the backbone’s reported 90 .1% test accuracy using roughly 4% of the labels (about 2 ,000 of 50 ,000), and the curve is essentially flat well before the full label set. This is the accuracy-versus-label-count curve the introduction promises to explain; the panel is descriptive and makes no floor or cut claim, since those are pinned in Experiment A where the constants are known. (The ridge reference tracks the graph probe because a frozen self-supervised backbone has already performed the augmentation-graph smoothing the probe would otherwise supply, which is Theorem 12; we do not read a regularization gain into the comparison.) 
+
+Acknowledgments and Disclosure of Funding 
+
+This work was supported by the Natural Sciences and Engineering Research Council of Canada (NSERC), a Canada CIFAR AI Chair, and Coefficient Giving (formerly Open Philanthropy). The author declares no competing interests. 11 10 1 10 0 10 1  
+
+> % of training labels
+> 10 210 310 4
+> number of labeled images (log scale)
+> 75
+> 80
+> 85
+> 90
+> transductive accuracy on unlabeled pool (%)
+> SimCLR backbone test accuracy (90.1%)
+> ~90% accuracy
+> at 4% of labels (2,000 labels)
+> CIFAR-10: frozen SimCLR features are label-efficient
+> ridge linear probe (reference)
+> graph-Laplacian probe (Eq. alg)
+
+Figure 2: The phenomenon on CIFAR-10. Transductive accuracy on the unlabeled pool versus the number of labels, for the graph-Laplacian probe (5) and a ridge linear-probe reference, on frozen SimCLR features. Both reach the backbone’s 90 .1% ceiling at about 4% of the labels. Descriptive: it establishes the label-efficiency phenomenon the rate explains, with the controlled verification deferred to Experiment A. 
+
+# A Proofs 
+
+This appendix gives complete proofs of Theorems 6–12. The arguments are elementary but assemble several ideas, so we develop them slowly and motivate each step. A reader meeting algorithmic stability for the first time should be able to follow the whole chain. We keep the notation of Sections 2–5. It is enough to argue for a single class score, so we fix a class index and write g = g·,k ∈ Rm; because the regularizer (3) is a sum over classes, the multiclass statements follow by summing the per-class bounds. Write 
+
+Q(g) = g⊤K−1g, L(g, S L) = 1
+
+nL
+
+X 
+
+> zj∈SL
+
+ℓ(g, z j ), Rr(g, S L) = L(g, S L) + λ Q (g)for the per-class regularizer, the labeled empirical loss, and the regularized objective. The algorithm (5) returns its minimizer, f = A(SL, S U ) = arg min g Rr(g, S L). For a labeled index i we also need the leave-one-out solution f \i = arg min g Rr(g, S L\i), where SL\i = SL \ { zi} removes the labeled pair zi = ( xi, y i) (the point stays in SU , it simply loses its label). Throughout, K is symmetric positive definite and depends only on the unlabeled graph, never on the labels or on g;this independence is what makes the regularizer behave like a fixed norm and is used repeatedly. 
+
+A.1 Two tools: Bregman divergence and a Cauchy–Schwarz inequality 
+
+Bregman divergence. For a differentiable convex function F , the Bregman divergence from g′
+
+to g is the gap between F and its first-order Taylor expansion at g′,
+
+dF (g, g ′) = F (g) − F (g′) − g − g′, ∇F (g′) .
+
+12 Geometrically it is how far the graph of F at g sits above the tangent plane drawn at g′. Convexity says the tangent plane lies below the graph, so dF (g, g ′) ≥ 0 always. Two special cases do all the work below. 
+
+(i) At a minimizer the divergence is just the function gap. If f ⋆ minimizes F then ∇F (f ⋆) = 0, and the linear term vanishes, leaving 
+
+dF (g, f ⋆) = F (g) − F (f ⋆) for every g. (9) This lets us turn statements about minimizers into statements about divergences, which we can then manipulate algebraically. 
+
+(ii) For a quadratic the divergence is translation invariant. If Q(g) = g⊤K−1g then ∇Q(g′) = 2K−1g′, and expanding, 
+
+dQ(g, g ′) = g⊤K−1g − g′⊤ K−1g′ − 2⟨g − g′, K−1g′⟩ = ( g − g′)⊤K−1(g − g′) = Q(g − g′).
+
+So the divergence of a quadratic depends only on the difference g − g′. Finally, divergences are 
+
+additive in their function, dA+B = dA + dB , directly from the definition; we use this to split the divergence of Rr = L + λQ into a loss part and a regularizer part. 
+
+Lemma 14 (Cauchy–Schwarz in the K norm) . Let K be symmetric positive definite and Q(f ) = 
+
+f ⊤K−1f . Then for every coordinate i,
+
+f 2 
+
+> i
+
+≤ Q(f ) Ki,i .
+
+Proof. The point is to compare a single coordinate fi (the value of the score at node i) with the global energy Q(f ). Because K is symmetric positive definite it has a symmetric positive-definite square root K1/2, and we may insert K1/2K−1/2 = I into the coordinate, written as an inner product with the standard basis vector ei:
+
+fi = ⟨f, e i⟩ = K−1/2f, K1/2ei .
+
+Apply the ordinary Cauchy–Schwarz inequality to the two vectors on the right: 
+
+|fi| ≤ K−1/2f K1/2ei .
+
+Now read off the two norms. The first is the energy, ∥K−1/2f ∥2 = f ⊤K−1f = Q(f ). The second is the diagonal entry, ∥K1/2ei∥2 = e⊤ 
+
+> i
+
+Kei = Ki,i . Squaring gives f 2 
+
+> i
+
+≤ Q(f ) Ki,i .The lemma says a function with small energy cannot be large at any one node, and the allowable size at node i is gauged by Ki,i . This diagonal entry measures how “loosely connected” node i is in the augmentation graph, and it is exactly the quantity that will appear in the stability bound. 
+
+A.2 Stability: removing one label barely moves the solution (Lemma 5) 
+
+Why stability. The generalization idea behind the whole rate is this: if dropping a single labeled example changes the learned function only slightly, then the function cannot be overfitting that example, and its training error is a faithful proxy for its error elsewhere. We make “changes only slightly” quantitative by bounding |f (xi) − f \i(xi)|, the change at the very point we removed. 13 Proof of Lemma 5. Write the two minimizers as f = arg min g Rr(g, S L) and f \i = arg min g Rr(g, S L\i), and abbreviate the perturbation ∆ f = f \i − f . The two objectives differ in exactly one term: the full objective includes the loss of the i-th point with weight 1 /n L, and the leave-one-out objective does not, so 
+
+Rr(g, S L) − Rr(g, S L\i) = 1
+
+nL
+
+ℓ(g, z i) for every g. (10) 
+
+Step 1: write the optimality of each solution as a divergence. Apply (9) to each objective at its own minimizer. Since f minimizes Rr(·, S L), 
+
+dRr (·,S L)
+
+ f \i, f  = Rr(f \i, S L) − Rr(f, S L) ≥ 0,
+
+and since f \i minimizes Rr(·, S L\i), 
+
+dRr (·,S L\i)
+
+ f, f \i = Rr(f, S L\i) − Rr(f \i, S L\i) ≥ 0.
+
+Step 2: add them and let the shared parts cancel. Sum the two displays. On the right, group the four terms into the two objective differences (10) evaluated at f \i and at f :
+
+dRr (·,S L)
+
+ f \i, f  + dRr (·,S L\i)
+
+ f, f \i =
+
+h
+
+Rr(f \i, S L) − Rr(f \i, S L\i)
+
+i
+
+−
+
+h
+
+Rr(f, S L) − Rr(f, S L\i)
+
+i
+
+.
+
+By (10) each bracket is a single loss term, and the right-hand side collapses to 
+
+dRr (·,S L)
+
+ f \i, f  + dRr (·,S L\i)
+
+ f, f \i = 1
+
+nL
+
+ ℓ(f \i, z i) − ℓ(f, z i). (11) 
+
+Step 3: keep only the quadratic part. Split each divergence using additivity, dRr = dL + λ d Q.The two loss objectives are convex, so their Bregman divergences are nonnegative; we are free to 
+
+discard the loss divergences on the left of (11), which only decreases the left side. What remains are the two quadratic divergences, and by translation invariance both equal Q(∆ f ): 
+
+λ d Q
+
+ f \i, f  + λ d Q
+
+ f, f \i = 2 λ Q (∆ f ).
+
+Hence 2λ Q (∆ f ) ≤ 1
+
+nL
+
+ ℓ(f \i, z i) − ℓ(f, z i). (12) 
+
+Step 4: bound the loss gap by the perturbation at xi. The loss is σℓ-Lipschitz in its first argument (Assumption 1), so 
+
+ℓ(f \i, z i) − ℓ(f, z i) ≤ σℓ f \i(xi) − f (xi) = σℓ |∆f (xi)|.
+
+Substituting into (12), 
+
+Q(∆ f ) ≤ σℓ
+
+2λn L
+
+|∆f (xi)|. (13) 
+
+Step 5: convert energy into a pointwise bound and close the loop. Inequality (13) controls the 
+
+global energy of ∆ f by its value at one point . Lemma 14 runs the other way, controlling the value at a point by the energy: (∆ f (xi)) 2 ≤ Q(∆ f ) Ki,i . Chaining the two, (∆ f (xi)) 2 ≤ Q(∆ f ) Ki,i ≤ σℓ Ki,i 
+
+2λn L
+
+|∆f (xi)|.
+
+If ∆ f (xi) = 0 the claimed bound is trivial; otherwise cancel one factor of |∆f (xi)| from both sides to obtain 
+
+f (xi) − f \i(xi) ≤ σℓ Ki,i 
+
+2λn L
+
+,
+
+which is the lemma. 14 The bound is small for two reasons that match intuition: a larger regularization weight λ pins the solution down more firmly, and a larger label count nL dilutes the influence of any one example. The factor Ki,i says removing a loosely connected node (large diagonal) disturbs the fit more than removing a well-connected one. 
+
+A.3 From stability to the oracle inequality (Theorem 6) 
+
+Proof of Theorem 6. Step 1: stability controls the leave-one-out loss. Fix a labeled index i. By Lipschitzness and then Lemma 5, 
+
+ℓ(f \i, z i) ≤ ℓ(f, z i) + σℓ f (xi) − f \i(xi) ≤ ℓ(f, z i) + σ2 
+
+> ℓ
+
+Ki,i 
+
+2λn L
+
+.
+
+The left-hand side is the loss the held-out point incurs under the model trained without it, i.e. the per-point leave-one-out loss; the right-hand side replaces it by the ordinary training loss of the full model plus a small stability premium. 
+
+Step 2: average over which point is held out. Averaging the display over i with weight 1 /n L
+
+turns the left-hand side into Lloo (A, S L, S U ) of Definition 4: 
+
+Lloo (A, S L, S U ) ≤ 1
+
+nL
+
+X
+
+> i∈SL
+
+ℓ(f, z i) + σ2
+
+> ℓ
+
+2λn L
+
+· 1
+
+nL
+
+X
+
+> i∈SL
+
+Ki,i .
+
+Step 3: turn the training loss into the regularized objective, then into an oracle. Add and subtract the regularizer: the first sum on the right is L(f, S L), and adding λQ (f ) makes it Rr(f, S L). Because f minimizes Rr(·, S L), we may replace it by any competitor g at the cost of an inequality, 
+
+Rr(f, S L) ≤ Rr(g, S L). Thus for every g,
+
+Lloo (A, S L, S U ) ≤ Rr(g, S L) + σ2
+
+> ℓ
+
+2λn L
+
+· 1
+
+nL
+
+X
+
+> i∈SL
+
+Ki,i . (14) This already has the shape of an oracle inequality: the price of using only the nL revealed labels is the small last term. 
+
+Step 4: take expectations over the random labeled set. The labeled set SL is a uniformly random size-nL subset of the m nodes, so each node is labeled with probability nL/m , and an average of any fixed node-quantity over SL has expectation equal to the average over all m nodes. Applied to the regularized objective and to the diagonal sum, 
+
+ESL Rr(g, S L) = 1
+
+m
+
+> m
+
+X
+
+> i=1
+
+ℓ(g, z i) + λQ (g), ESL
+
+1
+
+nL
+
+X
+
+> i∈SL
+
+Ki,i = 1
+
+m
+
+> m
+
+X
+
+> i=1
+
+Ki,i .
+
+(The key point in the first identity is that the regularizer λQ (g) does not depend on which points are labeled, so it passes through the expectation untouched; only the empirical loss averages out to the full-sample loss.) Taking expectations in (14) and then the infimum over g gives 
+
+ESL
+
+Lloo (A, S L, S U ) ≤ min 
+
+> g
+
+n 1
+
+> m
+
+Pmi=1 ℓ(g, z i) + λQ (g)
+
+o
+
++ σ2 
+
+> ℓ
+> 2λn L
+
+· 1
+
+> m
+
+Pmi=1 Ki,i ,
+
+which is (6). 15 Two remarks on reading the bound. First, the rate in nL is genuinely 1 /n L, not 1 /√nL: this is the in-expectation, leave-one-out form, where the stability premium enters linearly. (The high-probability version, obtained by feeding the same stability constant into the McDiarmid bounded-difference inequality as in Bousquet and Elisseeff [2002], carries the familiar 1 /√nL deviation term; here we keep the cleaner in-expectation statement.) Second, the bound is transductive: the right-hand side is the regularized loss had we labeled the entire sample, so the inequality measures how well nL labels propagate across the fixed unlabeled set, not generalization to a fresh draw. 
+
+A.4 The error comparison and the role of balanced classes 
+
+Theorem 6 controls a surrogate loss. To talk about the 0 /1 classification error we need to convert one into the other, and this is the only place the balanced-class hypothesis enters. 
+
+Lemma 15 (Error versus surrogate loss) . Let ϕ be the admissible margin loss of Assumption 1, with constants a, b, c , where c is the margin: the separation between the regions where the true-class and wrong-class one-versus-rest losses are small. Then for any scores f, g and any label y,
+
+err( f, y ) ≤ max 
+
+> k∈Y
+
+h 1 
+
+> a
+
+ϕ0
+
+ gk, δ y,k 
+
+ + 2 
+
+> c
+
+f k − gk i
+
+.
+
+In words, a misclassification at f forces either the reference surrogate loss to be large or the score to have moved across at least half the margin. Proof sketch and the meaning of the margin. A misclassification at f means some wrong class scores at least as high as the true one, f y ≤ f k for some k̸ = y. Fix the threshold t = c/ 2 halfway across the margin. Then either the true-class score has fallen below the threshold, f y ≤ t, or the wrong-class score has risen above it, f k ≥ t. In the first case the true-class surrogate loss is already at its “large” level ϕ0(·, 1) ≥ a; in the second the wrong-class surrogate is at its large level ϕ0(·, 0) ≥ a,by the definition of c as the gap between these two level sets. Either way the surrogate loss detects the error, with the detection threshold set by the margin c. Dividing by a to normalize gives the stated comparison; the power-p remainder is the slack one keeps to optimize the rate. 
+
+Why balance matters. The comparison degrades as c → 0: a vanishing margin means the surrogate loss barely distinguishes a correct from an incorrect label, and the constant b/c blows up, dragging the rate back to 1 /√nL. Assumption 8 (balanced classes) is precisely what keeps c bounded below by a universal constant as the sample grows: when no class is vanishingly rare, the score level sets for “true” and “false” stay separated by an Θ(1) margin. This is the mechanism behind Johnson and Zhang’s observation that the graph-cut bound attains the fast 1 /n rate exactly under class balance. 
+
+A.5 Augmentation quality enters the bound (Theorem 9) 
+
+Proof of Theorem 9. Step 1: evaluate the oracle term at the labels. Specialize the kernel to the graph form K−1 = αS−1 + LS(G) of Section 2 and feed the label indicator gj,k = δyj ,k into the full-sample oracle term of Theorem 6. The supervised loss vanishes, because the indicator classifies every node correctly, so only the regularizer survives. Using the explicit form (4) of the regularizer, the ridge part contributes α P 
+
+> j
+
+S−1 
+
+> j
+
+= αs , and the Laplacian part contributes the sum over edges of squared normalized differences of the indicator. Splitting that edge sum by whether an edge crosses a label boundary recovers exactly the cut (7): for a different -label edge the two indicators 16 differ, producing the 1 
+
+> Sj
+
++ 1 
+
+> Sj′
+
+contribution; for a same -label edge they agree before normalization, leaving only the smaller ( S−1/2 
+
+> j
+
+− S−1/2 
+
+> j′
+
+)2 mismatch. Hence 1
+
+m
+
+X
+
+> j
+
+ϕ(gj , y j ) + λ Q (g, S U ) = λ αs + cut( LS, y ), s = X
+
+> j
+
+S−1 
+
+> j
+
+.
+
+The cut is the total weight of augmentation-graph edges that join differently labeled points: it is large exactly when augmentations frequently carry an image across a class boundary. This is the quantity we named the data-augmentation alignment error RDA (y). 
+
+Step 2: pass from surrogate loss to classification error. Combine the oracle inequality of Theo-rem 6 (in its leave-one-out, in-expectation form) with the error comparison Lemma 15. The stability premium of Theorem 6 contributes the σ2 
+
+> ℓ
+> 2λn L
+
+· 1
+
+> m
+
+P 
+
+> i
+
+Ki,i = O(1 /(λn L)) term, and the oracle term contributes λ(αs + cut) from Step 1. Writing this out, 
+
+ESL [err] ≤ 1
+
+a λ αs + cut( LS, y ) +
+
+ b tr p(K)
+
+c λ n L
+
+p
+
+, (15) for every p > 0, where tr p(K) = ( 1
+
+> m
+
+P 
+
+> j
+
+Kpj,j )1/p is the normalized diagonal. 
+
+Step 3: choose the free parameters. The two terms in (15) pull against each other through λ:the first grows with λ, the second shrinks. Assumption 8 keeps the margin constant c in the second term bounded below, so the trade-off is not spoiled by a shrinking margin. Optimizing λ (and the auxiliary parameter p, with α chosen small enough that the label-independent λαs folds into the 1/n L term) yields the fast rate. Carrying out this optimization is exactly Theorem 4 of Johnson and Zhang [2007]; we invoke their constant rather than reproduce the calculus, and write the result as 
+
+ESL [err] ≤ CnL
+
++ RDA (y), C = C(σℓ, α, tr K),
+
+with RDA (y) the normalized cut. When RDA (y) = 0 the second term is absent and the error is 
+
+O(1 /n L), recovering the perfectly-aligned case. We attribute the explicit constant C to Johnson and Zhang [2007] rather than recomputing it because their optimization over ( α, λ, p ) is precisely the step that converts the family (15) into a single clean rate; reproving it here would add length without adding insight. What our argument contributes is the route into (15): the stability oracle inequality and the identification of the oracle term with the augmentation graph cut. 
+
+A.6 The infinite-data limit recovers the ideal features (Theorem 12) 
+
+The previous proofs hold the kernel fixed. Here we let the unlabeled sample grow and show the learned feature subspace converges to the spectral object that the SSL feature-learning literature identifies. The argument has three moves: characterize the finite-sample minimizer as an eigenspace of W ; show W converges to the population operator TK ; and use a perturbation theorem to pass the eigenspace to the limit. We make each move explicit so the proof stands on its own, and cite the classical theorems it rests on. 
+
+Proof of Theorem 12. Step 1: the minimizer’s span is a top-K eigenspace of W . With RDA (y) = 0 the augmentations never cross a label boundary, so the supervised term is satisfied by any score that is constant on each augmentation-connected class region; it imposes no preference within the space of such scores. The only remaining force is the Laplacian energy Q(g, S U ) = g⊤( αS−1 + LS(G) ) g,17 which we are minimizing subject to producing K linearly independent class scores. By the Courant– Fischer variational principle, the energy-minimizing K-dimensional subspace under a fixed-norm constraint is the span of the K eigenvectors of K−1 with the smallest eigenvalues, equivalently the 
+
+K eigenvectors of the normalized adjacency W with the largest eigenvalues. Hence the minimizer’s span is the top-K eigenspace of W . Denote it bVK .
+
+Step 2: the empirical operator converges to the population operator. The normalized adjacency 
+
+W is the empirical version of the integral operator TK of the kernel kDAF in (2): W averages a function against the kernel over the m sampled points, while TK averages against ρX . Standard concentration for empirical integral operators gives, with high probability, 
+
+W − TK = O
+
+ 1√m
+
+
+
+, (16) in operator norm, where the constant depends on sup x kDAF (x, x ); this is the content of the integral-operator law of large numbers of Rosasco et al. [2010]. Intuitively, replacing the population average by an m-sample average perturbs the operator by a Monte-Carlo error of size 1 /√m.
+
+Step 3: a spectral-gap perturbation bound transfers the eigenspace. Let VK be the top-K
+
+eigenspace of the limit operator TK , and recall Assumption 11: there is a gap γK = μK − μK+1 > 0separating the K-th and ( K+1)-th eigenvalues of TK . The Davis–Kahan sin Θ theorem, in the statisticians’ form of Yu et al. [2015], bounds the principal angles Θ( bVK , V K ) between the two subspaces by the operator perturbation divided by the gap: 
+
+sin Θ( bVK , V K ) ≤ 2 ∥W − TK ∥
+
+γK
+
+.
+
+The gap is what makes the top-K subspace well defined and stable: if μK and μK+1 were equal, an arbitrarily small perturbation could rotate the chosen subspace freely. Combining with the concentration bound (16), 
+
+sin Θ( bVK , V K ) = O
+
+ 1
+
+γK
+
+√m
+
+
+
+−−−−→ 
+
+> m→∞
+
+0.
+
+So the learned subspace bVK converges to VK , the span of the leading K Mercer eigenfunctions of 
+
+kDAF , at the stated rate. This is the ideal feature target. We emphasize that Theorem 12 is not claimed as new: the identification of the limiting features with the top eigenfunctions of the augmentation operator is established, in increasing generality, by HaoChen et al. [2021], Balestriero and LeCun [2022], and Zhai et al. [2025]. The reason to include a self-contained proof is pedagogical and structural: it shows that the streamlined loss of this paper, stripped of the projector, negative-sample, and orthogonality machinery, lands on the same spectral object, so nothing is lost in the limit and the finite-sample rate of Sections 3–4 is bought at no cost to the feature quality. 
+
+# References 
+
+Sanjeev Arora, Hrishikesh Khandeparkar, Mikhail Khodak, Orestis Plevrakis, and Nikunj Saunshi. A theoretical analysis of contrastive unsupervised representation learning. In Proceedings of the 36th International Conference on Machine Learning (ICML) , 2019. arXiv:1902.09229. Randall Balestriero and Yann LeCun. Contrastive and non-contrastive self-supervised learning recover global and local spectral embedding methods. In Advances in Neural Information Pro-cessing Systems 35 (NeurIPS) , 2022. arXiv:2205.11508. 18 Mikhail Belkin, Irina Matveeva, and Partha Niyogi. Regularization and semi-supervised learning on large graphs. In Proceedings of the 17th Annual Conference on Learning Theory (COLT) ,2004. Mikhail Belkin, Partha Niyogi, and Vikas Sindhwani. Manifold regularization: A geometric frame-work for learning from labeled and unlabeled examples. Journal of Machine Learning Research ,7:2399–2434, 2006. Olivier Bousquet and Andr´ e Elisseeff. Stability and generalization. J. Mach. Learn. Res. , 2:499–526, 2002. URL http://jmlr.org/papers/v2/bousquet02a.html. Olivier Bousquet, Yegor Klochkov, and Nikita Zhivotovskiy. Sharper bounds for uniformly sta-ble algorithms. In Proceedings of the 33rd Conference on Learning Theory (COLT) , 2020. arXiv:1910.07833. Jun Chen, Hong Chen, Yonghua Yu, and Yiming Ying. How does labeling error impact con-trastive learning? a perspective from data dimensionality reduction. In Proceedings of the 42nd International Conference on Machine Learning (ICML) , 2025. arXiv:2507.11161. Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. In Proceedings of the 37th International Conference on Machine Learning (ICML) , 2020a. URL https://arxiv.org/abs/2002.05709. arXiv:2002.05709. Ting Chen, Simon Kornblith, Kevin Swersky, Mohammad Norouzi, and Geoffrey Hinton. Big self-supervised models are strong semi-supervised learners. In Advances in Neural Information Pro-cessing Systems 33 (NeurIPS) , 2020b. URL https://arxiv.org/abs/2006.10029. arXiv:2006.10029. Corinna Cortes, Mehryar Mohri, Dmitry Pechyony, and Ashish Rastogi. Stability of transductive regression algorithms. In Proceedings of the 25th International Conference on Machine Learning (ICML) , 2008. arXiv:0904.0814. Yijun Dong, Kevin Miller, Qi Lei, and Rachel Ward. Cluster-aware semi-supervised learning: Relational knowledge distillation provably learns clustering. In Advances in Neural Information Processing Systems 36 (NeurIPS) , 2023. arXiv:2307.11030. Vitaly Feldman and Jan Vondrak. Generalization bounds for uniformly stable algorithms. In 
+
+Advances in Neural Information Processing Systems 31 (NeurIPS) , 2018. arXiv:1812.09859. Vitaly Feldman and Jan Vondrak. High probability generalization bounds for uniformly stable algorithms with nearly optimal rate. In Proceedings of the 32nd Conference on Learning Theory (COLT) , 2019. arXiv:1902.10710. Jeff Z. HaoChen, Colin Wei, Adrien Gaidon, and Tengyu Ma. Provable guarantees for self-supervised deep learning with spectral contrastive loss. In Advances in Neural Information Processing Systems 34 (NeurIPS) , 2021. arXiv:2106.04156. Olivier J. H´ enaff, Aravind Srinivas, Jeffrey De Fauw, Ali Razavi, Carl Doersch, S. M. Ali Eslami, and A¨ aron van den Oord. Data-efficient image recognition with contrastive predictive coding. In Proceedings of the 37th International Conference on Machine Learning (ICML) , 2020. URL https://arxiv.org/abs/1905.09272. arXiv:1905.09272. 19 Daniel D. Johnson, Ayoub El Hanchi, and Chris J. Maddison. Contrastive learning can find an optimal basis for approximately view-invariant functions. In The Eleventh International Confer-ence on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 . OpenReview.net, 2023. URL https://openreview.net/pdf?id=AjC0KBjiMu. Rie Johnson and Tong Zhang. On the effectiveness of laplacian normalization for graph semi-supervised learning. J. Mach. Learn. Res. , 8:1489–1517, 2007. doi: 10.5555/1314498.1314549. URL https://dl.acm.org/doi/10.5555/1314498.1314549. Yunwen Lei, Tianbao Yang, Yiming Ying, and Ding-Xuan Zhou. Generalization analysis for con-trastive representation learning. In Proceedings of the 40th International Conference on Machine Learning (ICML) , 2023. arXiv:2302.12383. Rattana Pukdee, Dylan Sam, Maria-Florina Balcan, and Pradeep Ravikumar. Label propagation with weak supervision. In The Eleventh International Conference on Learning Representations (ICLR) , 2023. arXiv:2210.03594. Philippe Rigollet. Generalization error bounds in semi-supervised classification under the cluster assumption. Journal of Machine Learning Research , 8:1369–1392, 2007. Lorenzo Rosasco, Mikhail Belkin, and Ernesto De Vito. On learning with integral operators. Journal of Machine Learning Research , 11:905–934, 2010. Huayi Tang and Yong Liu. Information-theoretic generalization bounds for transductive learning and its applications. Journal of Machine Learning Research , 25, 2025. arXiv:2311.04561. Alexandru Tifrea, Gizem Y¨ uce, Amartya Sanyal, and Fanny Yang. Can semi-supervised learning use all the data effectively? a lower bound perspective. In Advances in Neural Information Processing Systems 36 (NeurIPS) , 2023. arXiv:2311.18557. Saurabh Verma and Zhi-Li Zhang. Stability and generalization of graph convolutional neural networks. In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD) , 2019. arXiv:1905.01004. Yifei Wang, Qi Zhang, Yisen Wang, Jiansheng Yang, and Zhouchen Lin. Chaos is a ladder: Anew theoretical understanding of contrastive learning via augmentation overlap. In The Tenth International Conference on Learning Representations (ICLR) , 2022. arXiv:2203.13457. Shuo Yang, Yijun Dong, Rachel Ward, Inderjit S. Dhillon, Sujay Sanghavi, and Qi Lei. Sample effi-ciency of data augmentation consistency regularization. In Proceedings of the 26th International Conference on Artificial Intelligence and Statistics (AISTATS) , 2023. arXiv:2202.12230. Yi Yu, Tengyao Wang, and Richard J. Samworth. A useful variant of the Davis–Kahan theorem for statisticians. Biometrika , 102(2):315–323, 2015. Runtian Zhai, Bingbin Liu, Andrej Risteski, J. Zico Kolter, and Pradeep Ravikumar. Understand-ing augmentation-based self-supervised representation learning via RKHS approximation and regression. In The Twelfth International Conference on Learning Representations (ICLR) , 2024. arXiv:2306.00788. Runtian Zhai et al. Contextures: Representations from contexts. In Proceedings of the 42nd International Conference on Machine Learning (ICML) , 2025. arXiv:2505.01557. 20 Tong Zhang. Leave-one-out bounds for kernel methods. Neural Comput. , 15(6):1397–1437, 2003. doi: 10.1162/089976603321780326. URL https://doi.org/10.1162/089976603321780326. Jingge Zhu. Semi-supervised learning: the case when unlabeled data is equally useful. In Proceedings of the 36th Conference on Uncertainty in Artificial Intelligence (UAI) , 2020. arXiv:2005.11018. Xiaojin Zhu, Zoubin Ghahramani, and John D. Lafferty. Semi-supervised learning using gaussian fields and harmonic functions. In Proceedings of the 20th International Conference on Machine Learning (ICML) , 2003. 21
