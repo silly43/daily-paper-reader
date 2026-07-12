@@ -1,0 +1,806 @@
+Title: Moonstone: A Multimodal Foundation Model and Benchmark for Lunar Remote Sensing
+
+URL Source: https://arxiv.org/pdf/2607.03644v1
+
+Published Time: Tue, 07 Jul 2026 01:22:14 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+# Moonstone: A Multimodal Foundation Model and Benchmark for Lunar Remote Sensing 
+
+Ayush Prasad 1 and Swarnalee Mazumder 2 
+
+> 1
+
+Space and Earth Observation Centre, Finnish Meteorological Institute, Finland  
+
+> 2
+
+Data Management, German Climate Computing Centre, Germany 
+
+ayush.prasad@fmi.fi 
+
+Abstract. Decades of orbital missions have produced multi-modal re-mote sensing data for the Moon, spanning optical imagery, spectroscopy, thermal emission, radar, gravity, and elemental composition. Yet these datasets remain fragmented across archives, and no benchmark exists for evaluating machine learning on lunar data. We introduce Moonstone, the first multi-modal foundation model benchmark for lunar remote sensing. Our contributions are: (1) a 28-channel, 128 pixels-per-degree ( ∼237 m) global lunar pretraining dataset from seven instrument families across five missions, (2) MG-MAE, a modality-grouped masked autoencoder with per-group convolutional tokenizers, a shared Vision Transformer encoder, attention masking for missing modalities, coverage-adaptive masking for heterogeneous spatial coverage, and spectral continuity reg-ularization for physically plausible reconstructions, and (3) a benchmark of six downstream tasks covering classification, regression, and segmen-tation. MG-MAE pretrained features outperform scratch baselines on all tasks and surpass both ImageNet-pretrained and vanilla MAE base-lines by large margins. We release the pretraining dataset, code, and the benchmark suite. 3
+
+Keywords: Foundation model · Lunar remote sensing · Multi-modal learning · Masked autoencoder · Benchmark 
+
+# 1 Introduction 
+
+The Artemis program and commercial lunar missions have renewed interest in the Moon’s surface composition, geology, and resource potential. Over the past two decades, missions including NASA’s Lunar Reconnaissance Orbiter (LRO) [29], India’s Chandrayaan-1 [25], and the GRAIL mission [35] have pro-duced terabytes of multi-modal data: optical imagery, hyperspectral reflectance, thermal emission, synthetic aperture radar (SAR), gravity fields, and elemental abundances. However, these datasets are spread across different archives (NASA PDS, USGS, ISRO PRADAN), stored in incompatible formats, and measured at different spatial resolutions.  
+
+> 3
+
+Data: https://huggingface.co/datasets/ayushprd/Moonstone Code: https: //github.com/ayushprd/Moonstone  
+
+> arXiv:2607.03644v1 [cs.CV] 3 Jul 2026 2A. Prasad and S. Mazumder
+
+Foundation models for Earth observation have shown that self-supervised pretraining on multi-modal remote sensing data produces representations that transfer across downstream tasks [1,10,12,33]. Benchmarks such as GEO-Bench [14] and PANGAEA [17] have enabled fair comparison across models. No such benchmark exists for lunar data, despite the need for AI-assisted lunar science and resource prospecting. We address these gaps with three contributions: 1. Pretraining dataset. We assemble a 28-channel global lunar pretraining dataset at 128 pixels per degree ( ∼237 m/pixel) from seven instrument fam-ilies spanning five missions. Channels are organized into seven physically meaningful modality groups (Tab. 1) and stored as pre-normalized memory-mapped arrays for efficient training from unlimited random crops. 2. Model. We propose MG-MAE (Modality-Grouped MAE), a masked autoen-coder that uses per-group multi-channel convolutional tokenizers, a shared ViT-Base encoder [7], and key-dimension attention masking to gracefully handle the 16–100% coverage variation across modalities. MG-MAE incor-porates two lunar-specific design choices: coverage-adaptive masking that adjusts per-group mask ratios based on spatial coverage, and spectral con-tinuity regularization that enforces physically plausible mineral reflectance reconstructions. 3. Benchmark. We define six downstream tasks (Tab. 2) covering classification (49-class geology, 5-class surface age), regression (FeO/TiO 2 composition, cross-modal thermal prediction), and segmentation (mare/highlands, crater delineation), with fixed train/val/test splits and evaluation metrics. MG-MAE pretrained features outperform scratch baselines on all six tasks, with the largest gains on geology classification (+16.2% accuracy) and crater seg-mentation (+14.7 mIoU). Comparisons against ImageNet-pretrained and vanilla MAE baselines confirm the importance of domain-specific grouped pretraining. 
+
+# 2 Related Work 
+
+Foundation models for Earth observation. Self-supervised pretraining on remote sensing imagery has produced many foundation models. MAE [11], BEiT [3], and DINO [5, 23] established core pretraining strategies. SatMAE [6] and Scale-MAE [27] adapted these to satellite imagery. MultiMAE [2] introduced per-modality patch embeddings with a shared encoder. More recent models include SkySense [10] (billion-parameter contrastive learning), TerraMind [12] (any-to-any generative pretraining), AnySat [1] (JEPA with scale-adaptive encoders), Galileo [33] (multi-scale contrastive), Prithvi-EO-2.0 [32] (600M-parameter tem-poral MAE), and GFM [18] (continual pretraining). All of these models target Earth observation. Adapting them to the Moon requires addressing unique challenges: the absence of atmosphere and vegeta-tion simplifies optical interpretation but increases reliance on spectral, thermal, Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 3
+
+radar, and gravity data, coverage is highly non-uniform (16–100% depending on instrument), and labeled data for supervised tasks is extremely scarce. 
+
+Relation to grouped/multi-modal MAEs. Grouped and multi-modal masked autoencoding is well established, and MG-MAE inherits its tokenizer design from this line of work. SatMAE [6] partitions multi-spectral bands into groups (chosen by spatial resolution and wavelength similarity) with a separate patch embedding and distinct spectral positional encoding per group. Multi-MAE [2] uses a per-modality patch projection into a shared ViT encoder and, via Dirichlet token sampling, is explicitly trained to operate on arbitrary sub-sets of its RGB/depth/segmentation modalities. MMEarth [20] takes a different route: a single optical (Sentinel-2) input to a ConvNeXt V2 encoder with the other geospatial modalities used only as reconstruction targets through per-task decoders. Our per-group convolutional tokenizers are closest to SatMAE and MultiMAE. Our contribution is not modality grouping itself, but three mechanisms that make grouped multi-modal pretraining work under the lunar coverage regime. (i) 
+
+Coverage-adaptive masking sets each group’s mask ratio from that instrument’s global coverage (16–100%). This has no analogue in EO models, whose sensors have near-complete coverage. (ii) Spectral continuity regularization exploits the contiguous M 3 reflectance spectrum, a physical prior specific to a single hyper-spectral instrument and absent from the non-contiguous multispectral bands EO models operate on. (iii) Missing-modality attention masking handles groups that are genuinely absent for a given patch via key-dimension ghost-token masking. This differs in kind from MultiMAE’s subset training: MultiMAE always has every modality available in its (pseudo-labeled) pretraining data and chooses 
+
+which tokens to drop, whereas on the Moon entire instrument groups are un-available over large regions and the model must remain well-defined when a group contributes zero tokens. Our ablations (Tab. 8) isolate each: removing missing-modality masking is the most damaging change ( −4.6% geology), indi-cating these components, rather than grouping alone, carry the method in the lunar setting. 
+
+Benchmarks for geospatial foundation models. GEO-Bench [14] pro-vides a classification and segmentation benchmark for EO foundation models. PANGAEA [17] extends this with 11 datasets across different geographies, res-olutions, and sensor types. Both have enabled fair model comparison. Mars-Bench [26] is the first benchmark for Mars science tasks, evaluating EO and ImageNet-pretrained models across 20 Mars datasets. No equivalent benchmark exists for lunar remote sensing, despite the Moon’s richer multi-modal data cov-erage from decades of orbital missions. We note that existing EO foundation models cannot be directly evaluated on lunar data, as their patch embeddings are hardcoded to specific Earth sensors (e.g. Sentinel-2 bands, C-band SAR) that have no correspondence with lunar modalities such as GRAIL gravity, M3 hyperspectral reflectance, or gamma-ray spectroscopy. 
+
+Machine learning for lunar science. Most ML applications on lunar data have focused on single-modality, single-task approaches. Crater detection 4 A. Prasad and S. Mazumder 
+
+has received the most attention, with deep learning methods applied to DEM data [30] and optical imagery [13], typically using catalogs such as Robbins [28]. Moseley et al. [19] applied unsupervised learning to Diviner [24] thermal data. The USGS Unified Geologic Map of the Moon [8], building on Wilhelms’ [34] geological mapping, provides a 49-class global map that serves as ground truth for classification tasks. To our knowledge, no prior work has proposed a multi-modal pretraining and evaluation benchmark for lunar remote sensing. 
+
+# 3 Dataset 
+
+3.1 Channel Inventory 
+
+We assemble 28 data channels from seven instrument families spanning five or-bital missions (Tab. 1), including LRO WAC and LOLA [29,31], Chandrayaan-1 M3 [9, 25], LRO Diviner [24], LRO Mini-RF [21], and GRAIL [35]. Channels are organized into seven modality groups based on physical measurement type. This grouping reflects both the correlations within each modality (e.g., eight M 3
+
+spectral bands sample a continuous reflectance spectrum) and the independence across modalities (e.g., gravity and optical imagery measure fundamentally dif-ferent properties). 
+
+3.2 Data Processing 
+
+All channels are aligned to a common equirectangular grid at 128 pixels per degree ( 46 ,080 × 23 ,040 pixels globally) using the lunar ellipsoid ( a = b = 1737 .4
+
+km). Each channel is z-score normalized using statistics computed from 200 ran-dom 256 × 256 windows. Missing data (NaN) is set to zero after normalization. The data is stored as pre-normalized memory-mapped numpy arrays for effi-cient random access during training, enabling unlimited random 256 × 256 crop sampling.                                                       
+
+> Table 1: The 28-channel Moonstone dataset organized by modality group. Coverage indicates the fraction of the lunar surface with valid data. Group Channels Count Instrument(s) Coverage Surface WAC morph., elevation, slope, roughness 4LRO WAC, LOLA/SLDEM 100% Thermal Bol. temp, regolith temp, rock abund., CF 4LRO Diviner 53–86% Spectral M3750–2857 nm reflectance 8Chandrayaan-1 M 367% Gravity Free-air, Bouguer, uncertainty 3GRAIL 100% Radar CPR, S1 backscatter 2LRO Mini-RF 16–18% Hapke 415, 566, 604, 689 nm reflectance 4LRO WAC Hapke 78% Composition Clem. 750 nm, LP-GRS TiO 2, FeO 3Clem., LP 99–100% Total 28 5 missions Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 5
+> Table 2: Moonstone downstream task definitions. Task Type Target Metric Geology Classification (49 classes) USGS geologic units [8] Accuracy / F1 Age Classification (5 classes) Surface age periods Accuracy / F1 Composition Regression FeO, TiO 2weight % R2
+> Cross-modal Regression Thermal from non-thermal R2
+> Mare Segmentation Mare vs. highlands mIoU Craters Segmentation Crater ( >10 km) delineation mIoU
+
+Mini-RF radar data required special preprocessing: raw S1 backscatter con-tained extreme outliers (max > 10 6 DN) and CPR values exceeding 50. We applied a log(1 + x) transform to both channels, compressing the dynamic range to 0–13.8 (S1) and 0–3.9 (CPR) before normalization. The full dataset comprises 16,200 non-overlapping 256 ×256 patches (a 180 ×
+
+90 global grid) at 128 ppd, split 70/15/15 into train (11,340), validation (2,430), and test (2,430) sets, which we use for downstream evaluation. Pretraining is decoupled from this fixed grid: rather than iterating over the 16,200 patches, we sample unlimited random 256 × 256 crops from the full 46 ,080 × 23 ,040 global map, so every training sample is effectively unique and the effective pretraining pool is far larger than the fixed patch count. This design suits the lunar setting, where the whole body is imaged as a single contiguous map and no more source data can be collected without new missions. Scale therefore comes from dense sampling of a fixed global surface rather than from an ever-growing image corpus. 
+
+3.3 Downstream Tasks 
+
+We define six downstream tasks (Tab. 2) covering classification, regression, and segmentation: 
+
+Geology classification. Each patch is labeled with the dominant USGS Unified Geologic Map unit [8], yielding 49 classes. This is the most challenging task due to the high class count and subtle inter-class boundaries. 
+
+Age classification. Geologic units are grouped into five stratigraphic age periods (pre-Nectarian, Nectarian, Imbrian, Eratosthenian, Copernican), provid-ing a coarser but scientifically important classification. 
+
+Composition regression. The target is FeO and TiO 2 weight fraction from Lunar Prospector Gamma-Ray Spectrometer (LP-GRS) data [4]. LP-GRS mea-surements have an effective spatial resolution of ∼60 km, so this task primarily tests whether embeddings encode regional geochemical trends. 
+
+Cross-modal prediction. The model predicts thermal channel values from non-thermal input groups only. This task directly evaluates whether cross-modal relationships learned during pretraining transfer to held-out data. 
+
+Mare segmentation. Binary segmentation of mare basalts vs. highland terrain, derived from the geologic map. Tests spatial feature quality. 6 A. Prasad and S. Mazumder  
+
+> Fig. 1: MG-MAE architecture overview. Left: Seven modality groups (28 channels total from 5 missions) are independently tokenized by per-group Conv2d projections. Center-left: Tokens are masked per group with coverage-adaptive ratios (60–85%). Vis-ible tokens (colored) and placeholder tokens from unavailable groups (Radar, shown dashed) are concatenated with positional and type embeddings. Center: All tokens are processed by a shared ViT-Base encoder with cross-modal self-attention. Unavail-able groups are excluded via standard key-dimension attention masking ( −∞ ). Right: Per-group decoders with cross-modal attention reconstruct masked patches with pro-portionally weighted MSE loss and InfoNCE contrastive alignment.
+
+Crater segmentation. Segmentation of large impact craters ( >10 km di-ameter) from a global crater catalog. The most spatially demanding task. 
+
+# 4 Method 
+
+4.1 MG-MAE Architecture 
+
+Our architecture, illustrated in Fig. 1, extends the masked autoencoder frame-work [11] to multi-modal lunar data through grouped tokenization, shared encod-ing with missing-modality masking, and proportionally weighted reconstruction. 
+
+Grouped tokenization. Rather than assigning each of the 28 channels its own tokenizer (as in MultiMAE [2], requiring 28 separate projection layers), we group channels by physical modality (Tab. 1) and use a single multi-channel convolutional tokenizer per group: Conv2d (ng , D, P ), where ng is the group’s channel count and P = 16 is the patch size. For example, the spectral group tokenizes all eight M 3 bands jointly, enabling the tokenizer to learn correlations across the reflectance spectrum. This reduces the number of tokenizers from 28 to 7 while improving representation quality. Each group produces Np = ( H/P ) × (W/P ) = 16 × 16 = 256 spatial to-kens of dimension D = 768 . Per-group learned positional embeddings and type embeddings are added to distinguish spatial location and modality identity. 
+
+Shared encoder with missing-modality masking. At a mask ratio of 75%, each group retains approximately 64 visible tokens, yielding ∼448 tokens across all 7 groups fed to a shared ViT-Base encoder (12 layers, 768 dimensions, 12 heads). Self-attention across all groups enables cross-modal information ex-change. For instance, a gravity token can attend to a spatially co-located ele-Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 7
+
+vation token. Coverage varies from 16% (Mini-RF) to 100% (LOLA, GRAIL). For patches where a group has no valid data, we insert placeholder tokens (zero vectors) and apply standard key-dimension attention masking ( −∞ ) to prevent them from contributing to attention-weighted sums. We mask only keys, not queries, to avoid the NaN gradients from softmax (−∞ , . . . , −∞ ) on all-masked rows. 
+
+Decoder with cross-modal attention. A single lightweight decoder (4 lay-ers, 384 dimensions, 6 heads) is shared across all modality groups, with per-group mask tokens and per-group linear prediction heads. Before the self-attention layers, each group’s decoder tokens cross-attend to all encoder tokens from all groups via a shared multi-head cross-attention layer. This allows the decoder to leverage information from every available modality when reconstructing a given group’s masked patches, enabling the model to infer thermal patterns from spa-tially co-located surface observations, for example. Encoder tokens from unavail-able groups are excluded from cross-attention via key padding masks. A single shared decoder (rather than the per-channel design’s 28 independent decoders) is what enables this cross-modal reconstruction. See the supplementary material for details. 
+
+Loss. The reconstruction loss combines per-group MSE with cross-modal contrastive and spectral continuity terms: 
+
+L =
+
+> G
+
+X
+
+> g=1
+
+wg · 1
+
+|M g |
+
+X
+
+> i∈M g
+
+vi∥ˆxgi − xgi ∥2 + λLNCE + μLSCR  (1) where Mg is the set of masked patches for group g, vi is the valid pixel fraction (downweighting patches with NaN pixels), and wg is a proportional weight: 
+
+wg = ℓg
+
+PGg′=1 ℓg′
+
+(2) where ℓg is the current reconstruction loss for group g. This self-balancing scheme automatically upweights harder groups (radar, spectral) and downweights easier ones (gravity) without manual tuning. The contrastive term LNCE is an InfoNCE loss [22] ( τ = 0 .07 , λ = 0 .1) that aligns mean-pooled per-group en-coder features across all group pairs, encouraging the shared encoder to produce modality-invariant representations. 
+
+Spectral continuity regularization. Mineral reflectance spectra are smooth functions of wavelength. We exploit this physical prior via LSCR , an L2 penalty on second-order finite differences across the 8 reconstructed M 3 spectral chan-nels ( μ = 0 .01 ). This enforces physically plausible spectral reconstructions and is specific to planetary spectroscopy, where contiguous bands from a single in-strument sample a continuous spectrum. It has no analogue in Earth EO models operating on non-contiguous multispectral bands. 8 A. Prasad and S. Mazumder 
+
+4.2 Training 
+
+We train for 100 epochs with AdamW [15] ( β1 = 0 .9, β2 = 0 .95 , weight decay 
+
+= 0 .05 ), learning rate 1.5 × 10 −4 with linear warmup over 10 epochs followed by cosine decay. Effective batch size is 256 (64 per GPU × 2 GPUs × 2 gra-dient accumulation steps). Training uses bfloat16 mixed precision with gradient clipping at max norm 1.0. The model has ∼101.6M parameters and trains in approximately 20 hours on two NVIDIA H100 GPUs ( ∼40 GPU-hours total). 
+
+Complementary masking. To strengthen cross-modal learning, we use complementary masking: with probability 0.5, 1–2 randomly selected anchor groups retain 100% of their tokens while remaining groups mask at 90% (vs. the standard 75%). This forces the model to reconstruct heavily-masked groups using cross-modal information from the anchor groups via the decoder cross-attention mechanism. 
+
+Coverage-adaptive masking. Lunar modalities have highly non-uniform spatial coverage (16% for radar to 100% for LOLA/GRAIL). We adapt the per-group mask ratio based on coverage: mg = 0 .75+ α·(cg − ¯c), where cg is coverage fraction and α = 0 .15 . This yields ∼60% masking for radar and ∼85% for fully-covered groups, preserving more tokens from rare modalities. This is specific to planetary data where instrument coverage varies by an order of magnitude. 
+
+# 5 Experiments 
+
+5.1 Evaluation Protocol 
+
+We evaluate pretrained representations in three settings: 
+
+– Scratch: Randomly initialized encoder + task-specific head, trained end-to-end. 
+
+– Linear: Frozen pretrained encoder + linear/MLP head trained on extracted features. 
+
+– Finetune: Pretrained encoder + task head, trained end-to-end with lower learning rate. For classification and regression tasks, features are extracted by pooling to-kens within each group and averaging across available groups, producing a 768-dimensional representation per patch. For segmentation, we use surface group tokens directly (256 tokens → 16 × 16 spatial grid). All downstream models use early stopping with patience 5, label smoothing 0.1, and feature dropout 0.3. 
+
+5.2 Main Results 
+
+Tab. 3 presents the full evaluation across six tasks and three modes. 
+
+Observations. (1) MG-MAE outperforms all baselines on every task. Im-ageNet features transfer poorly (33.2% geology vs. 52.4% MG-MAE linear). Vanilla MAE closes part of the gap but remains below MG-MAE, confirming Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 9                                                                    
+
+> Table 3: Downstream evaluation results. Best result per task in bold. ImageNet ViT-B [7] uses frozen ImageNet-pretrained features with a linear head. Vanilla MAE [11] uses per-channel tokenizers without modality grouping or missing-modality masking, pretrained on the same lunar data. Baselines MG-MAE (ours) Task Metric ImageNet Scratch V. MAE Linear Finetune Geology Acc 33.2 40.1 44.8 52.4 56.3
+> Age Acc 50.4 58.7 63.5 69.8 73.2
+> Composition R 20.631 0.802 0.871 0.924 0.908 Cross-modal R 20.812 0.941 0.956 0.971 0.987
+> Craters mIoU 0.542 0.621 0.668 0.698 0.768
+> Mare mIoU 0.867 0.901 0.912 0.928 0.936 Table 4: Few-shot evaluation (Accuracy ±std over 5 trials). Task K-shot Scratch MG-MAE Linear Geology 5-shot 14 .4±2.323 .7±1.8
+> 10-shot 20 .5±1.928 .4±1.5
+> Age 5-shot 28 .8±2.635 .2±2.1
+> 10-shot 33 .4±2.242 .6±1.9
+
+the value of grouped tokenization and cross-modal attention. (2) The largest gains are on geology (+16.2% accuracy) and craters (+14.7 mIoU), where class diversity and spatial structure benefit most from pretraining. (3) Linear probing achieves R 2 = 0.924 on composition, above finetuning (0.908), indicating pre-trained features already encode geochemical information. (4) Mare segmentation shows +3.5 mIoU gain (0.936 vs. 0.901 scratch), confirming pretraining benefits even simple binary tasks. 
+
+5.3 Few-Shot Evaluation 
+
+Labeled data for lunar science is extremely scarce. We evaluate few-shot learning by precomputing encoder features and training a lightweight MLP head on K
+
+samples per class, averaged over 5 random trials (Tab. 4). MG-MAE features improve few-shot geology by +9.3% at 5-shot and +7.9% at 10-shot. Age gains are similarly strong (+6.4% at 5-shot, +9.2% at 10-shot), with non-overlapping confidence intervals confirming statistical significance. This is relevant for lunar resource prospecting, where ground truth is limited to a handful of sample return sites. 
+
+5.4 Reconstruction Quality 
+
+Tab. 5 reports per-group reconstruction MSE. Gravity is easiest (0.003, smooth fields), radar hardest (0.262, sparse high-frequency texture). 10 A. Prasad and S. Mazumder WAC Morphology    
+
+> Original Masked Input (25%) Reconstruction Ground Truth
+> Diviner Thermal M3 750 nm GRAIL Free-Air
+
+Fig. 2: Reconstruction examples from MG-MAE across 4 modality groups. From left: original patch, masked input (25% visible tokens, gray = masked), model reconstruction (visible patches preserved, masked patches predicted), and ground truth. The model reconstructs coherent spatial patterns across physically distinct modalities from only 25% visible tokens. 
+
+5.5 Geographic Split Evaluation 
+
+To test geographic generalization, we re-evaluate on latitude-band splits: training on ±60 ◦, validation on 60–70 ◦ (N+S), testing on 70–80 ◦ (N+S). Tab. 6 compares random and geographic splits. As expected, geographic splits reduce absolute performance by 3–5% across tasks due to distributional shift between equatorial training and high-latitude test regions (different geology, illumination, and thermal regimes). The relative gain from MG-MAE pretraining is preserved under geographic splits (+14.4% geology accuracy vs. +16.2% random), confirming that pretrained representa-tions generalize across geographic regions. Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 11 5 10 Full           
+
+> 10
+> 20
+> 30
+> 40
+> 50
+> Acc (%)
+> Geology
+> 510 Full
+> 30
+> 40
+> 50
+> 60
+> 70
+> Acc (%)
+> Age
+> 510 Full
+> 0.4
+> 0.6
+> 0.8
+> R2
+> Composition
+> 510 Full
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> R2
+> Cross-modal
+> 510 Full
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> mIoU
+> Crater Seg.
+> 510 Full
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> mIoU
+> Mare Seg.
+> Samples per class (K)
+> MG-MAE
+> Scratch
+
+Fig. 3: Data efficiency across all six downstream tasks. MG-MAE linear-probe features (solid) outperform training from scratch (dashed) across labeling budgets, with the largest advantage in the low-data regime. Markers denote the three measured operating points ( K = 5 , K = 10 , and the full training set). 
+
+Table 5: Per-group reconstruction MSE (epoch 99, validation set). Surface Thermal Spectral Gravity Radar Hapke Composition 0.077 0.136 0.175 0.003 0.262 0.077 0.009 
+
+5.6 Transfer from Earth Observation Foundation Models 
+
+We evaluate whether EO foundation models transfer useful representations to lunar data. For a fair comparison, we use a learned linear adapter that projects all 28 lunar channels to each model’s expected input dimensionality, preserving the original pretrained patch embedding and avoiding the distribution mismatch caused by replacing the embedding with random weights. All models are then finetuned end-to-end. We compare SatMAE [6], Prithvi-EO-2.0 [32], and Terra-Mind [12], all using ViT-Base encoders. Tab. 7 shows that EO pretraining provides only marginal gains over train-ing from scratch. The best EO model (Prithvi, 42.0% geology) improves just +1.9% over scratch (40.1%) and falls far below MG-MAE (56.3%). EO models learn Earth-specific features (vegetation indices, ocean color, atmospheric scat-tering) with no lunar counterpart. While the adapter protocol ensures pretrained weights receive compatible input distributions, the fundamental domain gap be-tween terrestrial and lunar imagery limits transfer. Domain-specific pretraining on lunar data is essential. 
+
+5.7 Ablation Studies 
+
+We ablate design choices to understand their contributions (Tab. 8). All ablations use the linear probe protocol on the geology, composition, and craters tasks. 
+
+Grouped vs. per-channel tokenizers. Per-channel tokenizers (as in Mul-tiMAE [2]) drop geology by 3.3% and craters by 2.6 points. Grouped tokeniza-tion captures intra-group correlations (e.g., M 3 spectral bands) that per-channel tokenization discards. 
+
+Missing-modality masking. Removing key-dimension masking for unavail-able groups is the most damaging ablation ( −4.6% geology, −4.7 points craters). 12 A. Prasad and S. Mazumder                                                   
+
+> Table 6: Random vs. geographic (latitude-band) splits. Geographic splits are more conservative but MG-MAE pretraining still provides consistent gains over scratch. Random Split Geographic Split Task Metric Scratch MG-MAE FT Scratch MG-MAE FT Geology Acc 40.1 56.3 36.8 51.2 Age Acc 58.7 73.2 54.1 69.5 Composition R 20.802 0.908 0.768 0.886 Craters mIoU 0.621 0.768 0.584 0.732 Mare mIoU 0.901 0.936 0.872 0.921
+> Table 7: Transfer from EO foundation models to lunar tasks. All models use a learned linear adapter to map 28 lunar channels to the pretrained input space, preserving the original patch embedding, and are finetuned end-to-end. Model Geology Acc Age Acc Comp. R 2Craters mIoU Scratch (no pretraining) 40.1 58.7 0.802 0.621 SatMAE [6] 41.3 59.4 0.811 0.629 Prithvi-EO-2.0 [32] 42.0 60.2 0.819 0.634 TerraMind [12] 41.6 59.8 0.814 0.631 MG-MAE (ours) finetune 56.3 73.2 0.908 0.768
+
+Zero vectors from missing instruments corrupt attention weights, a well-known failure mode. The gap confirms proper handling of missing modalities is essential. 
+
+Cross-modal components. Complementary masking ( −1.4% geology, −1.5
+
+mIoU craters) forces the model to reconstruct heavily-masked groups from an-chor modalities, strengthening cross-modal representations. Decoder cross-attention costs −1.8% geology and −1.7 mIoU craters when removed. Contrastive loss has a smaller effect ( −1.1% geology). 
+
+Lunar-specific components. Coverage-adaptive masking improves geology by +1.6% and craters by +1.3 mIoU. Spectral continuity regularization improves composition by +1.3 R 2 points by enforcing smooth spectral reconstructions. 
+
+Other ablations. Reducing mask ratio from 75% to 50% yields −1.2% geol-ogy. Proportional loss weighting adds +0.6% over uniform. ViT-Small (6 layers, 384-d) underperforms ViT-Base by 5.9% on geology. 
+
+5.8 Single-Modality Baselines 
+
+To quantify the benefit of multi-modal fusion, we train single-group baselines that restrict both pretraining and evaluation to a single modality group. Tab. 9 shows that multi-modal MG-MAE consistently outperforms even the best single-group baseline. Multi-modal pretraining improves over the best single modality by +10.9% on geology (vs. surface-only), +6.2 points on composition R 2 (vs. composition-Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 13 
+
+Table 8: Ablation study. Each row modifies one component from the full MG-MAE model. Configuration Geology Acc Comp. R 2 Craters mIoU MG-MAE (full) 52.4 0.924 0.698 
+
+Per-channel tokenizers ( 28 ×Conv2d) 49.1 0.897 0.672 No missing-modality masking 47.8 0.879 0.651 No complementary masking 51.0 0.913 0.683 No cross-modal decoder attention 50.6 0.911 0.681 No contrastive loss 51.3 0.918 0.689 No coverage-adaptive masking 50.8 0.916 0.685 No spectral continuity reg. 52.0 0.911 0.695 50% mask ratio (vs. 75%) 51.2 0.916 0.687 Uniform loss weighting 51.8 0.919 0.693 ViT-Small (6 layers, 384-d) 46.5 0.881 0.647 
+
+Table 9: Single-modality baselines (linear probe) vs. full multi-modal MG-MAE. Each row uses only the indicated modality group for both pretraining and downstream eval-uation. Modality Geology Acc Comp. R 2 Craters mIoU Surface only 41.5 0.738 0.638 Thermal only 32.1 0.714 0.558 Spectral only 38.4 0.831 0.589 Gravity only 24.3 0.498 0.521 Hapke only 36.2 0.778 0.572 Composition only 29.1 0.862 0.534 All 7 groups (MG-MAE) 52.4 0.924 0.698 
+
+only), and +6.0 points on craters mIoU (vs. surface-only). The gains are largest for geology, where surface morphology, spectral mineralogy, and gravity encode complementary signals. 
+
+5.9 Comparison with Task-Specific Methods 
+
+For the two tasks where prior methods exist, we compare against task-specific baselines (Tab. 10). For craters, we train a U-Net on surface channels following DeepMoon [30] and a CNN on optical imagery following Jia et al. [13]. For composition, we implement the Lucey et al. [16] empirical band-ratio algorithm for FeO/TiO2 from Clementine UVVIS, and a random forest on hand-crafted spectral indices from all channels. No prior ML methods exist for geology, age, mare, or cross-modal tasks on lunar data. MG-MAE finetune outperforms the task-specific U-Net by +5.6 mIoU on craters. For composition, MG-MAE linear (R 2 = 0.924) exceeds the random 14 A. Prasad and S. Mazumder                    
+
+> Table 10: Comparison with task-specific methods from the lunar science literature. MG-MAE outperforms dedicated single-task approaches that use hand-crafted features or task-specific architectures. Task Method Metric Result Craters U-Net on DEM [30] mIoU 0.712 CNN on optical [13] mIoU 0.683 MG-MAE linear mIoU 0.698 MG-MAE finetune mIoU 0.768
+> Composition Lucey band ratios [16] R20.681 RF on spectral indices R20.784 MG-MAE linear R20.924
+> MG-MAE finetune R20.908
+
+forest on hand-crafted indices (0.784) by +14.0 points and the classical Lucey band-ratio algorithm (0.681) by +24.3 points. Self-supervised multi-modal pre-training surpasses task-specific approaches designed with domain expertise. 
+
+# 6 Discussion 
+
+Multi-modal pretraining works for planetary data. MG-MAE outper-forms scratch, ImageNet, EO foundation model, and vanilla MAE baselines across all six tasks (Tab. 3), with the largest gains on geology (+16.2%) and craters (+14.7 mIoU). Single-modality baselines (Tab. 9) confirm that no single group suffices: the best (surface, 41.5% geology) falls far short of the multi-modal model (52.4%). The near-zero transfer from EO models (Tab. 7) confirms that Earth-specific pretraining does not generalize to planetary data. 
+
+Design choices matter. Missing-modality attention masking has the largest ablation effect ( −4.6% geology without it). Grouped tokenization adds +3.3% over per-channel tokenizers by capturing intra-group correlations. Cross-modal decoder attention adds +1.8% geology. Coverage-adaptive masking improves craters by +1.3 mIoU by preserving more tokens from sparse modalities, and spectral continuity regularization improves composition by +1.3 R 2 points. 
+
+Geographic generalization. The geographic split evaluation (Tab. 6) shows that MG-MAE pretraining provides similar relative improvements under conser-vative latitude-band splits as under random splits (+14.4% vs. +16.2% geology accuracy). This matters for lunar science applications where models must gen-eralize to under-explored regions (e.g., polar areas targeted by Artemis). 
+
+Per-task analysis. Geology sees the largest gain (+16.2%) because 49-class discrimination requires jointly interpreting morphology, mineralogy, and grav-ity. Mare segmentation shows the smallest gain (+3.5 mIoU), consistent with boundaries distinguishable from albedo alone. Composition linear probing (R 2
+
+= 0.924) outperforms finetuning (0.908), suggesting the encoder captures geo-Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 15 
+
+chemical gradients at LP-GRS resolution and finetuning overfits. Cross-modal prediction achieves R 2 = 0.987. 
+
+Failure modes. Geology classification shows systematic confusion between stratigraphically adjacent units (e.g., upper vs. lower Imbrian mare basalts) that differ primarily in absolute age rather than composition. Crater segmentation struggles with degraded craters ( >3 Ga) whose rims have been softened by sub-sequent impacts. Radar-dependent predictions degrade in the 84% of the surface lacking Mini-RF coverage, where the model must rely on cross-modal inference. 
+
+Limitations. We evaluate only at ViT-Base scale, and scaling to ViT-Large may yield further improvements. Polar regions ( >70 ◦ latitude) have limited cov-erage for most modalities, making them effectively out-of-distribution. While our geographic splits are more rigorous than random splits, cross-hemisphere splits would be even more conservative. 
+
+# 7 Conclusion 
+
+We have presented Moonstone, the first multi-modal foundation model bench-mark for lunar remote sensing. Our 28-channel dataset at 237 m resolution covers seven modality types from five orbital missions. MG-MAE handles coverage gaps through grouped tokenization, missing-modality attention masking, coverage-adaptive masking, and cross-modal attention, with spectral continuity regular-ization enforcing physically plausible reconstructions. Ablation studies confirm that each component contributes to performance. Across six downstream tasks, MG-MAE outperforms scratch, ImageNet, EO foundation model, and vanilla MAE baselines by large margins. We release the dataset, pretrained model, and evaluation code to provide a common protocol for lunar foundation model re-search. New data from upcoming missions (Chandrayaan-3 LIBS, Lunar Trailblazer) can be incorporated as additional modality groups without architectural changes, since MG-MAE’s missing-modality masking handles increasing coverage hetero-geneity. Extending the benchmark to localization tasks and adapting MG-MAE to other planetary bodies, such as Mars or Mercury, are promising future di-rections. We have not evaluated cross-body transfer in this work, and doing so would require assembling comparable multi-modal data for those bodies. 16 A. Prasad and S. Mazumder 
+
+# References 
+
+1. Astruc, G., Gonthier, N., Mallet, C., Landrieu, L.: AnySat: One earth observation model for many resolutions, scales, and modalities. In: CVPR (2025) 2 2. Bachmann, R., Mizrahi, D., Atanov, A., Zamir, A.: MultiMAE: Multi-modal multi-task masked autoencoders. In: ECCV (2022). https://doi.org/10.1007/978-3-031-19836-6_20 2, 3, 6, 11 3. Bao, H., Dong, L., Piao, S., Wei, F.: BEiT: BERT pre-training of image transform-ers. In: ICLR (2022) 2 4. Calzada Diaz, A., Keszthelyi, L.: Descriptive models for lunar high-Ti de-posits. Acta Astronautica 226 , 375–384 (2025). https://doi.org/10.1016/j. actaastro.2024.10.031 55. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging properties in self-supervised vision transformers. In: ICCV (2021) 2 6. Cong, Y., Khanna, S., Meng, C., Liu, P., Rozi, E., He, Y., Burke, M., Lobell, D., Ermon, S.: SatMAE: Pre-training transformers for temporal and multi-spectral satellite imagery. In: NeurIPS (2022) 2, 3, 11, 12 7. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. In: ICLR (2021) 2, 9 8. Fortezzo, C., Spudis, P., Harrel, S.: Release of the digital unified global geologic map of the moon at 1:5,000,000-scale. In: 51st Lunar and Planetary Science Conference, Abstract #2760 (2020) 4, 5 9. Green, R., Pieters, C., Mouroulis, P., Eastwood, M., Boardman, J., Glavich, T., Isaacson, P., Annadurai, M., Besse, S., Barr, D., et al.: The moon mineralogy mapper (M3) imaging spectrometer for lunar science: Instrument description, cal-ibration, on-orbit measurements, science data calibration and on-orbit validation. J. Geophys. Res.: Planets 116 (E10), E00G19 (2011). https://doi.org/10.1029/ 2011JE003797 410. Guo, X., Lao, J., Dang, B., Zhang, Y., Yu, L., Ru, L., Zhong, L., Huang, Z., Wu, K., Hu, D., et al.: SkySense: A multi-modal remote sensing foundation model towards universal interpretation for earth observation imagery. In: CVPR (2024) 2 11. He, K., Chen, X., Xie, S., Li, Y., Dollár, P., Girshick, R.: Masked autoencoders are scalable vision learners. In: CVPR. pp. 15979–15988 (2022). https://doi.org/ 10.1109/CVPR52688.2022.01553 2, 6, 9 12. Jakubik, J., Yang, F., Blumenstiel, B., Scheurer, E., Sedona, R., Maurogiovanni, S., Bosmans, J., Dionelis, N., Marsocci, V., Kopp, N., et al.: TerraMind: Large-scale generative multimodality for earth observation. In: ICCV (2025) 2, 11, 12 13. Jia, Y., Wan, G., Liu, L., Wu, Y., Zhang, C.: Automated detection of lunar craters using deep learning. In: IEEE ITAIC (2020). https://doi.org/10.1109/ ITAIC49862.2020.9339179 4, 13, 14 14. Lacoste, A., Lehmann, N., Rodriguez, P., Sherwin, E., Kerner, H., et al.: GEO-Bench: Toward foundation models for earth monitoring. In: NeurIPS (2023) 2, 315. Loshchilov, I., Hutter, F.: Decoupled weight decay regularization. In: ICLR (2019) 816. Lucey, P., Blewett, D., Jolliff, B.: Lunar iron and titanium abundance algorithms based on final processing of clementine ultraviolet-visible images. Journal of Geo-physical Research: Planets 105 (E8), 20297–20305 (2000). https://doi.org/10. 1029/1999JE001117 13, 14 Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 17 17. Marsocci, V., Jia, Y., Le Bellier, G., Kerekes, D., Zeng, L., et al.: PANGAEA: A global and inclusive benchmark for geospatial foundation models. arXiv preprint arXiv:2412.04204 (2024) 2, 3 18. Mendieta, M., Han, B., Shi, X., Zhu, Y., Chen, C.: Towards geospatial foundation models via continual pretraining. In: ICCV (2023) 2 19. Moseley, B., Bickel, V., Burelbach, J., Relatores, N.: Unsupervised learning for thermophysical analysis on the lunar surface. The Planetary Science Journal 1(2), 32 (2020). https://doi.org/10.3847/PSJ/ab9a52 420. Nedungadi, V., Kariryaa, A., Oehmcke, S., Belongie, S., Igel, C., Lang, N.: MMEarth: Exploring multi-modal pretext tasks for geospatial representation learn-ing. In: ECCV (2024) 3 21. Nozette, S., Spudis, P., Bussey, B., et al.: The LRO miniature radio frequency (Mini-RF) technology demonstration. Space Science Reviews 150 , 285–302 (2010). 
+
+https://doi.org/10.1007/s11214-009-9607-5 422. van den Oord, A., Li, Y., Vinyals, O.: Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748 (2018) 7 23. Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al.: DINOv2: Learning robust visual features without supervision. TMLR (2024) 2 24. Paige, D., Foote, M., Greenhagen, B., Schofield, J., Calcutt, S., Vasavada, A., Preston, D., Taylor, F., Allen, C., Snook, K., et al.: The lunar reconnaissance orbiter diviner lunar radiometer experiment. Space Science Reviews 150 , 125–160 (2010). https://doi.org/10.1007/s11214-009-9529-2 425. Pieters, C., Boardman, J., Buratti, B., et al.: The moon mineralogy mapper (M3) on chandrayaan-1. Current Science 96 (4), 500–505 (2009) 1, 4 26. Purohit, M., Gajera, B., Malaviya, V., Mehta, I., Kasodekar, K., Adler, J., Lu, S., Rebbapragada, U., Kerner, H.: Mars-Bench: A benchmark for evaluating founda-tion models for mars science tasks. In: NeurIPS (2025) 3 27. Reed, C., Gupta, R., Li, S., Brockman, S., Funk, C., Clipp, B., Keutzer, K., Can-dido, S., Uyttendaele, M., Darrell, T.: Scale-MAE: A scale-aware masked autoen-coder for multiscale geospatial representation learning. In: ICCV (2023) 2 28. Robbins, S.: A new global database of lunar impact craters >1–2 km: 1. crater locations and sizes, comparisons with published databases, and global analysis. J. Geophys. Res.: Planets 124 (4), 871–892 (2019). https://doi.org/10.1029/ 2018JE005592 429. Robinson, M., Brylow, S., Tschimmel, M., et al.: Lunar reconnaissance orbiter camera (LROC) instrument overview. Space Science Reviews 150 , 81–124 (2010). 
+
+https://doi.org/10.1007/s11214-010-9634-2 1, 4 30. Silburt, A., Ali-Dib, M., Zhu, C., Jackson, A., Valencia, D., Kissin, Y., Tamayo, D., Menou, K.: Lunar crater identification via deep learning. Icarus 317 , 27–38 (2019). https://doi.org/10.1016/j.icarus.2018.06.022 4, 13, 14 31. Smith, D., Zuber, M., Neumann, G., Lemoine, F., Mazarico, E., Torrence, M., McGarry, J., Rowlands, D., Head, J., Duxbury, T., et al.: Initial observations from the lunar orbiter laser altimeter (LOLA). Geophys. Res. Lett. 37 (18) (2010). 
+
+https://doi.org/10.1029/2010GL043751 432. Szwarcman, D., Roy, S., Fraccaro, P., Jakubik, J., et al.: Prithvi-EO-2.0: A versatile multi-temporal foundation model for earth observation applications. arXiv preprint arXiv:2412.02732 (2024) 2, 11, 12 33. Tseng, G., Fuller, A., Reil, M., Herzog, H., Beukema, P., Bastani, F., Green, J., Shelhamer, E., Kerner, H., Rolnick, D.: Galileo: Learning global and local features of many remote sensing modalities. In: ICML (2025) 2 18 A. Prasad and S. Mazumder 34. Wilhelms, D.: The Geologic History of the Moon. USGS Professional Paper 1348, U.S. Government Printing Office (1987) 4 35. Zuber, M., Smith, D., Watkins, M., et al.: Gravity field of the moon from the gravity recovery and interior laboratory (GRAIL) mission. Science 339 (6120), 668–671 (2013). https://doi.org/10.1126/science.1231507 1, 4 Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 19 
+
+# Supplementary Material 
+
+# Moonstone: A Multimodal Foundation Model and Benchmark for Lunar Remote Sensing 
+
+# 1 Extended Architecture Details 
+
+We provide the complete mathematical formulations and implementation details for every component of MG-MAE. 
+
+1.1 Parameter Count Breakdown 
+
+Tab. 1 gives a detailed breakdown of MG-MAE’s ∼101.6M parameters by compo-nent. Compared to a per-channel tokenizer design (28 separate Conv2d(1, 768, 16, 16) projections) which requires 181.4M parameters with 28 independent de-coders, grouped tokenization reduces total parameters by 44% while improving representation quality through intra-group correlation learning. 
+
+1.2 Key-Dimension Attention Masking 
+
+Lunar modality coverage ranges from 16% (Mini-RF radar) to 100% (LOLA, GRAIL). For patches where a modality group g has no valid data, we insert placeholder (“ghost”) tokens 0 ∈ RD into the token sequence. These must be excluded from attention computations to prevent zero vectors from corrupting learned representations. We construct an attention mask M ∈ RN ×N operating on the key dimension only: 
+
+Mi,j =
+
+(
+
+0 if token j is valid (non-ghost) 
+
+−∞ if token j is a ghost token  (1) The masked attention computation becomes: 
+
+Attention (Q, K, V) = softmax 
+
+ QK ⊤
+
+√d + M
+
+
+
+V (2) where the mask is broadcast across all attention heads: M ∈ RB×1×N ×N .
+
+Why key-only masking. A natural alternative would mask both queries and keys for ghost tokens, setting entire rows of the attention matrix to −∞ .However, this creates rows where softmax (−∞ , . . . , −∞ ) is undefined, produc-ing NaN values that propagate through backpropagation. By masking only keys (columns), ghost query rows still produce valid softmax distributions over non-ghost keys. The resulting ghost query outputs are irrelevant but numerically sta-ble, and are discarded in all downstream computations via the has_group mask. In practice, the mask is passed to PyTorch’s scaled_dot_product_attention 
+
+function, which dispatches to FlashAttention-2 on compatible hardware. 20 A. Prasad and S. Mazumder 
+
+1.3 Cross-Modal Decoder Attention 
+
+The decoder includes a cross-modal attention layer before its self-attention blocks. Each modality group’s decoder tokens attend to encoder tokens from all groups. This is the primary mechanism for cross-modal information flow during recon-struction. Formally, let Henc ∈ RB×Nenc ×Denc be the full encoder output. For each active group g, the decoder tokens Zg ∈ RB×256 ×Ddec (where Ddec = 384 ) cross-attend to the projected encoder output: 
+
+Z′ 
+
+> g
+
+= Zg + MHA (LN (Zg ), Wproj Henc , Wproj Henc , mask = venc ) (3) where LN denotes LayerNorm (pre-norm convention, consistent with all self-attention blocks), Wproj ∈ RDdec ×Denc projects encoder tokens to decoder di-mension, and venc is a key padding mask that excludes ghost encoder tokens. For computational efficiency, all G active groups are stacked along the batch dimension as a single tensor of shape (G · B, 256 , D dec ), with the encoder output replicated G times. This allows a single multi-head attention call rather than G
+
+separate calls. 
+
+1.4 Coverage-Adaptive Masking 
+
+Standard MAE applies a uniform mask ratio across all tokens. For lunar data, where instrument coverage varies by an order of magnitude, we adapt the mask ratio per group based on spatial coverage: 
+
+mg = m0 + α · (cg − ¯c) (4) where m0 = 0 .75 is the base mask ratio, α = 0 .15 controls the adapta-tion strength, cg is the fractional coverage of group g over the lunar surface, and ¯c = 1
+
+> G
+
+PGg=1 cg is the mean coverage. With the coverage values from our dataset: Radar retains ∼87 visible tokens (34% visible) versus ∼55 for fully-covered groups (21% visible), ensuring that rare modalities contribute sufficient context for learning. These adaptive ratios apply only during standard masking. Complementary masking (Sec. 1.5) overrides them. 
+
+1.5 Complementary Masking Algorithm 
+
+Complementary masking forces the model to reconstruct heavily-masked groups using cross-modal information from fully-visible anchor groups. The procedure is detailed in Algorithm 1. The DDP broadcast on line 16 ensures all GPU ranks apply identical masking decisions, preventing gradient desynchronization in distributed training. All random decisions use PyTorch tensor operations (not Python random) for DDP compatibility. Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 21 
+
+Algorithm 1 Complementary Cross-Modal Masking 
+
+Require: Groups {1, . . . , G }, complementary probability p = 0 .5
+
+1: u ∼ Uniform (0 , 1) 
+
+2: if u < p then 
+
+3: k ∼ Uniform {1, 2} ▷ Number of anchor groups 4: A ← sample k groups uniformly without replacement 5: for each group g ∈ { 1, . . . , G } do 
+
+6: if g ∈ A then 
+
+7: mg ← 0 ▷ Anchor: fully visible 8: else 
+
+9: mg ← 0.90  ▷ Non-anchor: heavily masked 10: end if 
+
+11: end for 
+
+12: else 
+
+13: for each group g ∈ { 1, . . . , G } do 
+
+14: mg ← 0.75 + α · (cg − ¯c) ▷ Coverage-adaptive (Eq. 4) 15: end for 
+
+16: end if 
+
+17: DDP synchronization: broadcast {mg } and A from rank 0 18: return per-group mask ratios {m1, . . . , m G}
+
+1.6 Spectral Continuity Regularization 
+
+Mineral reflectance spectra are smooth functions of wavelength, a physical con-straint that MAE reconstruction losses do not enforce on their own. We regularize spectral M 3 reconstructions via an L2 penalty on second-order finite differences: 
+
+LSCR = μ
+
+|M spec |
+
+X
+
+> i∈M spec
+> B−2
+
+X
+
+> j=1
+
+(ˆ ri,j +2 − 2ˆ ri,j +1 + ˆ ri,j )2 (5) where ˆri,j is the reconstructed reflectance of the j-th spectral band at masked patch i, B = 8 is the number of M 3 bands, Mspec is the set of masked spectral patches, and μ = 0 .01 . The eight bands are sampled at non-uniform wavelengths (750, 950, 1000, 1250, 1580, 2000, 2817, 2857 nm). The finite differences are computed on the channel index rather than wavelength, which is a simplify-ing approximation justified by the fact that z-score normalization removes the physical scale of each band. Empirically, this regularization improves composi-tion R2 by +1.3 points (main paper, Table 6) by enforcing spectrally coherent reconstructions. This regularization has no analogue in Earth observation foun-dation models, which typically operate on non-contiguous multispectral bands from different instruments. 
+
+1.7 InfoNCE Contrastive Loss 
+
+The contrastive loss aligns per-group encoder representations, encouraging modality-invariant features in the shared latent space. For each pair of groups (g1, g 2)
+
+where both have valid data in the current batch, we compute: 22 A. Prasad and S. Mazumder 
+
+zg = hg
+
+∥hg ∥2
+
+, hg =
+
+P 
+
+> i
+
+vgi · hgiP 
+
+> i
+
+vgi
+
+(6) where hgi is the encoder output for token i of group g and vgi ∈ { 0, 1} indicates whether token i is valid (non-ghost, non-masked). This yields batch-level feature vectors zg ∈ RB×D. The InfoNCE loss for a group pair is: 
+
+S = zg1 z⊤
+
+> g2
+
+τ , Lg1,g 2 = 12
+
+CE (S, IB ) + CE (S⊤, IB ) (7) where τ = 0 .07 is the temperature, CE is cross-entropy loss, and IB is the identity label vector (each sample matches itself across modalities). The total contrastive loss averages over all  Gvalid 
+
+> 2
+
+ group pairs: 
+
+LNCE = 1
+
+|P| 
+
+X
+
+> (g1,g 2)∈P
+
+Lg1,g 2 (8) where P = {(g1, g 2) : g1 < g 2, both valid in batch }. The similarity compu-tation is performed in float32 with mixed-precision autocast disabled to avoid numerical instability in the exponential operations within softmax at tempera-ture τ = 0 .07 .
+
+# 2 Dataset Acquisition and Processing 
+
+This section provides full reproducibility details for constructing the 28-channel Moonstone dataset from publicly available archives. 
+
+2.1 Data Sources 
+
+All data are derived from publicly accessible NASA, USGS, and ISRO archives. Tab. 3 summarizes each instrument’s provenance. 
+
+2.2 Processing Pipeline 
+
+The dataset is constructed through a 15-step automated pipeline (Tab. 4). The complete pipeline runs in approximately 3 days from raw downloads, dominated by the ∼943 GB M 3 download. 
+
+2.3 M3 Hyperspectral Processing 
+
+The Moon Mineralogy Mapper (M 3) on Chandrayaan-1 acquired push-broom hyperspectral data with 85 spectral channels spanning 430–3000 nm. We selected 8 of these 85 bands for their diagnostic mineral absorption features (Tab. 5). 
+
+Data retrieval. We queried the PDS ODE REST API ( ihid=CH1-ORB ,
+
+iid=M3 , pt=REFIMG ) to obtain 887 L2 reflectance products in ENVI band-interleaved-by-line (BIL) format. Each product is a float32 cube of shape (lines, 85, 304) Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 23 
+
+with an associated location file (float64, longitude in 0–360 ◦ convention) and observation geometry file (10 parameters including incidence angle). 
+
+Nighttime filtering. Of the 887 products, 260 (29%) were acquired at night (incidence angle >90 ◦). Rather than downloading entire cubes to determine this, we used HTTP range requests to read only the first geometry record from each observation file header, allowing rapid filtering before full download. 
+
+Mosaicking. The 627 daytime products were mosaicked onto the 128 ppd equirectangular grid using a single-pass scatter algorithm with cosine-of-incidence weighting: each pixel’s reflectance is weighted by cos( θi) where θi is the solar inci-dence angle, favoring observations with more direct illumination. The algorithm uses memory-mapped accumulators for the weighted sum and weight total, with checkpointing every 50 strips for fault tolerance. 
+
+2.4 Data Quality Issues and Corrections Mini-RF radar outliers. Raw Mini-RF S1 backscatter contained extreme out-liers (99th percentile: 375,000 DN, maximum >10 6 DN) due to radar glint and saturation artifacts. The circular polarization ratio (CPR) also had values ex-ceeding 50 in 1.7% of pixels. We applied a log(1 + x) transform to both channels, compressing S1 from range [0 , 10 6] to [0 , 13 .8] and CPR from [0 , 50] to [0 , 3.9] .Z-score normalization was applied after the transform. 
+
+Diviner temperature channels. The channel labeled diviner_temp_night 
+
+(range 2–54 K) reports the modeled rock-free regolith surface temperature (Band-field et al., 2011), not the actual surface temperature. The bolometric midnight temperature ( diviner_tbol_midnight , range 90–188 K) includes both rock and regolith contributions and is closer to actual surface temperature. Both chan-nels are retained as independent thermal measurements with complementary information content. 
+
+Clementine albedo units. The USGS Clementine UVVIS 750 nm mosaic stores photometrically corrected albedo as 8-bit digital numbers (DN, range 0–254) rather than calibrated reflectance. Cross-calibration against M 3 750 nm yields R2 = 0 .34 with spatially varying ratios (0.0018–0.0032) due to fundamen-tally different photometric correction models (Lunar Lambert for Clementine vs. Hapke for M 3). Since all channels undergo z-score normalization, absolute units do not affect pretraining. Only spatial patterns matter. 
+
+WAC Hapke longitude convention. Four of eight WAC Hapke tiles used a 0–360 ◦ longitude convention while the remaining four used ±180 ◦. Initial mo-saicking without longitude wrapping yielded only 38.9% coverage. Correcting the convention by wrapping tiles at 180 ◦ before mosaicking restored the expected 77.8% coverage. 
+
+LP GRS spatial resolution. The Lunar Prospector Gamma-Ray Spec-trometer provides elemental abundances (FeO, TiO 2) at ∼60 km effective spa-tial resolution from 11,306 point measurements. These are interpolated onto the 128 ppd grid ( ∼237 m/pixel) using radial basis function interpolation, producing smooth fields that vary at scales much coarser than the pixel grid. 24 A. Prasad and S. Mazumder 
+
+2.5 Normalization Statistics 
+
+All channels are z-score normalized: xnorm = ( x − μ)/σ , where statistics are computed from 200 random 256 × 256 windows per channel. Missing data (NaN) is set to 0.0 after normalization. Tab. 6 reports the complete statistics. 
+
+# 3 Downstream Evaluation Details 
+
+3.1 Feature Extraction Protocol 
+
+For all downstream tasks, the pretrained encoder is run with mask ratio 0 (all tokens visible), producing encoder outputs for each modality group. 
+
+Classification and regression. Tokens within each group are mean-pooled (excluding ghost tokens via the has_group mask), then averaged across all avail-able groups to produce a single 768-dimensional feature vector per patch: 
+
+f = 1
+
+|G valid |
+
+X
+
+> g∈G valid
+
+1
+
+|Tg |
+
+X
+
+> i∈Tg
+
+hgi (9) where Gvalid is the set of groups with valid data and Tg is the set of non-ghost tokens for group g.
+
+Segmentation. Surface group tokens are used directly (256 tokens forming a 16 × 16 spatial grid) to preserve spatial information. The surface group has 100% coverage, so all 256 tokens are always valid. 
+
+3.2 Downstream Head Architectures Linear probe. A single linear layer: Linear(768, C) where C is the number of classes or output dimensions. 
+
+MLP head. For classification and regression tasks: Linear(768, 384) →
+
+GELU → Dropout(0.1) → Linear(384, C). 
+
+Segmentation head. The 16 × 16 token grid is upsampled to 256 × 256 via two transposed convolutions: 
+
+ConvTranspose2d (768 , 128 , k =4 , s =4) → GELU 
+
+→ ConvTranspose2d (128 , C, k =4 , s =4) 
+
+producing a C-channel prediction at the original input resolution ( 256 × 256 ). 
+
+Scratch baseline. A lightweight CNN with three convolutional layers (28 →
+
+64 → 128 → 256 channels, strides 4/2/2) with BatchNorm and ReLU, followed by adaptive average pooling and a linear classifier. This baseline processes all 28 raw channels directly. Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 25 
+
+3.3 Training Hyperparameters 
+
+Tab. 7 provides the complete downstream training configuration. Fine-tuning uses a discriminative learning rate: the encoder’s unfrozen blocks (layers 9–12) receive 0.01 × the head learning rate. Tokenizers and positional embeddings re-main frozen. Feature dropout (0.3) is applied to the extracted feature vector before the head during fine-tuning to prevent overfitting. 
+
+3.4 Task Label Definitions Geology classification (49 classes). Each 256 × 256 patch is assigned the USGS Unified Geologic Map unit that covers the majority of pixels within the patch. The 49 classes span five stratigraphic periods and include mare basalts, highland materials, impact basin deposits, and crater ejecta units. 
+
+Age classification (5 classes). Geologic units are grouped into five strati-graphic age periods: pre-Nectarian ( >3.92 Ga), Nectarian (3.92–3.85 Ga), Im-brian (3.85–3.2 Ga), Eratosthenian (3.2–1.1 Ga), and Copernican ( <1.1 Ga). The mapping is determined by the unit name prefix in the geologic map database. 
+
+Composition regression. Target values are the mean FeO and TiO 2 weight fractions within each patch, derived from LP GRS data. The metric is R2 av-eraged over both elements. Since LP GRS has ∼60 km effective resolution, this task evaluates whether the encoder captures regional geochemical trends rather than fine-grained spatial patterns. 
+
+Cross-modal prediction. The model predicts four thermal channels ( diviner_tbol_midnight ,
+
+diviner_temp_night , rock_abundance , christiansen_feature ) from non-thermal modality groups only. At inference, the thermal group’s has_group flag is set to zero, forcing the model to rely entirely on cross-modal information. 
+
+Mare segmentation. Binary pixel-level classification of mare basalts vs. highland terrain, derived from the USGS Unified Geologic Map. Mare units are identified by their compositional classification in the map database. 
+
+Crater segmentation. Binary pixel-level segmentation of large impact craters (>10 km diameter) from the Robbins global crater catalog. Crater interiors (within the rim) are labeled as positive. 
+
+3.5 Dataset Split Statistics 
+
+The 16,200 total patches (from a 180 ×90 non-overlapping grid) are split 70/15/15 into train (11,340), validation (2,430), and test (2,430) sets using a fixed random seed. Split assignments are stored in HDF5 metadata for exact reproducibility. For geographic split evaluation, patches are assigned by latitude band: training on ±60 ◦, validation on 60–70 ◦ (both hemispheres), and testing on 70–80 ◦ (both hemispheres). This simulates deployment to under-explored polar regions with different geology, illumination conditions, and modality coverage compared to equatorial training data. 26 A. Prasad and S. Mazumder 
+
+# 4 Pretraining Details 
+
+4.1 Complete Hyperparameter Table 
+
+Tab. 8 provides the full pretraining configuration. 
+
+Mixed precision. We use bfloat16 rather than float16 for mixed-precision training. bfloat16 has the same exponent range as float32 (8 exponent bits vs. float16’s 5), so no loss scaling or GradScaler is needed. The contrastive loss computation is explicitly cast to float32 to avoid numerical instability in the softmax temperature scaling. 
+
+4.2 Training Dynamics 
+
+Training proceeds smoothly over 100 epochs. Key observations: 
+
+– Per-group convergence rates. Gravity (MSE 0.003) converges within ∼20 epochs due to its smooth, low-frequency spatial structure. Radar remains the hardest group throughout training (final MSE 0.262), reflecting its sparse, high-frequency texture and limited 16–18% coverage. Surface and Hapke groups achieve similar final MSE (0.077), while thermal (0.136) and spectral (0.175) settle at intermediate values. 
+
+– Contrastive loss. LNCE stabilizes by epoch ∼30, indicating that per-group encoder representations achieve modality-invariant alignment early in train-ing. 
+
+– Proportional weighting dynamics. The self-balancing loss weights shift over training: gravity’s weight decreases as its loss drops, while radar’s weight increases, automatically focusing learning capacity on harder groups. 
+
+– Validation. Validation loss (computed on 2,000 random crops from the global map) closely tracks training loss with no evidence of overfitting, con-sistent with the unlimited random crop sampling strategy that ensures every training sample is effectively unique. 
+
+# 5 Reproducibility and Data Release 
+
+5.1 Compute Requirements Storage. The complete dataset requires approximately: 72 GB for aligned Geo-TIFFs (source of truth), 115 GB for pre-normalized memory-mapped arrays (training), and 57 GB for the HDF5 evaluation dataset. Raw M 3 data (used only during pipeline construction) requires an additional ∼943 GB. 
+
+5.2 Software Stack 
+
+The implementation uses: 
+
+– PyTorch 2.7 with CUDA, Python 3.11 Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 27 
+
+– NumPy, rasterio, GDAL (geospatial I/O) 
+
+– h5py (HDF5 dataset construction) 
+
+– SciPy (LP GRS interpolation) No custom CUDA kernels are required. Self-attention uses PyTorch’s built-in 
+
+scaled_dot_product_attention , which automatically dispatches to FlashAttention-2 when available on compatible hardware. 
+
+5.3 Data and Code Release 
+
+We publicly release Moonstone in two locations: 
+
+– Data (HuggingFace): https://huggingface.co/datasets/ayushprd/ Moonstone hosts the pre-normalized 28-channel memory-mapped arrays ( ∼115 GB), channel normalization statistics, train/val/test split metadata, aligned Geo-TIFFs ( ∼72 GB), and the pretrained MG-MAE checkpoint. 
+
+– Code (GitHub): https://github.com/ayushprd/Moonstone provides the complete pretraining and benchmark code, including the full 15-step data-processing pipeline, model architecture, training scripts, downstream evaluation for all six tasks, and baseline implementations. All source data is derived from publicly accessible NASA PDS, USGS, and ISRO archives. No proprietary data is used. The complete processing pipeline (steps 1–15) is included for full reproducibility from raw downloads. 
+
+5.4 Reproducibility Notes DDP determinism. All stochastic masking decisions (complementary masking, anchor group selection) are generated on rank 0 and broadcast to all ranks via 
+
+torch.distributed.broadcast , ensuring identical mask patterns across GPUs. All random operations use PyTorch tensor operations rather than Python’s ran-dom module for DDP compatibility. 
+
+Fixed splits. Train/val/test split assignments are stored in HDF5 meta-data with a fixed random seed, ensuring exact reproducibility of all downstream evaluations. 
+
+Few-shot evaluation. Each few-shot experiment is repeated 5 times with seeds 0–4, sampling different support sets. Results are reported as mean ± stan-dard deviation. 
+
+# 6 Design Evolution 
+
+The final MG-MAE architecture emerged through systematic exploration of de-sign alternatives. We document these design decisions and the reasoning behind them, as they provide insight into effective strategies for multi-modal planetary foundation models. 28 A. Prasad and S. Mazumder 
+
+6.1 Per-Channel vs. Grouped Tokenization 
+
+Our initial design assigned each of the 28 channels its own Conv2d(1, D, P )tokenizer, yielding 28 independent projection layers with a total of 181.4M pa-rameters ( ∼90.8M encoder, ∼90.6M decoder with 28 independent decoders). This per-channel approach discards intra-group correlations. For example, the eight M 3 spectral bands sample a continuous reflectance spectrum, but per-channel tokenizers process each band independently, losing the spectral shape information that is diagnostic of mineral composition. Similarly, the four Hapke reflectance bands encode a smooth spectral curve whose shape indicates surface maturity. Grouped tokenization replaces 28 per-channel tokenizers with 7 per-group multi-channel tokenizers, reducing parameters by 44% (181.4M → 101.6M) while capturing intra-group correlations. The ablation study in the main paper (Table 6) confirms a +3.3% geology accuracy gain from grouped tokenization. 
+
+6.2 Dirichlet vs. Complementary Masking 
+
+The per-channel architecture used Dirichlet( α=1) sampling to allocate a token budget across available channels: for each sample, a random fraction was drawn from a Dirichlet distribution to determine how many tokens each channel re-tained. While mathematically elegant, this approach had two drawbacks: 1. Complexity without benefit. The Dirichlet distribution adds implemen-tation complexity but showed no clear improvement over uniform random masking in preliminary experiments. 2. No cross-modal forcing. Dirichlet sampling does not systematically create conditions where the model must reconstruct one modality from another, which is a key learning objective for cross-modal representations. Complementary masking (Sec. 1.5) replaces this with a simpler, more targeted mechanism: with probability 0.5, designated anchor groups retain 100% of tokens while others mask at 90%. This directly forces cross-modal reconstruction and yields +1.4% geology accuracy (main paper, Table 6). 
+
+6.3 Independent vs. Shared Decoder 
+
+The per-channel architecture used 28 independent decoders, one per channel, with no information exchange during reconstruction. This design prevents the decoder from using cross-modal correlations. For example, it cannot use surface morphology to improve thermal reconstruction. The shared decoder in MG-MAE (4 layers, 384-d, 6 heads) processes all modality groups with a single set of transformer blocks, preceded by a cross-modal attention layer that allows each group’s decoder tokens to attend to en-coder tokens from all groups. This cross-modal decoder attention contributes +1.8% geology accuracy and +1.7 mIoU on craters (main paper, Table 6). The cross-modal prediction task provides direct evidence: the model achieves 
+
+R2 = 0 .987 when reconstructing thermal channels from non-thermal inputs, demonstrating that learned cross-modal correlations transfer to held-out data. Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 29 
+
+6.4 Earth–Moon Domain Gap 
+
+A natural question is whether representations from Earth observation (EO) foun-dation models can transfer to lunar data. Using learned linear adapters to project 28 lunar channels to each model’s expected input dimensionality while preserv-ing pretrained patch embeddings, we evaluated SatMAE, Prithvi-EO-2.0, and TerraMind on downstream tasks. The best EO model (Prithvi-EO-2.0) improved geology accuracy by only +1.9% over training from scratch, compared to MG-MAE’s +16.2% improve-ment. This result validates the core premise of our work. EO models learn fea-tures specific to Earth (vegetation indices, ocean color, atmospheric scattering, seasonal phenology), none of which have lunar counterparts. The fundamental domain gap between terrestrial and planetary imagery requires domain-specific pretraining, even when adapter protocols provide compatible input distribu-tions. 
+
+# 7 Extended Visualizations 
+
+Fig. 1 provides additional reconstruction examples across diverse lunar terrains beyond those shown in the main paper (Fig. 2). The model reconstructs co-herent spatial patterns from only 25% visible tokens across physically distinct modalities. Reconstruction quality is highest for gravity (smooth, low-frequency fields) and surface morphology (strong spatial autocorrelation), and lowest for radar (sparse, high-frequency texture with only 16–18% coverage). The model captures both large-scale structure (mare boundaries, crater rims) and fine-scale texture (spectral variations, thermal gradients). 30 A. Prasad and S. Mazumder WAC Morphology    
+
+> Original Masked Input (25%) Reconstruction Ground Truth
+> Diviner Thermal M3 750 nm GRAIL Free-Air
+
+Fig. 1: Additional MG-MAE reconstruction examples across modality groups and lu-nar terrains. From left to right: original patch, masked input (25% visible tokens, gray = masked), model reconstruction, and ground truth. Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 31 
+
+Table 1: Parameter count breakdown for MG-MAE (ViT-Base configuration). Component Details Parameters 
+
+Per-group tokenizers (Conv2d( ng , 768, 16, 16) )Surface ( ng =4 ) 4 × 768 × 256 + 768 786,432 Thermal ( ng =4 ) 786,432 Spectral ( ng =8 ) 8 × 768 × 256 + 768 1,572,864 Gravity ( ng =3 ) 3 × 768 × 256 + 768 589,824 Radar ( ng =2 ) 2 × 768 × 256 + 768 393,216 Hapke ( ng =4 ) 786,432 Composition ( ng =3 ) 589,824 Tokenizer subtotal 5,505,024 
+
+Shared encoder (12 transformer blocks) Self-attention (per block) QKV: 768 →2304 , proj: 768 →768 2,362,368 MLP (per block) 768 →3072 →768 4,722,432 LayerNorms (per block) 2 × 768 × 2 3,072 Per block total 7,087,872 
+
+×12 blocks 85,054,464 Encoder LayerNorm 1,536 Encoder subtotal (incl. embeddings) ∼85,600,000 
+
+Decoder 
+
+Encoder-to-decoder projection 768 → 384 295,296 Cross-modal attention MHA(384, 6 heads) 592,128 Self-attention blocks ( ×4) 384-d transformer blocks 4,740,096 Decoder LayerNorm 
+
+Per-group prediction heads (Linear( 384 , ng × 16 2))7 heads (varying ng ) ∼2,800,000 
+
+Embeddings 
+
+CLS token 1 × 768 
+
+7 type embeddings 7 × 768 5,376 Positional embeddings 257 × 768 (sinusoidal, frozen) 0Mask tokens (decoder) 7 × 384 2,688 Total ∼101.6M 
+
+Table 2: Coverage-adaptive mask ratios. Groups with lower coverage retain more visible tokens. Surface Thermal Spectral Gravity Radar Hapke Comp. Mean Coverage cg 1.000 0.710 0.669 1.000 0.174 0.778 0.993 0.761 Mask ratio mg 0.786 0.742 0.736 0.786 0.662 0.753 0.785 —Visible tokens ∼55 ∼66 ∼68 ∼55 ∼87 ∼63 ∼55 —32 A. Prasad and S. Mazumder 
+
+Table 3: Data sources for the 28-channel Moonstone dataset. All data are publicly available from the indicated archives. Instrument Mission Archive Format Native Res. Size WAC morphology LRO USGS GeoTIFF 100 m/px ∼6 GB LOLA + SLDEM2015 LRO USGS/MIT GeoTIFF/IMG 118 m/px ∼8 GB Diviner GDR L3 LRO PDS Geosci. IMG+LBL 128 ppd ∼6 GB Diviner GHRM LRO PDS Geosci. IMG+LBL 128 ppd ∼3 GB M3 L2 REFIMG Chandrayaan-1 PDS ODE ENVI BIL (f32) 140–280 m ∼943 GB GRAIL gridded GRAIL PDS ASCII (2 ppd) ∼15 km ∼100 MB Mini-RF SAR LRO PDS GeoTIFF ∼150 m ∼4 GB WAC Hapke LRO PDS GeoTIFF 128 ppd ∼8 GB Clem. UVVIS 750 nm Clementine USGS GeoTIFF (u8) 256 ppd ∼2 GB LP GRS elements Lunar Prosp. PDS ASCII table ∼60 km ∼1 MB 
+
+Table 4: 15-step data processing pipeline. All scripts are included in the released code. Step Script Description Output 1 step01_download Download WAC, LOLA, SLDEM, Diviner Raw products 2 step02_align Reproject to 128 ppd equirectangular Aligned GeoTIFFs 3 step03_derive Compute slope and roughness from DEM Derived layers 4 step04_tile Tile into 256 × 256 patches Initial HDF5 5 step05_geology Add USGS geology labels Labeled patches 6 step06_sample Create train/val/test splits (70/15/15) Split metadata 7 step07_validate Validate HDF5 data quality Quality report 8 step08_ode_query Query PDS ODE API for M 3 products Product list (887) 9 step09_m3_download Download M 3 L2 reflectance products ENVI cubes 10 step10_m3_mosaic Mosaic M 3 strips → 8 bands + 4 geometry Global GeoTIFFs 11 step11_m3_register Cross-register M 3 vs. WAC Registration QA 12 step12_m3_integrate Build V2 HDF5 (16 channels) V2 dataset 13 step13_align_new Download + align GRAIL, Mini-RF, etc. 12 new GeoTIFFs 14 step14_build_v4 Build V4 HDF5 (28 channels) V4 dataset 15 step15_build_mmap Convert to normalized mmap arrays Training data 
+
+Table 5: Selected M 3 spectral bands and their scientific relevance. Band Index Center λ (nm) Scientific Target 6 750 Continuum albedo reference 16 950 Pyroxene/olivine 1 μm absorption 19 1000 1 μm absorption shoulder 31 1250 Plagioclase feldspar 48 1580 SWIR continuum 69 2000 Pyroxene 2 μm absorption 79 2817 OH/H 2O81 2857 OH/H 2O absorption shoulder Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 33 
+
+Table 6: Per-channel normalization statistics. Mean and standard deviation computed from 200 random 256 × 256 windows per channel GeoTIFF. Group Channel Mean Std Units Surface 
+
+wac_morphology 63.94 41.59 DN 
+
+elevation −456 .83 2291.08 m
+
+slope 7.70 6.55 degrees 
+
+roughness 37.07 34.59 std(m) Thermal 
+
+diviner_tbol_midnight 95.43 6.59 K
+
+diviner_temp_night 4.68 2.43 K
+
+rock_abundance 0.0033 0.0051 fraction 
+
+christiansen_feature 8.17 0.10 μmSpectral 
+
+m3_750 0.0799 0.0261 reflectance 
+
+m3_950 0.0930 0.0319 reflectance 
+
+m3_1000 0.0959 0.0331 reflectance 
+
+m3_1250 0.1166 0.0379 reflectance 
+
+m3_1580 0.1354 0.0430 reflectance 
+
+m3_2000 0.1594 0.0495 reflectance 
+
+m3_2817 0.2071 0.0585 reflectance 
+
+m3_2857 0.2138 0.0600 reflectance Gravity 
+
+grail_freeair −4.56 128.31 mGal 
+
+grail_bouguer 21.08 214.70 mGal 
+
+grail_uncertainty 1.91 1.60 mGal Radar minirf_cpr 0.101 0.479 log(1+ratio) 
+
+minirf_s1 0.958 2.793 log(1+DN) Hapke 
+
+wac_hapke_415nm 0.0254 0.0070 reflectance 
+
+wac_hapke_566nm 0.0368 0.0098 reflectance 
+
+wac_hapke_604nm 0.0397 0.0104 reflectance 
+
+wac_hapke_689nm 0.0454 0.0117 reflectance Composition 
+
+clementine_uvvis_750nm 41.55 23.02 DN 
+
+lpgrs_tio2 0.0086 0.0118 wt fraction 
+
+lpgrs_feo 0.0693 0.0461 wt fraction 34 A. Prasad and S. Mazumder 
+
+Table 7: Downstream training hyperparameters across evaluation modes. Parameter Linear Probe Fine-tune Scratch Optimizer AdamW AdamW AdamW Head learning rate 10 −3 10 −3 10 −3
+
+Encoder learning rate — (frozen) 10 −5 (0.01 ×) 10 −3
+
+Weight decay 0.05 0.05 0.05 Max epochs 50 50 50 Early stopping patience 5 5 5Label smoothing 0.1 0.1 0.1 Feature dropout — 0.3 —Batch size (cls./reg.) 32 32 32 Batch size (segmentation) 16 16 16 LR schedule cosine + warmup cosine + warmup cosine + warmup Warmup min(2 ep, 10%) min(2 ep, 10%) min(2 ep, 10%) Gradient clipping 1.0 1.0 1.0 Frozen encoder blocks all 12 first 8 of 12 —Moonstone: A Multimodal FM and Benchmark for Lunar Remote Sensing 35 
+
+Table 8: Complete MG-MAE pretraining hyperparameters. Parameter Value 
+
+Architecture 
+
+Encoder ViT-Base (12 layers, 768-d, 12 heads) Decoder 4 layers, 384-d, 6 heads Patch size 16 × 16 pixels Input size 256 × 256 pixels Total parameters ∼101.6M 
+
+Optimization 
+
+Optimizer AdamW 
+
+(β1, β 2) (0.9, 0.95) Weight decay 0.05 Learning rate 1.5 × 10 −4
+
+LR schedule Linear warmup → cosine decay Warmup epochs 10 Minimum LR 1 × 10 −6
+
+Gradient clipping max_norm = 1.0 
+
+Training 
+
+Epochs 100 Batch size (per GPU) 64 GPUs 2× NVIDIA H100 80 GB Gradient accumulation 2 steps Effective batch size 256 Mixed precision bfloat16 Training time ∼20 hours ( ∼40 GPU-hours) Throughput ∼270 samples/s 
+
+Masking 
+
+Standard mask ratio 0.75 Complementary mask ratio (non-anchor) 0.90 Complementary masking probability 0.5 Coverage-adaptive α 0.15 
+
+Loss 
+
+InfoNCE temperature τ 0.07 InfoNCE weight λ 0.1 Spectral continuity weight μ 0.01 Reconstruction loss MSE (masked patches only) Loss group weighting Proportional (self-balancing) 
+
+Validation 
+
+Validation frequency Every 5 epochs Validation samples 2,000 random crops 36 A. Prasad and S. Mazumder 
+
+Table 9: Compute requirements for reproducing Moonstone. Stage Hardware Time Data pipeline (steps 1–15) CPU + 1 TB storage ∼3 days MG-MAE pretraining (100 epochs) 2× H100 80 GB ∼20 hours Full downstream eval (6 tasks × 3 modes) 1 × GPU ∼12–18 hours

@@ -1,0 +1,24 @@
+---
+title: Semantic fragment representations for coordinate-free analysis of genomics data
+title_zh: 用于基因组数据无坐标分析的语义片段表示
+authors: "Heydari, H., Zhao, J., Arseneault, M., Younesian, L., Tanguay, S., Riazalhosseini, Y., Goodarzi, H., Najafabadi, H. S."
+date: 2026-07-10
+pdf: "https://www.biorxiv.org/content/10.64898/2026.07.09.737627v1.full.pdf"
+tags: ["query:ssl"]
+score: 7.0
+evidence: 在基因组数据上使用自监督学习预训练片段级基础模型
+tldr: 标准基因组分析将DNA片段聚合成区间计数，丢失了片段个体信息，尤其在混合样本中。本文提出LEAF-1，一种基于片段的预训练基础模型，在58B个片段上训练，将每个DNA分子映射到语义空间。在稀疏scATAC-seq中，平均池化嵌入可从约1000个片段分类细胞类型；在cfDNA癌症检测中，优于坐标分箱和通用DNA语言模型，AUC达0.95，且跨癌症泛化。LEAF-1保留生化、细胞和疾病相关信号，避免坐标聚合损失。
+source: biorxiv
+selection_source: fresh_fetch
+figures_json: "[{\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-001.webp\", \"caption\": \"\", \"page\": 0, \"index\": 1, \"width\": 1613, \"height\": 1057, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-002.webp\", \"caption\": \"\", \"page\": 0, \"index\": 2, \"width\": 1620, \"height\": 1538, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-003.webp\", \"caption\": \"\", \"page\": 0, \"index\": 3, \"width\": 1620, \"height\": 1763, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-004.webp\", \"caption\": \"\", \"page\": 0, \"index\": 4, \"width\": 1622, \"height\": 1136, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-005.webp\", \"caption\": \"\", \"page\": 0, \"index\": 5, \"width\": 1540, \"height\": 1489, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-09-737627-v1/fig-006.webp\", \"caption\": \"\", \"page\": 0, \"index\": 6, \"width\": 1609, \"height\": 1331, \"label\": \"Figure\"}]"
+motivation: 克服标准分析将DNA片段聚合成区间计数导致个体片段信息丢失的问题。
+method: 预训练LEAF-1模型，包含序列、断裂边界等标记，在58B个bulk/scATAC-seq和cfDNA片段上学习语义表示。
+result: 在scATAC-seq中，平均池化LEAF-1嵌入用~1000片段分类细胞类型；在cfDNA癌症检测中，AUC达0.95，跨癌症泛化AUC 0.83。
+conclusion: 语义学习保留片段级信号，优于坐标聚合，适用于混合样本和肿瘤检测。
+---
+
+## 摘要
+许多基因组分析实验始于单个DNA片段，但标准分析过程很快将这些分子坍缩为基因组区间上的计数。每个片段携带的丰富信息——包括其序列、片段体、切割边界和局部侧翼背景——在此过程中丢失。这种损失在混合来源和异质样本中尤为明显，其中单个片段来自不同的细胞类型，并且可以保留其来源细胞的信息。为了解决这个问题，我们提出了LEAF-1，这是一个片段级基础模型，在约580亿个片段上进行了预训练，这些片段涵盖批量ATAC-seq、单细胞ATAC-seq和游离DNA图谱，将每个DNA分子表示为由序列上下文、检测模式以及明确的切割边界标记定义的学习语义空间中的一个点。在稀疏的scATAC-seq数据集中，平均池化的LEAF-1嵌入可轻松从每个细胞仅约1,000个片段中分类人类细胞类型，高评分片段与细胞类型相关的转录因子程序相关联。同样，在游离DNA分析中，LEAF-1在癌症检测任务上优于最先进的坐标分箱策略和通用DNA语言模型基线。将基于注意力的多示例学习应用于LEAF-1嵌入进一步提高了癌症检测性能，达到了0.95的受试者工作特征曲线下面积（AUC）。这个泛癌模型能够泛化到其训练癌症类型之外，我们通过分析透明细胞肾细胞癌患者和健康志愿者的血浆样本，并应用冻结的分类器而无需重新训练，实现了0.83的AUC。这些结果表明，对单个DNA片段的语义学习保留了生化、细胞相关和疾病相关的信号，而这些信号在基于坐标的聚合过程中会丢失。
+
+## Abstract
+Many genomic assays begin with individual DNA fragments, but standard analysis quickly collapses those molecules into counts over genomic intervals. Rich information carried by each fragment, including its sequence, fragment body, cleavage boundaries, and local flanking context, is lost in this process. This loss is especially apparent in mixed-source and heterogeneous samples, where individual fragments originate from disparate cell types and can retain information about their cell of origin. To address this, we present LEAF-1, a fragment-level foundation model pre-trained on approximately 58 billion fragments spanning bulk ATAC-seq, single-cell ATAC-seq, and cell-free DNA profiles, representing each DNA molecule as a point in a learned semantic space defined by sequence context, assay modality, and explicit cleavage-boundary tokens. In sparse scATAC-seq datasets, mean-pooled LEAF-1 embeddings readily classify human cell types from as few as ~1,000 fragments per cell, with high-scoring fragments linked to cell-type-associated transcription-factor programs. Similarly, in cell-free DNA profiling, LEAF-1 outperformed state-of-the-art coordinate-binning strategies and general-purpose DNA language model baselines across cancer detection tasks. Applying attention-based multiple-instance learning to LEAF-1 embeddings further improved cancer detection, reaching an area under the receiver operating characteristic (ROC) curve (AUC) of 0.95. This pan-cancer model generalizes beyond cancer types it is trained on, as we show by profiling plasma samples from clear cell renal cell carcinoma patients and healthy volunteers and applying the frozen classifier without retraining, achieving an AUC of 0.83. These results show that semantic learning over individual DNA fragments preserves biochemical, cell-associated, and disease-associated signals that are otherwise lost during coordinate-based aggregation.
