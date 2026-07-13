@@ -6,50 +6,53 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-12
-- 运行时间：2026-07-12 20:11:53 UTC
+- 最新运行日期：2026-07-13
+- 运行时间：2026-07-13 21:41:39 UTC
 - 运行状态：成功
-- 本次总论文数：10
-- 精读区：5
-- 速读区：5
+- 本次总论文数：11
+- 精读区：7
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读聚焦Worldscape-MoE和InternVLA-A1.5，分别以混合专家世界模型实现可扩展异构动作控制、统一理解与动作实现组合泛化，质量极高。最值得关注方向：MoE世界模型在异构动作中的扩展能力，以及统一框架下的组合泛化技术。建议普通读者优先精读这两篇高分论文，深入理解其模型设计思路与应用潜力。
-- 详情：[/202607/12/README](/202607/12/README)
+今日精选11篇论文，精读7篇，重点攻克层级视觉动态建模与扩散模型表征学习两大方向；DynaVieW（9.0分）以模式引导理解层级视觉动态，Probing Diffusion（9.0分）探索扩散去噪动态做对比学习，均值得优先深入；普通读者可从这两篇高分论文入手，快速把握视觉理解与表征学习前沿。
+- 详情：[/202607/13/README](/202607/13/README)
 
 ### 精读区论文标签
-1. [Worldscape-MoE: A Unified Mixture-of-Experts World Model for Scalable Heterogeneous Action Control](/202607/12/2607.03964v1-worldscape-moe-a-unified-mixture-of-experts-world-model-for-scalable-heterogeneous-action-control)  
-   标签：评分：10.0/10、query:world-models
-   evidence：提出统一的混合专家世界模型用于异构动作控制
-2. [InternVLA-A1.5: Unifying Understanding, Latent Foresight, and Action for Compositional Generalization](/202607/12/2607.04988v1-internvla-a15-unifying-understanding-latent-foresight-and-action-for-compositional-generalization)  
+1. [DynaVieW: Schema-Guided World Modeling for Understanding Hierarchical Visual Dynamics](/202607/13/2607.04112v1-dynaview-schema-guided-world-modeling-for-understanding-hierarchical-visual-dynamics)  
    标签：评分：9.0/10、query:world-models
-   evidence：通过潜在查询预测未来状态用于机器人操作
-3. [Moonstone: A Multimodal Foundation Model and Benchmark for Lunar Remote Sensing](/202607/12/2607.03644v1-moonstone-a-multimodal-foundation-model-and-benchmark-for-lunar-remote-sensing)  
+   evidence：模式引导的世界模型用于视觉动态预测
+2. [Probing Diffusion Denoising Dynamics for Contrastive Representation Learning](/202607/13/2607.09067v1-probing-diffusion-denoising-dynamics-for-contrastive-representation-learning)  
+   标签：评分：9.0/10、query:ssl
+   evidence：利用扩散去噪动态进行对比学习
+3. [Causally Debiased Latent Action Model for Embodied Action Conditioned World Models](/202607/13/2607.09185v1-causally-debiased-latent-action-model-for-embodied-action-conditioned-world-models)  
+   标签：评分：9.0/10、query:world-models
+   evidence：直接针对具身动作条件世界模型中的潜在动作模型
+4. [Similarity search generalisation in contrastive learning with InfoNCE loss](/202607/13/2607.09405v1-similarity-search-generalisation-in-contrastive-learning-with-infonce-loss)  
+   标签：评分：9.0/10、query:ssl
+   evidence：对比学习与InfoNCE损失分析
+5. [When Structured Sparse Autoencoders Learn Consistent Concepts Across Modalities](/202607/13/2607.08605v1-when-structured-sparse-autoencoders-learn-consistent-concepts-across-modalities)  
    标签：评分：8.0/10、query:ssl
-   evidence：用于月球遥感的模态分组掩码自编码器
-4. [Contrastive Order Learning: A General Framework for Ordinal Regression](/202607/12/2607.08109v1-contrastive-order-learning-a-general-framework-for-ordinal-regression)  
+   evidence：结构化稀疏自编码器用于跨模态一致概念
+6. [Shortcut Trajectory Planning for Efficient Offline Reinforcement Learning](/202607/13/2607.09336v1-shortcut-trajectory-planning-for-efficient-offline-reinforcement-learning)  
+   标签：评分：8.0/10、query:world-models
+   evidence：基于模型的离线强化学习中的快捷轨迹规划
+7. [ARSENAL: Learning Transferable Regulatory DNA Representations with Targeted Short-Context Language Models](/202607/13/biorxiv-10-64898-2026-02-05-703637-v3-arsenal-learning-transferable-regulatory-dna-representations-with-targeted-short-context-language-models)  
    标签：评分：8.0/10、query:ssl
-   evidence：用于序数回归的对比学习框架
-5. [NiCLIP: Neuroimaging contrastive language-image pretraining model for predicting text from brain activation images](/202607/12/biorxiv-10-1101-2025-06-14-659706-v4-niclip-neuroimaging-contrastive-language-image-pretraining-model-for-predicting-text-from-brain-activation-images)  
-   标签：评分：8.0/10、query:ssl
-   evidence：将CLIP对比学习应用于神经影像
+   evidence：基于调控元件的掩码DNA语言模型预训练
 
 ### 速读区论文标签
-1. [On the Genealogy of Machine Learning Weather Prediction](/202607/12/2607.05045v1-on-the-genealogy-of-machine-learning-weather-prediction)  
-   标签：评分：7.0/10、query:world-models
-   evidence：讨论学习潜在动力学和自回归预测在天气中的应用
-2. [A unified theory of context-conditioned efficient and predictive coding](/202607/12/biorxiv-10-1101-2025-02-24-639817-v2-a-unified-theory-of-context-conditioned-efficient-and-predictive-coding)  
-   标签：评分：7.0/10、query:world-models
-   evidence：预测编码理论作为内部世界模型
-3. [Semantic fragment representations for coordinate-free analysis of genomics data](/202607/12/biorxiv-10-64898-2026-07-09-737627-v1-semantic-fragment-representations-for-coordinate-free-analysis-of-genomics-data)  
-   标签：评分：7.0/10、query:ssl
-   evidence：在基因组数据上使用自监督学习预训练片段级基础模型
-4. [Orthogonal Dendritic Intrinsic Networks: An Architecture for Significance-Ordered, Orthogonal Latent Spaces](/202607/12/2607.05653v1-orthogonal-dendritic-intrinsic-networks-an-architecture-for-significance-ordered-orthogonal-latent-spaces)  
+1. [Distinct regimes of spatial prediction across the visual field during natural vision](/202607/13/biorxiv-10-64898-2026-03-27-714859-v2-distinct-regimes-of-spatial-prediction-across-the-visual-field-during-natural-vision)  
+   标签：评分：8.0/10、query:world-models
+   evidence：使用深度生成模型研究视觉皮层的预测世界模型
+2. [DiCE-CIR: Direct Composition Learning for Efficient Zero-Shot Composed Image Retrieval](/202607/13/2607.04665v1-dice-cir-direct-composition-learning-for-efficient-zero-shot-composed-image-retrieval)  
    标签：评分：6.0/10、query:ssl
-   evidence：提出一种新的自编码器架构学习正交潜在空间，与自监督表示学习相关
-5. [Attention reshapes the information dynamics of thalamic and cortical prediction-error learning](/202607/12/biorxiv-10-64898-2026-07-10-737794-v1-attention-reshapes-the-information-dynamics-of-thalamic-and-cortical-prediction-error-learning)  
-   标签：评分：6.0/10、query:world-models
-   evidence：预测误差学习更新内部模型
+   evidence：直接组合学习的零样本组合图像检索
+3. [YeTI: You Only Need Two Noisy Images for Real-World sRGB Noise Generation](/202607/13/2607.09193v1-yeti-you-only-need-two-noisy-images-for-real-world-srgb-noise-generation)  
+   标签：评分：6.0/10、query:ssl
+   evidence：用于自监督噪声合成的生成模型
+4. [Tokenizing single-cell transcriptomes as a native language for large language models](/202607/13/biorxiv-10-1101-2025-10-22-684047-v2-tokenizing-single-cell-transcriptomes-as-a-native-language-for-large-language-models)  
+   标签：评分：6.0/10、query:ssl
+   evidence：将转录组转化为token并融入LLM，支持多模态自监督学习
 
 
 <div class="dpr-home-promo-card">
