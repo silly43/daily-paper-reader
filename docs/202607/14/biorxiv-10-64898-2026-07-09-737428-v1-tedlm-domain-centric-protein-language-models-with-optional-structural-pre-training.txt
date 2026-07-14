@@ -1,0 +1,1398 @@
+Title: TEDlm: domain-centric protein language models with optional structural pre-training
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.07.09.737428v1.full.pdf
+
+Number of Pages: 27
+
+Markdown Content:
+1
+
+# TEDlm: domain -centric protein language models with optional 1
+
+# structural pre -training 2
+
+## Tiejun Wei 1, Shaun M. Kandathil 1,2 , Daniel W. A. Buchan 1, David T. Jones 1,3,* 
+
+3
+
+1Department of Computer Science, University College London, Gower Street, 4
+
+## London WC1E 6BT, United Kingdom 5
+
+2Present address: InstaDeep, 1 Triton Square, London NW1 3BF, United Kingdom 6
+
+3Institute of Structural and Molecular Biology, University College London, 7
+
+## London WC1E 6BT, United Kingdom 8
+
+## *Correspondence 9
+
+## Contributions 10 
+
+D.T.J. conceived the study, the domain -centric pretraining approach and carried out model training. D.T.J 11 
+
+designed and implemented the TEDlm and TEDlm3D architectures. T.W. assembled the domain -level 12 
+
+pretraining dataset from TED, curated and performed the downstream evaluation and a nalysis. T.W. 13 
+
+prepared the figures and wrote the original draft. S.M.K. and D.W.A.B. contributed to method 14 
+
+development, benchmarking, and evaluation design. D.T.J. supervised the project and acquired funding. 15 
+
+All authors reviewed and edited the manuscript and approved the final version. 16 
+
+## Corresponding author 17 
+
+David T. Jones 18 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+2
+
+## Abstract 19 
+
+Conventional protein language models are pretrained on full -length sequences that interleave multiple 20 
+
+domains with linkers and disordered regions, diluting fold -specific signal s. Our approach pretrains 21 
+
+masked language models on structurally -defined domain segments from The Encyclopedia of Domains. 22 
+
+TEDlm learns from domain sequences alone with a standard MLM objective, while its variant TEDlm3D 23 
+
+adds a Cα distance -guided contact los s that supervises the attention maps. On CATH S40 remote -24 
+
+homology detection (<40% identity), the domain -centric pretraining has a bigger effect than model scale: 25 
+
+at the final layer, a 650M -parameter TEDlm achieves an AUROC1 of 0.28 compared to 0.22 for ESM 226 
+
+3B, whereas TEDlm3D reaches 0.50, approaching the structure -based search tool Foldseek (0.53) from 27 
+
+sequence alone at inference. Attention -map and categorical Jacobian probes show that the contact signal 28 
+
+is encoded in the model representations themselves, not only in a trained output head. TEDlm variants 29 
+
+also substantially improve zero -shot Molecular Function prediction over ESM2, while matching it on 30 
+
+various biophysical property tasks, indicating that signals are largely domain -intrinsic. Together, these 31 
+
+results position domain -centric pretraining as a route to compact, structurally informed protein language 32 
+
+models. 33 
+
+## Introduction 34 
+
+Proteins underpin  essentially  all biological  processes  yet  inferring their three -dimensional structures and 35 
+
+molecular functions directly from amino acid sequences remains a fundamental challenge despite recent 36 
+
+breakthroughs in deep learning –based structure prediction 1,2 . Genome and metagenome sequencing 37 
+
+project s have produced billions of sequences, creating urgent demand for scalable methods to detect 38 
+
+homology and infer structure and function  in silico 3. Alignment -based tools such as BLAST, HMMER, 39 
+
+and HHblits have long been used for this task 4–6. Recent algo rithms like MMseqs2 significantly improved 40 
+
+the speed and sensitivity of sequence searches, with better sensitivity than PSI -BLAST while being 41 
+
+hundreds of times faster 7. However, pure alignment -based methods struggle when sequence identity 42 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+3
+
+approaches the  so -called twilight zone 8,9 , leading to the development of machine learning methods that 43 
+
+can detect subtle sequence signals of structural or functional similarity. To date, accurate homology 44 
+
+detection remains a crucial first step  for transferring  structural and functional annotations between 45 
+
+proteins. 46 
+
+The advent of transformer architectures 10 , which revolutionized natural language processing through 47 
+
+contextual self -attention and large -scale pretraining 11 , has similarly reshaped bioinformatics.  Deep 48 
+
+transformer -based protein language models (pLMs) have achieved remarkable success in capturing 49 
+
+evolutionary and structural patterns from self -supervised pretraining on large -scale sequence datasets 12 –15 .50 
+
+The success of sequence -only pLMs may be attr ibuted to their ability to learn the evolutionary 51 
+
+information embedded in protein sequences, commonly reflected as conserved regions that have 52 
+
+accumulated over millions of years. The Evolutionary Scale Models (ESM) family of pLMs demonstrated 53 
+
+these evoluti onary patterns can be captured by pretraining on unaligned sequences 16,17 . Learning rich 54 
+
+protein representations  was thought to be achievable only through relatively expensive computation of 55 
+
+multiple sequence alignments (MSAs) 18 .56 
+
+Remarkably, large pLM  embeddings contain signals predictive of secondary structure, residue –residue 57 
+
+contacts, and protein function, despite being trained only to model sequences 15 . A landmark example is 58 
+
+ESM2, a masked language model whose embeddings, learned from unaligned se quences alone, carry 59 
+
+enough structural information that ESMFold predicts atomic -level protein structure from a single 60 
+
+sequence 16 . Recently, embedding -based methods such as PLMSearch have demonstrated that even frozen 61 
+
+pLMs, e.g. the modestly sized ESM -1b  model, can rival alignment -based methods like MMseqs2 for 62 
+
+homology detection with a simple cosine similarity  ranking 7,15,19 . These findings underscore the 63 
+
+evolutionary signal captured in pretrained sequence embeddings alone, without any structural superv ision. 64 
+
+The rapid expansion of structural data in the AlphaFold Protein Structure Database (AFDB )1,3  has enabled 65 
+
+another approach: bimodal sequence -structure pLMs. ProstT5, a structure -aware model trained on top of 66 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+4
+
+ProtT5, incorporates explicit structura l tokens alongside sequence tokens 12,13 . SaProt and ProSST take a 67 
+
+related route, the Foldseek 3Di alphabet in SaProt and a learned quantized alphabet in ProSST; both 68 
+
+require an explicit structure at inference 20,21 . Another recent approach, TM -Vec/ DeepBLAST, explicitly 69 
+
+incorporates structural information by training on TM -align scores as an auxiliary loss, producing 70 
+
+embeddings that correlate more directly with structural similarity 22 . Although the combination of 71 
+
+sequence and structure tokens signi ficantly boosts homology detection performance, it also relies on 72 
+
+ground -truth structures during training 21 . Similarly, Foldseek leverages a predefined vocabulary of 20 73 
+
+local residue environments called 3Di tokens, which enables ultra -fast structural sim ilarity search while 74 
+
+retaining high sensitivity in homology detection 23 .75 
+
+Independently of these bimodal approaches, Rao et al. demonstrated that transformer attention maps 76 
+
+trained with an unsupervised masked language modelling objective learn residue –re sidue contacts 77 
+
+directly, achieving state -of -the -art unsupervised contact prediction from a single forward pass 24 . More 78 
+
+recently, Zhang et al. showed through a categorical Jacobian analysis that pLMs such as ESM -2 store 79 
+
+statistics of coevolving residue mo tifs analogously to Markov Random Field models, though the 80 
+
+structural signal captured remains limited by having been trained on full -length sequences 25 . These 81 
+
+findings suggest that the self -attention mechanism in pLMs is a natural architecture for encodi ng residue -82 
+
+level geometric relationships, and that explicitly guiding this mechanism with structural supervision 83 
+
+during pretraining could amplify the contact signal beyond what unsupervised objectives achieve alone. 84 
+
+Although the growing availability of pro tein structures enables explicit incorporation of structural 85 
+
+information, significant potential remains in improving sequence -based pretraining alone. Many proteins 86 
+
+are composed of two or more domains, which are compact, independently folded functional uni ts of 87 
+
+protein sequence and structure. Conventional pLMs are typically trained on full -length sequences, which 88 
+
+may contain several concatenated domains, often in different orders 13,16,20 . This could obscure the learning 89 
+
+of domain -specific patterns, as the  model is trained on sequences of longer average length, which contain 90 
+
+unstructured/linker regions. Recent breakthroughs in deep learning -based protein domain segmentation, 91 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+5
+
+such as Merizo 26 , ChainSaw 27 , and UniDoc 28 , have made it possible to effectiv ely segment and classify 92 
+
+protein domains in data sets as large as the AFDB. A comprehensive dataset of domains in the AFDB is 93 
+
+now available, known as The Encyclopedia of Domains (TED) 29 . It identified more than 365 million 94 
+
+domains, with ~100M more domain s than were detectable by sequence -based methods. By segmenting 95 
+
+full -length proteins into domain -level sequences, models can be trained on structurally coherent, 96 
+
+functionally minimal regions, potentially capturing more implicit structural signals from sequ ence alone, 97 
+
+as compared to training on full -length protein sequences. 98 
+
+In this work, we introduce TEDlm and TEDlm3D, transformer -based protein language models that 99 
+
+leverage segmented domain sequences during pretraining to introduce fold -relevant inductive  bias. 100 
+
+TEDlm adopts a BERT -like masked language model objective and learns to predict masked amino acids 101 
+
+within domain sequences, capturing motifs and long -range dependencies that define specific folds and 102 
+
+superfamilies. TEDlm3D extends this framework by in corporating a Cα distance -guided contact 103 
+
+prediction auxiliary loss, exploiting the observation that transformer attention maps naturally encode 104 
+
+residue –residue proximity. By jointly optimising sequence prediction and contact geometry on domain 105 
+
+structures d erived from the AFDB, TEDlm3D is designed to explicitly encode the structural relationships 106 
+
+that TEDlm captures only implicitly. The key hypothesis is that learning from domain -level sequences, 107 
+
+optionally augmented with structural supervision, enables the  model to disentangle structure -relevant 108 
+
+patterns from extraneous sequence noise, yielding representations that generalise across structural and 109 
+
+functional prediction tasks. 110 
+
+Finally, we examine how structural information is distributed across transformer la yers. On homology 111 
+
+detection, intermediate -layer embeddings substantially outperform final -layer ones across every model we 112 
+
+test; the gap is large enough that even TEDlm3D 160M, from sequence input alone, surpasses Foldseek at 113 
+
+an intermediate layer. This mi rrors observations in natural language processing (NLP), where 114 
+
+intermediate layers encode richer representations than the final layer and consistently outperform final -115 
+
+layer embeddings on downstream tasks 30 . We interpret this as the final layers of a mas ked language model 116 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+6
+
+specialising for the token -level prediction objective, compressing the more abstract, fold -discriminative 117 
+
+features carried in intermediate layers. A systematic layer -wise analysis across all models is given in 118 
+
+Supplementary Table 1. 119 
+
+## Resu lts 120 
+
+## Domain pretraining and structural auxiliary loss improves fold recognition 121 
+
+We assessed TEDlm and TEDlm3D on homology detection using the CATH S40 dataset, a canonical 122 
+
+benchmark for evaluating a model's ability to capture structural relationships at  low sequence identity 123 
+
+(<40%) 31 . Sensitivity was measured in AUROC1 (area under the ROC curve up to the first false positive), 124 
+
+which quantifies how reliably true remote homologs are ranked ahead of non -homologs. We compared 125 
+
+against alignment -based methods  (MMseqs2, Foldseek) and state -of -the -art pLMs (ESM2, ProtT5, 126 
+
+ProstT5) 7,12,13,16,23 . All pLMs were evaluated using exhaustive all -vs -all cosine similarity ranking; 127 
+
+alignment -based tools used exhaustive search mode. 128 
+
+Restricting pretraining to domain segme nts improved fold discrimination on its own. Using final -layer 129 
+
+embeddings, TEDlm 650M outperformed both ESM2 models, the alignment tool MMseqs2, and 130 
+
+matching encoder -only ProtT5 3B. A 650M domain model therefore surpasses a full -length sequence 131 
+
+model more  than four times its size, hinting that on the homology detection task, the pretraining data 132 
+
+outweighs model scale. TEDlm3D, which combines the same domain -based pretraining with the Cα 133 
+
+distance -guided contact objective, shows further improvement in accurac y from sequence input alone, 134 
+
+approaching the structure -based tool Foldseek. Notably, the TEDlm3D 160M variant exceeded every 135 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+7
+
+sequence -only baseline, while remaining competitive with ProstT5 3B, which uses structural tokens 136 
+
+during training. 137 
+
+The structural signal was spread across the network rather than concentrated at t he output (Figure 1B). 138 
+
+Every model performs  substantially  better with intermediate layer embeddings compared to their final 139 
+
+layer embedding s on this task, indicating that the final layer understates the structural information and is 140 
+
+optimised for its MLM sequence loss objective. ESM2 models have the biggest gap with its final -layer 141 
+
+performance falling far below its intermediate -layer peak. TED lm3D models  (650M and 1.3B)  lose much 142 
+
+less and interestingly even their final -layer embeddings exceed the best layer of either ESM2 model. As 143 
+
+an upper reference, TEDlm 1.3B w/CATH, which adds a CATH topology classification loss, reaches 144 
+
+AUROC1 = 0.733; bec ause this loss directly shapes the embedding geometry that AUROC1 measures, 145 
+
+we report it as weakly supervised metric learning rather than a zero -shot result. Per -layer values are listed 146 
+
+in Supplementary Table 1. 147 
+
+## TEDlm3D contact head captures residue -level structural information 148 
+
+Figure 1  Homology detection  performance on the CATH S40 dataset . (A) Cumulative 
+
+sensitivity distributions using final -layer embeddings. True positives are matches within the 
+
+same CATH superfamily; false positives are matches between different folds. Mean AUROC1 
+
+(μ) is shown in the l egend. (B) Layer -wise AUROC1 across the last seven transformer layers 
+
+(layer 1 = final layer). Best AUROC1 achieved at any layer is indicated in the legend. 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+8
+
+We tested whether the Cα objective leaves a residue -level contact signal in the learned representations 149 
+
+rather than only in a trained output layer, using two probes on 1,327 CATH S40 v4.4.0 domains, one per 150 
+
+topology (Methods). We first probed the  attention maps, which reflect internal information mixing rather 151 
+
+than the output logits (Figure 2A). TEDlm3D and TEDlm 650M share the same architecture and the 152 
+
+MLM objective and differ in the Cα loss only. The best long -range head of TEDlm3D 650M reached 153 
+
+precision at  sequence  length  (P@L)  = 0.347 against 0.205 for TEDlm 650M, and 0.304 against 0.244 at 154 
+
+short and medium range, with the effect concentrated in a few heads rather than the attention  apparatus 155 
+
+(mean long -range P@L ≈ 0.04 across all 672 heads; Methods). The Cα loss thus reshapes how TEDlm3D 156 
+
+mixes residue information internally rather than adding a separate readout. 157 
+
+Figure  1 TEDlm3D captures long -range structure better than TEDlm under two independent 
+
+probes . Precision@L on 1,327 CATH topology representatives, for residue pairs split into 
+
+short+medium (6 
+
+≤ |i−j| < 23)  and long -range (|i−j| 
+
+≥ 23) bins.  (A) Best -head attention 
+
+precision for the TEDlm 650M / TEDlm3D 650M pair.  (B) Categorical -Jacobian contact 
+
+prediction across all models (hatched bars: TEDlm3D supervised contact head).  Both  panels 
+
+showed  TEDlm3D  performs  better than  its original in terms of contact prediction , while  the 
+
+advantage  widens at long rang e.  Unsupervised contact prediction precision  (Ovchinnikov 
+
+Jacobian method) and TEDlm3D contact head precision across P@L/5, P@L/2, and P@L 
+
+thresholds. Left: med ium - and long -range contacts (6  < |i−j| <23); right: long -range only (|i−j| ≥ 
+
+23). Solid bars  denote unsupervised Jacobian -derived predictions; hatched bars denote TEDlm3D 
+
+contact head predictions. Contacts defined as Cα distance < 8 Å, with APC correction  applied. 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+9
+
+The same pattern held end -to -end under the categorical Jacobian of each model's  logits, which scores 158 
+
+coevolutionary coupling without any trained contact layer and applies uniformly across architectures 159 
+
+(Figure 2B) 25 . For long -range pairs (|i−j| ≥ 23), TEDlm3D 1.3B reached P@L/5 = 0.552, above ESM2 3B 160 
+
+(0.438) and its MLM -only counter part TEDlm 1.3B (0.348), with the same ordering at smaller sizes. The 161 
+
+contact signal recoverable from a single forward pass is therefore stronger in TEDlm3D than in an equally 162 
+
+sized full -length model or in TEDlm. 163 
+
+Within TEDlm3D models, a dedicated contact  head, trained on Cα distance maps during pretraining, 164 
+
+reads this signal out at high precision in one forward pass (hatched bars, Figure 2B). For medium - and 165 
+
+long -range pairs it reached P@L/5 = 0.745 (650M) and 0.789 (1.3B), against about 0.45 for the best 166 
+
+unsupervised Jacobian baseline (ESM2 3B); for long -range pairs it reached 0.638 and 0.698 at P@L/5, 167 
+
+and 0.440 and 0.489 at the stricter P@L. Note the head is also an order of magnitude faster than the 168 
+
+unsupervised Jacobian approach, which requires a forwa rd pass per residue substitution. 169 
+
+## Training on domain sequences yield s better performance on MF Prediction 170 
+
+We evaluated zero -shot GO term prediction by KNN label transfer on two benchmarks: the time -cutoff 171 
+
+CAFA3 test 32 , whose knowledge base predates the CAFA3 targets and excludes homologs (Table 2), and 172 
+
+an up -to -date Swiss -Prot test that stratifies queries by maximum sequence identity to the knowledge base 173 
+
+(Figure 3; Methods). Molecular function (MF) was the namespace w here domain pretraining helped 174 
+
+consistently. The gap between models on the CAFA3 targets was large:  on MF namespace  TEDlm and 175 
+
+TEDlm3D variant s exceeded ESM2, with TEDlm 1.3B at wFmax = 0.336 and TEDlm 650M at 0.323 176 
+
+against ESM2 3B (0. 301 ) and ESM2 650M (0. 270 ). The Swiss -Prot test confirmed the trend: across the 177 
+
+identity -capped bins from 0.1 to 0.8, every TEDlm and TEDlm3D variant exceeded both ESM2 models, 178 
+
+and at a 0.3 cap, TEDlm 650M and 1.3B reached 0.488 and 0.486 against ESM2 3B (0.474) and ESM2 179 
+
+650M ( 0.458), a lead near 0.01 to 0.015 that closed to parity with ESM2 3B only when all  neighbours 180 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+10 
+
+were admitted. TEDlm and TEDlm3D tracked each other on MF, with TEDlm ahead at most thresholds, 181 
+
+so the gain reflects the domain training data rather than the cont act objective. Notably, most enzymes 182 
+
+realize their function within an individual domain, while a minority of active sites form at the interface 183 
+
+between two or more domains 33 . The molecular -function gains we observe are  therefore consistent with 184 
+
+domain -level pretraining capturing function -relevant signal. 185 
+
+In biological process (BP) the two benchmarks disagree, and we do not claim a domain advantage in 186 
+
+either.  On CC, ESM2 models remain leading position in t he CAFA3 test  (Table 2), on the up -to -date 187 
+
+Swiss -Prot test, ESM2 held the advantage at every identity threshold (Figure 3), with ESM2 3B highest 188 
+
+and the TEDlm3D variants lowest; at a 0.3 cap ESM2 3B reached BP wFmax 0.248 and CC 0.440, above 189 
+
+TEDlm 1.3B (0. 242 and 0.406). This fits the expectation that biological process and subcellular 190 
+
+localisation are more likely to depend on multi -domain context, signal peptides and protein interactions 191 
+
+that domain -level pretraining does not see. 192 
+
+## Domain pretraining achiev es property prediction across biophysical tasks 193 
+
+Figure 3  Zero -shot KNN -based GO  term prediction  (wFmax at K = 5) on the customized 
+
+UniProtKB -SwissProt benchmark across three ontology namespaces (MF, BP, CC). X -axis 
+
+indicates the maximum allowed query –neighbor sequence identity, with additional E -value < 
+
+10 −3 training mask applied at e ach threshold. 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+11 
+
+To assess whether the representational advantages of domain -centric pretraining extend beyond homology 194 
+
+detection, we evaluated all models on five biophysical property prediction tasks using a KNN label 195 
+
+transf er protocol with sequence -identity -stratified evaluation (S. Fig ure . 6; see Methods). Tasks included 196 
+
+enzyme catalytic efficiency (Kcat, Spearman ρ) 34 , metal -ion binding (AUROC) 35 , and thermostability 197 
+
+prediction on human, cross -species, and nanobody  datasets (Spearman ρ) 36 –38 . For each task, an 198 
+
+MMseqs2 -based search was first used to restrict  the  dataset to single -domain proteins 7. An additional 199 
+
+training mask was then applied to exclude  neighbours  above a specified sequence -identity threshold, 200 
+
+crea ting a series of increasingly stringent evaluation bins that probe whether embeddings capture 201 
+
+transferable signals beyond high sequence similarity. 202 
+
+Across tasks, TEDlm and TEDlm3D achieved performance comparable to ESM2. TEDlm variants 203 
+
+showed modest advan tages under stringent filtering for enzyme catalytic efficiency, with Kcat at a 60% 204 
+
+identity cap TEDlm 650M (0.45) outperform ing  ESM2 650M (0.36); and metal -ion binding (20% 205 
+
+sequence identity cap ), TEDlm 1.3B (0.74) v.s. ESM2 3B (0.66), where the relevant  biophysical signals 206 
+
+are defined at the domain level by active -site motifs and coordination geometries. TEDlm3D performed 207 
+
+comparably to TEDlm on most tasks, but weaker on thermostability prediction, and the clearest case 208 
+
+where ESM2 holds advantage was cross -species thermostability (TEDlm 650M ρ = 0.49 vs 0.54 for 209 
+
+ESM2 650M), likely because organism -level thermal adaptations extend beyond individual domain 210 
+
+properties. Taken together, properties governing catalysis and metal coordination appears largely intrin sic 211 
+
+to individual domain sequences and can be captured without full -protein context 34 –36 .212 
+
+## Discussion 213 
+
+In this work, we introduced TEDlm and TEDlm3D, protein language models pretrained on structurally 214 
+
+defined domain segments from The Encyclopedia of Domains (TED) 29 . Between TEDlm and ESM2, we 215 
+
+have demonstrated the training dataset effect: restricting training to domain -level sequences alone 216 
+
+produces representations that outperform models up to 4 -fold larger on a stringent homology detection 217 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+12 
+
+task. TE Dlm 650M outperforms ESM2 3B on homology detection despite having fewer than a quarter of 218 
+
+the parameters, and TEDlm3D, which adds a Cα distance -guided contact prediction objective, approaches 219 
+
+the performance of Foldseek (AUROC1 = 0.497 vs 0.528) while requ iring only sequence input at 220 
+
+inference 7,16,23 . The layer -wise analysis showed that the weakest layer of TEDlm3D 650M and 1.3B still 221 
+
+outperforms ESM2's peak performance, so domain pretraining with structural supervision retains fold -222 
+
+relevant information u p to the final layer rather than concentrating it in intermediate layers. The TEDlm 223 
+
+1.3B w/CATH variant, which incorporates CATH topology -level classification as an auxiliary loss, 224 
+
+pushes this further (AUROC1 = 0.733), illustrating that domain -centric pret raining provides a strong 225 
+
+foundation upon which even modest structural supervision yields disproportionate gains, a design 226 
+
+principle shared by TEDlm3D through its complementary contact -level geometric loss. 227 
+
+The contact prediction benchmark provides direct mechanistic evidence for what TEDlm3D's structural 228 
+
+auxiliary loss encodes. The unsupervised categorical Jacobian approach shows that TEDlm3D 229 
+
+representations contain richer coevolutionary signals than either TEDlm or ESM2 25 , and a dedicated 230 
+
+contact head r eads this out at high precision in a single forward pass. A common assumption in protein 231 
+
+language modelling is that representations are dominated by short -range correlations. This is well 232 
+
+motivated: in masked token prediction, much of the recoverable infor mation is contained within local 233 
+
+sequence context, such as motifs associated with secondary structure. Our results suggest that this can be 234 
+
+addressed with auxiliary losses derived from structure. Although the contact prediction head shows strong 235 
+
+performanc e across both short - and long -range interactions, as we might expect, we also find that the 236 
+
+learned embeddings themselves encode substantially more long -range information than those of baseline 237 
+
+models such as ESM, as demonstrated by the ability of the amin o acid projections to better reconstruct 238 
+
+long -range contacts. Crucially, the Cα objective supplies no structural input at inference ; TEDlm3D still 239 
+
+reads sequence alone, so it acts purely as a training -time constraint rather than an added information 240 
+
+channe l. Comparing TEDlm3D against TEDlm, the most closely matched pair available (Figure 2A), 241 
+
+TEDlm3D's attention maps recover long -range contacts more accurately (best head P@L 0.347 vs 0.205 242 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+13 
+
+at 650M), placing this gain in the learned representation itself rat her than in a readout head trained on top 243 
+
+of it. This suggests that the auxiliary contact loss directly influences the geometry of the representation 244 
+
+space, encouraging the whole model to better incorporate long -range structural dependencies. Taken 245 
+
+togethe r, these findings suggest that incorporating structurally motivated auxiliary objectives can mitigate 246 
+
+the intrinsic locality bias of masked language modelling and promote the learning of more globally 247 
+
+informative representations. On the locally defined tas ks, catalytic efficiency and metal coordination, 248 
+
+TEDlm and TEDlm3D match or slightly exceed ESM2, which supports our interpretation that properties 249 
+
+such as catalytic efficiency, metal coordination are better represented by single -domain trained TEDlm 250 
+
+model s. However , thermal stability prediction is the exception and seems to favour full -length models. 251 
+
+The functional annotation benchmarks reveal both the strengths and the principled limits of domain -level 252 
+
+representations. On the CAFA3 benchmark, all TEDlm an d TEDlm3D variants substantially outperform 253 
+
+ESM2 in predicting Molecular Function (wFmax up to 0.336 vs 0. 301 ), consistent with the expectation 254 
+
+that many MF annotations, (e.g. catalytic activities and binding specificities), are attributable to individual 255 
+
+domains. The advantage was specific to MF. On the up -to -date Swiss -Prot benchmark, ESM2 led in both 256 
+
+Biological Process and Cellular Component prediction across all identity thresholds, with TEDlm3D 257 
+
+lowest, the two benchmarks diverging because CAFA3 removes close homologs and uses a dated 258 
+
+knowledge base that rewards remote -homology signal. 259 
+
+On the other hand, this reflects an intrinsic granularity mismatch: GO annotations are curated at the gene -260 
+
+product level, while TEDlm is pretrained on isolated domain segm ents with no exposure to multi -domain 261 
+
+architectures or protein complex contexts that often determine subcellular localisation. Domain -level 262 
+
+embeddings may therefore require explicit aggregation mechanisms to recover protein -level CC 263 
+
+assignments, as domain -informed annotation resources such as InterPro2GO have demonstrated 39 .264 
+
+Several limitations should be acknowledged. The domain boundaries inherited from TED, though derived 265 
+
+from high -quality AlphaFold models and consensus segmentation tools 26 –28 , may in clude boundary 266 
+
+inaccuracies that propagate into pretraining. For TEDlm, the training data undergoes redundancy 267 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+14 
+
+reduction at the protein level (UniRef50/90) 40 before domain segmentation, meaning the actual 268 
+
+redundancy structure of the domain -level training set has not been directly controlled. We addressed this 269 
+
+by curating TED50/90 from the 365M complete TED dataset and trained TEDlm3D upon this. However, 270 
+
+another limitation could arise from the fact that pretraining data is drawn from AFDB version 4 3,271 
+
+inh erently biasing toward high -confidence predictions and under -representing rare folds and intrinsically 272 
+
+disordered regions. TEDlm does not incorporate multiple sequence alignments, foregoing the explicit 273 
+
+evolutionary depth that has proven valuable in method s such as AlphaFold2 1,2 . Finally, the performance 274 
+
+gains from intermediate embeddings, documented in the extended data, suggest that final transformer 275 
+
+layers in pLMs are partially optimised for token -level prediction at the expense of global structural 276 
+
+re presentations 30 , a phenomenon warranting further investigation. Future work should explore domain -277 
+
+level deduplication strategies, hierarchical representations bridging domain and protein levels for 278 
+
+functional annotation, and integration of TEDlm3D's doma in -centric approach with multi -domain and 279 
+
+complex -level context. 280 
+
+## Methods 281 
+
+## Data preparation 282 
+
+Using the 2021_04 release of UniProt, protein sequences were obtained by cross -referencing the UniProt 283 
+
+identifiers from UniRef50 representative sequences (49,874,565 entries) and UniRef90 (138,515,945 284 
+
+entries) against version 4 of the AFDB (214,683,829 entries) 3,40 , yielding a customised set of 41,859,106 285 
+
+UniRef50 entries and 108,502,280 UniRef90 entries which could be exactly matched against AFDB 286 
+
+structure models. Domain boundary annotations were sourced from version 5 TED release 29 . We then 287 
+
+cross -referenced the custom UniRef50/90 sets against the consensus TED domain boundaries, retaining 288 
+
+36,458,420 entries with matching domain annotations. Each matched protein w as then truncated into its 289 
+
+constituent domains according to TED consensus boundaries, producing a curated set of compact, 290 
+
+independently folded sequence segments for downstream transformer pretraining, which we call the TED -291 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+15 
+
+UniRef50 and TED -UniRef90 sets. 0 .1% of the whole dataset was held out as a validation set, while the 292 
+
+remainder was used as the training set. As a result, TED -UniRef50 has 60,064,241 entries in the training 293 
+
+set and 60,125 in the validation set, whereas TED -UniRef90 has 177,642,528 and 177 ,821 entries, 294 
+
+respectively. 295 
+
+We then constructed TED90 and TED50 directly from TED365, taken from The Encyclopedia of 296 
+
+Domains. TED365 was first clustered with MMseqs2 at 90% sequence identity and 60% coverage, 297 
+
+yielding 190,626,362 representative sequences ( TED90) that constitute a redundancy -reduced pretraining 298 
+
+dataset 7. The TED90 representatives were then re -clustered at 50% identity (60% coverage) to produce 299 
+
+TED50, with a total of 84,811,276 entries. As the cluster result is highly imbalanced, with a few super -300 
+
+hubs containing up to 21,749 members and the majority containing many fewer, we adopted a weighted 301 
+
+training scheme whereby the learning rate is weighted by the inverse size of the cluster to address the 302 
+
+pretraining dataset imbalance. 303 
+
+## Homology detect ion benchmark 304 
+
+We evaluated the effectiveness of TEDlm in capturing structural and evolutionary signals using a 305 
+
+customized homology detection benchmark based on the CATH S40 dataset 31 . This benchmark is 306 
+
+designed to assess a model’s ability to identify hom ology relationships between structurally related 307 
+
+proteins with low sequence identity (<40%), in which traditional sequence alignment -based methods 308 
+
+often underperform. For context, we benchmarked our model against several SOTA protein language 309 
+
+models and ot her tools: 310 
+
+● the deep learning -based ESM2 models, namely esm2_t33_650M_UR50D, and 311 
+
+esm2_t36_3B_UR50D, referred to as ESM2 650M and ESM2 3B respectively; 312 
+
+● ProtTrans, also known as ProtT5, with the 3B denoising objective -tuned checkpoint 313 
+
+prot_t5_xl_uniref50, re ferred to as ProtT5 3B; 314 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+16 
+
+● ProstT5, an encoder -decoder style model trained bidirectionally with sequence and 3Di tokens 315 
+
+upon the ProtT5 -XL -U50 checkpoint, in its latest checkpoint, referred to as ProstT5 3B; 316 
+
+● Foldseek; and 317 
+
+● MMseqs2, a commonly used sequence a lignment -based tool. 318 
+
+Note that all deep learning -based models are evaluated using a strict all -vs -all (exhaustive) similarity 319 
+
+ranking test. The alignment -based tools, i.e. Foldseek and MMseqs2, have prefilters enabled but running 320 
+
+in exhaustive search mode. This is to ensure all tools are performing at their best capability. The pLM 321 
+
+models are ranked using average -pooled embedding cosine similarity, while bit score and qTM score 322 
+
+were used for MMseqs2 and Foldseek, respectively. The ProtT5 and ProstT5 models use an encoder -only 323 
+
+approach, thus effectively using ~ 1.5B parameters. All pLM baselines are evaluated from sequence input, 324 
+
+with Foldseek included as a structure -based upper reference; structure -token pLMs such as SaProt and 325 
+
+ProSST require per -residue structural tokens at inference to fully leverage their difference to ESM2 326 
+
+models and w ere not trained for sequence -only inference mode, so they were not benchmarked. The 327 
+
+selected methods serve as informative baselines of sequence -based embedding search, structure -sequence 328 
+
+embedding search and alignment -based search in zero -shot style. 329 
+
+## Enzyme Catalytic efficiency, thermostability, and metal binding prediction 330 
+
+For the zero -shot enzyme catalytic efficiency, metal -ion binding, and the rmostability benchmarks, we 331 
+
+used the same CAFA3 style evaluation protocol described below , in which protein embeddings are used 332 
+
+for KNN label transfer from the training set, i.e. the knowledge base or the “universe”, to test set. For 333 
+
+enzyme catalytic effic iency, we used the Enzyme Catalytic Efficiency dataset hosted at Hugging Face 334 
+
+(https://huggingface.co/datasets/biomap -research/enzyme_catalytic_efficiency), consisting of 16,838 335 
+
+entries. These measurements were originally curated from multiple enzyme -kinet ics repositories by Li et 336 
+
+al. (DLKcat) and subsequently adopted as a benchmark in xTrimoPGLM 34,41 . Spearman's correlation 337 
+
+coefficient between predicted values and experimental K cat was used as the main metric for this task. 338 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+17 
+
+Similarly, we used the metal -binding train/test set, where a binary classification task was performed via 339 
+
+KNN, and AUROC was used as the main metric 35 . For thermostability, we curated task -specific splits 340 
+
+from melting -temperature resources, including gene -level melting -point a ggregation derived from the 341 
+
+Meltome Atlas thermal proteome profiling study 36 . We cross -referenced both the human and cross -species 342 
+
+meltome datasets against the TED365 domain database. Using MMseqs2, we performed sequence 343 
+
+similarity searches with the easy -search module to identify hits with 80% coverage. For enzymatic 344 
+
+efficiency prediction, metal binding and thermostability prediction tasks, sequences were searched against 345 
+
+the TED365 fasta file with MMseqs2 suite, easy -search mode with coverage of 80% and sequence 346 
+
+similarity of 80%, to form a single -domain subset of data. A random split with train/validation/test ratio 347 
+
+of 8:1:1 was created. Nanobody thermostability data were adopted from NbThermo and NanoMelt 37,38,42 .348 
+
+Detailed number of dataset entries ca n be found in S. Table 2. 349 
+
+To reduce leakage from near -identical sequences, including homologues and point -mutation variants, we 350 
+
+applied an MMseqs2 -based training mask during KNN label propagation using a series of maximum 351 
+
+allowed sequence -identity thresho lds 7. Any neighbour above the specified sequence -identity threshold 352 
+
+was excluded from query label voting before the cosine -similarity search. All results were generated with 353 
+
+k=5, last layer embedding in the heat map S. Figure 6.354 
+
+## Contact prediction from single -sequence Jacobians. 355 
+
+We assessed the capacity of each model to encode residue –residue contact information using the 356 
+
+categorical Jacobian approach of Zhang et al 25 . For a protein of length L, we constructed a full (L × 20 × 357 
+
+L × 20) Jacobian tensor by substituting each position i with all 20 canonical amino acids and recording 358 
+
+the change in predicted logits at every other position j relative to the wild -type sequence. The resulting 359 
+
+tensor was centred by iteratively subtracting the mean along each of its four axes, collapsed to an (L × L) 360 
+
+coupling matrix via the Frobenius norm over the two amino -acid dimensions, symmetrized, and corrected 361 
+
+for phylogenetic and positional biases with the average product correction (APC) 43 . For TEDlm3D 362 
+
+models, we additionally evaluated a supervised contact head: a single forward pass through the model 363 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+18 
+
+captured the final hidden representations h ∈ ℝ^ (L × d), which were projected through a learned linear 364 
+
+layer. The (L × L) contact -probability matrix was then obtained by element -wise sigmoid followed by 365 
+
+symmetrization. APC was not applied to the contact -head output, as the supervised head already accounts 366 
+
+for positional biases. 367 
+
+The benchmark was evaluated on 1,327 CATH S40 (v4.4.0) domains selected as one representative per 368 
+
+topology (T -level). Domains were restricted to 50 –300 residues containing only canonical amino acids. 369 
+
+Ground -truth binary contact maps were derived from Cβ atomic coordinat es (C α for glycine) at an 8 Å 370 
+
+distance threshold. We report precision at L/5, L/2, and L top -scoring predictions, as well as the area 371 
+
+under the receiver operating characteristic curve (AUROC), stratified by sequence separation into 372 
+
+short/medium range (6 ≤ |i − j| < 23) and long range (|i − j| ≥ 23). 373 
+
+## Per -head attention precision 374 
+
+TEDlm and TEDlm3D use Flash Attention, which does not expose attention weights. For each sequence 375 
+
+we registered a forward pre -hook on every attention layer's inner kernel to capture the post -rotary query 376 
+
+and key tensors and recomputed the attention matrix explicitly as scaled -dot -product -attention (SDPA )377 
+
+via softmax(QK ᵀ/√d) per head. Specifically, for both 650M models: 28 layers × 24 heads = 672 heads. To 378 
+
+ensure the attention matrix remain ed the same as Flash Attention, we recomputed weights and the 379 
+
+maximum absolute error < 5×10⁻³ across both models. Each head's L×L attention matrix was symmetrised 380 
+
+(A + A ᵀ) and APC -corrected, then scored by precision against the gold labels. On ly the best performing 381 
+
+head was selected, i.e. the head with the highest mean long -range P@L over the 1,327 CATH S40 T-level 382 
+
+representatives. For TEDlm: layer 27/head 5; and for TEDlm3D: layer 25/head 15, the Figure 2A reports 383 
+
+that head's precision in both short+medium and long -range bins. As a negative control, the mean long -384 
+
+range P@L across all 672 heads is around 0.04 for both models, differing drastically to the heads with 385 
+
+high mean long -range P@L (0.347 for TEDlm3D 650M and 0.205 for TEDlm 650M). 386 
+
+## GO p rediction benchmark 387 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+19 
+
+We evaluated the model’s ability to generalize functional relationships using a modified, stringent, zero -388 
+
+shot style of the CAFA3 benchmark 32 . Functional annotation transfer is fundamentally related to 389 
+
+homology detection, as both depe nd on identifying sequence relationships that reflect shared structural or 390 
+
+evolutionary ancestry. Unlike standard KNN -style evaluations, our custom setting deliberately removes 391 
+
+any homologous proteins from the training knowledge base, creating a far more s tringent test of 392 
+
+generalization. This design probes whether representations learned through the domain -centric pretraining 393 
+
+could capture meaningful functional similarity when sequence similarity is low. To construct the training 394 
+
+set, or the knowledge base used during the KNN, we used the intersection between Swiss -Prot and the 395 
+
+UniProt -GOA 2017_01, prior to the date preceding the CAFA3 release (2017_01) 40,44 . During the KNN -396 
+
+based label propagation, any sequence with identical UniProt ID was excluded. MMseq s2 easy search 397 
+
+with a sensitivity of 30 and query/target coverage of 60% was conducted, and any query with E -value 398 
+
+smaller than 10 was also excluded 7. Embeddings for both the knowledge base and target sequences were 399 
+
+computed using the same approach as in the homology detection benchmark, and functional prediction 400 
+
+was performed using cosine -similarity –weighted label propagation within the Molecular Function (MF), 401 
+
+Biological Process (BP), and Cellular Component (CC) namespaces. 402 
+
+To further examine how embedd ing similarity relates to functional similarity, we randomly sampled 403 
+
+100,000 non -homologous protein pairs from the Swiss -Prot and UniProt -GOA 2017_01 set, excluding 404 
+
+any pairs with E -values smaller than 10. Each sequence was embedded with the aforementioned models, 405 
+
+and mean pooling was applied across residues to obtain a single vector representation per protein. 406 
+
+Pairwise cosine similarity scores were computed and normalized to the [0,1] range, with the embedding 407 
+
+distance defined as D, where s̃ is the cosine similarity min -max scaled to [0,1], as shown in equation (2). 408 
+
+To assess functional similarity, we computed the Jaccard Index between the GO term sets of each pair 409 
+
+across the namespaces, using GO annotations derived from the 2017_01 Gene Ontology Annotation 410 
+
+(GOA) release 44,45 .411 
+
+𝐷  = 1 − 𝑆 ̃ ; 𝑆  = 𝑎 ∙𝑏  
+
+> ‖𝑎 ‖‖𝑏 ‖
+
+(2) 412 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+20 
+
+413 
+
+The functional similarity between two proteins A and B was quantified using the Jaccard Index J(A, B), 414 
+
+defined as: 415 
+
+𝐽 (𝐴 , 𝐵 ) = |𝐺 𝐴 ∩𝐺 𝐵 | 
+
+> |𝐺 𝐴 ∪𝐺 𝐵 |
+
+(3) 416 
+
+where G A and G B denote the sets of GO terms annotated to proteins A and B, respectively 45 .417 
+
+AUROC was used to quantify the model’s ability to distinguish functionally related from unrelated 418 
+
+domain pairs. A pair was considered functionally similar when its GO Jaccard ind ex exceeded 0.5, 419 
+
+corresponding to a positive label. 420 
+
+For the UniProtKB -SwissProt benchmark set, we start by collecting sequences with experimental -only 421 
+
+labels, the allowed annotation evidence codes are EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, 422 
+
+HEP. The resulting set is then cross -referenced with the latest GOA, yielding ~79k sequences. To avoid 423 
+
+data leakage, we chose the cluster -then -random -assign approach. We started by clustering sequences 424 
+
+based on different thresholds of sequence identity in [0.1 , ..., 0.9], then randomly assigned the member 425 
+
+sequences and their representatives into the train/test sets, with a soft constraint on label balancing and 426 
+
+achieving roughly the ratio of 8:2 for the train and test sets 46 . The label balancing is done by ra ndomly 427 
+
+assigning the train -test set 100 times with a fixed random seed for reproducibility. A term is considered as 428 
+
+valid when it is present in both train and test set, and the random assignment with the most valid label 429 
+
+pairs are selected for use as the b enchmark. This is done across the sequence identity range. To prevent 430 
+
+leakage between near -identical sequences lying near cluster boundaries, we ran an all -against -all 431 
+
+MMseqs2 search over the training set and generated a training mask, which effectively ma sked any pair 432 
+
+with E -value below 0.001 during the KNN label transfer. A CAFA6 information accretion file, as 433 
+
+provided on the CAFA6 official website, is used for the weighted F max (wF max ) and weighted S min (wS min )434 
+
+calculation using the cafa -evaluator tool 47 .435 
+
+436 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+21 
+
+## Data Availability 437 
+
+The pre -trained weights for all TEDlm and TEDlm3D variants are deposited on Zenodo 438 
+
+https://zenodo.org/records/20814105 .439 
+
+## Code Availability 440 
+
+Code for model inference and benchmark is available at https://github.com/psipred/tedlm under the 441 
+
+Apache -2.0 licence. A versioned snapshot of the repository corresponding to this publication is archived 442 
+
+on Zenodo https://zenodo.org/records/20814105 .443 
+
+444 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+22 
+
+## References 445 
+
+1. Jumper, J. et al. Highly accurate protein structure prediction with AlphaFold. Nature 596 , 583 –446 
+
+589 (2021). 447 
+
+2. Abramson, J. et al. Accurate structure prediction of biomolecular interactions with AlphaFold 3. 448 
+
+Nature 630 , 493 –500 (2024). 449 
+
+3. Varadi, M. et al. AlphaFold Protein Structure Database in 2024: providing structure coverage for 450 
+
+over 214 million protein sequences. Nucleic Acids Res. 52 , D368 –D375 (2024). 451 
+
+4. Remmert, M., Biegert, A., Hauser, A. & Söding, J. HHblits: lightning -fast iterative protein 452 
+
+sequ ence searching by HMM -HMM alignment. Nat. Methods 9, 173 –175 (2012). 453 
+
+5. Finn, R. D., Clements, J. & Eddy, S. R. HMMER web server: interactive sequence similarity 454 
+
+searching. Nucleic Acids Res. 39 , W29 –W37 (2011). 455 
+
+6. Altschul, S. F. et al. Gapped BLAST and P SI -BLAST: a new generation of protein database 456 
+
+search programs. Nucleic Acids Res. 25 , 3389 –3402 (1997). 457 
+
+7. Steinegger, M. & Söding, J. MMseqs2 enables sensitive protein sequence searching for the 458 
+
+analysis of massive data sets. Nat. Biotechnol. 35 , 1026 –10 28 (2017). 459 
+
+8. Rost, B. Twilight zone of protein sequence alignments. Protein Engineering, Design and Selection 460 
+
+12 , 85 –94 (1999). 461 
+
+9. Doolittle, R. F. Of URFs and ORFs: A Primer on How to Analyze Derived Amino Acid Sequences .462 
+
+(University Science Books, 1986) .463 
+
+10. Vaswani, A. Attention is all you need. Adv. Neural Inf. Process. Syst. (2017). 464 
+
+11. Devlin, J., Chang, M. -W., Lee, K. & Toutanova, K. BERT: Pre -training of Deep Bidirectional 465 
+
+Transformers for Language Understanding. in Proceedings of NAACL -HLT 4171 –4186 (2019). 466 
+
+12. Elnaggar, A. et al. Prottrans: Toward understanding the language of life through self -supervised 467 
+
+learning. IEEE Trans. Pattern Anal. Mach. Intell. 44 , 7112 –7127 (2021). 468 
+
+13. Heinzinger, M. et al. Bilingual language model for protein s equence and structure. bioRxiv 2023 –469 
+
+2027 (2023). 470 
+
+14. Lin, Z. , A. H. , R. R. , H. B. , Z. Z. , L. W. , S. N. , V. R. , K. O. , S. Y. , dos S. C. A. F. -Z. M. , S. 471 
+
+T. C. S. et al. Evolutionary -Scale Prediction of Atomic -Level Protein Structure with a Languag e472 
+
+Model. Science (1979). 379 , eabn2010 (2023). 473 
+
+15. Rives, A. et al. Biological structure and function emerge from scaling unsupervised learning to 474 
+
+250 million protein sequences. Proceedings of the National Academy of Sciences 118 , (2021). 475 
+
+16. Lin, Z. et al . Evolutionary -scale prediction of atomic -level protein structure with a language 476 
+
+model. Science (1979). 379 , 1123 –1130 (2023). 477 
+
+17. Hayes, T. et al. Simulating 500 million years of evolution with a language model. Science (1979). 478 
+
+387 , 850 –858 (2025). 479 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+23 
+
+18. Rao, R. M. et al. MSA transformer. in International conference on machine learning 8844 –8856 480 
+
+(2021). 481 
+
+19. Liu, W. et al. PLMSearch: Protein language model powers accurate and fast sequence search for 482 
+
+remote homology. Nat. Commun. 15 , 2775 (2024). 483 
+
+20. Su, J. et al. Saprot: Protein language modeling with structure -aware vocabulary. bioRxiv 2010 –484 
+
+2023 (2023). 485 
+
+21. Li, M. et al. ProSST: Protein Language Modeling with Quantized Structure and Disentangled 486 
+
+Attention. bioRxiv 2024 (2024). 487 
+
+22. Hamamsy, T. et al. Protein remote homology detection and structural alignment using deep 488 
+
+learning. Nat. Biotechnol. 42 , 975 –985 (2024). 489 
+
+23. van Kempen, M. et al. Fast and accurate protein structure search with Foldseek. Nat. Biotechnol. 490 
+
+42 , 243 –246 (2024). 491 
+
+24. Rao, R., Meier, J., Sercu, T., Ovchinnikov, S. & Rives, A. Transformer protein language models 492 
+
+are unsupervised structure learners. Biorxiv 2012 –2020 (2020). 493 
+
+25. Zhang, Z. et al. Protein language models learn evolutionary statistics of interacting sequence 494 
+
+motifs. Proceedings of the National Academy of Sciences 121 , (2024). 495 
+
+26. Lau, A. M., Kandathil, S. M. & Jones, D. T. Merizo: a rapid and accurate protein domain 496 
+
+segmentation method using invariant point attention. Nat. Commun. 14 , 8445 (2023). 497 
+
+27. Wells, J. et al. Chainsaw: protein domain segmentation with fully convolutional neural networks. 498 
+
+Bioinformatics 40 , btae296 (2024). 499 
+
+28. Zhu, K., Su, H., Peng, Z. & Yang, J. A unified approach to protein domain parsing with inter -500 
+
+residue distance matrix. Bioinform atics 39 , btad070 (2023). 501 
+
+29. Lau, A. M. et al. Exploring structural diversity across the protein universe with The Encyclopedia 502 
+
+of Domains. Science (1979). 386 , eadq4946 (2024). 503 
+
+30. Skean, O. et al. Layer by layer: Uncovering hidden representations in lan guage models. arXiv 504 
+
+preprint arXiv:2502.02013 (2025). 505 
+
+31. Sillitoe, I. et al. CATH: comprehensive structural and functional annotations for genome 506 
+
+sequences. Nucleic Acids Res. 43 , D376 –D381 (2015). 507 
+
+32. Zhou, N. et al. The CAFA challenge reports improved p rotein function prediction and new 508 
+
+functional annotations for hundreds of genes through experimental screens. Genome Biol. 20 , 244 509 
+
+(2019). 510 
+
+33. Holliday, G. L., Fischer, J. D., Mitchell, J. B. O. & Thornton, J. M. Characterizing the complexity 511 
+
+of enzymes on the basis of their mechanisms and structures with a bio‐computational analysis. 512 
+
+FEBS J. 278 , 3835 –3845 (2011). 513 
+
+34. Li, F. et al. Deep learning -based k cat prediction enables improved enzyme -constrained model 514 
+
+reconstruction. Nat. Catal. 5, 662 –672 (2022). 515 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+24 
+
+35. Cheng, Y. et al. Co -evolution -based prediction of metal -binding sites in proteomes by machine 516 
+
+learning. Nat. Chem. Biol. 19 , 548 –555 (2023). 517 
+
+36. Jarzab, A. et al. Meltome atlas —thermal proteome stability across the tree of life. Nat. Methods 518 
+
+17 , 495 –50 3 (2020). 519 
+
+37. Valdés -Tresanco, M. S., Valdés -Tresanco, M. E., Molina -Abad, E. & Moreno, E. NbThermo: a 520 
+
+new thermostability database for nanobodies. Database 2023 , baad021 (2023). 521 
+
+38. Zhang, Y. & Tsuda, K. Nbbench: Benchmarking language models for comprehen sive nanobody 522 
+
+tasks. Mach. Learn. Sci. Technol. (2025). 523 
+
+39. Blum, M. et al. InterPro: the protein sequence classification resource in 2025<? mode longmeta?>. 524 
+
+Nucleic Acids Res. 53 , D444 –D456 (2025). 525 
+
+40. Bateman, A. et al. UniProt: the Universal Protein Kno wledgebase in 2025. Nucleic Acids Res. 53 ,526 
+
+D609 –D617 (2025). 527 
+
+41. Chen, B. et al. Xtrimopglm: unified 100 -billion -parameter pretrained transformer for deciphering 528 
+
+the language of proteins. Nat. Methods 1–12 (2025). 529 
+
+42. Ramon, A. et al. Prediction of protein biophysical traits from limited data: a case study on 530 
+
+nanobody thermostability through NanoMelt. in MAbs vol. 17 2442750 (2025). 531 
+
+43. Dunn, S. D., Wahl, L. M. & Gloor, G. B. Mutual information without the influence of phylogeny 532 
+
+or entropy dramatically impr oves residue contact prediction. Bioinformatics 24 , 333 –340 (2008). 533 
+
+44. Huntley, R. P. et al. The GOA database: gene ontology annotation updates for 2015. Nucleic Acids 534 
+
+Res. 43 , D1057 –D1063 (2015). 535 
+
+45. Lord, P. W., Stevens, R. D., Brass, A. & Goble, C. A. Investigating semantic similarity measures 536 
+
+across the Gene Ontology: the relationship between sequence and annotation. Bioinformatics 19 ,537 
+
+1275 –1283 (2003). 538 
+
+46. Kulmanov, M. & Hoehndorf, R. DeepGOZero: improving protein function prediction from 539 
+
+sequence and zero -shot learning based on ontology axioms. Bioinformatics 38 , i238 –i245 (2022). 540 
+
+47. Piovesan, D. et al. CAFA -evaluator: a Python tool for benchmarking ontological classification 541 
+
+methods. Bioinformatics Advances 4, (2024). 542 
+
+543 
+
+## Acknowledgements 544 
+
+We thank Dr Owain Kenway for valuable discussions and comments. This work was supported by the 545 
+
+Biotechnology and Biological Sciences Research Council (BBSRC) BB/T019409/1. We gratefully 546 
+
+acknowledge the computational resources and support provided by UCL Central Clu ster Myriad, 547 
+
+Advanced Research Computing (ARC), and the use of the UCL Department of Computer Science high -548 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+25 
+
+performance computing cluster for model development and training. This work also used the Isambard -AI 549 
+
+National AI Research Resource (AIRR). Isambard -AI is operated by the University of Bristol and funded 550 
+
+by the UK Government's Department for Science, Innovation and Technology (DSIT) via UK Research 551 
+
+and Innovation (UKRI) and the Science and Technology Facilities Council (STFC) 0251 -9628 -2113 -1. 552 
+
+## Ethics d eclarations 553 
+
+## Competing interests 554 
+
+No  competing interests statement is required .555 
+
+## Supplementary Information 556 
+
+Supplementary  Material provided separately. 557 
+
+558 
+
+## Tables 559 
+
+Table 1: Homology detection (AUROC1) performance on the CATH S40 dataset. The canonical 560 
+
+AUROC1 uses final -layer embeddings; peak -AUROC1 reports the peak across the last seven 561 
+
+transformer layers. Best overall in bold; second -best underlined. 562 
+
+Method  Type  St ruct. Source  Pretrain Data  AUROC1  Peak -
+
+AUROC1 
+
+across layers 
+
+TEDlm 650M  PLM  ✗ TED -
+
+UniRef50/90 
+
+0.2780  0.4817 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+26 
+
+TEDlm 1.3B  PLM  ✗ TED -
+
+UniRef50/90 
+
+0.3112  0.4553 
+
+TEDlm3D 
+
+160M 
+
+PLM  Cα contact 
+
+loss 
+
+TED50  0.3757  0.5535 
+
+TEDlm3D 
+
+650M 
+
+PLM  Cα contact 
+
+loss 
+
+TED50  0.4795  0.5901 
+
+TEDlm3D 
+
+1.3B 
+
+PLM  Cα contact 
+
+loss 
+
+TED50  0.4970  0.6089 
+
+TEDlm 1.3B 
+
+w/CATH 
+
+PLM  ✗ TED -
+
+UniRef50/90 
+
+0.7326  N/A 
+
+ESM2 650M  PLM  ✗ UR50D  0.1591  0.4679 
+
+ESM2 3B  PLM  ✗ UR50D  0.2228  0.4609 
+
+ProtT5 3B  PLM  ✗ BFD + 
+
+UniRef50 
+
+0.2731  0.4733 
+
+ProstT5 3B  PLM (hybrid)  ✓ BFD + 3Di 
+
+vocab 
+
+0.3878  0.4898 
+
+MMseqs2  Seq -align  ✗ N/A  0.1810  N/A 
+
+Foldseek  Structural -
+
+align 
+
+✓ N/A  0.5278  N/A 
+
+563 
+
+564 
+
+> .CC-BY 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.07.09.737428 doi: bioRxiv preprint
+
+27 
+
+Table 2: Zero -shot GO term prediction performance (weighted Fmax) on the CAFA3 benchmark 565 
+
+with k=5 . Homologous sequences excluded by E -value < 10. Best per namespace in bold. Error bar 566 
+
+represents half -width of a 95% bootstrap confidence interval (10,000 protein -level resamples). 567 
+
+Ontology  MF wFmax  BP wFmax  CC wFmax 
+
+TEDlm 650M  0.323 ± 0.021  0.136 ± 0.010  0.287 ± 0.0 19 
+
+TEDlm 1.3B  0.336 ± 0.021  0.131 ± 0.0 09  0.270 ± 0.0 18 
+
+TEDlm3D 650M  0.308 ± 0.0 20  0.182 ± 0.012  0.260 ± 0.0 17 
+
+TEDlm3D 1.3B  0.304 ± 0.02 0 0.157 ± 0.0 08  0.27 0 ± 0.0 18 
+
+ESM2 650M  0.2 70 ± 0.0 19  0.1 45 ± 0.0 07  0.2 94 ± 0.0 19 
+
+ESM2 3B  0. 301 ± 0.0 21  0.1 38 ± 0.0 07  0.2 96 ± 0.018 
+
+568

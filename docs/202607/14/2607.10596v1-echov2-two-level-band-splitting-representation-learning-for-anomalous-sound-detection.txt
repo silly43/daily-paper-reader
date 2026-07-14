@@ -1,0 +1,498 @@
+Title: ECHOv2: Two-Level Band-Splitting Representation Learning for Anomalous Sound Detection
+
+URL Source: https://arxiv.org/pdf/2607.10596v1
+
+Published Time: Tue, 14 Jul 2026 01:05:02 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 1
+
+# ECHOv2: Two-Level Band-Splitting Representation Learning for Anomalous Sound Detection 
+
+Yucong Zhang , Graduate Student Member, IEEE , Juan Liu , Senior Member, IEEE ,and Ming Li , Senior Member, IEEE 
+
+Abstract —Machine anomalous sound detection (ASD) requires robust audio representations capable of capturing subtle devia-tions in machine sounds under limited supervision. Existing pre-trained audio backbones do not fully capture frequency-specific characteristics of machine sounds. To address this, we propose ECHOv2, a band-splitting model that learns localized intra-band representations to capture fine-grained spectral patterns while also incorporating a two-level self-distillation strategy with ex-plicit inter-band supervision to model cross-frequency dependen-cies. The inter-band branch performs global context alignment and masked sub-band reconstruction, and multiple summary tokens are introduced for structured aggregation with control-lable frequency granularity, enabling region-aware interaction across sub-bands during training. This design allows ECHOv2 to robustly handle diverse machine types and noisy operating con-ditions while maintaining stable representation quality. To enable fair and consistent evaluation of pre-trained audio backbones, we establish a unified ASD benchmark over DCASE 2020–2025 with two complementary protocols: embedding-based evaluation for frozen representation discriminability and adaptation-based eval-uation for downstream transferability. Ablation studies confirm the effectiveness of intra-band learning, inter-band supervision, and structured aggregation granularity for robust ASD represen-tation learning. These findings demonstrate that structured cross-band modeling provides a powerful and adaptable framework for ASD representation learning and can serve as a strong foundation for future research. The model and benchmark are fully open-sourced at https://github.com/yucongzh/ECHOv2 and https://github.com/yucongzh/ASD Benchmark to promote repro-ducible research. 
+
+Index Terms —Anomalous sound detection, pre-trained model, band-splitting model, self-distillation learning 
+
+I. I NTRODUCTION 
+
+Machine Anomalous Sound Detection (ASD) aims to iden-tify abnormal machine conditions from acoustic observations and plays an important role in intelligent monitoring and predictive maintenance. The task has received increasing at-tention in recent years, as reflected by the DCASE Task 2 series, which provides public benchmarks for machine sound anomaly detection across different machine types, domains, and operating conditions [1]–[6]. A key challenge of ASD   
+
+> Corresponding author: Juan Liu and Ming Li. Yucong Zhang is with the School of Computer Science, Wuhan University, Wuhan 430072, China and the School of Artificial Intelligence, The Chinese University of Hong Kong, Shenzhen 518172. Juan Liu is with the School of Artificial Intelligence and the School of Computer Science, Wuhan University, Wuhan 430072, China. Ming Li is with the School of Artificial Intelligence, The Chinese Uni-versity of Hong Kong, Shenzhen 518172, China and the School of Artificial Intelligence, Wuhan University, Wuhan 430072, China. E-mails: yucong.zhang@whu.edu.cn; liujuan@whu.edu.cn; mingli369@cuhk.edu.cn.
+
+is its normal-only training setting: models are trained using only normal machine sounds and are expected to detect un-seen anomalous conditions during evaluation. Early ASD sys-tems commonly addressed this setting through reconstruction-based [7]–[9], or density-estimation [10] approaches, where deviations from normal training data are used as anomaly indicators. Subsequent systems further improved performance by exploiting auxiliary machine information, domain-aware training with discriminative classification objectives [11]–[14], contrastive learning [15]–[17], and prototype learning [14], [18]. As recent ASD benchmarks increasingly involve diverse machine types, operating conditions, and source/target do-main shifts, learning representations with strong generalization ability has become increasingly important. This trend has motivated the use of transferable audio representations learned from large-scale pre-training. Large-scale pre-trained audio models have therefore become an attractive solution for ASD, as they provide transferable representations learned from diverse audio data. Many recent audio pre-training methods adopt ViT-style architectures [19] over time–frequency patches [20]–[24], while Dasheng [25] explores a sliding time-patch design for audio representa-tion learning. Recent studies have applied such pre-trained models to machine ASD, showing that pre-trained weights can improve robustness when abnormal data are unavailable during training [26]–[28]. Further improvements have also been reported by using task-specific adaptation or parameter-efficient fine-tuning techniques such as LoRA [27], [29], [30]. These results suggest the potential of pre-trained audio representations for ASD. However, general-purpose audio pre-training does not ex-plicitly exploit the frequency-structured nature of machine sounds. Machine sounds often exhibit distinct characteristics across frequency regions, and anomalous cues may appear as localized spectral changes rather than global acoustic pat-terns [31]–[37]. To capture such frequency-dependent pat-terns, prior studies have explored attention-based modeling over time–frequency representations [31], [38], [39], shifted-window designs for local modeling across time and fre-quency [34], [40], and temporal–spectral fusion strategies for improving ASD performance [41], [42]. Building upon this frequency-structured perspective, we present ECHO as the band-splitting backbone of this journal work [43]. ECHO decomposes the time–frequency represen-tation into multiple sub-bands and learns localized represen-tations within each sub-band, preserving fine-grained spectral information critical for ASD representation learning. Related arXiv:2607.10596v1 [eess.AS] 12 Jul 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 2        
+
+> TABLE I KEY DIFFERENCES BETWEEN ECHO AND ECHO V2.
+> Aspect ECHO ECHOv2
+> Cross-frequency modeling Implicit Explicit via inter-band branch Training objective Intra-band self-distillation Two-level self-distillation Cross-band supervision Not explicitly used Context alignment and masked sub-band reconstruction Frequency modeling granularity Individual sub-band level Structured multi-summary-token level
+
+band-splitting models, such as FISHER [44], also adopt sub-band decomposition, further supporting the effectiveness of this design family. Nevertheless, ECHO, like other band-splitting models, primarily optimizes sub-band representations independently, and the final representation is typically formed by concatenating the resulting sub-band features. As a result, dependencies across sub-bands remain largely implicit, limit-ing the ability of the model to capture cross-band contextual information during pre-training. To address this limitation, we further introduce ECHOv2, an enhanced band-splitting model that retains the intra-band training paradigm of ECHO while incorporating a two-level self-distillation strategy with explicit cross-frequency super-vision. An additional inter-band branch uses global context alignment and masked sub-band reconstruction to encourage information exchange across frequency bands. The inter-band module is further equipped with multiple summary tokens for structured aggregation, enabling region-aware interaction with controllable granularity along the frequency axis. This explicit modeling of cross-band dependencies, together with structured aggregation, forms the core of ECHOv2, extending ECHO into a more informative model for frequency-structured ASD representation learning. Alongside model development, evaluating pre-trained repre-sentations for ASD in a fair and standardized manner remains challenging, because existing ASD systems often differ in en-coders, adaptation strategies, training objectives, and anomaly scoring schemes. As a result, ASD performance differences may reflect not only the representation capability of a pre-trained model, but also the choice of downstream evaluation pipeline. Recent benchmark efforts on general audio represen-tations have therefore emphasized standardized and compara-ble evaluation [45]–[47]. HEAR [45] and SUPERB [46] evalu-ate frozen audio representations using lightweight downstream adaptation modules under standardized benchmark settings. X-ARES [47] further extends this perspective by incorporating a direct evaluation of raw representations through an unpa-rameterized paradigm. These benchmarks suggest that rep-resentation quality should be examined from complementary perspectives rather than a single evaluation protocol. Motivated by these recent benchmarks [45]–[47], we in-troduce a unified ASD evaluation benchmark tailored for pre-trained audio backbones. This benchmark comprises two com-plementary protocols: an embedding-based protocol to directly evaluate the intrinsic discriminability of frozen representations, and an adaptation-based protocol to assess the transferability of these representations through a lightweight downstream mapping. Together, these protocols provide a standardized and fair platform for comparing pre-trained audio backbones for ASD across multiple datasets and evaluation settings. The differences between ECHOv2 and ECHO are shown in Table I. Experiments show that ECHO provides a strong band-splitting backbone and outperforms existing strong pre-trained audio baselines under both embedding-based and adaptation-based protocols. With the proposed two-level distillation strat-egy, ECHOv2 further improves over ECHO by explicitly incor-porating cross-frequency supervision during training. Ablation studies further indicate that inter-band supervision improves the final band-level representation, and that structured aggre-gation granularity affects downstream ASD performance. This paper builds upon and extends our previous work on band-splitting foundation model ECHO for ASD. The main contributions of this work are summarized as follows:  
+
+> •
+
+We present ECHO as the band-splitting backbone of this journal work. ECHO decomposes time–frequency inputs into sub-bands and learns frequency-localized represen-tations through intra-band self-distillation. Experiments on the unified ASD benchmark show strong performance compared to popular pre-trained audio backbones.  
+
+> •
+
+We extend ECHO to ECHOv2 to address its limita-tion in modeling cross-band dependencies. ECHOv2 in-corporates two-level self-distillation with explicit cross-frequency supervision and structured aggregation via multiple summary tokens for region-aware and control-lable feature interaction.  
+
+> •
+
+We establish a unified ASD evaluation benchmark over DCASE 2020–2025 with two protocols: an embedding-based protocol evaluating frozen representations, and an adaptation-based protocol assessing representation trans-ferability.  
+
+> •
+
+To support reproducible research, we fully release the ECHOv2 model and the benchmark at https:// github.com/yucongzh/ECHOv2 and https://github.com/ yucongzh/ASD Benchmark. II. M ETHODOLOGY 
+
+This section first reviews ECHO [43], the band-splitting backbone of this work. We then introduce ECHOv2, which augments ECHO with a two-level self-distillation strategy that combines intra- and inter-band supervision. The inter-band branch is further extended with structured multi-summary-token aggregation to control the granularity of cross-frequency modeling. Finally, we describe the training pipeline used to jointly optimize the intra-band and inter-band objectives. 
+
+A. Recap of the ECHO Band-Splitting Backbone 
+
+ECHO 1 [43], short for frEquenCy-aware Hierarchical en-cOding, is a band-splitting audio foundation model for ASD representation learning. As shown in Fig. 1, given an input    
+
+> 1Codes available at https://github.com/yucongzh/ECHO JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 3Input
+> Spectrogram
+> Chunking
+> ···
+> ···
+> Patch Embeddings
+> ··· ···
+> Band Encoder
+> ···
+> Fig. 1. Inference process of the ECHO band-splitting backbone. The input spectrogram is divided into frequency sub-bands, which are encoded by a shared band encoder to produce localized sub-band representations. The final utterance-level representation is obtained by concatenating all sub-band representations.
+
+audio signal, we first convert it into a time–frequency rep-resentation. The resulting spectrogram is then split along the frequency axis into N sub-bands: 
+
+X → { Xk}Nk=1 . (1) Each sub-band Xk is further segmented along the time axis into a sequence of non-overlapping local patches. These patches are then projected into embeddings before being fed into the band encoder. Formally, for the k-th sub-band, we obtain 
+
+Ek = [ ek, 1, ek, 2, . . . , ek,T ], (2) where ek,t denotes the patch embedding at time step t in the 
+
+k-th sub-band, and T is the total number of time steps. The patch embedding sequence of each sub-band is then processed independently by a shared band encoder: 
+
+ck = fθ (Ek), (3) where ck denotes the band-level representation of the k-th sub-band. The final utterance-level representation is obtained by concatenating the representations from all sub-bands as shown in Fig. 1: 
+
+c = [ c1, c2, . . . , cN ]. (4) This design preserves the frequency-wise decomposition induced by band splitting, while allowing the encoder to model local temporal structure within each sub-band through patch embeddings. The codes and model checkpoints are released at https://github.com/yucongzh/ECHO. 
+
+B. Intra-Band Self-Distillation 
+
+As illustrated in Fig. 2, intra-band learning follows the intra-band self-distillation paradigm of the ECHO backbone. Each sub-band is processed independently within a teacher–student self-distillation framework [23]. For each sub-band, the student encoder receives a masked patch-embedding sequence, while the teacher encoder pro-cesses the corresponding unmasked sequence to provide su-pervision. The student is trained with two complementary objectives: a masked latent reconstruction objective and a representation-level distillation objective. The reconstruction objective predicts the teacher represen-tations at the masked patch positions using a lightweight convolutional decoder: 
+
+L(k)rec = X
+
+> t∈M k
+
+ˆhk,t − h(T )
+
+> k,t
+> 22
+
+, (5) Intra-Band       
+
+> Encoder (T)
+> Masking
+> Intra-context
+> Error
+> CNN
+> Decoder
+> Intra-reconstruction
+> Error
+> Intra-Band
+> Encoder (S)
+> EMA
+> Fig. 2. Intra-band self-distillation for a single sub-band. Bkdenotes the k-th sub-band, and ckdenotes the sub-band representation.
+
+where Mk denotes the set of masked positions in the k-th sub-band, ˆhk,t is the student prediction for the masked position t,and h(T ) 
+
+> k,t
+
+is the corresponding teacher encoder embedding. The distillation objective aligns the student band-level rep-resentation with a teacher target: 
+
+Lintra ctx = X
+
+> k
+
+c(s) 
+
+> k
+
+− tk
+
+> 22
+
+, (6) where c(s) 
+
+> k
+
+is the student representation and tk is constructed by aggregating the teacher’s intermediate features across layers and then averaging over time: 
+
+tk = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+1
+
+L
+
+> L
+
+X
+
+> l=1
+
+h(l)
+
+> k,t
+
+!
+
+, (7) where h(l) 
+
+> k,t
+
+denotes the hidden representation at position t from the l-th layer for the k-th sub-band. Here, L denotes the total number of layers in the encoder. As a result, intra-band learning encourages the model to capture both local latent structure and contextual consistency within each frequency band. This branch provides frequency-localized supervision for ECHOv2 and preserves the intra-band modeling ability of ECHO. 
+
+C. Inter-Band Self-Distillation 
+
+The ECHO intra-band branch provides localized represen-tations, but its supervision is applied independently to each JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 4Sampling       
+
+> Inter-context
+> Error
+> Inter-reconstruction
+> Error
+> Inter-Band
+> Encoder (S)
+> CNN
+> Decoder
+> Inter-Band
+> Encoder (T)
+> ···
+> FPE
+> EMA
+> Fig. 3. Inter-band self-distillation over the sequence of sub-band representa-tions. ckdenotes the k-th sub-band representation, and sdenotes the summary token.
+
+sub-band. As a result, it does not explicitly capture depen-dencies across frequency bands. To address this limitation, we introduce an inter-band learning mechanism that models cross-band interactions at the representation level. 
+
+a) Cross-band aggregation: As shown in Fig. 3, given band-level representations {ck}Nk=1 , we first inject frequency positional information to preserve the relative ordering of sub-bands: 
+
+˜ck = ck + pk, (8) where pk is the frequency positional embedding (FPE) of the 
+
+k-th band. Specifically, 
+
+pk = PE( rk), rk = fk − fmin 
+
+fmax − fmin 
+
+∈ (0 , 1) , (9) where fk denotes the center frequency of the k-th sub-band, and PE( ·) is the sinusoidal positional encoding function. In this way, the inter-band encoder is informed not only by the content of each band representation, but also by its relative location on the frequency axis. The position-aware band tokens are then processed by an inter-band encoder alongside a summary token s:
+
+[s′, u1, . . . , uN ] = gθ ([ s, ˜c1, . . . , ˜cN ]) , (10) where s′ denotes the updated summary token and uk denotes the updated representation of the k-th band. The summary token aggregates global cross-band context, while the updated band tokens retain band-specific information after interacting with other frequency regions. 
+
+b) Inter-band objectives: Inter-band learning adopts the same teacher–student self-distillation paradigm as intra-band learning, with a context-matching objective and a reconstruc-tion objective defined at the band-representation level. The key difference is that the modeling unit is now the band-level representation sequence rather than the patch sequence within each sub-band. Accordingly, the supervision is imposed in the inter-band representation space to encourage cross-band dependency modeling. 
+
+1) Inter-context loss: The student summary token s′ is used as a global representation of the band sequence and is aligned with a teacher target constructed by aggregating the teacher’s intermediate inter-band representations across layers and bands: 
+
+t = 1
+
+N
+
+> N
+
+X
+
+> k=1
+
+1
+
+L
+
+> L
+
+X
+
+> l=1
+
+h(l)
+
+> k
+
+!
+
+, (11) where h(l) 
+
+> k
+
+denotes the hidden representation of the k-th band at the l-th layer of the teacher inter-band encoder. The corresponding loss is 
+
+Linter ctx = ∥s′ − t∥22 . (12) 
+
+2) Inter-reconstruction loss: In parallel, missing band repre-sentations are reconstructed in the latent space. Specifically, a lightweight decoder predicts the teacher representation at each masked band position: 
+
+Linter rec = X
+
+> k∈M
+
+ˆuk − u(T ) 
+
+> k
+> 22
+
+, (13) where ˆuk is the prediction for the k-th masked band and u(T )
+
+> k
+
+is the corresponding teacher representation. As a result, inter-band learning encourages the model to capture both holistic cross-band information and dependency structure among band representations, aiming to complement intra-band learning by explicitly modeling interactions across different frequency regions. 
+
+D. Structured Inter-Band Aggregation 
+
+The inter-band formulation above relies on a single sum-mary token, which performs global aggregation over all fre-quency bands. Although this design is effective, a single token may be insufficient to represent heterogeneous spectral patterns distributed across different frequency regions. To provide a more structured form of cross-band aggrega-tion, we extend the inter-band module by introducing multiple summary tokens. As illustrated in Fig. 4, instead of forcing all cross-band information into a single global token, the model is allowed to maintain several aggregation pathways, each of which can attend to different subsets of band representations. Concretely, let {sm}Mm=1 denote M learnable summary tokens. The inter-band encoder processes the augmented token sequence as 
+
+[s′
+
+> 1
+
+, . . . , s′ 
+
+> M
+
+, u1, . . . , uN ] = gθ ([ s1, . . . , sM , ˜c1, . . . , ˜cN ]) ,
+
+(14) where s′ 
+
+> m
+
+denotes the updated m-th summary token and uk
+
+denotes the updated representation of the k-th band. Each summary token is encouraged to serve as a learnable aggregation unit for a frequency-ordered group of bands. In this way, inter-band learning is reformulated from a single global aggregation path to a multi-granularity structured ag-gregation scheme. The inter-context objective is generalized accordingly: 
+
+Linter ctx = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+∥s′ 
+
+> m
+
+− tm∥22 , (15) JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 5EMA 
+
+Inter-Band 
+
+Encoder (S) 
+
+Inter-Band 
+
+Encoder (T) 
+
+> summary tokens
+
+lo  med  hi          
+
+> Structured Inter-Context Loss
+> Fig. 4. Structured inter-band learning with multiple summary tokens. skdenotes the summary token. Spectrogram
+> Intra-band
+> Learning
+> Inter-band
+> Learning
+> Intra-band
+> Encoder
+> Intra-band
+> Encoder
+> Intra-band
+> Encoder
+> Total
+> Objective
+> random sampling
+> stratified sampling ( low /mid /high )
+> Fig. 5. Band-level, student-side view of the proposed training pipeline. Starting from an input spectrogram, the student branch forms two parallel pathways: intra-band learning with random sub-band sampling, and inter-band learning with stratified frequency sampling over low-, medium-, and high-frequency regions. The sampled sub-bands are processed by the intra-band encoder, and the two branches are jointly optimized under a unified objective. Teacher supervision is omitted for clarity.
+
+where tm denotes the teacher target associated with the m-th summary token. Specifically, each tm is obtained by aggre-gating the teacher inter-band representations over a frequency-ordered subset of bands: 
+
+tm = 1
+
+|G m|
+
+X
+
+> k∈G m
+
+1
+
+L
+
+> L
+
+X
+
+> l=1
+
+h(l)
+
+> k
+
+!
+
+, (16) where Gm denotes the set of bands associated with the m-th summary token. Here, the full band sequence is partitioned into M contiguous groups along the frequency axis, and Gm
+
+corresponds to the m-th such group. The number of summary tokens M controls the granularity of cross-band supervision. When M = 1 , the formulation reduces to the single-token global inter-band aggregation. Increasing M enables the model to represent cross-band dependencies at a finer granularity, which is useful when spec-tral patterns from different frequency regions exhibit distinct characteristics. This design improves the flexibility of cross-band supervi-sion without changing the underlying ECHO backbone. 
+
+E. Training Pipeline 
+
+Fig. 5 illustrates the overall training process from a band-level, student-side perspective. Given an input spectrogram, the student branch constructs two parallel pathways with different sub-band sampling strategies, corresponding to intra-band and inter-band learning. For intra-band learning, sub-bands are randomly sampled from the full set of available sub-bands, and each sampled sub-band is processed independently by the intra-band branch. This pathway follows the ECHO intra-band training pipeline and focuses on within-band representation learning through reconstruction and contextual alignment at the individual band level. For inter-band learning, the student branch instead adopts stratified sampling to construct a band sequence for cross-band modeling. Specifically, the full set of sub-bands is first divided, in ascending frequency order, into three contiguous frequency groups corresponding to low-, medium-, and high-frequency regions. The same number of sub-bands is then sampled from each group, so that the resulting sequence maintains balanced spectral coverage. These sampled sub-bands are first encoded into band-level representations by the intra-band encoder, and the resulting representations are then fed into the inter-band module for cross-band aggregation and supervision. The teacher branch is not shown in Fig. 5 for simplicity. In the intra-band branch, the teacher and student follow the same band-wise pathway, except that the student receives masked inputs and the teacher processes unmasked inputs. In contrast, in the inter-band branch, the stratified sampling is applied only to the student input, whereas the teacher continues to process the complete band set and provides supervisory targets derived from the full-spectrum band sequence. The two pathways are optimized jointly under a unified objective: 
+
+Ltotal = λ1 ·L intra rec +λ2 ·L intra ctx +λ3 ·L inter rec +λ4 ·L inter ctx , (17) where Lintra rec and Lintra ctx denote the intra-band reconstruction and contextual alignment losses, respectively, and Linter rec and 
+
+Linter ctx denote their inter-band counterparts. This joint formu-lation couples intra-band and inter-band learning within a JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 6                           
+
+> Fig. 6. Embedding-based anomaly scoring protocol. Normal training samples are first encoded into reference embeddings to construct a reference bank. For each test sample, a frozen encoder extracts a query embedding, which is compared with the reference bank using nearest-neighbor cosine similarity. The anomaly score is computed as 1−s, where sdenotes the maximum cosine similarity to the reference bank. TABLE II YEAR -SPECIFIC EVALUATION SETTINGS IN THE UNIFIED ASD BENCHMARK . MTYPE, MID, SEC, AND DOM DENOTE MACHINE TYPE ,MACHINE ID,
+> SECTION ,AND DOMAIN ,RESPECTIVELY .
+> Year Task characteristic Scoring granularity Final aggregation
+> 2020 ID-aware ASD (MTYPE,MID) for both AUC and pAUC Arithmetic mean 2021 Domain-shifted ASD (MTYPE,SEC,DOM) for both AUC and pAUC Harmonic mean 2022–2025 Section/domain-aware ASD (MTYPE,SEC,DOM) for AUC; (MTYPE,SEC) for pAUC Harmonic mean
+
+single training strategy, allowing the model to retain band-wise modeling capacity while explicitly incorporating cross-band dependencies. III. ASD B ENCHMARK FOR REPRESENTATION 
+
+EVALUATION 
+
+Evaluating pre-trained audio representations for ASD requires a standardized protocol that separates representation quality from downstream system design. Existing ASD systems often differ in encoders, adaptation strategies, training objectives, and anomaly scoring schemes, making direct comparison among pre-trained backbones difficult. To address this is-sue, we establish a unified ASD evaluation benchmark over DCASE 2020–2025 for comparing pre-trained audio back-bones under consistent evaluation settings. The benchmark is designed to assess pre-trained audio back-bones from two complementary perspectives. The embedding-based protocol directly evaluates the intrinsic discriminability of frozen representations without introducing task-specific adaptation modules. The adaptation-based protocol evaluates representation transferability by applying a lightweight down-stream projection trained on normal data before anomaly scoring. Together, these protocols provide a unified platform for comparing pre-trained audio backbones under consistent ASD evaluation settings. 
+
+A. DCASE Datasets 
+
+Our experiments are conducted exclusively on the DCASE Task 2 ASD datasets [1]–[6], which are generated from other popular machine sound datasets. Specifically, the DCASE 2020 dataset is generated from MIMII [48] and ToyAD-MOS [49]; the DCASE 2021 dataset is from MIMII Due [50] and ToyADMOS2 [51]; the DCASE 2022 ASD dataset is from MIMII DG [52] and ToyADMOS2 [51]; the DCASE 2023 ASD dataset is from MIMII DG [52] and ToyADMOS2+ [53]; the DCASE 2024 ASD dataset is from MIMII DG [52] and ToyADMOS2# [54], and finally the DCASE 2025 ASD dataset is from MIMII DG [52], ToyADMOS2025 [55] and IMAD-DS [56]. These six benchmarks all target machine condition moni-toring, while reflecting the evolution of the task setting from conventional unsupervised ASD to domain-shifted or domain-generalization scenarios and, more recently, first-shot unsuper-vised ASD. Depending on the year, each benchmark contains recordings from various numbers of machine types. The input audio consists mainly of short single-channel clips of approx-imately 10 seconds, typically containing both target-machine sounds and environmental noise. For all six benchmarks, we use the official data splits provided by the corresponding challenges. JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 7
+
+B. Year-Specific DCASE Evaluation Protocols 
+
+Table II summarizes the year-specific evaluation definitions adopted in the unified ASD benchmark. Across all years, the final submission format consists of sample-level anomaly scores, while the official performance is evaluated using AUC and pAUC. Here, pAUC denotes the partial area under the ROC curve computed over the false-positive-rate range [0 , 0.1] .For DCASE 2020, both AUC and pAUC are computed at the machine-ID level within each machine type, and the final yearly score is obtained by arithmetic averaging over all reported values. For DCASE 2021, both AUC and pAUC are computed at the granularity of machine type, section, and domain, and the final yearly score is given by the harmonic mean over all reported values. For DCASE 2022–2025, AUC is computed at the granularity of machine type, section, and domain, whereas pAUC is computed at the granularity of machine type and section. The final yearly score for these benchmarks is again obtained by the harmonic mean. In our implementation, these official evaluation definitions are applied after anomaly scores are generated by the corre-sponding benchmark protocol. 
+
+C. Embedding-Based ASD Evaluation Protocol 
+
+The embedding-based protocol evaluates frozen representa-tions directly in the feature space. Fig. 6 illustrates the anomaly scoring process. For each benchmark year, embeddings ex-tracted from normal training samples are stored as reference features. Each test sample is assigned an anomaly score by comparing its embedding with the corresponding reference bank. All embeddings are ℓ2-normalized, and the anomaly score is computed as the nearest-neighbor cosine distance. The construction of the reference bank follows the year-specific metadata used for matching and scoring, as summa-rized in Table II. For DCASE 2020, reference matching is performed using machine type and machine ID. For DCASE 2021–2025, reference matching is performed using machine type, section, and domain information. Final performance is computed using the official AUC and pAUC definitions of each year. 
+
+D. Adaptation-Based ASD Evaluation Protocol 
+
+The adaptation-based protocol evaluates whether frozen rep-resentations can be effectively transferred to a downstream ASD setting. For each benchmark year, we train a lightweight adaptation module on top of frozen embeddings using only normal training data with auxiliary labels derived from the available metadata. The module consists of a linear projection layer followed by a linear classifier. During adaptation, the pre-trained encoder remains frozen, and only the lightweight module is optimized. Auxiliary labels are constructed from the metadata available in each DCASE year, such as machine type, machine ID, sec-tion, domain, and operating-condition attributes. After training, the classifier is discarded, and only the learned projection layer is retained to transform embeddings into an adapted feature space. Anomaly scoring is then performed using the same memory-bank protocol illustrated in Fig. 6. IV. E XPERIMENTAL RESULTS 
+
+A. Experimental Setup 1) Baselines: We compare ECHOv2 with several rep-resentative pre-trained audio foundation models, including BEATs [22], CED [24], EAT [23], Dasheng [25], and FISHER [44]. These baselines cover both general-purpose audio encoders and band-splitting-based models. All compared models are publicly available and are built upon Transformer-or ViT-style backbones pre-trained on large-scale open-source audio corpora from different domains, including general audio datasets, such as AudioSet [57], VGGSound [58], ACAV100M [59], and Freesound 2, and music datasets, such as MTG-Jamendo [60], and Music4All [61]. ECHO is included as the direct band-splitting baseline, allowing us to isolate the effect of the proposed inter-band supervision and structured aggregation in ECHOv2. 
+
+2) Implementation Details: ECHOv2 uses the ECHO back-bone, and its default downstream representation follows the ECHO setting by concatenating band-level features from all sub-bands. The input is a spectrogram extracted from normal-ized raw audio using a 25 ms window and a 10 ms hop, and the sub-band width is fixed to 32. For the inter-band branch, the encoder consists of two Transformer layers with four attention heads, and the default number of summary tokens is set to three. We train the model with AdamW [62] using a two-stage schedule. In the first stage, the backbone is optimized with only the intra-band objective for 400k steps, where λ1 = λ2 =0.5. In the second stage, the model is jointly optimized with both intra-band and inter-band learning enabled for another 100k steps, where λ coefficients of the training objectives are equally divided into 0.25 . For both stages, the learning rate is linearly warmed up to 1 × 10 −4 and then cosine-decayed to 1 × 10 −5. The batch size is 256 and the weight decay is 0.05. Pre-training follows the ECHO backbone setup and uses public audio corpora, mainly including AudioSet [57], MTG-Jamendo [60], and Freesound audio data from WavCaps [63]. Compared with several baselines that additionally use datasets such as VGGSound [58], ACAV100M [59], or Music4All [61], ECHOv2 is trained without these extra corpora, which makes the comparison conservative with respect to pre-training data scale. All experiments were performed on two computing nodes with a total of eight K500SM AI 64 GB accelerator cards. For the adaptation-based ASD evaluation, all models use the same lightweight adaptation setting. A linear projection layer with output dimension 256 and a linear classifier are trained on top of frozen embeddings using AdamW for 10 epochs, with a learning rate of 1 × 10 −3, weight decay of 1 × 10 −4,and batch size of 64. After training, only the learned projection layer is retained for subsequent ASD evaluation. 
+
+B. Main Results on ASD Benchmarks 1) Results under the Embedding-based Protocol: Table III presents the ASD results under the embedding-based proto-col on DCASE 2020–2025. Under this frozen-representation 
+
+> 2Data derived from https://freesound.org/
+
+JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 8
+
+TABLE III MAIN ASD RESULTS (%) UNDER THE EMBEDDING -BASED EVALUATION PROTOCOL ON DCASE 2020–2025. F OR DCASE 2020, THE YEARLY SCORE IS THE ARITHMETIC MEAN OF THE DEVELOPMENT AND EVALUATION RESULTS . F OR DCASE 2021–2025, THE YEARLY SCORE IS THE HARMONIC MEAN .“DEV” AND “EVAL” DENOTE DEVELOPMENT AND EVALUATION SCORES UNDER THE YEAR -SPECIFIC PROTOCOLS IN SECTION III-B. “O VERALL ”
+
+DENOTES THE ARITHMETIC MEAN OVER THE SIX YEARLY SCORES . B EST AND SECOND -BEST RESULTS ARE MARKED IN BOLD AND UNDERLINE ,
+
+RESPECTIVELY .
+
+Model Version 2020 2021 2022 2023 2024 2025 Overall DEV EVAL Mean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean 
+
+BEATs [22] base 73.71 74.98 74.26 63.43 59.00 61.31 62.90 55.50 58.97 60.44 65.54 62.89 55.96 55.83 55.89 59.26 56.65 57.84 61.86 CED [24] base 67.40 68.20 67.75 56.87 56.47 56.67 59.50 55.18 57.26 59.79 61.94 60.84 57.91 57.77 57.83 59.82 55.99 57.72 59.68 mini 66.86 68.54 67.59 56.50 56.20 56.35 59.53 54.73 57.03 59.08 60.63 59.85 57.66 55.44 56.39 58.54 56.48 57.43 59.11 small 67.47 67.98 67.69 57.10 56.21 56.66 59.42 54.39 56.79 59.07 61.04 60.04 58.00 56.67 57.24 59.92 56.22 57.89 59.39 tiny 67.14 67.30 67.21 56.25 56.09 56.17 58.96 54.73 56.77 58.48 60.79 59.61 57.82 54.98 56.19 59.13 56.72 57.82 58.96 Dasheng [25] base 69.25 69.03 69.15 58.00 56.57 57.27 60.86 55.16 57.87 59.92 61.50 60.70 56.90 58.36 57.71 58.14 56.06 57.01 59.95 0.6b 68.22 68.13 68.18 57.30 56.22 56.76 59.21 54.23 56.61 58.27 61.72 59.94 55.58 57.69 56.75 57.77 55.85 56.73 59.16 1.2b 69.58 69.34 69.48 58.21 55.95 57.06 60.36 54.53 57.29 59.35 63.23 61.23 55.84 58.17 57.13 58.89 55.65 57.12 59.88 EAT [23] base 70.49 74.23 72.13 58.01 57.57 57.79 61.11 56.24 58.57 59.50 59.89 59.69 56.99 57.22 57.12 60.81 58.86 59.75 60.84 large 72.43 75.86 73.94 58.57 56.41 57.47 62.31 55.20 58.54 60.20 63.20 61.66 57.66 58.07 57.89 62.33 58.12 60.01 61.58 FISHER [44] mini 68.42 71.97 69.98 60.06 56.80 58.39 60.76 55.32 57.91 59.10 61.65 60.35 54.91 56.72 55.91 59.76 54.61 56.90 59.91 small 69.10 72.38 70.54 60.34 58.70 59.51 64.05 56.06 59.79 59.80 64.01 61.83 55.20 56.02 55.66 59.79 57.75 58.68 61.00 tiny 68.96 72.78 70.64 60.14 56.96 58.51 59.22 55.14 57.11 58.10 58.83 58.46 53.55 56.82 55.34 58.62 56.90 57.69 59.62 ECHO [43] small 70.96 73.84 72.23 61.77 58.70 60.20 63.98 56.42 59.96 61.40 66.21 63.71 55.63 59.73 57.86 58.97 58.47 58.70 62.11 tiny 68.69 72.00 70.14 60.01 58.03 59.01 63.62 56.34 59.76 61.33 66.36 63.75 55.52 58.05 56.91 57.07 59.62 58.40 61.33 ECHOv2 small 71.69 74.59 72.96 61.78 59.00 60.36 64.23 57.13 60.48 61.13 66.17 63.55 55.71 61.45 58.80 59.77 59.49 59.62 62.63 
+
+TABLE IV MAIN ASD RESULTS (%) UNDER THE ADAPTATION -BASED EVALUATION PROTOCOL ON DCASE 2020–2025. F OR DCASE 2020, THE YEARLY SCORE IS THE ARITHMETIC MEAN OF THE DEVELOPMENT AND EVALUATION RESULTS . F OR DCASE 2021–2025, THE YEARLY SCORE IS THE HARMONIC MEAN .“DEV” AND “EVAL” DENOTE DEVELOPMENT AND EVALUATION SCORES UNDER THE YEAR -SPECIFIC PROTOCOLS IN SECTION III-B. “O VERALL ”
+
+DENOTES THE ARITHMETIC MEAN OVER THE SIX YEARLY SCORES . B EST AND SECOND -BEST RESULTS ARE MARKED IN BOLD AND UNDERLINE ,
+
+RESPECTIVELY .
+
+Model Version 2020 2021 2022 2023 2024 2025 Overall DEV EVAL Mean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean DEV EVAL HMean 
+
+BEATs [22] base 77.41 82.75 79.75 61.23 58.84 60.01 63.84 56.90 60.17 59.93 61.93 60.91 59.25 57.55 58.28 59.53 55.23 57.15 62.71 CED [24] base 72.91 75.12 73.88 59.17 56.43 57.77 62.06 56.52 59.16 58.88 60.46 59.66 58.69 56.15 57.24 59.14 56.51 57.71 60.90 mini 71.79 74.81 73.11 58.32 56.28 57.28 61.33 56.69 58.92 57.80 59.88 58.82 57.62 55.53 56.43 58.00 55.56 56.68 60.21 small 72.91 74.91 73.79 59.28 56.37 57.79 61.91 56.66 59.17 58.36 60.28 59.31 58.24 56.20 57.07 59.50 56.33 57.77 60.82 tiny 71.23 71.61 71.40 58.20 55.84 56.99 61.63 56.60 59.01 57.29 59.85 58.54 57.46 54.82 55.95 58.63 55.25 56.78 59.78 Dasheng [25] base 76.38 79.92 77.93 60.61 57.93 59.24 62.80 56.40 59.43 61.06 61.50 61.28 57.56 58.39 58.02 59.84 56.48 58.00 62.32 0.6b 76.13 79.69 77.69 59.72 57.47 58.57 62.47 56.34 59.25 58.91 62.06 60.44 57.50 57.30 57.39 58.85 56.54 57.60 61.82 1.2b 76.00 79.73 77.64 60.84 57.68 59.22 61.78 56.64 59.10 60.42 61.98 61.19 56.42 58.83 57.75 59.34 55.66 57.32 62.04 EAT [23] base 73.14 76.81 74.75 59.07 57.06 58.05 60.60 56.84 58.66 59.05 58.55 58.80 55.13 54.86 54.98 59.62 54.83 56.96 60.37 large 75.57 78.10 76.68 61.22 57.54 59.32 62.48 57.07 59.65 60.57 60.85 60.71 55.43 55.44 55.44 59.04 54.24 56.38 61.36 FISHER [44] mini 72.68 77.87 74.96 60.44 57.33 58.84 59.90 55.45 57.59 57.63 61.15 59.34 53.86 55.36 54.69 59.01 53.86 56.15 60.26 small 72.69 79.02 75.47 61.29 58.97 60.11 64.34 56.48 60.15 59.06 62.38 60.68 56.06 55.49 55.74 58.57 55.58 56.93 61.51 tiny 71.72 77.91 74.44 60.23 56.67 58.39 60.52 55.97 58.16 58.88 56.86 57.85 54.28 57.78 56.20 59.22 53.92 56.27 60.22 ECHO [43] small 77.06 82.62 79.51 63.73 59.52 61.55 65.41 57.57 61.24 62.26 67.40 64.73 57.87 60.95 59.56 60.24 57.99 59.02 64.27 tiny 73.85 79.59 76.37 62.14 57.73 59.85 64.63 56.60 60.35 61.63 67.30 64.34 55.94 57.91 57.03 58.92 57.64 58.23 62.69 ECHOv2 small 77.64 82.16 79.62 63.49 59.39 61.37 65.62 58.65 61.94 61.18 69.18 64.93 59.14 61.28 60.33 60.07 57.95 58.92 64.52 
+
+setting, ECHO-Small already provides a strong band-splitting baseline, achieving the best overall score among the compared baselines (62.11), ahead of BEATs (61.86) and EAT-Large (61.58). This result indicates that band-structured representa-tions remain highly competitive for unified evaluation across multiple DCASE years. On top of this strong baseline, ECHOv2 further improves the overall score from 62.11 to 62.63. The improvement is con-sistent across most benchmark years rather than being driven by a single favorable setting. More specifically, ECHOv2 outperforms ECHO-Small on DCASE 2020, 2021, 2022, 2024, and 2025, while remaining comparable on DCASE 2023. This year-wise pattern indicates that the improvement is observed across heterogeneous ASD settings. Such consistency is meaningful because DCASE 2020– 2025 ASD tasks do not constitute identical evaluation setups. Across years, the benchmark varies in machine categories, operating conditions, domain-shift characteristics, and official aggregation rules. Therefore, the fact that ECHOv2 improves the overall average while yielding gains on most yearly benchmarks supports the view that the benefit of inter-band learning is not tied to a specific dataset configuration, but generalizes across heterogeneous ASD scenarios. From the perspective of representation learning, these re-sults suggest that inter-band supervision complements the ECHO intra-band training paradigm by injecting cross-frequency contextual cues into the learned band representa-tions during pre-training. Rather than altering the backbone architecture, ECHOv2 improves the representation through additional training-time supervision. The consistent improve-ment over the ECHO baseline indicates that explicit inter-band modeling can provide additional supervisory value beyond the intra-band self-distillation scheme. JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 9
+
+TABLE V ABLATION STUDY OF THE INTER -BAND LEARNING DESIGN UNDER THE UNIFIED ASD BENCHMARK . “O VERALL ” DENOTES THE ARITHMETIC MEAN OVER DCASE 2020–2025. B EST RESULTS IN EACH COLUMN ARE MARKED IN BOLD .
+
+Method Embedding-based ASD Adaptation-based ASD 2020 2021 2022 2023 2024 2025 Overall 2020 2021 2022 2023 2024 2025 Overall 
+
+ECHOv2 72.96 60.36 60.48 63.55 58.80 59.62 62.63 79.62 61.37 61.94 64.93 60.33 58.92 64.52 
+
+w/o inter-context 71.92 60.17 60.20 63.40 58.44 58.57 62.11 78.85 60.96 61.68 63.98 59.03 58.62 63.85 w/o inter-reconstruction 72.90 60.34 60.01 63.20 58.29 58.90 62.27 79.44 61.09 61.29 64.36 59.86 58.95 64.17 w/o FPE 72.89 60.46 60.15 63.51 58.53 59.26 62.46 79.82 61.45 61.45 64.72 60.02 59.29 64.46 ECHO-Small [43] 72.23 60.20 59.96 63.71 57.86 58.70 62.11 79.50 61.55 61.24 64.73 59.56 59.02 64.27 TABLE VI EFFECT OF STRUCTURED INTER -BAND MODELING WITH DIFFERENT NUMBERS OF SUMMARY TOKENS . H ERE , THE NUMBER OF SUMMARY TOKENS M
+
+> CONTROLS THE GRANULARITY OF CROSS
+
+-BAND SUPERVISION IN THE INTER -BAND BRANCH . “O VERALL ” DENOTES THE ARITHMETIC MEAN OVER 
+
+DCASE 2020–2025. B EST RESULTS IN EACH COLUMN ARE MARKED IN BOLD .                                                                       
+
+> # Summary Tokens ( M)Embedding-based ASD Adaptation-based ASD 2020 2021 2022 2023 2024 2025 Overall 2020 2021 2022 2023 2024 2025 Overall
+> 172.81 60.24 60.02 63.40 58.06 58.91 62.24 79.12 61.15 61.35 64.32 59.47 58.77 64.03 3 (ECHOv2) 72.96 60.36 60.48 63.55 58.80 59.62 62.63 79.62 61.37 61.94 64.93 60.33 58.92 64.52
+> 672.65 60.32 60.15 63.14 58.11 58.57 62.16 79.47 61.07 61.44 64.50 59.05 58.40 63.99 – (ECHO-Small [43]) 72.23 60.20 59.96 63.71 57.86 58.70 62.11 79.50 61.55 61.24 64.73 59.56 59.02 64.27
+
+2) Results under the Adaptation-based Protocol: Table IV reports the ASD results under the adaptation-based protocol. Compared with the embedding-based setting, this protocol evaluates frozen representations after a lightweight down-stream adaptation module, providing a complementary view of representation transferability. Under this setting, ECHO-Small remains the strongest baseline, achieving the best overall score among the compared baselines (64.27). This result suggests that the band representation learned by ECHO is effective not only for direct embedding-based scoring, but also for downstream use with lightweight task adaptation. ECHOv2 further improves the overall score from 64.27 to 64.52 and preserves the advantage over ECHO-Small under the adaptation-based protocol. At the yearly level, ECHOv2 outperforms ECHO-Small on DCASE 2020, 2022, 2023, and 2024, while remaining very close on DCASE 2021 and 2025. This pattern indicates that the benefit of inter-band learning is largely preserved after downstream adaptation rather than being limited to the original frozen embedding space. The adaptation-based results are also broadly consistent with those observed under the embedding-based protocol. Since the two protocols assess the learned representations from different angles—one through direct frozen-feature scoring and the other through a lightweight learned transformation— the consistent advantage of ECHOv2 under both settings sug-gests that inter-band learning improves representation quality in a more general sense, rather than only benefiting a specific evaluation pipeline. Overall, the results under the two protocols support the same conclusion: ECHOv2 provides consistent gains over the ECHO baseline under both evaluation protocols. While the margins are moderate, they are consistently obtained over a strong band-splitting baseline, which supports the effectiveness and transferability of the proposed cross-band learning strategy. 
+
+TABLE VII PAIRED STATISTICAL SIGNIFICANCE ANALYSIS BETWEEN ECHO V2 AND REPRESENTATIVE STRONG BASELINES . T HE REPORTED VALUES ARE TWO -SIDED PAIRED t-TEST p-VALUES COMPUTED FROM YEAR -LEVEL SCORES . “C OMBINED ” USES 12 PAIRED OBSERVATIONS FROM THE TWO EVALUATION PROTOCOLS .
+
+Comparison Embedding Adaptation Combined 
+
+ECHOv2 vs. ECHO-Small 0.0353 0.1843 0.0096 ECHOv2 vs. FISHER-Small 0.0101 0.0042 1.3×10 −4
+
+ECHOv2 vs. BEATs 0.3033 0.0213 0.0139 ECHOv2 vs. EAT-Large 0.1469 0.0011 0.0012 
+
+C. Statistical Significance Analysis 
+
+Since the numerical margins among strong pre-trained au-dio backbones can be small, we further conduct two-sided paired t-tests using the year-level scores from DCASE 2020– 2025. We select representative methods from two categories: structurally related band-splitting baselines, including ECHO-Small and FISHER-Small, and strong general-purpose pre-trained audio backbones according to the overall scores in the main result tables, including BEATs and EAT-Large. We compare ECHOv2 with these representative baselines under the embedding-based and adaptation-based protocols. We also report a combined test over the 12 year-protocol pairs as an additional summary. Table VII shows that ECHOv2 significantly improves over ECHO-Small under the embedding-based protocol (p =0.0353 ) and in the combined test (p = 0.0096 ), while the adaptation-based gain over ECHO-Small is positive but not significant at the 0.05 level. Compared with FISHER-Small, ECHOv2 shows significant improvements under both protocols. For BEATs, the improvement is not significant under the embedding-based protocol but becomes significant under the adaptation-based protocol and in the combined test, suggesting that the advantage of ECHOv2 is more evident after lightweight downstream adaptation. For EAT-Large, ECHOv2 shows significant improvement under the adaptation-based JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 10 
+
+protocol and in the combined test. These results provide paired statistical evidence that the overall gains of ECHOv2 are generally consistent across benchmark years and evaluation protocols. 
+
+D. Ablation Study 1) Effect of Inter-Band Learning: The ablation results in Table V analyze the contribution of each component in the inter-band branch. Among the examined components, the inter-context objective provides the largest contribution, while inter-reconstruction and FPE offer additional refinements. A particularly clear pattern appears when the inter-context objective is removed. Under the embedding-based protocol, the overall score drops from 62.63 to 62.11, exactly returning to the level of ECHO-Small. Under the adaptation-based protocol, the score further decreases from 64.52 to 63.85, which is even lower than the ECHO-Small baseline (64.27). This behavior indicates that the effectiveness of the inter-band branch mainly comes from the contextual supervision imposed on cross-band aggregation. The effect of inter-reconstruction is more moderate. With-out this objective, the model still reaches 62.27 under the embedding-based protocol, which remains above ECHO-Small, indicating that inter-context supervision alone already accounts for a substantial part of the improvement. Under the adaptation-based protocol, however, the score decreases to 64.17, slightly below the ECHO-Small result. This suggests that inter-reconstruction is useful, but its contribution is better understood as supportive rather than dominant. One possible explanation is that the adaptation-based protocol may be more sensitive to the global organization of the representation space, where explicit inter-context supervision becomes particularly useful. Removing FPE causes only small changes in the overall results, yielding 62.46 and 64.46 under the two protocols. This suggests that FPE acts as a lightweight refinement that provides positional guidance during cross-band aggregation, rather than serving as the main source of improvement. Taken together, the ablation shows that the inter-band branch is driven primarily by inter-context supervision, with inter-reconstruction offering additional support and FPE acting as a lightweight refinement. 
+
+2) Influence of Summary Token Granularity: Table VI studies how the number of summary tokens affects the struc-tured inter-band modeling design. In our formulation, the token number M determines the granularity of cross-band aggregation in the inter-band branch: M = 1 corresponds to a single global aggregation pathway, while larger M allows the model to organize cross-band interactions in a more structured manner. A consistent trend can be observed under both evaluation protocols. Moving from one summary token to three improves the overall score from 62.24 to 62.63 in the embedding-based setting and from 64.03 to 64.52 in the adaptation-based setting. This indicates that a single global summary may be too coarse to capture the diversity of cross-band dependencies involved in machine sound analysis. In contrast, increasing the number                                       
+
+> TABLE VIII REPRESENTATION ANALYSIS WITH DIFFERENT NUMBERS OF SUMMARY TOKENS . “ SUMTOK ”DENOTES THE CONCATENATED SUMMARY -TOKEN REPRESENTATION ,AND “+” DENOTES FEATURE CONCATENATION .“A VERAGE ”IS THE ARITHMETIC MEAN OF THE EMBEDDING -AND ADAPTATION -BASED ASD SCORES .MRepresentation Embedding-based ASD Adaptation-based ASD Average
+> 1band 62.24 64.03 63.14
+> sumtok 59.47 59.29 59.38 band+sumtok 62.33 62.92 62.63 3band 62.63 64.52 63.58
+> sumtok 60.60 60.61 60.61 band+sumtok 62.68 63.11 62.90 6band 62.16 63.99 63.08
+> sumtok 62.50 62.66 62.58 band+sumtok 62.21 62.87 62.54
+
+further to six does not bring additional gains, with the overall results dropping to 62.16 and 63.99, respectively. The year-wise results follow the same general pattern. The three-token configuration achieves the best overall perfor-mance and attains the strongest result in most yearly eval-uations across the two protocols, whereas the one-token and six-token settings are generally less competitive. Rather than indicating that more summary tokens are always preferable, these results point to the importance of choosing an appropri-ate aggregation granularity for inter-band modeling. From this perspective, the three-token setting appears to offer a better balance between global integration and struc-tured frequency-region modeling. Using only one summary token tends to enforce overly coarse aggregation, while using too many tokens does not translate into better downstream ASD performance. The results therefore support the use of a moderate number of summary tokens as a practical design choice for structured inter-band learning. 
+
+E. Discussion on Downstream Representations 
+
+ECHOv2 is designed to improve the ECHO band representa-tion through explicit cross-band supervision while preserving the band-splitting representation format for downstream ASD. At the same time, the introduction of structured summary tokens raises a natural question: beyond supporting inter-band learning during training, can these additional repre-sentations also serve as effective downstream features for ASD? To address this question, Table VIII compares the band representation, the summary-token representation, and their concatenation. 
+
+1) Band vs. Summary-Token Representations: The band representation remains the most reliable downstream feature across the evaluated settings. Under the default configuration of M = 3 , it achieves the highest average score, reaching 63.58 across the embedding-based and adaptation-based pro-tocols. This supports our default choice of using the final band-level representation for downstream ASD evaluation. A likely reason is that the band representation preserves band-specific structure while also benefiting from the cross-band contextual refinement introduced by inter-band learn-ing. By contrast, the summary-token representation is more JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 11 
+
+compact and more strongly oriented toward aggregated global information, which makes it less effective at retaining the fine-grained spectral cues needed for ASD. 
+
+2) Summary Tokens as Structured Aggregation Units: Used alone, summary-token representations are generally weaker than band representations, especially when M = 1 or M = 3 .This indicates that summary tokens are useful for aggregating cross-band information, but are not the most suitable stan-dalone representation for downstream inference. Their behavior nevertheless remains informative. As the number of summary tokens increases, the average score of the summary-token representation rises from 59.38 for M = 1 to 60.61 for M = 3 , and further to 62.58 for M = 6 . This trend suggests that finer structured aggregation increases the expres-sive capacity of the summary-token pathway itself. Even so, the band representation remains stronger in all three settings. The role of summary tokens is therefore better understood as facilitating structured cross-band interaction during training rather than replacing the final band representation at inference time. 
+
+3) Is Concatenation Necessary?: The concatenation results lead to a similar conclusion. Although band+sumtok consis-tently outperforms the summary-token representation alone, it does not provide a clear benefit over the band representation by itself. This is most evident under the adaptation-based protocol, where the concatenated representation is lower than the band representation for all three values of M .This pattern suggests that much of the useful information captured by the summary-token pathway has already been in-corporated into the learned band representation through inter-band learning. Once the band-level feature has been refined in this way, explicit concatenation adds little for downstream ASD. Overall, the evidence points to a clear division of roles in ECHOv2: the band representation remains the most stable and effective downstream feature, whereas summary tokens mainly serve as structured aggregation units that support inter-band learning during training. V. L IMITATIONS AND FUTURE WORK 
+
+Although ECHOv2 achieves strong performance on the uni-fied DCASE 2020–2025 ASD benchmark, several directions remain for future investigation. First, the current benchmark experiments are conducted on the official DCASE Task 2 datasets from 2020 to 2025. While these datasets provide a reproducible basis for multi-year ASD evaluation, apply-ing the benchmark to additional ASD datasets still requires dataset-specific adaptation of metadata parsing, reference-bank construction, and scoring definitions. Second, ECHOv2 uses a fixed sub-band partition and a fixed number of summary tokens during pre-training. Different machine types or operat-ing conditions may benefit from adaptive frequency grouping or data-dependent summary-token allocation. Third, this work focuses on representation-level evaluation with frozen back-bones and lightweight downstream adaptation. Future work may further integrate ECHOv2 with more task-specific ASD scoring and adaptation strategies while preserving the benefits of frequency-structured representation learning. VI. C ONCLUSION 
+
+This paper presented ECHOv2, a band-splitting audio rep-resentation model for anomalous sound detection. ECHOv2 learns localized intra-band representations while introduc-ing explicit inter-band supervision through a two-level self-distillation strategy. By combining inter-band context align-ment, masked sub-band reconstruction, and structured multi-summary-token aggregation, ECHOv2 captures both local spectral structure and cross-frequency dependencies. We also established a unified ASD benchmark over DCASE 2020–2025 with two complementary protocols: embedding-based evaluation for frozen representation discriminability and adaptation-based evaluation for downstream transferability. Experimental results, ablation studies, and statistical signifi-cance analysis demonstrate the effectiveness of ECHOv2 for ASD representation learning. The model and benchmark are fully open-sourced to support reproducible research. ACKNOWLEDGEMENT 
+
+Generative AI tools were used for limited language editing purposes, including improving clarity and correcting grammat-ical issues. No substantive content, analysis, or conclusions were generated by AI. The authors remain fully responsible for the content of this manuscript. This research is funded in part by the National Natural Science Foundation of China (62571223) and the Science and Technology Program of Suzhou City (SYC2022051). Many thanks for the computa-tional resource provided by the Advanced Computing East China Sub-Center. REFERENCES [1] Y. Koizumi, Y. Kawaguchi, K. Imoto, T. Nakamura, Y. Nikaido, R. Tanabe et al. , “Description and discussion on dcase2020 challenge task2: Unsupervised anomalous sound detection for machine condition monitoring,” in Proc. DCASE , 2020, pp. 81–85. [2] Y. Kawaguchi, K. Imoto, Y. Koizumi, N. Harada, D. Niizumi, K. Dohi                                                
+
+> et al. , “Description and discussion on dcase 2021 challenge task 2: Unsupervised anomalous detection for machine condition monitoring under domain shifted conditions,” in Proc. DCASE , 2021, pp. 186–190. [3] K. Dohi, K. Imoto, N. Harada, D. Niizumi, Y. Koizumi, T. Nishida
+> et al. , “Description and discussion on dcase 2022 challenge task 2: Un-supervised anomalous sound detection for machine condition monitoring applying domain generalization techniques,” in Proc. DCASE , 2022. [4] ——, “Description and discussion on DCASE 2023 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitoring,” in Proc. DCASE , 2023, pp. 31–35. [5] T. Nishida, N. Harada, D. Niizumi, D. Albertini, R. Sannino, S. Pradolini
+> et al. , “Description and discussion on dcase 2024 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitoring,” in Proc. DCASE , 2024, pp. 111–115. [6] ——, “Description and discussion on dcase 2025 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitoring,” in Proc. DCASE , 2025. [7] K. Suefusa, T. Nishida, H. Purohit, R. Tanabe, T. Endo, and Y. Kawaguchi, “Anomalous sound detection based on interpolation deep neural network,” in Proc. ICASSP , 2020, pp. 271–275. [8] E. Rushe and B. Mac Namee, “Anomaly detection in raw audio using deep autoregressive networks,” in Proc. ICASSP , 2019, pp. 3597–3601. [9] A. Jiang, W.-Q. Zhang, Y. Deng, P. Fan, and J. Liu, “Unsupervised anomaly detection and localization of machine audio: A gan-based approach,” in Proc. ICASSP , 2023, pp. 1–5. [10] R. Giri, S. V. Tenneti, K. Helwani, F. Cheng, U. Isik, and A. Kr-ishnaswamy, “Unsupervised anomalous sound detection using self-supervised classification and group masked autoencoder for density estimation,” Challenge on Detection and Classification of Acoustic Scenes and Events (DCASE 2020 Challenge), Tech. Rep , vol. 23, 2020. JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 12
+
+[11] H. Chen, Y. Song, L.-R. Dai, I. McLoughlin, and L. Liu, “Self-supervised representation learning for unsupervised anomalous sound detection under domain shift,” in Proc. ICASSP , 2022, pp. 471–475. [12] Y. Zhang, S. Hongbin, Y. Wan, and M. Li, “Outlier-aware Inlier Modeling and Multi-scale Scoring for Anomalous Sound Detection via Multitask Learning,” in Interspeech 2023 , 2023, pp. 5381–5385. [13] K. Wilkinghoff, “Self-supervised learning for anomalous sound detec-tion,” in Proc. ICASSP , 2024, pp. 276–280. [14] A. Jiang, X. Zheng, B. Han, Y. Qiu, P. Fan, W.-Q. Zhang, C. Lu, and J. Liu, “Adaptive prototype learning for anomalous sound detection with partially known attributes,” in Proc. ICASSP , 2025, pp. 1–5. [15] H. Hojjati and N. Armanfard, “Self-supervised acoustic anomaly detec-tion via contrastive learning,” in Proc. ICASSP , 2022, pp. 3253–3257. [16] J. Guan, F. Xiao, Y. Liu, Q. Zhu, and W. Wang, “Anomalous sound detection using audio representation with machine id based contrastive learning pretraining,” in Proc. ICASSP , 2023, pp. 1–5. [17] X.-M. Zeng, Y. Song, Z. Zhuo, Y. Zhou, Y.-H. Li, H. Xue, L.-R. Dai, and I. McLoughlin, “Joint generative-contrastive representation learning for anomalous sound detection,” in Proc. ICASSP , 2023, pp. 1–5. [18] X.-M. Zeng, Y. Song, I. McLoughlin, L. Liu, and L.-R. Dai, “Robust Prototype Learning for Anomalous Sound Detection,” in Interspeech 2023 , 2023, pp. 261–265. [19] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner et al. , “An image is worth 16x16 words: Transformers for image recognition at scale,” in Proc. ICLR , 2021. [20] Y. Gong, Y.-A. Chung, and J. Glass, “AST: Audio Spectrogram Trans-former,” in Interspeech 2021 , 2021, pp. 571–575. [21] P.-Y. Huang, H. Xu, J. Li, A. Baevski, M. Auli, W. Galuba et al. ,“Masked autoencoders that listen,” in Proc. NeurIPS , vol. 35, 2022, pp. 28 708–28 720. [22] S. Chen, Y. Wu, C. Wang, S. Liu, D. Tompkins, Z. Chen et al. , “BEATs: Audio pre-training with acoustic tokenizers,” in Proc. ICML , 2023, pp. 5178–5193. [23] W. Chen, Y. Liang, Z. Ma, Z. Zheng, and X. Chen, “EAT: Self-supervised pre-training with efficient audio transformer,” in Proc. IJCAI ,2024, pp. 3807–3815. [24] H. Dinkel, Y. Wang, Z. Yan, J. Zhang, and Y. Wang, “CED: Consistent ensemble distillation for audio tagging,” in Proc. ICASSP , 2024, pp. 291–295. [25] H. Dinkel, Z. Yan, Y. Wang, J. Zhang, Y. Wang, and B. Wang, “Scaling up masked audio encoder learning for general audio classification,” in 
+
+Proc. Interspeech , 2024, pp. 547–551. [26] B. Han, Z. Lv, A. Jiang, W. Huang, Z. Chen, Y. Deng et al. , “Exploring large scale pre-trained models for robust machine anomalous sound detection,” in Proc. ICASSP , 2024, pp. 1326–1330. [27] B. Han, A. Jiang, X. Zheng, W.-Q. Zhang, J. Liu, P. Fan, and Y. Qian, “Exploring self-supervised audio models for generalized anomalous sound detection,” IEEE Trans. ASLP , 2025. [28] A. Jiang, B. Han, Z. Lv, Y. Deng, W.-Q. Zhang, X. Chen et al. ,“Anopatch: Towards better consistency in machine anomalous sound detection,” in Proc. Interspeech , 2024, pp. 107–111. [29] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, W. Chen et al. , “Lora: Low-rank adaptation of large language models.” 2022. [30] X. Zheng, A. Jiang, B. Han, Y. Qian, P. Fan, J. Liu, and W.-Q. Zhang, “Improving anomalous sound detection via low-rank adaptation fine-tuning of pre-trained audio models,” in Proc. SLT , 2024, pp. 969–974. [31] H. Zhang, J. Guan, Q. Zhu, F. Xiao, and Y. Liu, “Anomalous Sound Detection Using Self-Attention-Based Frequency Pattern Analysis of Machine Sounds,” in Proc. Interspeech , 2023, pp. 336–340. [32] Y. Zeng, H. Liu, L. Xu, Y. Zhou, and L. Gan, “Robust anomaly sound detection framework for machine condition monitoring,” in Proc. DCASE , 2022. [33] K. T. Mai, T. Davies, L. Griffi, E. Benetos et al. , “Explaining the decisions of anomalous sound detectors,” in Proc. DCASE .[34] Y. Zhang, J. Liu, Y. Tian, H. Liu, and M. Li, “A dual-path framework with frequency-and-time excited network for anomalous sound detec-tion,” in Proc. ICASSP , 2024, pp. 1266–1270. [35] Y. Wang, Q. Zhang, W. Zhang, and Y. Zhang, “A lightweight framework for unsupervised anomalous sound detection based on selective learning of time-frequency domain features,” Applied Acoustics , vol. 228, p. 110308, 2025. [36] G. Chen, J. Yuan, Y. Zhang, H. Zhu, R. Huang, F. Wang, and W. Li, “Enhancing reliability through interpretability: A comprehensive survey of interpretable intelligent fault diagnosis in rotating machinery,” IEEE access , vol. 12, pp. 103 348–103 379, 2024. [37] T. Li, J. Chen, T. Liu, C. Sun, Z. Zhao, X. Chen, and R. Yan, “Explainable artificial intelligence based intelligent fault diagnosis: A systematic review from applications to insights,” Reliability Engineering & System Safety , p. 111935, 2025. [38] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez 
+
+et al. , “Attention is all you need,” Proc. NeurIPS , vol. 30, 2017. [39] Y. Liu, J. Guan, Q. Zhu, and W. Wang, “Anomalous sound detection using spectral-temporal information fusion,” in Proc. ICASSP , 2022, pp. 816–820. [40] Y. Zhang, J. Liu, and M. Li, “Multi-scale scanning network for machine anomalous sound detection,” in Proc. ICONIP , 2025, pp. 303–316. [41] D. Kong, H. Yu, and G. Yuan, “Multi-spectral and multi-temporal features fusion with se network for anomalous sound detection,” IEEE Access , vol. 12, pp. 167 262–167 277, 2024. [42] C. Ma, P. Jia, H. Guo, and W. Yang, “Estm: An enhanced dual-branch spectral-temporal mamba for anomalous sound detection,” IEEE SPL ,2025. [43] Y. Zhang, J. Liu, and M. Li, “Echo: Frequency-aware hierarchical encoding for variable-length signals,” in Proc. ICASSP , 2026. [44] P. Fan, A. Jiang, S. Zhang, Z. Lv, B. Han, X. Zheng et al. , “FISHER: A foundation model for multi-modal industrial signal comprehensive representation,” arXiv preprint arXiv:2507.16696 , 2025. [45] J. Turian, J. Shier, H. R. Khan, B. Raj, B. W. Schuller, C. J. Steinmetz, C. Malloy, G. Tzanetakis, G. Velarde, K. McNally et al. , “Hear: Holistic evaluation of audio representations,” in Proc. NeurIPS , 2022, pp. 125– 145. [46] S. wen Yang, P.-H. Chi, Y.-S. Chuang, C.-I. J. Lai, K. Lakhotia, Y. Y. Lin, A. T. Liu, J. Shi, X. Chang, G.-T. Lin, T.-H. Huang, W.-C. Tseng, K. tik Lee, D.-R. Liu, Z. Huang, S. Dong, S.-W. Li, S. Watanabe, A. Mohamed, and H. yi Lee, “SUPERB: Speech Processing Universal PERformance Benchmark,” in Interspeech 2021 , 2021, pp. 1194–1198. [47] J. Zhang, H. Dinkel, Y. Niu, C. Liu, S. Cheng, A. Zhao, and J. Luan, “X-ares: A comprehensive framework for assessing audio encoder performance,” in Proc. Interspeech , 2025. [48] H. Purohit, R. Tanabe, K. Ichige, T. Endo, Y. Nikaido, K. Suefusa, and Y. Kawaguchi, “Mimii dataset: Sound dataset for malfunctioning industrial machine investigation and inspection,” in Proc. DCASE , 2019, pp. 209–213. [49] Y. Koizumi, S. Saito, H. Uematsu, N. Harada, and K. Imoto, “Toyadmos: A dataset of miniature-machine operating sounds for anomalous sound detection,” in Proc. WASPAA , 2019, pp. 313–317. [50] R. Tanabe, H. Purohit, K. Dohi, T. Endo, Y. Nikaido, T. Nakamura, and Y. Kawaguchi, “Mimii due: Sound dataset for malfunctioning industrial machine investigation and inspection with domain shifts due to changes in operational and environmental conditions,” in Proc. WASPAA , 2021, pp. 21–25. [51] N. Harada, D. Niizumi, D. Takeuchi, Y. Ohishi, M. Yasuda, and S. Saito, “Toyadmos2: Another dataset of miniature-machine operating sounds for anomalous sound detection under domain shift conditions,” in Proc. DCASE , 2021. [52] K. Dohi, T. Nishida, H. Purohit, R. Tanabe, T. Endo, M. Yamamoto, Y. Nikaido, and Y. Kawaguchi, “Mimii dg: Sound dataset for mal-functioning industrial machine investigation and inspection for domain generalization task,” in Proc. DCASE , 2022, pp. 31–35. [53] N. Harada, D. Niizumi, D. Takeuchi, Y. Ohishi, and M. Yasuda, “Toyadmos2+: New toyadmos data and benchmark results of the first-shot anomalous sound event detection baseline,” in Proc. DCASE , 2023, pp. 41–45. [54] D. Niizumi, N. Harada, Y. Ohishi, D. Takeuchi, and M. Yasuda, “Toyadmos2#: Yet another dataset for the dcase2024 challenge task 2 first-shot anomalous sound detection,” in Proc. DCASE , 2024, pp. 106– 110. [55] N. Harada, D. Niizumi, Y. Ohishi, D. Takeuchi, and M. Yasuda, “Toyadmos2025: The evaluation dataset for the dcase2025t2 first-shot unsupervised anomalous sound detection for machine condition moni-toring,” in Proc. DCASE , 2025, pp. 230–234. [56] D. Albertini, F. Augusti, K. Esmer, A. Bernardini, and R. Sannino, “Imad-ds: A dataset for industrial multi-sensor anomaly detection under domain shift conditions,” in Proc. DCASE , 2024, pp. 1–5. [57] J. F. Gemmeke, D. P. Ellis, D. Freedman, A. Jansen, W. Lawrence, R. C. Moore et al. , “Audio set: An ontology and human-labeled dataset for audio events,” in Proc. ICASSP , 2017, pp. 776–780. [58] H. Chen, W. Xie, A. Vedaldi, and A. Zisserman, “Vggsound: A large-scale audio-visual dataset,” in Proc. ICASSP , 2020, pp. 721–725. [59] S. Lee, J. Chung, Y. Yu, G. Kim, T. Breuel, G. Chechik, and Y. Song, “Acav100m: Automatic curation of large-scale datasets for audio-visual video representation learning,” in Proc. ICCV , 2021, pp. 10 274–10 284. JOURNAL OF L ATEX CLASS FILES, VOL. 18, NO. 9, SEPTEMBER 2020 13 
+
+[60] D. Bogdanov, M. Won, P. Tovstogan, A. Porter, and X. Serra, “The mtg-jamendo dataset for automatic music tagging,” in Proc. ICML , 2019. [61] I. A. P. Santana, F. Pinhelli, J. Donini, L. Catharin, R. B. Mangolin, V. D. Feltrim et al. , “Music4all: A new music database and its applications,” in Proc. IWSSIP , 2020, pp. 399–404. [62] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,” in Proc. ICLR , 2019. [63] X. Mei, C. Meng, H. Liu, Q. Kong, T. Ko, C. Zhao et al. , “Wavcaps: A chatgpt-assisted weakly-labelled audio captioning dataset for audio-language multimodal research,” IEEE/ACM Trans. ASLP , vol. 32, pp. 3339–3354, 2024. 
+
+Yucong Zhang (Graduate Student Member, IEEE) received the B.Eng. degree from ShanghaiTech Uni-versity in 2020, and the M.Eng. degree from Duke University in 2022. He worked as a research as-sistant in speech processing at Speech and Multi-modal Intelligent Information Processing (SMIIP) Lab in 2023. He is currently pursuing the Ph.D. degree in the School of Computer Science under the joint supervision of Prof. Juan Liu and Prof. Ming Li. His research interests include anomalous sound detection, general audio processing and audio understanding. 
+
+Juan Liu (Senior Member, IEEE) received the Ph.D. degree in computer science and theory from Wuhan University in 1996. She is currently a Professor and Doctoral Supervisor with the School of Computer Science, Wuhan University, where she also serves as the Director of the Institute of Artificial Intelli-gence. Her research interests include bioinformatics, machine learning, data mining, pattern recognition, medical image processing, and artificial intelligence methods for speech, audio, and signal processing. She has published more than 150 research papers and holds or has applied for multiple national invention patents and software copyrights. 
+
+Ming Li (Senior Member, IEEE) received his Ph.D. in Electrical Engineering from University of South-ern California in 2013. He is currently a Full Pro-fessor in the School of Artificial Intelligence at the Chinese University of Hong Kong, Shenzhen. He is also an Adjunct Professor in the School of Artificial Intelligence at Wuhan University. He was a faculty member at Duke Kunshan University from 2018 to 2026, a research scholar in the Department of Electrical and Computer Engineering at Duke Uni-versity from 2018 to 2023 and an adjunct professor in the Department of Electrical and Computer Engineering at Carnegie Mellon University from 2015 to 2018. His research interests are in the areas of audio, speech and language processing as well as multimodal behavior signal analysis and interpretation. He has published more than 200 papers and served as the member of IEEE speech and language technical committee, CCF speech dialogue and auditory processing technical committee, CAAI affective intelligence technical committee, APSIPA speech and language processing technical committee. He was an area chair or meta reviewer for many Interspeech, ICASSP, SLT, ASRU conferences. He is the technical program co-chair at Odyssey 2022 and ASRU 2023. He is an editorial member of IEEE Transactions on Audio, Speech and Language Processing and Computer Speech and Language. Works co-authored with his colleagues have won first prize awards at Interspeech Computational Paralinguistic Challenges 2011, 2012 and 2019, ASRU 2019 MGB-5 ADI Challenge, Interspeech 2020 and 2021 Fearless Steps Challenges, VoxSRC 2021, 2022 and 2023 Challenges, ICASSP 2022 M2MeT Challenge, IJCAI 2023 ADD challenge, ICME 2024 ChatCLR challenge, Interspeech 2025 MISP challenge, Interspeech 2024 and 2025 AVSE challenges. As a co-author, he has won the best paper award in DCOSS 2009 and ISCSLP 2014 as well as the best paper shortlist in Interspeech 2024. He received the IBM faculty award in 2016, the ISCA Computer Speech and Language 5-years best journal paper award in 2018 and the youth achievement award of outstanding scientific research achievements of Chinese higher education in 2020. He is a senior member of IEEE.
