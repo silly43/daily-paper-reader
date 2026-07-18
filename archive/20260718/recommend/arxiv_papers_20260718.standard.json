@@ -1,0 +1,672 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-18T21:14:20.248836+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 13,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 9,
+    "quick_skim_target": 12,
+    "quick_selected": 9
+  },
+  "deep_dive": [
+    {
+      "id": "2607.10203v2",
+      "source": "arxiv",
+      "title": "Adaptive Compute in Latent World Models: When Depth Helps, Hurts, or Doesn't Matter",
+      "abstract": "Adaptive-compute world models -- early-exit or mixture-of-depths predictors that spend variable depth per step -- assume depth buys better predictions and can be routed adaptively. In autoregressive rollouts, the first assumption requires depth's per-step precision to survive composition. We test this with a pre-registered instrument, the shallow penalty $ρ=\\mathrm{err}(\\text{shallowest-exit rollout})/\\mathrm{err}(\\text{full-depth rollout})$, across nine DeepMind Control tasks under matched single-step ($K=1$) and multi-step ($K=4$) training, three seeds each. We find three regimes: on 6/9 tasks depth helps rollouts (intrinsic, $ρ$ up to $4.7\\times$), on 2/9 the shallow exits beat the full stack (inversion, $ρ$ down to $0.85\\times$), and one is flat. The robust inversion (cheetah) is not a property of the dynamics but is created by training: an ablation supervising early exits only at the first rollout step erases it ($ρ: 0.87\\to1.18$, $n=8$, $Δ=+0.31$), while an intrinsic-tradeoff task is unaffected -- a double dissociation we call the routability catch-22, since the supervision that makes exits routable is what trains them to out-roll the full stack. The regime is partly predictable a priori: observation/action dimensionality and one-step model error correlate with $ρ$ at $|\\text{Spearman}|\\approx0.75$ ($n=9$). Inside a CEM planner, $ρ$'s sign predicts whether planning benefits from depth, most sharply on the inversion task, where shallow planning beats deep. Finally, three cautions: a task's regime depends on the metric space, the rollout horizon, and the encoder. All thresholds and gates were fixed before the compute campaign, including a pre-registered negative for the hypothesis that motivated the study.",
+      "authors": [
+        "Achyuthan Sivasankar"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-07-11T08:27:33+00:00",
+      "link": "https://arxiv.org/pdf/2607.10203v2",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "latent world model adaptive compute depth analysis",
+      "llm_evidence_cn": "潜在世界模型自适应计算深度分析",
+      "llm_evidence": "潜在世界模型自适应计算深度分析",
+      "canonical_evidence": "潜在世界模型自适应计算深度分析",
+      "llm_tldr_en": "Investigates when adaptive depth helps or hurts in latent world model rollouts across control tasks, finding three regimes: depth helps on 6/9 tasks, hurts on 2/9, and no effect on 1/9.",
+      "llm_tldr_cn": "该论文针对潜在世界模型中自适应计算深度是否总是有益的问题展开研究，提出了浅层惩罚指标，在九个DeepMind控制任务上系统评估了深度在自回归展开中的影响。实验发现，在大多数任务中深度有助于提升展开质量，但在少数任务中浅层反而更好，甚至出现深度反转。这一发现为设计高效、自适应的世界模型提供了重要指导，表明深度并非越多越好，需根据具体任务调整计算策略。",
+      "llm_tldr": "该论文针对潜在世界模型中自适应计算深度是否总是有益的问题展开研究，提出了浅层惩罚指标，在九个DeepMind控制任务上系统评估了深度在自回归展开中的影响。实验发现，在大多数任务中深度有助于提升展开质量，但在少数任务中浅层反而更好，甚至出现深度反转。这一发现为设计高效、自适应的世界模型提供了重要指导，表明深度并非越多越好，需根据具体任务调整计算策略。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.14943v1",
+      "source": "arxiv",
+      "title": "Steering Robustness into World Action Models via Mechanistic Interpretability and Optimal Control",
+      "abstract": "World Action Models (WAMs) enable semantically- and physically-informed control but are brittle under distribution shift. In this work, we use mechanistic interpretability to study how robustness-relevant perturbations are represented in WAM activation space. Comparing activations across successful and unsuccessful rollouts, we find some WAM architectures exhibit low-dimensional linear separability for robustness-critical features, while others do not. This motivates the use of contrastive activation directions for training-free WAM steering. We also show that local linearity in WAM activation dynamics enables efficient feedback steering via model-based optimal control, yielding World-Action Linear Quadratic Regulator (WA-LQR), a minimally-invasive reduced-order LQR controller. Via mechanistic evaluations, we predict strong steerability in the Cosmos-Policy and DiT4DiT models but weak steerability in LingBot-VA, consistent with steering intervention results. On Cosmos-Policy and DiT4DiT, WA-LQR generalizes contrastive directions to new tasks and improves robustness to camera, gripper, and visual-noise perturbations over unsteered and prompt steering baselines.",
+      "authors": [
+        "Jihoon Hong",
+        "Julian Skifstad",
+        "Qiyue Dai",
+        "Alice Chan",
+        "Glen Chou"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.LG",
+        "eess.SY",
+        "math.OC"
+      ],
+      "published": "2026-07-16T12:52:49+00:00",
+      "link": "https://arxiv.org/pdf/2607.14943v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "uses mechanistic interpretability to improve World Action Models robustness",
+      "llm_evidence_cn": "利用机械可解释性提升世界行动模型的鲁棒性",
+      "llm_evidence": "利用机械可解释性提升世界行动模型的鲁棒性",
+      "canonical_evidence": "利用机械可解释性提升世界行动模型的鲁棒性",
+      "llm_tldr_en": "This work applies mechanistic interpretability to analyze robustness failures in World Action Models, discovers linear separability of critical features, and proposes contrastive steering and optimal control for training-free robustness improvement.",
+      "llm_tldr_cn": "世界行动模型在分布偏移下表现脆弱，但其原因尚不明确。本文利用机械可解释性分析世界行动模型的激活模式，发现鲁棒关键特征在激活空间中具有低维线性可分性。基于此提出对比激活方向进行无训练引导，以及基于模型预测控制的最优反馈调整策略WA-LQR。实验证明该方法能有效提升世界行动模型在分布外场景的鲁棒性，为世界模型的可信部署提供了新思路。",
+      "llm_tldr": "世界行动模型在分布偏移下表现脆弱，但其原因尚不明确。本文利用机械可解释性分析世界行动模型的激活模式，发现鲁棒关键特征在激活空间中具有低维线性可分性。基于此提出对比激活方向进行无训练引导，以及基于模型预测控制的最优反馈调整策略WA-LQR。实验证明该方法能有效提升世界行动模型在分布外场景的鲁棒性，为世界模型的可信部署提供了新思路。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.15142v1",
+      "source": "arxiv",
+      "title": "Concept-Guided Spatial Regularization for World Models in Atari Pong",
+      "abstract": "World models are usually evaluated as components of model-based reinforcement learning (MBRL) systems, while the world models themselves are rarely studied in isolation.   We examine five representative visual world-model agents in Atari Pong: DreamerV3, DIAMOND, TWISTER, Simulus, and STORM. After reproducing their training pipelines and matching the reported agent performance, we freeze the learned world models and evaluate them with a closed-loop rollout diagnostic: a policy trained separately from the corresponding MBRL agent interacts with each frozen model, and the generated video trajectories are inspected for visual and dynamical errors. Across all five models, the rollouts contain clear failures, including ball disappearance, incorrect ball motion, and invalid ball-paddle interactions.   Beyond visual trajectories, we further evaluate them with pixel-space zero-shot MBRL, where a new policy is trained entirely inside a frozen world model and then evaluated in the real environment. Across all five models, the resulting policies substantially underperform those produced by the corresponding original MBRL training pipelines. The gap is particularly large for DreamerV3, whose mean return drops from -5.5 to -20.9, near the minimum Pong return of -21.   We hypothesize that insufficient modeling of task-critical concepts, such as the ball in Pong, may contribute to these failures. We therefore propose Concept-Guided Spatial Regularization (CGSReg), an auxiliary pixel reconstruction loss applied to segmented concept regions. Experiments show that CGSReg improves both closed-loop rollouts and pixel-space zero-shot MBRL in DreamerV3, DIAMOND, and TWISTER. Its effects vary across the remaining models and evaluation metrics, indicating that CGSReg alone does not address all world-model bottlenecks.",
+      "authors": [
+        "Yukuan Lu",
+        "Zaishuo Xia",
+        "Weyl Lu",
+        "Yubei Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-16T15:46:44+00:00",
+      "link": "https://arxiv.org/pdf/2607.15142v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "evaluates world models in model-based RL for Atari Pong",
+      "llm_evidence_cn": "在Atari Pong中评估基于模型强化学习的世界模型",
+      "llm_evidence": "在Atari Pong中评估基于模型强化学习的世界模型",
+      "canonical_evidence": "在Atari Pong中评估基于模型强化学习的世界模型",
+      "llm_tldr_en": "This paper examines five visual world-model agents in Atari Pong, finds common rollout failures like ball disappearance, and proposes concept-guided spatial regularization to improve world model fidelity.",
+      "llm_tldr_cn": "世界模型通常作为模型强化学习的一部分被评估，但其自身很少被孤立研究。本文在Atari Pong游戏中考察了五个代表性视觉世界模型agent（DreamerV3、DIAMOND等），发现所有模型的闭环轨迹都存在明显错误，如球消失、球运动错误等。为此提出概念引导空间正则化，通过注入空间先验提升世界模型的预测保真度。该工作揭示了当前世界模型的脆弱性并提出了改进方向。",
+      "llm_tldr": "世界模型通常作为模型强化学习的一部分被评估，但其自身很少被孤立研究。本文在Atari Pong游戏中考察了五个代表性视觉世界模型agent（DreamerV3、DIAMOND等），发现所有模型的闭环轨迹都存在明显错误，如球消失、球运动错误等。为此提出概念引导空间正则化，通过注入空间先验提升世界模型的预测保真度。该工作揭示了当前世界模型的脆弱性并提出了改进方向。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.11964v1",
+      "source": "arxiv",
+      "title": "LIDAR-AD: A Decoder-Free Latent-Interaction Dreamer with Action-Residual Chains for Autonomous Driving",
+      "abstract": "Autonomous driving requires long-horizon closedloop decision making in dynamic traffic environments. Latent world models offer an effective framework for this problem by enabling imagination-based decision making in compact latent spaces. However, multi-source observations contain controlirrelevant redundancy, whereas reliable driving decisions rely on risk-relevant relations, future dynamics, and continuous action adjustments. This mismatch makes observation reconstruction and absolute action modeling suboptimal for learning decisionrelevant latent dynamics. We propose LIDAR-AD, a decoderfree Latent-Interaction Dreamer with Action-Residual Chains for autonomous driving. LIDAR-AD replaces observation reconstruction with redundancy-reduced latent alignment, encouraging compact representations of risk-relevant relations in multi-source driving inputs. It further models vehicle control as residual action updates and uses residual-action sequence contrastive learning to align multi-step residual-driven rollouts with future latent states. A deterministic analysis shows that the latent-tanh residual parameterization preserves interior action reachability while representing smooth long-horizon control as compact local updates. Together, these designs improve risk-aware state abstraction, continuous-control modeling, and long-horizon dynamics prediction. Extensive experiments across diverse simulated driving scenarios demonstrate that LIDAR-AD consistently outperforms world-model baselines, achieving the highest reward and the best success rate among learning-based methods. Evaluations on nuPlan-derived log-reconstructed scenarios further demonstrate the transferability of LIDAR-AD under real-world traffic layouts.",
+      "authors": [
+        "Yongzhi Liu",
+        "Yang Xiao",
+        "Zhong Cao",
+        "Zeng Kang",
+        "Sunan Zhang",
+        "Zhaozhi Dong",
+        "Guojun Yu",
+        "Weichao Zhuang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-12T16:06:09+00:00",
+      "link": "https://arxiv.org/pdf/2607.11964v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latent world models for autonomous driving",
+      "llm_evidence_cn": "用于自动驾驶的潜在世界模型",
+      "llm_evidence": "用于自动驾驶的潜在世界模型",
+      "canonical_evidence": "用于自动驾驶的潜在世界模型",
+      "llm_tldr_en": "LIDAR-AD proposes a decoder-free latent-interaction dreamer with action-residual chains for autonomous driving, using latent world models for imagination-based decision making.",
+      "llm_tldr_cn": "针对自动驾驶中多源观测存在控制无关冗余的问题，本文提出LIDAR-AD，一种无解码器的潜在交互Dreamer。该方法使用动作残差链在潜在空间中高效学习决策相关动态，替代传统观测重建，提升了闭环决策性能。实验表明该方法在复杂交通场景中表现优异。",
+      "llm_tldr": "针对自动驾驶中多源观测存在控制无关冗余的问题，本文提出LIDAR-AD，一种无解码器的潜在交互Dreamer。该方法使用动作残差链在潜在空间中高效学习决策相关动态，替代传统观测重建，提升了闭环决策性能。实验表明该方法在复杂交通场景中表现优异。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world models for reinforcement learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.13192v1",
+      "source": "arxiv",
+      "title": "Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?",
+      "abstract": "Self-supervision is a powerful technique for learning visual representations from unlabeled data. Existing techniques primarily adopt a two-stage approach for self-supervised learning (SSL): a pretraining stage on unlabeled data followed by a finetuning stage on labeled data. While this pipeline has demonstrated extreme effectiveness, the interaction between self-supervised and supervised learning objectives remains insufficiently understood. In this work, we systematically investigate whether jointly optimizing the self-supervised and supervised objectives during training provides a better alternative. We compare two training paradigms: (1) the aforementioned pretraining followed by finetuning (PFT) and (2) joint training (JT), where self-supervised and supervised losses are optimized simultaneously in the same network. Across eight representative SSL methods and diverse computer vision tasks on natural, medical, crisis response, and remote sensing data, we evaluate performance under varying percentages of labeled data. Our results reveal that the relative effectiveness of PFT and JT depends strongly on the task at hand, the availability of labeled data, and the complexity of the domain. We find that JT consistently improves data and training efficiency while being robust in low-label settings, while PFT is more reliable in more specialized domains. We further analyze representation quality, robustness, and cross-domain generalization, providing new insights into how self-supervised and supervised objectives interact during optimization. We establish a comprehensive empirical benchmark for hybrid SSL-based semi-supervised learning and offer practical guidance for selecting appropriate training strategies across diverse vision applications.",
+      "authors": [
+        "Nusrat Munia",
+        "Tyler Ward",
+        "Nishat Nayla",
+        "Matthew A. Massey",
+        "Abdullah-Al-Zubaer Imran"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-14T18:45:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.13192v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-supervised visual representation learning",
+      "llm_evidence_cn": "自监督视觉表征学习",
+      "llm_evidence": "自监督视觉表征学习",
+      "canonical_evidence": "自监督视觉表征学习",
+      "llm_tldr_en": "Systematically compares pretrain-finetuning and joint training paradigms for self-supervised visual representation learning, revealing interactions between objectives.",
+      "llm_tldr_cn": "自监督视觉表征学习通常采用预训练后微调的两阶段范式，但自监督与监督目标之间的交互尚未充分理解。本文系统比较了预训练-微调和联合训练两种范式，揭示了联合训练在某些情况下能提高表示质量，并分析了不同训练策略的影响。该工作为自监督视觉学习提供了设计指南。",
+      "llm_tldr": "自监督视觉表征学习通常采用预训练后微调的两阶段范式，但自监督与监督目标之间的交互尚未充分理解。本文系统比较了预训练-微调和联合训练两种范式，揭示了联合训练在某些情况下能提高表示质量，并分析了不同训练策略的影响。该工作为自监督视觉学习提供了设计指南。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised visual representation learning",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.14180v1",
+      "source": "arxiv",
+      "title": "RENEW: Towards Learning World Models and Repairing Model Exploitation from Preferences",
+      "abstract": "World models are widely used in offline reinforcement learning (RL) to improve sample efficiency and generate experience beyond a fixed dataset. However, they are vulnerable to model exploitation where data coverage is thin. Prior work addresses this either by collecting more expert demonstrations, which is often expensive, unsafe, or unavailable, or by conservative algorithms that avoid uncertain regions, which limits generalization. We propose instead to repair exploitation directly using human preferences over imagined rollouts, leveraging the strong intuitive physics that allows humans to easily spot egregious dynamics hallucinations. We formalize this as Dynamics Learning from Human Feedback (DLHF), a Bradley-Terry preference loss over trajectory log-likelihoods under a learned dynamics model. Unfortunately, naive DLHF is sample inefficient, so we introduce RENEW, which uses epistemic uncertainty to focus finetuning where the model is most exploitable. We evaluate on several Jumanji and classic control environments and find that while naive DLHF requires an outsize preference budget, RENEW makes the framework practical by improving sample efficiency, limiting catastrophic forgetting, and reducing exploitation in pretrained world models. Taken together, our results provide initial evidence that preferences can supervise world model dynamics directly, offering a new approach to addressing exploitation in offline model-based RL.",
+      "authors": [
+        "Logan Mondal Bhamidipaty",
+        "Mykel Kochenderfer",
+        "Subramanian Ramamoorthy"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-07-15T14:03:45+00:00",
+      "link": "https://arxiv.org/pdf/2607.14180v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Using human preferences to repair world model exploitation in offline RL",
+      "llm_evidence_cn": "利用人类偏好修复离线强化学习中的世界模型利用",
+      "llm_evidence": "利用人类偏好修复离线强化学习中的世界模型利用",
+      "canonical_evidence": "利用人类偏好修复离线强化学习中的世界模型利用",
+      "llm_tldr_en": "RENEW proposes Dynamics Learning from Human Feedback (DLHF) to repair world model exploitation using human preferences on imagined rollouts, avoiding costly expert demonstrations.",
+      "llm_tldr_cn": "离线强化学习中世界模型存在模型利用问题，现有方法依赖昂贵专家演示或保守策略。提出RENEW，利用人类偏好来修复世界模型，通过Bradley-Terry偏好损失从想象轨迹中学习动态。实验表明该方法有效减少幻象，提升泛化，为世界模型学习提供新范式。",
+      "llm_tldr": "离线强化学习中世界模型存在模型利用问题，现有方法依赖昂贵专家演示或保守策略。提出RENEW，利用人类偏好来修复世界模型，通过Bradley-Terry偏好损失从想象轨迹中学习动态。实验表明该方法有效减少幻象，提升泛化，为世界模型学习提供新范式。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "world model",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.13805v1",
+      "source": "arxiv",
+      "title": "AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization",
+      "abstract": "Contrastive Language-Image Pretraining learns a shared representation space through large-scale contrastive learning. However, existing methods that enforce global consistency regularization overlook a key challenge: the inherent information asymmetry between images and text: captions typically describe only one specific aspect of an image, thus images with similar visual content can be paired with completely divergent textual content and semantic information. Consequently, global regularizers inadvertently impose constraints between visually similar images whose captions describe divergent aspects, introducing semantic distortion into the representation space. We propose AspectCLIP, a framework that reformulates consistency regularization to respect this one-to-many structure. AspectCLIP first partitions training samples into attribute clusters based on textual similarity to identify aspect-coherent groups, then applies full cyclic consistency within each cluster while restricting cross-cluster regularization to prototype-level comparisons. This aspect-guided regularization enforces strict geometric alignment only when images and texts describe a consistent facet, while allowing flexibility across divergent aspects. Extensive experiments on downstream tasks demonstrate that AspectCLIP consistently outperforms traditional methods and achieves a more structured representation space.",
+      "authors": [
+        "Yiyang Yao",
+        "Shanglin Liu",
+        "Jianming Lv",
+        "Chengjun Wang",
+        "Jinyi Li",
+        "Yuchan Jie",
+        "Zhihua Jin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T13:11:06+00:00",
+      "link": "https://arxiv.org/pdf/2607.13805v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Contrastive learning with consistency regularization for CLIP representation",
+      "llm_evidence_cn": "对比学习与一致性正则化优化CLIP表示",
+      "llm_evidence": "对比学习与一致性正则化优化CLIP表示",
+      "canonical_evidence": "对比学习与一致性正则化优化CLIP表示",
+      "llm_tldr_en": "AspectCLIP introduces aspect-guided consistency regularization to address information asymmetry in contrastive language-image pretraining, improving representation quality.",
+      "llm_tldr_cn": "针对CLIP对比预训练中图文信息不对称导致全局正则化引入语义失真的问题，提出AspectCLIP框架，利用方面引导的一致性正则化优化表示空间。实验表明该方法有效提升了零样本分类和检索性能，为多模态对比学习提供了新视角。",
+      "llm_tldr": "针对CLIP对比预训练中图文信息不对称导致全局正则化引入语义失真的问题，提出AspectCLIP框架，利用方面引导的一致性正则化优化表示空间。实验表明该方法有效提升了零样本分类和检索性能，为多模态对比学习提供了新视角。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.13805v2",
+      "source": "arxiv",
+      "title": "AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization",
+      "abstract": "Contrastive Language-Image Pretraining learns a shared representation space through large-scale contrastive learning. However, existing methods that enforce global consistency regularization overlook a key challenge: the inherent information asymmetry between images and text: captions typically describe only one specific aspect of an image, thus images with similar visual content can be paired with completely divergent textual content and semantic information. Consequently, global regularizers inadvertently impose constraints between visually similar images whose captions describe divergent aspects, introducing semantic distortion into the representation space. We propose AspectCLIP, a framework that reformulates consistency regularization to respect this one-to-many structure. AspectCLIP first partitions training samples into attribute clusters based on textual similarity to identify aspect-coherent groups, then applies full cyclic consistency within each cluster while restricting cross-cluster regularization to prototype-level comparisons. This aspect-guided regularization enforces strict geometric alignment only when images and texts describe a consistent facet, while allowing flexibility across divergent aspects. Extensive experiments on downstream tasks demonstrate that AspectCLIP consistently outperforms traditional methods and achieves a more structured representation space.",
+      "authors": [
+        "Yiyang Yao",
+        "Shanglin Liu",
+        "Jianming Lv",
+        "Chengjun Wang",
+        "Jinyi Li",
+        "Yuchan Jie",
+        "Zhihua Jin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T13:11:06+00:00",
+      "link": "https://arxiv.org/pdf/2607.13805v2",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Contrastive learning with consistency regularization for CLIP representation",
+      "llm_evidence_cn": "对比学习与一致性正则化优化CLIP表示",
+      "llm_evidence": "对比学习与一致性正则化优化CLIP表示",
+      "canonical_evidence": "对比学习与一致性正则化优化CLIP表示",
+      "llm_tldr_en": "AspectCLIP introduces aspect-guided consistency regularization to address information asymmetry in contrastive language-image pretraining, improving representation quality.",
+      "llm_tldr_cn": "针对CLIP对比预训练中图文信息不对称导致全局正则化引入语义失真的问题，提出AspectCLIP框架，利用方面引导的一致性正则化优化表示空间。实验表明该方法有效提升了零样本分类和检索性能，为多模态对比学习提供了新视角。",
+      "llm_tldr": "针对CLIP对比预训练中图文信息不对称导致全局正则化引入语义失真的问题，提出AspectCLIP框架，利用方面引导的一致性正则化优化表示空间。实验表明该方法有效提升了零样本分类和检索性能，为多模态对比学习提供了新视角。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-1101-2025-10-22-684047-v2",
+      "source": "biorxiv",
+      "title": "Tokenizing single-cell transcriptomes as a native language for large language models",
+      "abstract": "Large language models (LLMs) can process diverse forms of information once they are represented as tokens in a shared sequence space. However, single-cell transcriptomes remain a foreign modality to LLMs because they are continuous, high-dimensional molecular profiles rather than discrete linguistic units. Here, we propose CellTok, a tokenized single-cell language modeling approach that converts transcriptomic profiles into compact cellular token sequences and incorporates them into the vocabulary of a pretrained LLM. By representing cells as native tokens, CellTok enables cellular measurements, textual instructions, biological context, and multi-cell populations to be jointly processed within the same autoregressive modeling framework. Across diverse tasks, CellTok enable LLMs to recognize individual cells, interpret homogeneous and heterogeneous cell populations, infer disease-associated cellular states, predict cell-cell communication, model developmental trajectories, and generate cellular states. Moreover, prompt-based experiments show that providing appropriate biological context improves performance, indicating that CellTok can leverage LLM knowledge and contextual reasoning to support cellular data interpretation. These results demonstrate that single-cell transcriptomes can be transformed from a foreign molecular modality into a native language for LLMs, establishing a unified interface for modeling cells, populations, and biological knowledge in a shared token space.",
+      "authors": [
+        "Xiao, C.",
+        "Ding, Y.",
+        "Bian, H.",
+        "Chen, Y.",
+        "Wei, L.",
+        "Zhang, X."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-11T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.1101/2025.10.22.684047v2.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised tokenization of single-cell transcriptomes for LLM training",
+      "llm_evidence_cn": "单细胞转录组的自监督标记化方法用于语言模型训练",
+      "llm_evidence": "单细胞转录组的自监督标记化方法用于语言模型训练",
+      "canonical_evidence": "单细胞转录组的自监督标记化方法用于语言模型训练",
+      "llm_tldr_en": "CellTok converts single-cell transcriptomes into token sequences and autoregressively pretrains an LLM, enabling joint modeling of cellular and textual data.",
+      "llm_tldr_cn": "论文提出CellTok方法，将高维单细胞转录组数据转化为紧凑的细胞token序列并嵌入预训练大语言模型词汇表中。通过自回归建模框架，CellTok使得细胞测量、文本指令和生物上下文能在同一模型中联合处理，弥合了分子谱与语言模态之间的鸿沟。实验表明该框架能有效学习细胞表示并支持多细胞群体的联合分析。",
+      "llm_tldr": "论文提出CellTok方法，将高维单细胞转录组数据转化为紧凑的细胞token序列并嵌入预训练大语言模型词汇表中。通过自回归建模框架，CellTok使得细胞测量、文本指令和生物上下文能在同一模型中联合处理，弥合了分子谱与语言模态之间的鸿沟。实验表明该框架能有效学习细胞表示并支持多细胞群体的联合分析。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised representation learning approaches",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-10-737794-v2",
+      "source": "biorxiv",
+      "title": "Attention reshapes the information dynamics of thalamic and cortical prediction-error learning",
+      "abstract": "Prediction errors (PEs) drive perceptual learning by updating internal models of the sensory environment, yet it remains unclear how attention reshapes their representation across distributed thalamocortical circuits. Using intracranial stereoelectroencephalography (sEEG) from 17 patients performing a roving auditory oddball task under attended and unattended conditions, we quantified PE encoding using mutual information and co-information to capture redundant and synergistic PE representations. Attention modulated PE encoding in both the thalamus and the temporal cortex, but with distinct informational dynamics. Thalamic encoding showed a stable reduction of PE information during distraction, consistent with state-dependent thalamocortical gating. In contrast, the temporal cortex expressed two opposing learning trajectories during attended listening that converged once attention was diverted, revealing distinct cortical learning regimes rather than a uniform attentional effect. Attention further reorganized the informational content of cortical PE representations by altering the balance between redundant and synergistic information. A biologically constrained neural network showed that attention-dependent changes in inhibition and long-range connectivity reproduced these dynamics through Hebbian learning. Together, these findings suggest that attention regulates predictive learning not simply by changing the strength of PE responses, but by reshaping how distributed thalamocortical circuits represent and integrate sensory evidence over time.",
+      "authors": [
+        "Aijala, J.",
+        "Jensen, M. A.",
+        "Miller, K. J.",
+        "Hermes, D.",
+        "Blenkmann, A. O.",
+        "Ince, R. A. A.",
+        "Bekinschtein, T. A.",
+        "Vinck, M.",
+        "Garagnani, M.",
+        "Canales-Johnson, A."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-14T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.10.737794v2.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "studies prediction error encoding in thalamocortical circuits, relevant to predictive world models",
+      "llm_evidence_cn": "研究丘脑皮层回路中的预测误差编码，与预测世界模型相关",
+      "llm_evidence": "研究丘脑皮层回路中的预测误差编码，与预测世界模型相关",
+      "canonical_evidence": "研究丘脑皮层回路中的预测误差编码，与预测世界模型相关",
+      "llm_tldr_en": "This study uses sEEG to show attention modulates prediction error encoding in thalamocortical circuits, revealing distinct informational dynamics relevant to internal world model updating.",
+      "llm_tldr_cn": "该论文利用颅内脑电图研究注意如何重塑丘脑和皮层中预测误差的信息动态，发现注意通过调节冗余和协同信息来影响预测误差表示，为理解预测世界模型的注意依赖性更新机制提供了神经证据。",
+      "llm_tldr": "该论文利用颅内脑电图研究注意如何重塑丘脑和皮层中预测误差的信息动态，发现注意通过调节冗余和协同信息来影响预测误差表示，为理解预测世界模型的注意依赖性更新机制提供了神经证据。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "predictive world model",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.14410v1",
+      "source": "arxiv",
+      "title": "LATTICE: Graph Self-Supervised Learning for Multimodal Spatial Omics Integration",
+      "abstract": "Spatially resolved omics studies increasingly combine transcriptomic and epigenomic assays, yet downstream analysis is often still performed using single-modality pipelines. We present LATTICE (Latent Alignment of Tissue-level and Transcriptomic Information for Cross-modal Embedding), a graph-based self-supervised framework that learns spot-level representations from harmonized multimodal features. LATTICE integrates five aligned modality blocks per Visium spot: Visium RNA, scMultiome RNA, scMultiome ATAC, spatial ATAC, and spatial CUT\\&Tag. These modalities capture spatial transcriptomic measurements, single-cell inferred regulatory activity, and in situ chromatin and histone states within a unified lattice representation. LATTICE constructs a spatial neighborhood graph and trains a TransformerConv encoder using masked reconstruction, cross-modal alignment, and spatial smoothness objectives. On a private 11-sample melanoma cohort from an anonymized clinical collaborator comprising 54{,}912 total spots, LATTICE demonstrated stable optimization behavior, reproducible embeddings across analysis seeds, and complete multimodal integration across all samples. Adding scMultiome RNA to Visium RNA alone substantially improved concordance with Space Ranger clusters across 11 runs (adjusted Rand index [ARI] +0.157, normalized mutual information [NMI] +0.143, and spatial contiguity +0.174). Additional modalities further improved spatial contiguity and multimodal utility score (MUS), although they sometimes reduced agreement with RNA-derived reference labels, likely because the learned embeddings captured chromatin and regulatory structure beyond transcriptomic similarity alone. These results position LATTICE as a practical and empirically grounded framework for multimodal spatial omics integration, while also highlighting the need for stronger supervision and broader external benchmarking.",
+      "authors": [
+        "Jagan Mohan Reddy Dwarampudi",
+        "Veena Kochat",
+        "Suresh Satpati",
+        "Kunal Rai",
+        "Tania Banerjee"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "q-bio.GN"
+      ],
+      "published": "2026-07-15T22:54:47+00:00",
+      "link": "https://arxiv.org/pdf/2607.14410v1",
+      "tags": [
+        "keyword:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "graph self-supervised learning for multimodal integration",
+      "llm_evidence_cn": "图自监督学习用于多模态整合",
+      "llm_evidence": "图自监督学习用于多模态整合",
+      "canonical_evidence": "图自监督学习用于多模态整合",
+      "llm_tldr_en": "LATTICE proposes a graph-based self-supervised framework to learn spot-level representations from multimodal spatial omics data, integrating multiple aligned modality blocks.",
+      "llm_tldr_cn": "现有的空间组学研究常将多模态数据分开分析，忽视跨模态关系。本文提出LATTICE，一个基于图的自监督学习框架，能够从对齐的多模态特征中学习spot级别的表示。LATTICE整合了五种空间组学模态，在统一潜在空间中捕获空间转录组、染色质和组蛋白状态。实验表明该方法有效融合了异源组学数据，为空间多模态整合提供了新范式。",
+      "llm_tldr": "现有的空间组学研究常将多模态数据分开分析，忽视跨模态关系。本文提出LATTICE，一个基于图的自监督学习框架，能够从对齐的多模态特征中学习spot级别的表示。LATTICE整合了五种空间组学模态，在统一潜在空间中捕获空间转录组、染色质和组蛋白状态。实验表明该方法有效融合了异源组学数据，为空间多模态整合提供了新范式。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-13-738284-v1",
+      "source": "biorxiv",
+      "title": "The unique value of zero prediction errors in reinforcement learning",
+      "abstract": "Learning is typically understood as a process driven by prediction errors, when outcomes differ from expectations. Yet it remains unclear whether outcomes that perfectly match expectations are psychologically and computationally meaningful. Here, we tested whether zero prediction errors shape affect, belief updating, and neural feedback processing in human reinforcement learning. Participants repeatedly predicted rewards in environments varying in uncertainty, with a subset of trial outcomes manipulated to exactly match their predictions. Zero prediction errors produced the highest momentary happiness, and computational modeling showed that behavior was best explained by a model in which zero prediction errors induce a distinct latent belief state that guides subsequent updating, particularly under higher uncertainty and in individuals with greater intolerance of uncertainty. Outcome-locked EEG analyses further showed that zero prediction errors elicited distinct P3-like responses, with residual neural activity predicting attenuated updating after zero prediction errors but enhanced updating after standard prediction errors. These findings suggest that perfect predictions are not neutral, but informative events that actively shape affect, behavior, and neural feedback processing.",
+      "authors": [
+        "Lloyd, B.",
+        "Kikumoto, A.",
+        "Wurm, F.",
+        "Vives, M.-L."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-14T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.13.738284v1.full.pdf",
+      "tags": [
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "studies zero prediction errors in RL, relates to predictive world models",
+      "llm_evidence_cn": "研究强化学习中的零预测误差，与预测世界模型相关",
+      "llm_evidence": "研究强化学习中的零预测误差，与预测世界模型相关",
+      "canonical_evidence": "研究强化学习中的零预测误差，与预测世界模型相关",
+      "llm_tldr_en": "This paper examines zero prediction errors in human RL, revealing a distinct latent belief state, informing how predictive world models incorporate zero-error events.",
+      "llm_tldr_cn": "该论文探讨了强化学习中零预测误差的独特价值，通过行为实验和计算建模发现零预测误差能最大化幸福感并触发独特的潜在信念状态，揭示了预测世界模型在应对零误差事件时的特殊机制，为理解基于预测误差的学习过程提供了新视角。",
+      "llm_tldr": "该论文探讨了强化学习中零预测误差的独特价值，通过行为实验和计算建模发现零预测误差能最大化幸福感并触发独特的潜在信念状态，揭示了预测世界模型在应对零误差事件时的特殊机制，为理解基于预测误差的学习过程提供了新视角。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "predictive world model",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.14967v1",
+      "source": "arxiv",
+      "title": "Latent Trajectory Discrimination for AI-Generated Text Detection",
+      "abstract": "Most existing approaches to AI-Generated Text Detection (AIGTD) treat documents as static objects and base their decisions on aggregate statistics or globally compressed embeddings. However, this perspective overlooks the inherently dynamic nature of autoregressive generation, where content evolves progressively through the latent space. In this paper, we reformulate AIGTD as the problem of distinguishing between latent generation trajectories. Instead of relying on static representations, we model how textual representations evolve across the sequence. To this end, we propose Geometric Trajectory and Contrastive Learning (GTCL), a framework that segments the document into ordered local units, encodes each unit in an embedding space, and constructs a structured and sequence-level representation. GTCL then applies contrastive learning to these trajectories to learn geometric regularities associated with the autoregressive generation. Evaluations performed on three different benchmarks and several approaches show that GTCL outperforms detection baselines consistently, which implies that explicitly modeling sequential dynamics provides robust discriminative signals across models and domains. These results suggest that modeling trajectory differences could improve detection and open up a dynamic direction that has been underexplored in previous AIGTD literature.",
+      "authors": [
+        "Gianluca Bonifazi",
+        "Christopher Buratti",
+        "Michele Marchetti",
+        "Federica Parlapiano",
+        "Giulia Quaglieri",
+        "Davide Traini",
+        "Domenico Ursino",
+        "Luca Virgili"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-07-16T13:19:14+00:00",
+      "link": "https://arxiv.org/pdf/2607.14967v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "uses contrastive learning for latent trajectory discrimination in text detection",
+      "llm_evidence_cn": "在文本检测中使用对比学习区分潜在轨迹",
+      "llm_evidence": "在文本检测中使用对比学习区分潜在轨迹",
+      "canonical_evidence": "在文本检测中使用对比学习区分潜在轨迹",
+      "llm_tldr_en": "Proposes GTCL framework using contrastive learning on ordered local units to model latent generation trajectories for AI-generated text detection.",
+      "llm_tldr_cn": "现有AI生成文本检测方法多基于静态表示，忽略了自回归生成过程中的动态潜在轨迹。本文提出几何轨迹与对比学习（GTCL）框架，将文档分割为有序局部单元，在嵌入空间中建模表示演化，并通过对比学习区分真实文本与生成文本的轨迹差异。实验表明该方法有效捕获了生成过程的动力学特征。",
+      "llm_tldr": "现有AI生成文本检测方法多基于静态表示，忽略了自回归生成过程中的动态潜在轨迹。本文提出几何轨迹与对比学习（GTCL）框架，将文档分割为有序局部单元，在嵌入空间中建模表示演化，并通过对比学习区分真实文本与生成文本的轨迹差异。实验表明该方法有效捕获了生成过程的动力学特征。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-05-29-726887-v2",
+      "source": "biorxiv",
+      "title": "Information-dependent eye-hand coordination emerges from active vision",
+      "abstract": "In daily activities, humans rely on visual information to plan hand movements, making the extraction of task-relevant information through eye gaze a key aspect of motor control. Behavioral studies have revealed characteristic saccade-pursuit patterns, likely governed by shared neural circuits, which enable an efficient reduction of task-related uncertainty. However, a unifying computational principle explaining the emergence of these patterns in continuous tasks such as reading or driving is still lacking. Here we propose a dual stochastic model predictive control formulation of active vision, in which eye movements are continuously controlled to minimize task-relevant uncertainty and build an internal model used for hand movement planning. Through experiments manipulating the amount, density, and difficulty of future visual information, we show how eye movement patterns adapt to the information context while maintaining an invariant extraction horizon. A saccade-pursuit pattern naturally emerges from the model, which accurately predicts both eye and hand movement features observed in experiments. These results provide a principled framework for understanding the continuous regulation of human eye movements and open new perspectives for applications in robotic assistance and active perception.",
+      "authors": [
+        "Zhao, J.",
+        "VERDEL, D.",
+        "Tan, Y.",
+        "Burdet, E."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-17T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.05.29.726887v2.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "builds an internal model for hand movement planning using active vision",
+      "llm_evidence_cn": "构建用于手部运动规划的内部模型",
+      "llm_evidence": "构建用于手部运动规划的内部模型",
+      "canonical_evidence": "构建用于手部运动规划的内部模型",
+      "llm_tldr_en": "Proposes a dual stochastic model predictive control formulation for active vision that continuously controls eye movements to minimize uncertainty and build an internal world model for hand planning.",
+      "llm_tldr_cn": "该论文针对连续任务中眼手协调行为缺乏统一计算原理的问题，提出了一种双随机模型预测控制框架，通过控制眼球运动最小化任务不确定性，同时构建内部世界模型用于手部运动规划。实验模拟显示该模型能复现人类扫视-追寻等行为模式，揭示了信息驱动的眼手协调机制。该工作为理解智能体内部世界模型提供了计算基础，并可用于机器人主动视觉与控制。",
+      "llm_tldr": "该论文针对连续任务中眼手协调行为缺乏统一计算原理的问题，提出了一种双随机模型预测控制框架，通过控制眼球运动最小化任务不确定性，同时构建内部世界模型用于手部运动规划。实验模拟显示该模型能复现人类扫视-追寻等行为模式，揭示了信息驱动的眼手协调机制。该工作为理解智能体内部世界模型提供了计算基础，并可用于机器人主动视觉与控制。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-10-737763-v1",
+      "source": "biorxiv",
+      "title": "A geometric and dynamical theory of latent computations in biological neural networks",
+      "abstract": "Many neural recordings have revealed low-dimensional sets of behaviorally relevant variables encoded within large-scale neural activity patterns. However, dimensionality reduction analyses alone cannot yield causal explanations for how networks stably implement computations that are resilient to the substantial variability of single neuron dynamics. Further, existing methods for dimensionality reduction often rely on simplifying assumptions about network structure that limit their applicability and explanatory power. To provide a theoretical framework describing the dynamics of low-dimensional computation in high-dimensional neural networks, here we introduce the concept of latent processing units (LPUs), which are architecture-agnostic computational elements operating within biological neural circuitry. Six theorems governing coding and computation by LPUs collectively provide explanations for a range of common biological findings: low-dimensional sets of coding variables can generate high-dimensional neural dynamics; many neurons have activity patterns that represent behaviorally relevant variables but exert little influence on downstream circuits; linear readouts of neural population activity commonly permit near-optimal decoding; the drift of neural representations is often substantial even while network computations remain intact. Overall, our treatment of LPUs, as enacted in network dynamics, unifies the geometric and dynamical views of neural computation under a joint framework and provides systems neuroscience with a causal account of how the brain executes reliable computations.",
+      "authors": [
+        "Dinc, F.",
+        "Blanco-Pozo, M.",
+        "Klindt, D.",
+        "Acosta, F.",
+        "Sylber, C.",
+        "Jiang, Y.",
+        "Ebrahimi, S.",
+        "Shai, A.",
+        "Tanaka, H.",
+        "Yuan, P.",
+        "Miolane, N.",
+        "Schnitzer, M. J."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-15T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.10.737763v1.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "latent processing units for low-dimensional dynamics in neural networks",
+      "llm_evidence_cn": "潜在处理单元用于神经网络低维动力学",
+      "llm_evidence": "潜在处理单元用于神经网络低维动力学",
+      "canonical_evidence": "潜在处理单元用于神经网络低维动力学",
+      "llm_tldr_en": "Introduces latent processing units (LPUs) as architecture-agnostic components to model stable low-dimensional computations in high-dimensional neural networks.",
+      "llm_tldr_cn": "神经活动低维变量编码缺乏因果解释。本文提出潜在处理单元（LPU）理论框架，描述高维网络中低维计算的稳定动力学。LPU架构无关，可解释网络如何通过潜在状态实现鲁棒计算，为理解生物和人工网络的内部世界模型提供理论基础。",
+      "llm_tldr": "神经活动低维变量编码缺乏因果解释。本文提出潜在处理单元（LPU）理论框架，描述高维网络中低维计算的稳定动力学。LPU架构无关，可解释网络如何通过潜在状态实现鲁棒计算，为理解生物和人工网络的内部世界模型提供理论基础。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-11-737920-v1",
+      "source": "biorxiv",
+      "title": "SST-MAE: Learning Spectral-Spatio-Temporal Representations from Plant Hyperspectral Time Series to Discover Complex Genotype-Phenotype Relations",
+      "abstract": "Understanding the link between genetic variation and observable traits is key to crop breeding. Hyperspectral imaging captures physiological and biochemical profiles, but current supervised methods require costly trait annotations and treat each observation as a static snapshot, ignoring the temporal dynamics of plant development. We introduce SST-MAE, a self-supervised framework that learns genotype-discriminative representations from plant hyperspectral developmental trajectories, without requiring phenotypic labels. The model learns to reconstruct masked information, capturing multiple growth trajectories. Validated on 194 field-grown lettuce genotypes across eight time points, the frozen encoder serves as a feature extractor for downstream genotype classification. SST-MAE outperforms raw spectral and linear baselines, achieving AUROC > 0.89 for anthocyanin pigmentation SNPs and 0.77 for leaf serration. The learned features are highly label-efficient, attaining near-full performance with only 30-50% of labeled data, offering a scalable pathway toward high-throughput genetic screening from image-based phenotypes. Keywords: Genotype prediction, Hyperspectral imaging, Masked autoencoder, Plant phenotyping, Self-supervised learning",
+      "authors": [
+        "Okyere, F. G. G.",
+        "Mehrem, S. L.",
+        "Snoek, B. L.",
+        "Van den Ackerveken, G.",
+        "Abeln, S."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-17T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.11.737920v1.full.pdf",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-supervised masked autoencoder for plant hyperspectral time series",
+      "llm_evidence_cn": "自监督掩码自编码器用于植物高光谱时间序列",
+      "llm_evidence": "自监督掩码自编码器用于植物高光谱时间序列",
+      "canonical_evidence": "自监督掩码自编码器用于植物高光谱时间序列",
+      "llm_tldr_en": "SST-MAE proposes a self-supervised framework using masked autoencoder to learn representations from plant hyperspectral temporal data, discovering genotype-phenotype relations without labels.",
+      "llm_tldr_cn": "现有方法需要昂贵表型标注并忽略时间动态。SST-MAE提出自监督框架，通过掩码重建学习植物高光谱发育轨迹的基因型判别表示。在194个生菜基因型八个时间点验证，该模型能捕获生长轨迹，无需任何表型标签即可发现复杂基因型-表型关系，为作物育种提供新工具。",
+      "llm_tldr": "现有方法需要昂贵表型标注并忽略时间动态。SST-MAE提出自监督框架，通过掩码重建学习植物高光谱发育轨迹的基因型判别表示。在194个生菜基因型八个时间点验证，该模型能捕获生长轨迹，无需任何表型标签即可发现复杂基因型-表型关系，为作物育种提供新工具。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "masked autoencoder for self-supervised learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}

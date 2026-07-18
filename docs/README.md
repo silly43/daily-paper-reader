@@ -6,44 +6,72 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 21:36:52 UTC
+- 最新运行日期：2026-07-18
+- 运行时间：2026-07-18 21:28:06 UTC
 - 运行状态：成功
-- 本次总论文数：8
-- 精读区：6
-- 速读区：2
+- 本次总论文数：16
+- 精读区：7
+- 速读区：9
 
 ### 今日简报（AI）
-今日共收8篇论文，精读6篇、速读2篇，重点聚焦结构MRI表征学习与自动驾驶决策框架两大方向。最值得关注的是《Contrastive Joint-Embedding Prediction》在医学影像上的对比联合嵌入预测（9.0分）和《LIDAR-AD》提出的无解码器潜交互梦想者模型（9.0分），二者分别在无监督表征与端到端驾驶策略上取得突出进展。建议普通读者优先精读这两篇高分论文，其余速读文章可作为风格解耦与跨层检测的补充参考。
-- 详情：[/202607/15/README](/202607/15/README)
+今日精读两篇满分论文：一篇探讨世界模型中自适应计算深度的影响，另一篇通过机制可解释性与最优控制增强世界动作模型的鲁棒性。
+
+最值得关注的方向：世界模型中的计算深度并非越深越好，需根据场景自适应调整；同时，利用可解释性方法可系统性地提升模型鲁棒性。
+
+建议普通读者优先精读这两篇10分论文，尤其关注它们对强化学习与可控生成模型设计的新启示。
+- 详情：[/202607/18/README](/202607/18/README)
 
 ### 精读区论文标签
-1. [Contrastive Joint-Embedding Prediction for Representation Learning in Structural MRI](/202607/15/2607.11962v1-contrastive-joint-embedding-prediction-for-representation-learning-in-structural-mri)  
+1. [Adaptive Compute in Latent World Models: When Depth Helps, Hurts, or Doesn't Matter](/202607/18/2607.10203v2-adaptive-compute-in-latent-world-models-when-depth-helps-hurts-or-doesnt-matter)  
+   标签：评分：10.0/10、query:world-models
+   evidence：潜在世界模型自适应计算深度分析
+2. [Steering Robustness into World Action Models via Mechanistic Interpretability and Optimal Control](/202607/18/2607.14943v1-steering-robustness-into-world-action-models-via-mechanistic-interpretability-and-optimal-control)  
+   标签：评分：10.0/10、query:world-models
+   evidence：利用机械可解释性提升世界行动模型的鲁棒性
+3. [Concept-Guided Spatial Regularization for World Models in Atari Pong](/202607/18/2607.15142v1-concept-guided-spatial-regularization-for-world-models-in-atari-pong)  
+   标签：评分：10.0/10、query:world-models
+   evidence：在Atari Pong中评估基于模型强化学习的世界模型
+4. [LIDAR-AD: A Decoder-Free Latent-Interaction Dreamer with Action-Residual Chains for Autonomous Driving](/202607/18/2607.11964v1-lidar-ad-a-decoder-free-latent-interaction-dreamer-with-action-residual-chains-for-autonomous-driving)  
+   标签：评分：9.0/10、query:world-models
+   evidence：用于自动驾驶的潜在世界模型
+5. [Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?](/202607/18/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training)  
    标签：评分：9.0/10、query:ssl
-   evidence：结合JEPA和对比损失的自监督框架
-2. [LIDAR-AD: A Decoder-Free Latent-Interaction Dreamer with Action-Residual Chains for Autonomous Driving](/202607/15/2607.11964v1-lidar-ad-a-decoder-free-latent-interaction-dreamer-with-action-residual-chains-for-autonomous-driving)  
+   evidence：自监督视觉表征学习
+6. [RENEW: Towards Learning World Models and Repairing Model Exploitation from Preferences](/202607/18/2607.14180v1-renew-towards-learning-world-models-and-repairing-model-exploitation-from-preferences)  
    标签：评分：9.0/10、query:world-models
-   evidence：自动驾驶中的潜在世界模型
-3. [From Observation to Insight: Mechanistic World Models and the Quest for Autonomous Discovery](/202607/15/2607.12474v1-from-observation-to-insight-mechanistic-world-models-and-the-quest-for-autonomous-discovery)  
-   标签：评分：9.0/10、query:world-models
-   evidence：提出机械论世界模型用于自主发现
-4. [Contrastive-Collapsed Loss for Flexible and Geometrically Optimal Embeddings and Faster Convergence](/202607/15/2607.12916v1-contrastive-collapsed-loss-for-flexible-and-geometrically-optimal-embeddings-and-faster-convergence)  
+   evidence：利用人类偏好修复离线强化学习中的世界模型利用
+7. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/18/2607.13805v1-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
    标签：评分：8.0/10、query:ssl
-   evidence：用于自监督表示学习的对比损失
-5. [Generating whole-brain neural activity and behavior through unified latent dynamics](/202607/15/biorxiv-10-64898-2026-06-05-730482-v2-generating-whole-brain-neural-activity-and-behavior-through-unified-latent-dynamics)  
-   标签：评分：8.0/10、query:world-models
-   evidence：学习统一潜在动态结构生成全脑神经活动和行为，本质上是一个预测未来状态的世界模型
-6. [Evidence of predictive information compression in latent space in humans during speech listening](/202607/15/biorxiv-10-64898-2026-07-14-738305-v1-evidence-of-predictive-information-compression-in-latent-space-in-humans-during-speech-listening)  
-   标签：评分：8.0/10、query:world-models
-   evidence：利用预测自编码器在听觉中实现潜在空间预测
+   evidence：对比学习与一致性正则化优化CLIP表示
 
 ### 速读区论文标签
-1. [Contrastive-Augmented Flow Matching for Style-Content Disentanglement](/202607/15/2607.12404v1-contrastive-augmented-flow-matching-for-style-content-disentanglement)  
+1. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/18/2607.13805v2-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
+   标签：评分：8.0/10、query:ssl
+   evidence：对比学习与一致性正则化优化CLIP表示
+2. [LATTICE: Graph Self-Supervised Learning for Multimodal Spatial Omics Integration](/202607/18/2607.14410v1-lattice-graph-self-supervised-learning-for-multimodal-spatial-omics-integration)  
+   标签：评分：8.0/10、query:ssl
+   evidence：图自监督学习用于多模态整合
+3. [Latent Trajectory Discrimination for AI-Generated Text Detection](/202607/18/2607.14967v1-latent-trajectory-discrimination-for-ai-generated-text-detection)  
+   标签：评分：8.0/10、query:ssl
+   evidence：在文本检测中使用对比学习区分潜在轨迹
+4. [Information-dependent eye-hand coordination emerges from active vision](/202607/18/biorxiv-10-64898-2026-05-29-726887-v2-information-dependent-eye-hand-coordination-emerges-from-active-vision)  
+   标签：评分：8.0/10、query:world-models
+   evidence：构建用于手部运动规划的内部模型
+5. [A geometric and dynamical theory of latent computations in biological neural networks](/202607/18/biorxiv-10-64898-2026-07-10-737763-v1-a-geometric-and-dynamical-theory-of-latent-computations-in-biological-neural-networks)  
+   标签：评分：8.0/10、query:world-models
+   evidence：潜在处理单元用于神经网络低维动力学
+6. [SST-MAE: Learning Spectral-Spatio-Temporal Representations from Plant Hyperspectral Time Series to Discover Complex Genotype-Phenotype Relations](/202607/18/biorxiv-10-64898-2026-07-11-737920-v1-sst-mae-learning-spectral-spatio-temporal-representations-from-plant-hyperspectral-time-series-to-discover-complex-genotype-phenotype-relations)  
+   标签：评分：8.0/10、query:ssl
+   evidence：自监督掩码自编码器用于植物高光谱时间序列
+7. [Tokenizing single-cell transcriptomes as a native language for large language models](/202607/18/biorxiv-10-1101-2025-10-22-684047-v2-tokenizing-single-cell-transcriptomes-as-a-native-language-for-large-language-models)  
    标签：评分：7.0/10、query:ssl
-   evidence：在流匹配中使用对比正则化进行表征学习，属于对比学习自监督方法
-2. [Cross-Layer Misalignment Detection in Agent Skills: A Progressive Loading-Aware Contrastive Learning Approach](/202607/15/2607.10534v1-cross-layer-misalignment-detection-in-agent-skills-a-progressive-loading-aware-contrastive-learning-approach)  
-   标签：评分：6.0/10、query:ssl
-   evidence：提出对比学习框架（PL-HCL）检测智能体技能的跨层错位，使用对比损失学习一致性。
+   evidence：单细胞转录组的自监督标记化方法用于语言模型训练
+8. [The unique value of zero prediction errors in reinforcement learning](/202607/18/biorxiv-10-64898-2026-07-13-738284-v1-the-unique-value-of-zero-prediction-errors-in-reinforcement-learning)  
+   标签：评分：7.0/10、query:world-models
+   evidence：研究强化学习中的零预测误差，与预测世界模型相关
+9. [Attention reshapes the information dynamics of thalamic and cortical prediction-error learning](/202607/18/biorxiv-10-64898-2026-07-10-737794-v2-attention-reshapes-the-information-dynamics-of-thalamic-and-cortical-prediction-error-learning)  
+   标签：评分：6.0/10、query:world-models
+   evidence：研究丘脑皮层回路中的预测误差编码，与预测世界模型相关
 
 
 <div class="dpr-home-promo-card">
