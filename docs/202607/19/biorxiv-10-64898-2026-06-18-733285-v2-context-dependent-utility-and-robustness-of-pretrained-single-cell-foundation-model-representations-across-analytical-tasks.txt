@@ -1,0 +1,2245 @@
+Title: Context-dependent utility and robustness of pretrained single-cell foundation model representations across analytical tasks
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.06.18.733285v2.full.pdf
+
+Number of Pages: 47
+
+Markdown Content:
+Context-dependent utility and robustness of pretrained single-cell foundation 1
+
+model representations across analytical tasks 2
+
+> 3
+
+Tianyuan Liu 1,2,† , Tingze Feng 3,† , Xianrun Pan 4, Yangyang Chen 1, Liping Ren 5, Xiucai 4
+
+Ye 1,* , Hao Lin 4,* , Yang Zhang 2,*  
+
+> 5
+> 6
+> 1
+
+Center for Artificial Intelligence Research, Tsukuba Institute for Advanced Research, 7
+
+University of Tsukuba, Tsukuba, 3058577, Japan. 8 
+
+> 2
+
+State Key Laboratory of Southwestern Chinese Medicine Resources, Innovative 9
+
+Institute of Chinese Medicine and Pharmacy, Chengdu University of Traditional 10 
+
+Chinese Medicine, Chengdu, 611137, China. 11  
+
+> 3
+
+State Key Laboratory of Phytochemistry and Natural Medicines, Dalian Institute of 12 
+
+Chemical Physics, Chinese Academy of Sciences, Dalian 116051, China. 13  
+
+> 4
+
+School of Life Science and Technology, University of Electronic Science and 14 
+
+Technology of China, Chengdu, 610054, China. 15  
+
+> 5
+
+School of Healthcare Technology, Chengdu Neusoft University, Chengdu 611844, 16 
+
+China. 17 
+
+> 18
+> 19
+
+*Corresponding author. Email: zhy1001@alu.uestc.edu.cn (Yang Zhang); 20 
+
+hlin@uestc.edu.cn (Hao Lin); yexiucai@cs.tsukuba.ac.jp (Xiucai Ye). 21 
+
+> †
+
+These authors contributed equally to this work. 22 
+
+> 23
+> 24
+> 25
+> 26
+> 27
+> 28
+> 29
+> 30
+> 31
+> 32
+> 33
+> 34
+> 35
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+Abstract 36 
+
+Single-cell foundation models (scFMs) have emerged as powerful representation 37 
+
+learning approaches for single-cell transcriptomics. However, the utility and 38 
+
+robustness of their pretrained representations across diverse analytical tasks and data 39 
+
+conditions remain insufficiently characterized, particularly in zero-shot settings 40 
+
+without task-specific fine-tuning. Here, we systematically analyze zero-shot 41 
+
+performance of single-cell transcriptomic representations across 20 methods, 642 
+
+downstream tasks and 1,607 datasets comprising nearly 21.8 million cells. We 43 
+
+evaluate model behavior along three complementary dimensions: utility on original 44 
+
+datasets, robustness to controlled changes in dataset structure, and exploratory 45 
+
+associations between dataset characteristics and performance variation. Our results 46 
+
+show that scFM performance is strongly task dependent, with no single method 47 
+
+consistently outperforming others across cell- and gene-level analyses. Notably, high 48 
+
+utility on original datasets did not necessarily translate into robustness under 49 
+
+structural perturbations, and several top-ranking methods were sensitive to changes in 50 
+
+cell number, gene number, class composition, class imbalance, and batch complexity. 51 
+
+Conventional statistical and task-specific methods remained competitive in several 52 
+
+settings, while greater computational cost did not consistently correspond to better 53 
+
+performance. Driver analyses further identified task-specific associations between 54 
+
+performance and dataset characteristics, including cell-type complexity, train-test 55 
+
+class overlap, batch number, and regulatory target-set size. Together, these findings 56 
+
+show that the zero-shot utility and robustness of pretrained scFM representations 57 
+
+depend jointly on analytical task and dataset structure. Our study provides a practical 58 
+
+basis for context-aware representation selection and underscores the importance of 59 
+
+evaluating structural robustness alongside utility when developing and applying 60 
+
+scFMs. 61 
+
+> 62
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+INTRODUCTION 63 
+
+Single-cell transcriptomics is now generating data at unprecedented scale ( 1, 2 ), 64 
+
+enabling detailed characterization of cellular heterogeneity across tissues (3), 65 
+
+developmental stages ( 4) and disease contexts ( 5). As single-cell RNA-sequencing 66 
+
+(scRNA-seq) atlases expand to hundreds of millions of cells, this growth has driven 67 
+
+intense interest in large-scale representation learning for biology ( 6). Inspired by 68 
+
+advances in foundation models in natural language processing (7-9 ), several 69 
+
+single-cell foundation models (scFMs) have been developed to learn generalizable 70 
+
+embeddings from large-scale pretraining (9-20 ). In particular, models such as 71 
+
+scFoundation ( 10 ), UCE ( 18 ) and GenePT ( 15 ) have explicitly emphasized zero-shot 72 
+
+applicability, proposing that pretrained representations can be reused across 73 
+
+downstream tasks without task-specific retraining. If this premise holds broadly, 74 
+
+representation learning could shift from task-centered model construction toward 75 
+
+reusable analytical backbones for single-cell data. 76 
+
+Despite these expectations, the extent to which scFMs have been incorporated 77 
+
+into routine analytical workflows remains uncertain. Our citation-context analysis of 78 
+
+1,330 studies citing original scFM publications suggests that direct downstream 79 
+
+analytical adoption remains limited (Supplementary Note 1, Supplementary Fig. 1). 80 
+
+While these models are widely referenced in the literature, their routine incorporation 81 
+
+into practical analytical pipelines appears less common than anticipated. In practice, 82 
+
+extensive fine-tuning demands substantial computational resources, mature software 83 
+
+infrastructures and systematic hyperparameter optimization, conditions that are not 84 
+
+universally available. Under such constraints, zero-shot deployment therefore 85 
+
+becomes a fundamental prerequisite for practical adoption rather than an optional 86 
+
+convenience. Researchers commonly extract pretrained embeddings directly for 87 
+
+downstream analysis, particularly when processing large-scale atlases. Therefore, the 88 
+
+critical question is whether zero-shot representations alone provide stable and 89 
+
+reproducible advantages over simpler statistical baselines such as principal 90 
+
+component analysis (PCA), which remain widely adopted because of their 91 
+
+interpretability and computational efficiency. 92 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+To support the rapid development of this field, several benchmarking efforts 93 
+
+have mapped an initial landscape of scFM capabilities across three complementary 94 
+
+tracks (21-26 ). Technical benchmarks, such as scEval (25 ), focus on model 95 
+
+optimization and training stability to provide guidelines for fine-tuning. Conversely, 96 
+
+biological application-centric benchmarks, including BioLLM ( 23 ) and Wu et al. ( 21 ), 97 
+
+investigate model performance in complex biomedical scenarios to guide model 98 
+
+selection for specific biological tasks. Concurrently, critical evaluations targeting 99 
+
+specific tasks, such as cell annotation ( 24 ) or batch integration ( 22 ), aim to investigate 100 
+
+whether massive pretrained architectures can outperform simpler baselines. A general 101 
+
+consensus from these diverse studies is that no single scFM consistently dominates. 102 
+
+While these benchmark studies establish an essential landscape, three critical 103 
+
+methodological gaps remain in evaluating practical zero-shot applicability. First, 104 
+
+current benchmarks rely almost exclusively on widely adopted datasets, leaving the 105 
+
+vulnerability of pretrained embeddings to structural data shifts, such as changes in cell 106 
+
+or gene numbers, largely untested. Second, zero-shot cross-task assessments lack the 107 
+
+algorithmic breadth and dataset scale required for comprehensive validation. Third, 108 
+
+the quantitative relationship between zero-shot efficacy and specific dataset-level 109 
+
+characteristics remains unexplored. Resolving these uncertainties is essential for 110 
+
+single-cell analyses in translational research ( 27-29 ), as overlooking representation 111 
+
+stability under realistic variability risks overestimating generalization claims while 112 
+
+neglecting simpler, highly robust alternatives. 113 
+
+Here we define the practical limits of zero-shot generalization in scFMs through 114 
+
+a structured evaluation framework spanning both cell-level and gene-level analyses. 115 
+
+We evaluated 20 representation methods across 6 downstream tasks on 1,607 datasets 116 
+
+encompassing nearly 21.8 million cells. These include original datasets alongside 117 
+
+their structural perturbations. Specifically, we characterize model performance along 118 
+
+three complementary dimensions: (i) baseline utility on original datasets, (ii) 119 
+
+robustness on structurally perturbed datasets and (iii) exploratory associations 120 
+
+between dataset-level features and performance. By employing structured data 121 
+
+augmentation to alter dataset properties, such as cell and gene count, we provide a 122 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+principled methodology to evaluate representation stability under controlled data 123 
+
+shifts. Rather than focusing solely on average task-level rankings, this framework 124 
+
+enables direct characterization of the practical zero-shot utility boundaries of scFMs. 125 
+
+It elucidates the critical relationship between baseline utility and structural robustness, 126 
+
+quantitatively capturing model sensitivity to dataset-level heterogeneity. Together, 127 
+
+these analyses contribute to a more transparent basis for evaluating generalization 128 
+
+claims and offer practical guidance for model selection in routine single-cell analysis. 129 
+
+> 130
+
+RESULTS 131 
+
+Overview of the benchmarking framework 132 
+
+To examine how scFMs perform under routine analytical conditions, we established a 133 
+
+structured evaluation framework that assesses pretrained representations across 134 
+
+diverse biological tasks and perturbations of dataset structural properties (Fig. 1). 135 
+
+Rather than focusing solely on average task-level rankings, this design measures the 136 
+
+robustness of zero-shot representations against realistic heterogeneity in single-cell 137 
+
+data. Pretrained models transform scRNA-seq data into biological representations, 138 
+
+including cell embeddings, gene embeddings and gene-gene attention scores (Fig. 1a). 139 
+
+These representations were evaluated under zero-shot conditions, without 140 
+
+task-specific fine-tuning. We examined six downstream applications spanning 141 
+
+unsupervised cell clustering, supervised annotation and network inference, reflecting 142 
+
+common analytical scenarios in single-cell studies (Fig. 1b). For each task, original 143 
+
+benchmark datasets were paired with systematically generated variants produced 144 
+
+through perturbations of dataset structure, including cell number, gene number, 145 
+
+cell-type number, class imbalance and batch complexity. This matched design enables 146 
+
+direct comparison between unperturbed and structurally altered datasets. Model 147 
+
+behavior was characterized along three complementary dimensions (Fig. 1c). Utility 148 
+
+was defined as performance on original datasets. Robustness quantified the magnitude 149 
+
+of performance change under dataset structural perturbations. In addition, driver 150 
+
+analysis examined associations between dataset-level characteristics and performance 151 
+
+variation using multivariable linear regression model. Overall, this framework 152 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+provides a principled basis for delineating zero-shot utility and s robustness across 153 
+
+heterogeneous single-cell contexts. 154 
+
+> 155
+
+Fig. 1 | Overview of the benchmarking framework. a, Representation extraction. 156 
+
+Input scRNA-seq data are processed by pre-trained foundation models to generate 157 
+
+distinct biological representations: cell embeddings, gene embeddings, and attention 158 
+
+scores. All representations are extracted under zero-shot conditions, without 159 
+
+task-specific fine-tuning (denoted by snowflake icons). b, Downstream tasks. The 160 
+
+benchmarking pipeline encompasses six downstream tasks, categorized into cell-level 161 
+
+analyses (cell clustering, cell-type annotation, drug sensitivity prediction, and batch 162 
+
+integration) and gene-level analyses (gene function prediction and gene regulatory 163 
+
+network inference). c, Evaluation dimensions. Model performance is characterized 164 
+
+across three complementary axes. Utility quantifies baseline performance on original 165 
+
+datasets through direct metric scoring and cross-dataset rank aggregation. Robustness 166 
+
+measures performance stability under systematic perturbations of dataset structural 167 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+properties. Drivers employs regression modeling to identify how specific dataset-level 168 
+
+meta-features dictate model efficacy. 169 
+
+Cell clustering under zero-shot representations 170 
+
+We first evaluated zero-shot cell embeddings in the context of cell clustering across 171 
+
+26 original datasets. Eighteen representation methods were compared, including 172 
+
+scFMs together with PCA and scGNN ( 30 ) as reference baselines (Methods). For each 173 
+
+dataset, embeddings were extracted without task-specific retraining and clustered 174 
+
+using a unified scIB ( 31 ) workflow. Performance was assessed both on original 175 
+
+datasets (utility) and on 339 datasets generated through perturbations of dataset 176 
+
+structural properties (robustness). Clustering accuracy was quantified using adjusted 177 
+
+Rand Index (ARI), normalized mutual information (NMI) and average silhouette 178 
+
+width (ASW), capturing agreement with reference cell labels and geometric 179 
+
+separability in embedding space. 180 
+
+Under original dataset conditions, models exhibited clear performance 181 
+
+stratification (Fig. 1b,d,f). Based on aggregated ranks, UCE4L, SCimilarity ( 16 ) and 182 
+
+CellPLM ( 17 ) achieved the highest overall clustering utility (Fig. 1a, Supplementary 183 
+
+Fig. 2-3). UCE4L and SCimilarity consistently ranked among the top performers 184 
+
+across ARI, NMI and ASW, whereas CellPLM remained within the top tier for ARI 185 
+
+and ASW with a modest decline in NMI. Across datasets, several scFMs significantly 186 
+
+outperformed PCA based on paired comparisons, indicating that large-scale 187 
+
+pretraining can improve recovery of cell-type structure under zero-shot settings. 188 
+
+However, higher utility on original datasets did not necessarily translate into 189 
+
+robustness under structural perturbations. Performance deviations under perturbations 190 
+
+varied substantially across methods (Fig. 1c,e,g). Robustness rankings revealed a 191 
+
+pattern distinct from utility rankings. CellFMmin (14 ), scBERTMean (20 ) and 192 
+
+scBERTCLS exhibited smaller deviations across multiple metrics and ranked highly 193 
+
+in overall robustness (Supplementary Fig. 4-5). Utility and robustness were not 194 
+
+aligned. Methods with lower utility sometimes exhibited smaller absolute deviations, 195 
+
+suggesting that limited dynamic range may partly constrain observed fluctuations. 196 
+
+Robustness rankings alone therefore do not fully characterize practical performance. 197 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+To jointly examine clustering utility and robustness, models were mapped in a 198 
+
+two-dimensional space (Fig. 1h), where lower ranks indicate better performance. 199 
+
+Using asymmetric thresholds (top quartile for utility and median for robustness), we 200 
+
+identified models combining high utility with acceptable robustness. In the overall 201 
+
+space, UCE4L and CellPLM occupied the preferred region, indicating a balance 202 
+
+between clustering utility and robustness. SCimilarity achieved strong utility but fell 203 
+
+below the robustness threshold. Metric-specific projections further revealed 204 
+
+heterogeneity. In ARI space, SCimilarity satisfied both thresholds, whereas in NMI 205 
+
+space UCE4L and CellPLM entered the preferred region. In contrast, ASW rankings 206 
+
+were reordered, with scFoundation uniquely satisfying both criteria, indicating 207 
+
+divergence between geometric separability and label-consistency metrics. 208 
+
+Drivers analysis identified systematic statistical associations between clustering 209 
+
+performance and dataset structural properties. For ARI and NMI, cell-type number 210 
+
+and total cell count exhibited the largest average absolute standardized coefficients, 211 
+
+indicating that clustering performance is associated with population complexity and 212 
+
+sample scale (Supplementary Fig. 6a). For ASW, cell-type number exhibited the 213 
+
+strongest association, whereas total cell number and gene number showed weaker 214 
+
+effects, suggesting that geometric separability is more sensitive to class structure than 215 
+
+dataset size alone. Across models, the direction of association was largely consistent 216 
+
+(Supplementary Fig. 6b). Heterogeneity across models was primarily reflected in 217 
+
+effect magnitude rather than direction. These results suggest that clustering 218 
+
+performance under zero-shot representations is systematically related to dataset 219 
+
+composition, although effect sizes differ across models. In addition, the time for cell 220 
+
+representation extraction ranged from approximately 1-2 minutes to over 30 minutes, 221 
+
+with substantial variation in CPU and GPU memory usage (Supplementary Table 2). 222 
+
+Computational cost did not directly track clustering utility, underscoring that model 223 
+
+selection in routine single-cell analysis may involve trade-offs among utility, 224 
+
+robustness and resource consumption. 225 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 226
+
+Figure 2 | Cell clustering under zero-shot representations. a, Performance 227 
+
+overview across original datasets (n=26), perturbation-derived datasets (n=339), and 228 
+
+computational scalability metrics (runtime, CPU and GPU memory usage). Utility and 229 
+
+robustness were summarized using rank-based aggregation across ARI, NMI and 230 
+
+ASW. Heatmap color gradients indicate relative method rankings. b,d,f, Clustering 231 
+
+performance on original datasets measured by ARI (b) , NMI (d) and ASW (f) . Box 232 
+
+plots display the distribution of metric values across datasets for each of the 18 233 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+methods. c,e,g, Performance deviations under structural perturbations measured by 234 
+
+ARI (c) , NMI (e) , and ASW (g) . Each point represents the deviation from the matched 235 
+
+original dataset across perturbation datasets. h, Utility-robustness landscapes based on 236 
+
+overall rank aggregation and individual evaluation metrics. Each point represents a 237 
+
+single method. The x-axis indicates utility rank and the y-axis indicates robustness 238 
+
+rank, where lower numerical values denote superior performance. Colors denote 239 
+
+decision-oriented regions defined by asymmetric thresholds: top quartile for utility 240 
+
+(Q1) and the median for robustness (Q2). ARI, adjusted Rand Index; NMI, 241 
+
+normalized mutual information; ASW, average silhouette width. 242 
+
+> 243
+
+Cell type annotation under zero-shot representations 244 
+
+We next evaluated zero-shot representations for supervised cell type annotation across 245 
+
+26 original datasets. Eighteen representation methods were compared, including 246 
+
+scFMs together with highVariable ( 32 ) and scGNN as reference baselines (Methods). 247 
+
+Stratified five-fold cross-validation was applied within each dataset, and embeddings 248 
+
+were extracted independently for training and testing partitions without sharing 249 
+
+intermediate statistics. A unified fully connected classifier was trained on all 250 
+
+embeddings to ensure comparability across methods. Performance was assessed on 251 
+
+original datasets (utility) and on 328 datasets generated through perturbations of 252 
+
+dataset structural properties (robustness). Classification accuracy was quantified using 253 
+
+F1-score, AUROC (area under the receiver operating characteristic curve) and 254 
+
+AUPRC (area under the precision-recall curve). 255 
+
+Under original dataset conditions, models exhibited clear stratification in 256 
+
+supervised discriminative performance (Fig. 3b,d,f). Based on aggregated ranks, 257 
+
+scFoundation achieved the highest overall utility, followed by highVariable and 258 
+
+CellPLM (Fig. 3a, Supplementary Fig. 7-8). scFoundation ranked consistently at the 259 
+
+top across F1-score, AUROC and AUPRC. Notably, highVariable remained 260 
+
+competitive under the unified classifier, indicating that traditional statistical 261 
+
+representations retain strong discriminative capacity in supervised settings. While 262 
+
+AUROC values approached saturation for multiple models, larger separations were 263 
+
+observed in F1-score and AUPRC. Cross-validation variance was low across folds, 264 
+
+suggesting stable performance estimation (Supplementary Fig. 9). Under 265 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+perturbations of dataset structural properties, most methods exhibited performance 266 
+
+deviations, particularly in F1-score and AUPRC (Fig. 3c,e,g). Robustness rankings 267 
+
+differed from utility rankings. CellFMmin, GenePTmin and GenePTlarge showed 268 
+
+smaller performance deviations overall, whereas some methods with high utility, such 269 
+
+as highVariable and CellPLM, displayed greater sensitivity to structural perturbations 270 
+
+(Supplementary Fig. 10-11). As observed in clustering, higher utility did not 271 
+
+necessarily imply greater robustness. 272 
+
+To evaluate the trade-off between model utility and robustness, models were 273 
+
+mapped in the two-dimensional utility-robustness landscape (Fig. 3h). Using the same 274 
+
+asymmetric thresholds as in clustering (top quartile for utility and median for 275 
+
+robustness), scFoundation, UCE4L and CellPLM occupied the preferred region. 276 
+
+highVariable and UCE33L achieved high utility but fell below the robustness 277 
+
+threshold. Metric-specific projections showed that scFoundation maintained favorable 278 
+
+positioning across all three metrics, whereas CellPLM and UCE4L ranked highly in 279 
+
+utility but did not satisfy the robustness criterion under F1-score and AUPRC. These 280 
+
+results indicate that high supervised utility does not consistently translate into 281 
+
+robustness under structural perturbations. Furthermore, drivers analysis identified 282 
+
+strong statistical associations between classification performance and dataset 283 
+
+structural properties. The proportion of overlapping cell types between training and 284 
+
+testing partitions exhibited the largest standardized coefficients across F1-score, 285 
+
+AUROC and AUPRC, indicating that supervised performance is strongly associated 286 
+
+with class composition consistency (Supplementary Fig. 12a). Associations with cell 287 
+
+number, class imbalance and gene number were smaller in magnitude. Across models, 288 
+
+the direction of association was broadly consistent, with heterogeneity primarily 289 
+
+reflected in effect size rather than sign (Supplementary Fig. 12b,c and Supplementary 290 
+
+Fig. 13). These results indicate that cell annotation performance under zero-shot 291 
+
+representations depends strongly on the overlap of cell types between training and 292 
+
+testing partitions. 293 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 294
+
+Fig. 3 | Cell type annotation under zero-shot representations. a, Performance 295 
+
+overview across original datasets (n=26) and perturbation-derived datasets (n=328). 296 
+
+Utility and robustness were summarized by rank-based aggregation of F1-score, 297 
+
+AUROC and AUPRC. b,d,f, Distribution of F1-score (b) , AUROC (d) and AUPRC (f) 298 
+
+across original datasets. Box plots show the distribution of metric values across 299 
+
+datasets for each of the 18 methods. c,e,g, Performance deviations under structural 300 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+perturbations across perturbation-derived datasets, shown as paired changes relative to 301 
+
+corresponding original datasets for F1-score (c) , AUROC (e) and AUPRC (g) . Each 302 
+
+point represents one perturbation instance. h, Utility-robustness landscape for 18 303 
+
+methods under overall ranking and individual metrics. Colors indicate predefined 304 
+
+decision regions based on asymmetric rank thresholds: top quartile for utility (Q1) and 305 
+
+median for robustness (Q2). AUROC, area under the receiver operating characteristic 306 
+
+curve; AUPRC, area under the precision-recall curve. 307 
+
+> 308
+
+Drug sensitivity prediction under zero-shot representations 309 
+
+We next evaluated zero-shot representations in a phenotype prediction setting, 310 
+
+focusing on drug sensitivity prediction across 14 curated single-cell datasets derived 311 
+
+from DRMref ( 33 ). In contrast to clustering and annotation tasks that assess structural 312 
+
+recovery or label discrimination, this task evaluates whether pretrained embeddings 313 
+
+capture cell-state representations that supports drug sensitivity prediction under 314 
+
+zero-shot conditions. For each dataset, a binary classification problem (resistant 315 
+
+versus non-resistant) was constructed at the cell level. All methods provided cell 316 
+
+embeddings as input features, extracted under zero-shot settings without fine-tuning. 317 
+
+A unified dual-tower neural architecture integrated cell embeddings with drug 318 
+
+molecular features encoded as 1,024-dimensional Morgan fingerprints derived from 319 
+
+SMILES representations. All models were trained under identical cross-validation, 320 
+
+optimization and architectural conditions to ensure that performance differences 321 
+
+reflected embedding quality rather than classifier design (Methods). Performance was 322 
+
+evaluated on original datasets (utility) and on 177 datasets generated through 323 
+
+perturbations of dataset structural properties and domain-shift scenarios (robustness). 324 
+
+F1-score, AUROC and AUPRC were used as complementary metrics. 325 
+
+Under original dataset conditions, models exhibited clear stratification in 326 
+
+predictive performance (Fig. 4b,d,f). Based on aggregated ranks, highVariable and 327 
+
+scFoundation achieved the highest overall utility, followed by GeneCompass ( 13 ) and 328 
+
+tGPT ( 19 ) (Fig. 4a, Supplementary Fig. 14-15). Notably, highVariable achieved the 329 
+
+top comprehensive ranking and performed strongly across all three metrics, indicating 330 
+
+that statistic-based features remain competitive in drug sensitivity prediction. 331 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+scFoundation also maintained consistently high rankings across F1-score, AUROC 332 
+
+and AUPRC under zero-shot settings, suggesting that its representations are 333 
+
+informative for drug sensitivity prediction. Cross-validation variance was low across 334 
+
+folds, supporting stability of performance estimation (Supplementary Fig. 16). In 335 
+
+addition, under perturbations of dataset structural properties, methods exhibited 336 
+
+measurable performance deviations (Fig. 4c,e,g). Robustness rankings were broadly 337 
+
+aligned with utility rankings in this task. highVariable and scFoundation demonstrated 338 
+
+smaller overall deviations across metrics (Supplementary Fig. 17-18). In contrast to 339 
+
+clustering and annotation tasks, the consistency between utility and robustness was 340 
+
+higher in drug sensitivity prediction. 341 
+
+To jointly assess utility and robustness, models were mapped in the 342 
+
+two-dimensional utility-robustness landscape (Fig. 4h). Given the stronger 343 
+
+consistency between utility and robustness observed in this task, we applied 344 
+
+symmetric thresholds (top quartile for both dimensions) to identify models 345 
+
+simultaneously achieving high utility and robustness. With this threshold, 346 
+
+highVariable, scFoundation, GeneCompass and tGPT occupied the preferred region in 347 
+
+the overall space. Furthermore, all four methods consistently remained within the 348 
+
+preferred region across F1-score, AUROC and AUPRC subspaces. Overall, drug 349 
+
+sensitivity prediction exhibited comparatively stronger alignment between utility and 350 
+
+robustness than observed in previous tasks. Furthermore, drivers analysis revealed 351 
+
+associations between predictive performance and dataset structural properties 352 
+
+(Supplementary Fig. 19-21). Across metrics, the degree of overlap in cell-type 353 
+
+composition between training and testing partitions exhibited the largest standardized 354 
+
+coefficients, indicating that consistency in cellular composition strongly influences 355 
+
+predictive performance (Supplementary Fig. 19a). Training-testing drug overlap also 356 
+
+showed positive associations with AUROC, AUPRC and F1-score, suggesting that 357 
+
+cross-drug structural consistency contributes to stable prediction. In contrast, total cell 358 
+
+number and class imbalance showed comparatively smaller effects. These findings 359 
+
+indicate that drug sensitivity prediction performance depends strongly on structural 360 
+
+consistency across both cellular and pharmacological domains. 361 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 362
+
+Fig. 4 | Drug sensitivity prediction under zero-shot representations. a, 363 
+
+Performance overview across original datasets (n=14) and perturbation-derived 364 
+
+datasets (n=79). Utility and robustness were summarized using rank-based 365 
+
+aggregation across F1-score, AUROC and AUPRC. b,d,f, Boxplots showing 366 
+
+performance distributions of 18 methods across original datasets measured by 367 
+
+F1-score, AUROC and AUPRC, respectively. c,e,g, Scatter plots showing 368 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+performance deviations under perturbation-derived datasets for F1-score, AUROC 369 
+
+and AUPRC, respectively. Each point represents a perturbation instance. h, 370 
+
+Utility-robustness landscape under overall ranking and individual metrics. Each point 371 
+
+represents one method; lower ranks indicate better performance. Colors denote 372 
+
+predefined decision regions based on symmetric thresholds (top quartile for both 373 
+
+utility and robustness). 374 
+
+> 375
+
+Batch integration under zero-shot representations 376 
+
+We next evaluated zero-shot representations in the context of batch integration on 377 
+
+seven widely used and representative multi-technology single-cell datasets. In contrast 378 
+
+to supervised tasks, batch integration is an unsupervised integration problem that 379 
+
+seeks to attenuate technical variation while preserving biological structure. Eighteen 380 
+
+representation methods were compared, including scFMs together with Harmony ( 34 )381 
+
+and scGNN as reference baselines. For all scFMs, embeddings were extracted under 382 
+
+zero-shot settings without batch-specific fine-tuning and evaluated using a unified 383 
+
+scIB workflow (Methods). Integration quality was assessed on original datasets 384 
+
+(utility) and on 325 datasets generated through perturbations of dataset structural 385 
+
+properties (robustness). Integration quality was quantified using complementary 386 
+
+metrics. Biological conservation was evaluated using ARI, NMI and ASW to measure 387 
+
+preservation of cell-type structure after integration. Batch mixing was evaluated using 388 
+
+iLISI (inverse local inverse Simpson’s index), kBET (k-nearest-neighbor batch effect 389 
+
+test) and batch ASW to quantify the degree of batch alignment in embedding space. 390 
+
+Under original dataset conditions, integration utility exhibited clear stratification 391 
+
+across methods (Fig. 5b,d and Supplementary Fig. 22). Harmony achieved the highest 392 
+
+overall rank, followed by scGPT ( 11 ) and SCimilarity (Fig. 5a and Supplementary Fig. 393 
+
+23-26). Harmony ranked first in ARI and NMI and remained highly competitive 394 
+
+across batch mixing metrics, indicating consistently strong performance across both 395 
+
+conservation and mixing objectives. scGPT ranked within the top five in five of the 396 
+
+six evaluated metrics and achieved the highest score in kBET, demonstrating broad 397 
+
+competitiveness across integration criteria. SCimilarity performed strongly in ARI, 398 
+
+NMI and ASW but ranked comparatively lower in batch mixing metrics, resulting in a 399 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+slightly reduced overall standing. These results indicate that while several zero-shot 400 
+
+foundation models exhibit measurable integration capacity, explicit batch-aware 401 
+
+integration strategies remain highly competitive in this setting. Under perturbations of 402 
+
+dataset structural properties, robustness patterns diverged from baseline utility 403 
+
+rankings (Fig. 5c,e and Supplementary Fig. 27). scFoundation and CellFMmin 404 
+
+exhibited smaller performance deviations across multiple metrics and ranked highly in 405 
+
+overall robustness (Fig. 5a and Supplementary Fig. 28-31). In contrast, Harmony and 406 
+
+scGPT, despite strong baseline utility, showed larger fluctuations under structural 407 
+
+perturbations, particularly in ASW and selected batch mixing metrics. As in previous 408 
+
+tasks, higher utility did not consistently correspond to greater robustness under 409 
+
+structural variability. 410 
+
+To better understand this divergence, we jointly evaluated utility and robustness. 411 
+
+Mapping models into the two-dimensional utility-robustness space further clarified 412 
+
+this relationship (Fig. 5f-h). Using the same asymmetric thresholds as in clustering 413 
+
+(top quartile for utility and median for robustness), UCE4L and SCimilarity occupied 414 
+
+the preferred region, indicating a relatively balanced integration-stability profile. 415 
+
+Harmony and scGPT remained utility-priority methods, reflecting strong integration 416 
+
+performance with comparatively lower structural stability. Conversely, scFoundation 417 
+
+and CellFMmin demonstrated favorable robustness but insufficient baseline 418 
+
+integration quality to enter the preferred region. These patterns reinforce that 419 
+
+integration quality and structural stability are not uniformly aligned across methods. 420 
+
+Drivers analysis further revealed systematic statistical associations between 421 
+
+integration performance and dataset structural properties. Across methods, the number 422 
+
+of batches exhibited the largest average absolute standardized coefficients in five of 423 
+
+the six evaluated metrics, indicating that integration performance is predominantly 424 
+
+associated with batch complexity (Supplementary Fig. 32a). In contrast, for ASW, the 425 
+
+number of cell types showed the largest average effect size, suggesting that geometric 426 
+
+separability after integration is more strongly influenced by biological population 427 
+
+complexity. Other structural variables, including total cell number and gene number, 428 
+
+showed comparatively smaller effects across metrics. Although effect magnitudes 429 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+varied across methods, the direction of association was largely consistent 430 
+
+(Supplementary Fig. 32b and Supplementary Fig. 33). These findings indicate that 431 
+
+variation in integration performance under zero-shot representations is primarily 432 
+
+shaped by batch number, with biological complexity exerting a more specific 433 
+
+influence on geometry-based conservation metrics. 434 
+
+.CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 435 
+
+Fig. 5 | Batch effect correction under zero-shot representations. a, Performance 436 
+
+overview across original datasets (n=7) and perturbation-derived datasets (n=325). 437 
+
+Utility and robustness were summarized using rank-based aggregation across 438 
+
+biological conservation and batch mixing metrics. b,d, Boxplots showing 439 
+
+performance distributions of 18 methods across original datasets measured by ARI 440 
+
+.CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint and iLISI, respectively. c,e, Scatter plots showing performance deviations under 441 
+
+perturbation-derived datasets for ARI and iLISI, respectively. Each point represents 442 
+
+one perturbation instance. f, Utility-robustness landscape under overall ranking across 443 
+
+all integration metrics. Each point represents one method; lower ranks indicate better 444 
+
+performance. Colors denote predefined decision regions based on asymmetric 445 
+
+thresholds (top quartile for utility and median for robustness). g, Utility-robustness 446 
+
+landscapes for biological conservation metrics. h, Utility-robustness landscapes for 447 
+
+batch mixing metrics. iLISI, integration Local Inverse Simpson’s Index; kBET, 448 
+
+k-nearest neighbor Batch Effect Test. 449 
+
+> 450
+
+Gene function prediction under zero-shot representations 451 
+
+We next evaluated whether pretrained gene embeddings encode functional semantics 452 
+
+sufficient to support tissue-specific gene classification. In contrast to cell-level tasks, 453 
+
+this analysis directly used zero-shot gene embeddings as input features. A total of 454 
+
+1,797 genes annotated to 15 tissue-specific categories from the Human Protein Atlas 455 
+
+(HPA) ( 35 ) were used to construct a single-label multiclass task (Methods). Five-fold 456 
+
+cross-validation was applied. Only models providing explicit gene embeddings were 457 
+
+included, resulting in 12 foundation models. A unified two-layer multilayer perceptron 458 
+
+(MLP) classifier was trained for all embeddings, and a one-hot encoding baseline was 459 
+
+included as a non-semantic control. Gene function prediction was assessed on original 460 
+
+datasets (utility) and on 180 datasets generated through perturbations of dataset 461 
+
+structural properties (robustness). Performance was quantified using F1-score, 462 
+
+AUROC and AUPRC. 463 
+
+Under original dataset conditions, models exhibited clear stratification. 464 
+
+GeneCompass achieved the highest overall utility, followed by scGPT and 465 
+
+Geneformer6L ( 12 ) (Fig. 6a, Supplementary Fig. 34-35). Rankings were largely 466 
+
+consistent across metrics. The one-hot baseline performed near random expectation, 467 
+
+indicating that gene identity alone is insufficient for tissue-specific classification. 468 
+
+Cross-validation variance was low, suggesting stable performance estimation 469 
+
+(Supplementary Fig. 36). Under perturbations of dataset structural properties, 470 
+
+robustness rankings differed from utility. CellFMmin and scFoundation exhibited 471 
+
+relatively smaller performance deviations, whereas GeneCompass showed larger 472 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+fluctuations (Supplementary Fig. 37-39). As observed in other tasks, higher utility did 473 
+
+not necessarily imply greater robustness. 474 
+
+Mapping models into the two-dimensional utility-robustness space revealed that 475 
+
+scGPT and Geneformer6L fell within the preferred region, whereas GeneCompass 476 
+
+showed high utility but did not consistently satisfy the robustness threshold (Fig. 6b). 477 
+
+Notably, under AUPRC, which is more sensitive to class prevalence, only scGPT 478 
+
+remained in the preferred region, whereas other high-utility models shifted toward a 479 
+
+utility-priority region. These patterns indicate that functional classification accuracy 480 
+
+and stability are only partially aligned under zero-shot gene embeddings. Drivers 481 
+
+analysis revealed systematic statistical associations between gene function prediction 482 
+
+performance and dataset structural properties. Across methods, the number of training 483 
+
+classes exhibited the largest average absolute standardized coefficients across all 484 
+
+metrics, indicating that performance is primarily associated with the breadth of label 485 
+
+space observed during training (Supplementary Fig. 40a). The number of training 486 
+
+genes showed second-largest positive associations, whereas class imbalance ratio 487 
+
+exerted comparatively smaller and predominantly negative effects. Weighted train-test 488 
+
+class overlap showed the moderate effects and was consistently positive. Although 489 
+
+effect magnitudes varied among methods, the direction of association was broadly 490 
+
+consistent (Supplementary Fig. 40b). Overall, these findings indicate that gene-level 491 
+
+prediction performance is more closely associated with label-space structure than with 492 
+
+dataset size or class imbalance alone. 493 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 494
+
+Fig. 6 | Gene-level tasks under zero-shot representations. a, Performance overview 495 
+
+for gene function prediction across original datasets (n=1) and perturbation-derived 496 
+
+datasets (n=120). Utility and robustness were summarized using rank-based 497 
+
+aggregation across F1-score, AUROC and AUPRC. b, Utility-robustness landscapes 498 
+
+for gene function prediction under overall ranking and individual metrics. Each point 499 
+
+represents one of the 13 evaluated methods; lower ranks indicate better performance. 500 
+
+Colors denote predefined decision regions based on asymmetric thresholds (top 501 
+
+quartile for utility and median for robustness). c, Performance overview for 502 
+
+perturbation-derived gene regulatory network inference across original datasets 503 
+
+(n=17), perturbation-derived datasets (n=167), and computational cost (runtime, CPU 504 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+memory and GPU memory). Utility and robustness were summarized using 505 
+
+rank-based aggregation across Jaccard, F1-score and AUPRC. d, Utility-robustness 506 
+
+landscapes for gene regulatory network inference under overall ranking and individual 507 
+
+metrics. Each point represents one of the 9 evaluated methods; lower ranks indicate 508 
+
+better performance. Colors denote predefined decision regions. 509 
+
+> 510
+
+Gene regulatory network inference under zero-shot representations 511 
+
+We next evaluated zero-shot representations for gene regulatory network (GRN) 512 
+
+inference across 17 single-cell datasets. This task assesses the ability of pretrained 513 
+
+gene association representations to recover transcription factor (TF)-target regulatory 514 
+
+relationships defined by combined expression-response and motif-support criteria 515 
+
+(Methods). Eight foundation models and one cosine similarity baseline were included. 516 
+
+For all models, gene association matrices were extracted directly from pretrained 517 
+
+weights without task-specific fine-tuning. Network aggregation and ranking 518 
+
+procedures were standardized across methods. Performance was quantified using 519 
+
+Jaccard index, F1-score and AUPR, capturing both early retrieval precision and 520 
+
+overall ranking quality. Utility was evaluated on the 17 original datasets, robustness 521 
+
+on 167 datasets generated through perturbations of dataset structural properties. 522 
+
+Under original dataset conditions, GRN recovery performance showed clear 523 
+
+stratification (Fig. 6c and Supplementary Fig. 41a,b,c). CellFMBase ranked first 524 
+
+overall, achieving the highest performance in both Jaccard and F1-score and 525 
+
+performing comparably to the Cosine baseline in AUPR (Supplementary Fig. 42-43). 526 
+
+The Cosine similarity baseline ranked second and exhibited consistently strong 527 
+
+performance across all three metrics. GeneCompass followed as a stable third-tier 528 
+
+method. In contrast, scBERT and scGPT showed comparatively lower recovery 529 
+
+performance. These results indicate substantial differences across models in their 530 
+
+ability to capture regulatory associations under zero-shot settings. Under perturbations 531 
+
+of dataset structural properties, robustness rankings diverged from utility rankings 532 
+
+(Supplementary Fig. 41d,e,f and Supplementary Fig. 44-45). CellFMmin and 533 
+
+Geneformer variants exhibited smaller performance deviations across metrics and 534 
+
+ranked highly in overall robustness. In contrast, CellFMBase and the cosine baseline, 535 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+despite strong utility, showed larger fluctuations under structural perturbations. As 536 
+
+observed in previous tasks, higher utility did not consistently correspond to greater 537 
+
+robustness. 538 
+
+Mapping models into the two-dimensional utility-robustness space further 539 
+
+clarified this trade-off. GeneCompass occupied the preferred region, reflecting a 540 
+
+relatively balanced profile between recovery accuracy and stability (Fig. 6d). 541 
+
+CellFMBase and Cosine remained utility-priority methods, characterized by strong 542 
+
+baseline recovery but reduced robustness. Conversely, CellFMmin and Geneformer 543 
+
+variants demonstrated favorable robustness yet insufficient baseline recovery 544 
+
+performance to enter the preferred region. Drivers analysis revealed that ground-truth 545 
+
+target set size exhibited the largest average absolute standardized coefficients across 546 
+
+metrics, indicating that GRN recovery performance is strongly associated with the 547 
+
+size of the positive regulatory set (Supplementary Fig. 46). Across models, the 548 
+
+direction of association was largely consistent, with heterogeneity primarily reflected 549 
+
+in effect magnitude. These findings suggest that GRN inference performance under 550 
+
+zero-shot representations is influenced more by candidate space scale than by sample 551 
+
+composition. In addition, computational profiling showed substantial differences in 552 
+
+runtime and memory requirements across methods (Fig. 6c). The cosine baseline was 553 
+
+the most efficient and did not require GPU resources, whereas larger foundation 554 
+
+models incurred higher GPU memory consumption. As in previous tasks, 555 
+
+computational cost did not directly track predictive utility, underscoring trade-offs 556 
+
+among utility, robustness and resource efficiency in practical applications. 557 
+
+> 558
+
+DISCUSSION 559 
+
+In this study, we established a structured framework to evaluate scFMs under routine 560 
+
+analytical constraints. All embeddings are extracted strictly in a zero-shot manner, 561 
+
+downstream pipelines are standardized, and performance is assessed on original 562 
+
+datasets as well as under perturbations of dataset structural properties. Across 6 tasks 563 
+
+and 1,607 datasets, no single method maintained consistently strong performance 564 
+
+across datasets. Instead, method preferences exhibit strong task dependency, 565 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+indicating that zero-shot performance cannot be reduced to a single global ranking. 566 
+
+Joint evaluation of utility and robustness revealed additional performance space 567 
+
+beyond baseline rankings. For cell clustering UCE4L and CellPLM satisfied the joint 568 
+
+utility-robustness criteria; scFoundation met the joint thresholds in cell type 569 
+
+annotation; and highVariable together with scFoundation showed balanced 570 
+
+performance in drug sensitivity prediction. In batch integration, Harmony ranked 571 
+
+highest in utility, whereas UCE4L and SCimilarity met both thresholds. At the gene 572 
+
+level, scGPT and Geneformer6L satisfied the joint criteria for gene function 573 
+
+prediction, whereas GeneCompass showed high utility with lower robustness. In gene 574 
+
+regulatory network inference, GeneCompass met the joint criteria, whereas a575 
+
+cosine-similarity baseline showed competitive utility but weaker robustness. These 576 
+
+patterns indicate that zero-shot generalization in scFMs cannot be inferred from utility 577 
+
+alone and is better understood as a balance between utility and robustness under 578 
+
+realistic analytical variability. 579 
+
+Several broader implications emerge from these cross-task comparisons. First, 580 
+
+utility and robustness can decouple. Methods that rank highly on original datasets can 581 
+
+exhibit larger paired deviations under structural perturbations, as observed for 582 
+
+SCimilarity in clustering and for Harmony and scGPT in batch integration. Reporting 583 
+
+both baseline utility and perturbation-based deviation therefore improves the 584 
+
+reliability of method recommendations, particularly when dataset composition differs 585 
+
+from benchmark conditions. Second, baseline methods remain practically competitive 586 
+
+in specific contexts when downstream pipelines are standardized and fine-tuning is 587 
+
+avoided. For example, highVariable performed strongly in supervised annotation and 588 
+
+met joint criteria in drug sensitivity prediction, and Harmony achieved the highest 589 
+
+utility in batch integration. These observations suggest that gains from large 590 
+
+pretrained embeddings are task- and data-dependent rather than universal. Third, 591 
+
+computational cost varied substantially across methods and did not consistently track 592 
+
+performance. Resource constraints can therefore rationally influence method choice 593 
+
+without implying uniform losses in accuracy. This observation aligns with the 594 
+
+accessibility challenges for large single-cell models (6) and supports reporting 595 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+comparison of resource requirements alongside performance metrics when 596 
+
+introducing new scFMs. In addition, drivers analyses indicated a small set of dataset 597 
+
+descriptors that consistently aligned with performance differences across tasks, such 598 
+
+as overlap of classes in supervised settings and batch number in integration. Although 599 
+
+these associations are descriptive rather than causal, they define practical axes for 600 
+
+stress-testing new representations. 601 
+
+Together, these findings refine the interpretation and boundaries of zero-shot 602 
+
+generalization in scFMs. Utility on a fixed benchmark captures one dimension of 603 
+
+practical value, but stability under shifts to dataset structure is a separate and 604 
+
+complementary dimension that can reorder methods. A comprehensive evaluation 605 
+
+therefore benefits from pairing standard utility summaries with robustness under 606 
+
+perturbations of dataset structural properties and from presenting recommendations 607 
+
+conditional on dataset structure and user constraints. 608 
+
+Several limitations should be considered. First, we intentionally avoided 609 
+
+fine-tuning and used standardized downstream heads to isolate representation content. 610 
+
+As a result, best-case performance achievable through extensive tuning or customized 611 
+
+architectures was not evaluated. Second, perturbations were defined along selected 612 
+
+structural properties and do not encompass all sources of biological and technical 613 
+
+variability. Third, the drivers analyses are associative and may reflect residual 614 
+
+confounding; they should therefore not be interpreted as evidence of causality. Finally, 615 
+
+gene-level tasks necessarily excluded models that do not expose reusable gene 616 
+
+embeddings or gene-gene relations, reflecting current heterogeneity in model 617 
+
+interfaces and reporting practices within the ecosystem. 618 
+
+Looking forward, as single-cell datasets scale to millions of cells ( 36, 37 ), the 619 
+
+computational burden of task-specific fine-tuning renders robust zero-shot 620 
+
+representations a fundamental requirement for downstream analysis. Consequently, 621 
+
+evaluating single-cell foundation models must shift from incremental leaderboard 622 
+
+gains to sustained efficacy in dynamic, real-world environments characterized by 623 
+
+class imbalance, incomplete annotations, and technical variations (38 ). Models 624 
+
+optimizing fixed benchmarks must prove their structural resilience in prospective 625 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+biological studies. Future progress will therefore depend less on scaling parameters ( 6, 626 
+
+39 ) and more on standardized stress-testing paradigms that capture analytical 627 
+
+volatility. Validating models across complex, multi-institutional cohorts is essential to 628 
+
+ensure they serve as reliable inference engines. Ultimately, reframing generalization 629 
+
+as a context-dependent property defined by data structure, task abstraction, and 630 
+
+computational constraints provides a principled foundation for next-generation 631 
+
+modeling. 632 
+
+> 633
+
+MATERIALS AND METHODS 634 
+
+Experimental Design 635 
+
+To evaluate scFMs across various downstream tasks, we quantified performance 636 
+
+along three complementary dimensions: utility on original datasets, robustness to 637 
+
+perturbations of dataset structural properties, and exploratory associations with 638 
+
+dataset-level characteristics. The same statistical framework was applied across all 639 
+
+tasks, with task-specific performance metrics substituted accordingly. 640 
+
+(1) Utility on original datasets 641 
+
+Utility was assessed using original datasets. Let    1, … ,   denote methods, 642 
+
+>  1, … ,  
+
+denote original datasets and  ,  denote the performance metric of 643 
+
+method   on dataset . All methods were evaluated on the same set of datasets 644 
+
+within each task, yielding a paired comparison structure across methods. Because 645 
+
+evaluation metrics may differ in scale, variance and dynamic range across datasets, 646 
+
+direct aggregation of raw metric values may overweight datasets with larger numeric 647 
+
+ranges. To obtain a scale-invariant summary of relative performance consistency, we 648 
+
+adopted a rank-based aggregation strategy. Within each dataset , methods were 649 
+
+ranked according to their performance: 650 
+
+>  ,      , #1
+
+where lower rank indicates better performance. Tied values were assigned average 651 
+
+ranks. For each method: 652 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 
+> 1   ,  
+> #2
+
+This quantity reflects the average relative standing of the method   across 653 
+
+heterogeneous datasets. When multiple metrics were used within a task, method-wise 654 
+
+average ranks were again ranked and averaged across metrics to yield an overall 655 
+
+utility rank. This two-level ranking procedure emphasizes performance consistency 656 
+
+rather than absolute scale and mitigates cross-dataset heterogeneity. Furthermore, for 657 
+
+pairwise comparison between methods A and B, paired differences were defined as: 658 
+
+>    ,    , #3
+
+One-sided Wilcoxon signed-rank tests were performed under the predefined 659 
+
+directional hypothesis from above utility ranking that higher performance indicates 660 
+
+superiority: 661 
+
+>  :        0#4
+
+All pairwise comparisons were conducted within each metric. P values were adjusted 662 
+
+using the Benjamini-Hochberg procedure within each metric to control the false 663 
+
+discovery rate. Adjusted p-value < 0.05 was considered statistically significant. The 664 
+
+median paired difference, 665 
+
+> !        ,    , #5
+
+was reported as an effect size to quantify the magnitude of utility differences. Positive 666 
+
+values of ! indicate that method A achieves higher performance than method B on 667 
+
+most datasets. 668 
+
+(2) Robustness under dataset perturbations 669 
+
+To quantify robustness under perturbations of dataset structural properties, we 670 
+
+measured the absolute raw deviation of model performance on each perturbed dataset 671 
+
+relative to its original counterpart. It provides a direction-invariant measure of 672 
+
+stability, as perturbations can induce both performance gains and losses. For each 673 
+
+method   and each original dataset , baseline performance was defined as  ,  .674 
+
+From each original dataset, zero or more perturbed datasets were generated after 675 
+
+quality control, indexed by  1, … , #  , where perturbations modified predefined 676 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+structural properties, such as cell number, to simulate diverse data conditions. 677 
+
+Performance under perturbation was denoted:  ,    . Performance deviation was 678 
+
+defined as: 679 
+
+> ∆  ,,   ,,      ,  #6
+
+This formulation ensures that deviations reflect structural modification relative to a 680 
+
+matched baseline rather than differences across unrelated datasets. When #  0, the 681 
+
+corresponding baseline dataset did not contribute to robustness analysis. Robustness 682 
+
+was operationalized as the magnitude of deviation: 683 
+
+> & ,,  '∆   ,, '#7
+
+Each perturbation instance  ,   was treated as a distinct structural scenario. Within 684 
+
+each perturbation scenario, methods were ranked according to & ,,  where lower 685 
+
+values indicate greater stability: 686 
+
+> ) ,,    , &  ,, #8
+
+For each method: 687 
+
+> )
+> 1#  )  ,,  ,
+> #9
+
+where # ∑ #    denotes the total number of perturbation scenarios. Cross-metric 688 
+
+aggregation followed the same rank-based procedure described for utility analysis. 689 
+
+Because robustness comparisons were conducted within identical perturbation 690 
+
+scenarios across methods, paired differences were preserved at the perturbation level. 691 
+
+For pairwise comparison between methods A and B, paired differences were defined 692 
+
+as: 693 
+
+>  ,  & ,,   &  ,, #10
+
+One-sided Wilcoxon signed-rank tests were performed under the predefined 694 
+
+directional hypothesis that smaller deviations indicate greater robustness: 695 
+
+>  :     ,   0#11
+
+Thus, rejection of the null hypothesis implies that method A exhibits significantly 696 
+
+smaller performance deviations than method B. All pairwise comparisons were 697 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+conducted within each metric. P values were adjusted using the Benjamini–Hochberg 698 
+
+procedure within each metric to control the false discovery rate. Adjusted p-value <699 
+
+0.05 was considered statistically significant. The median paired difference, 700 
+
+> !     , &  ,,   &  ,, #12
+
+was reported as an effect size to quantify the magnitude of robustness differences. 701 
+
+(3) Associations with dataset structural properties 702 
+
+Drivers analysis was designed as an exploratory assessment of whether model 703 
+
+performance is systematically associated with dataset structural properties. This 704 
+
+analysis was conducted independently for each task, performance metric, and method. 705 
+
+Let 1, … ,  denote the index of each dataset,   denote a specific method and 706 
+
+denote a specific evaluation metric. For a given method   and metric , we define 707 
+
+>  ,
+
+as the performance value of method   on dataset . For each dataset, we 708 
+
+define a vector of structural features: -  -  , -  , … , -  ,  where each -  709 
+
+corresponds to a dataset-level characteristic. All analyses were conducted separately 710 
+
+for each  ,   combination. To address multicollinearity among dataset structural 711 
+
+features and reduce overfitting risk, we applied Elastic Net regression using the 712 
+
+glmnet package in R. The mixing parameter was fixed at . 0.5 , assigning equal 713 
+
+weight to L1 and L2 penalties. Regularization strength was determined via 10-fold 714 
+
+cross-validation, and the optimal value was selected as 0  , corresponding to the 715 
+
+minimum cross-validated mean squared error. Predictors were internally centered and 716 
+
+scaled to unit variance during penalized fitting. Features with non-zero coefficients at 717 
+
+> 0 
+
+were retained for subsequent regression analysis. If no features were selected 718 
+
+for a given  ,  , the model was excluded from further analysis. To estimate 719 
+
+directionality and statistical significance, we refitted an ordinary least squares (OLS) 720 
+
+regression model using the Elastic Net-selected predictors. Before OLS fitting, 721 
+
+selected predictors were standardized: 722 
+
+> - ,  - ,   1 
+> 2
+> #13
+
+where 1 and 2 denote the mean and standard deviation of predictor 3 across 723 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+datasets. The regression model was specified as: 724 
+
+>  ,  4 5  4 
+> - ,  5 6   #14
+
+where 7 denotes the set of selected predictors. Because predictors were standardized, 725 
+
+the estimated coefficients 4 represent standardized effect sizes and are directly 726 
+
+comparable across features. To avoid overinterpretation of weak explanatory models, 727 
+
+only regressions with & 8 0.1  were retained for reporting and visualization. The 728 
+
+Drivers analysis is exploratory and intended to identify systematic statistical 729 
+
+associations between dataset structural properties and model performance. It does not 730 
+
+imply causal relationships. 731 
+
+Model variants of scFMs 732 
+
+To ensure comprehensive and practically relevant benchmarking, multiple variants of 733 
+
+specific scFMs were included if the original authors released distinct pre-trained 734 
+
+checkpoints or recommended alternative readout strategies. Specifically, we evaluated 735 
+
+the publicly available 4-layer and 33-layer checkpoints of UCE (denoted UCE4L and 736 
+
+UCE33L), and for Geneformer we included the released 6-layer and 12-layer 737 
+
+checkpoints pretrained on GeneCorpus-30M (Geneformer6L and Geneformer12L). 738 
+
+For GenePT, we benchmarked the two released configurations (GenePTmin and 739 
+
+GenePTlarge) based on different text-embedding backbones used to encode gene 740 
+
+summaries. For CellFM, we included the released parameter-scale variants 741 
+
+(CellFMmin, ~80M; CellFMBase, ~800M). In addition, we compared two 742 
+
+representation strategies of scBERT: the first token representation and global mean 743 
+
+pooling over gene tokens. All variants were subjected to identical zero-shot evaluation 744 
+
+protocols and were treated as independent models throughout the study. 745 
+
+Task 1: Cell clustering 746 
+
+Dataset and preprocessing 747 
+
+Tabula Sapiens 2.0 ( 40 ) was used to benchmark clustering performance across diverse 748 
+
+human tissues and to reduce potential overlap with model pretraining resources. After 749 
+
+stratifying by tissue of origin, subsets containing fewer than two cell types or fewer 750 
+
+than 1,000 cells were excluded. We applied uniform quality control by filtering genes 751 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+expressed in fewer than three cells (min.cells = 3) and removing cells with fewer than 752 
+
+1,000 detected genes (min.features = 1000) in R package Seurat R package ( 41 ). This 753 
+
+yielded 26 datasets comprising 541,276 cells (Supplementary Table 2). 754 
+
+Representation extraction and baselines 755 
+
+For each dataset, cell embeddings were extracted from each single-cell foundation 756 
+
+model under the zero-shot setting, with no task-specific fine-tuning. These 757 
+
+embeddings were used as the sole input features for downstream clustering. As 758 
+
+baselines, we included (i) PCA using the top 50 principal components computed from 759 
+
+the top 2,000 highly variable genes (HVGs), and (ii) scGNN, a self-supervised deep 760 
+
+learning approach that learns low-dimensional cell representations. 761 
+
+Downstream protocol and evaluation 762 
+
+Clustering was performed using the scIB framework ( 31 ). For each representation, we 763 
+
+constructed a k-nearest neighbor (kNN) graph (n_neighbors=15) and selected the 764 
+
+clustering resolution that maximized NMI with ground-truth cell-type labels. This 765 
+
+optimal-resolution setting was used to standardize cross-model comparisons and 766 
+
+isolate representation quality from resolution choice. Clustering accuracy and 767 
+
+separability were quantified by ARI, NMI, and ASW computed on cell types in the 768 
+
+embedding space. 769 
+
+Robustness perturbations and dataset features 770 
+
+To quantify robustness to changes of dataset structure, we generated 339 perturbed 771 
+
+datasets derived from the 26 datasets by (i) random gene subsampling (retaining 80%, 772 
+
+60%, 40% and 20% of genes), (ii) proportional cell subsampling using the same 773 
+
+gradients, and (iii) targeted removal of selected cell types. The full clustering pipeline 774 
+
+was repeated for each perturbed dataset. To support downstream factor analysis, we 775 
+
+computed four dataset features: cell count, gene count, number of cell types, and class 776 
+
+imbalance ratio (maximum-to-minimum cell type abundance) (Supplementary Table 777 
+
+1). 778 
+
+Task 2: Cell annotation 779 
+
+Dataset and preprocessing 780 
+
+We used the same 26 datasets as in Task 1. Within each dataset, we performed 781 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+stratified 5-fold cross-validation by cell-type labels, preserving class proportions 782 
+
+across folds. To avoid untrainable splits, each training fold was constrained to contain 783 
+
+all cell types present in its corresponding test fold. This design produced 130 train-test 784 
+
+splits and 2,706,380 total cell instances across folds (Supplementary Table 3). 785 
+
+Representation extraction and baselines 786 
+
+All foundation models generated cell embeddings in the zero-shot manner, without 787 
+
+any fine-tuning toward classification. Training and test folds were embedded 788 
+
+independently, disallowing the sharing of intermediate statistics. For the PCA baseline, 789 
+
+HVGs (top 2,000) were identified using training folds only to prevent information 790 
+
+leakage, and the resulting gene set was applied to the paired test fold. scGNN was 791 
+
+included as a self-supervised representation baseline. All data-dependent operations 792 
+
+were performed on training folds only, and test folds were used exclusively for 793 
+
+evaluation. 794 
+
+Downstream protocol and evaluation 795 
+
+To attribute performance differences to representation quality, we trained a796 
+
+standardized fully connected classifier comprising two hidden layers of 512 and 256 797 
+
+units with ReLU activations and dropout, on top of each embedding. Within a 5-fold 798 
+
+cross-validation framework, each training fold was further partitioned into a 9:1 799 
+
+stratified training and validation split. We optimized the models using multi-class 800 
+
+cross-entropy loss and the AdamW algorithm. To mitigate overfitting, we employed 801 
+
+dynamic learning rate decay and early stopping, specifically retaining the model 802 
+
+weights from the final epoch at the point of termination. We report macro-averaged 803 
+
+F1-score, AUROC and AUPRC, denoted as F1-score, AUROC and AUPRC, 804 
+
+evaluated on the held-out test folds. 805 
+
+Robustness perturbations and dataset features 806 
+
+To assess robustness to feature and training-distribution shifts, we constructed 328 807 
+
+perturbed variants from the training folds while keeping the corresponding test folds 808 
+
+fixed. Perturbations included (i) proportional gene subsampling (80%, 60%, 40%, 809 
+
+20%), (ii) stratified cell downsampling at the same gradients while preserving class 810 
+
+proportions, and (iii) random exclusion of selected cell types from training, retaining 811 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+at least two classes. The embedding and classification pipeline was repeated for each 812 
+
+perturbation. To support downstream factor analysis, we computed five dataset 813 
+
+features: training cell count, training gene count, training cell-type count, imbalance 814 
+
+ratio (maximum-to-minimum cell type abundance), and the proportion of train-test 815 
+
+cell-type overlap, weighted by test-set cell abundance (Supplementary Table 3). 816 
+
+Task 3: Drug response prediction 817 
+
+Dataset and preprocessing 818 
+
+We evaluated drug response prediction using single-cell drug response datasets from 819 
+
+DRMref( 33 ). Drug responses were binarized into Resistant (R) and Non-resistant 820 
+
+(NR). After quality control (min.cells = 3, min.features = 1000), 14 datasets 821 
+
+comprising 93,481 cells were retained. For each dataset, we performed stratified 822 
+
+5-fold cross-validation by R/NR labels and used identical splits across all methods 823 
+
+(Supplementary Table 4). 824 
+
+Representation extraction and baselines 825 
+
+Cell embeddings were used as the input features. Foundation models produced 826 
+
+embeddings under the zero-shot setting without access to drug response labels. As an 827 
+
+expression-based baseline, we used HVG features constructed from the top 2,000 828 
+
+HVGs selected within each training fold. scGNN embeddings were obtained via its 829 
+
+self-supervised procedure. Embedding extraction for training and test folds was 830 
+
+performed independently to avoid leakage, and all data-dependent operations were 831 
+
+confined to training folds. 832 
+
+Downstream protocol and evaluation 833 
+
+To predict drug sensitivity, we implemented a dual-tower neural network that 834 
+
+integrates cell embeddings with drug molecular features. PubChem SMILES ( 42 ) of 835 
+
+drug was converted to 1,024-dimensional Morgan fingerprints in RDKit (radius = 2). 836 
+
+Separate cell and drug encoders, each comprising a linear projection, ReLU activation, 837 
+
+batch normalization, and dropout, mapped the respective inputs into a shared latent 838 
+
+space. These representations were concatenated and processed by a two-layer fusion 839 
+
+network to output sensitivity predictions. Within a 5-fold cross-validation framework, 840 
+
+each training fold was further partitioned into a 9:1 stratified training and validation 841 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+split. Models were trained using the AdamW optimizer and binary cross-entropy loss 842 
+
+with logits, employing early stopping based on validation accuracy to mitigate 843 
+
+overfitting. We report F1-score, AUROC and AUPRC on test folds. 844 
+
+Robustness perturbations and dataset features 845 
+
+We generated 177 perturbed variants to evaluate robustness to dataset structural shifts, 846 
+
+including (i) gene subsampling in training folds (80%, 60%, 40%, 20%) and (ii) 847 
+
+stratified cell subsampling in training folds at the same gradients. In addition, we 848 
+
+constructed two generalization settings: unseen cell line (cell lines strictly separated 849 
+
+between training and test) and unseen drug (drugs strictly separated between training 850 
+
+and test). We repeated the full prediction pipeline for all perturbations and computed 851 
+
+dataset features including cell and gene counts, class imbalance ratio, and modality 852 
+
+overlap rates for factor analysis (Supplementary Table 4). 853 
+
+Task 4: Batch integration 854 
+
+Dataset and preprocessing 855 
+
+Following two established batch-correction benchmarking studies( 31, 43 ), we 856 
+
+selected seven representative single-cell datasets spanning cross-technology or 857 
+
+cross-experimental conditions. Quality control was performed as above (min.cells = 3, 858 
+
+min.features = 1000). In total, 7 datasets comprising 105,750 cells were retained 859 
+
+(Supplementary Table 5). 860 
+
+Representation extraction and baselines 861 
+
+All foundation models were evaluated in a zero-shot setting by extracting cell 862 
+
+embeddings without incorporating batch labels or downstream fine-tuning. 863 
+
+Harmony( 34 ) was included as a baseline method. scGNN provide cell embeddings 864 
+
+from the latent of its a self-supervised model. All embeddings were used as the sole 865 
+
+representations for downstream evaluation. 866 
+
+Downstream protocol and evaluation 867 
+
+Batch correction performance was evaluated using scIB. For each representation, we 868 
+
+constructed a kNN graph (n_neighbors = 15) and selected clustering resolution by 869 
+
+maximizing NMI. We quantified two complementary aspects: biological conservation 870 
+
+(ARI, NMI, cell-type ASW) and batch mixing (batch ASW, iLISI, kBET). 871 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+Robustness perturbations and dataset features 872 
+
+We constructed 325 perturbed variants to assess robustness to changes in dataset 873 
+
+structure: (i) gene subsampling (80%, 60%, 40%, 20%), (ii) cell downsampling (80%, 874 
+
+60%, 40%, 20%) while preserving batch and cell-type proportions, (iii) random 875 
+
+removal of one or multiple batches, (iv) random removal of one or multiple cell types, 876 
+
+and (v) hierarchical perturbations by jointly removing selected batch–cell-type 877 
+
+combinations. The evaluation pipeline was repeated for each perturbed dataset. We 878 
+
+computed four dataset features: cell count, gene count, cell type count, and batch 879 
+
+count to support factor analysis (Supplementary Table 5). 880 
+
+Task 5: Gene function prediction 881 
+
+Dataset, labels and model selection 882 
+
+To evaluate whether foundation models encode gene semantics in their gene-level 883 
+
+embeddings, we curated 1,797 single-tissue-specific genes across 15 tissue labels 884 
+
+from the HPA and formulated a single-label multi-class classification benchmark with 885 
+
+5-fold cross-validation (Supplementary Table 6). Because this task requires reusable 886 
+
+gene dictionaries, we screened the 18 previously considered models for eligibility. 887 
+
+Models without independent gene vocabularies (CellPLM, SCimilarity) and 888 
+
+graph-centric methods (scGNN) were excluded. Models sharing identical 889 
+
+gene-to-index dictionaries, notably scBERT and the UCE series, were consolidated to 890 
+
+avoid redundant evaluations. In total, 13 models with explicit gene-level embeddings 891 
+
+were retained and evaluated under a zero-shot setting with frozen pretrained weights. 892 
+
+As a non-semantic baseline, we used one-hot vectors. 893 
+
+Downstream protocol and evaluation 894 
+
+All gene representations were evaluated using a standardized two-layer MLP 895 
+
+classifier incorporating ReLU activation and dropout. To align the evaluation sets, 896 
+
+analysis was restricted to the intersection of genes shared across all embedding 897 
+
+dictionaries and the HPA dataset. Performance was assessed within a stratified 898 
+
+five-fold cross-validation framework. Models were optimized for 50 epochs using the 899 
+
+Adam optimizer with cross-entropy loss. We report macro-averaged F1, AUROC and 900 
+
+AUPRC (one-vs-rest), denoted as F1-score, AUROC and AUPRC in the text. 901 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+Robustness perturbations and dataset descriptors 902 
+
+We generated 180 perturbed variants across three robustness aspects: (i) gene subset 903 
+
+sampling, where training folds were subsampled (80%, 60%, 40%, 20%) under fixed 904 
+
+test sets and class-balance constraints; (ii) class ratio perturbation, where class 905 
+
+abundances were reshuffled and down-weighted from 1.0 to 0.1 to induce increasing 906 
+
+imbalance; and (iii) class overlap perturbation, where 1-5 randomly selected classes 907 
+
+were held out entirely as unseen classes and assigned to the test set, while the 908 
+
+remaining visible classes were split 8:2 for training/testing. For each perturbation, we 909 
+
+repeated the prediction pipeline and computed dataset features including training gene 910 
+
+count, training gene class count, imbalance ratio (maximum-to-minimum gene class 911 
+
+abundance), and train-test overlap for factor analysis (Supplementary Table 6). 912 
+
+Task 6: Gene regulatory network inference 913 
+
+Dataset and ground-truth construction 914 
+
+We evaluated foundation model capabilities for GRN inference using perturbation 915 
+
+single-cell datasets and a ground-truth definition for TF targets. We curated 17 916 
+
+datasets comprising 9,096 cells, each corresponding to TF overexpression (OE) or 917 
+
+knockdown/knockout (KD/KO) experiments. Controls were downsampled to match 918 
+
+perturbed cells to mitigate imbalance, followed by quality control (min.cells = 3, 919 
+
+min.features = 1000). Ground-truth TF targets were defined by a two-evidence 920 
+
+criterion combining expression response and motif support: (i) “expression-responsive 921 
+
+genes” identified by Wilcoxon tests (KD/KO: log2FC < −0.25, p-value < 0.05; OE: 922 
+
+log2FC > 0.25, p-value < 0.05), and (ii) motif-supported candidates defined as the top 923 
+
+5,000 genes ranked by the corresponding TF motif in the RcisTarget matrix( 44 ). The 924 
+
+intersection of the two sets was used as high-confidence targets. Datasets with fewer 925 
+
+than five targets were excluded to reduce indirect cascade effects (Supplementary 926 
+
+Table 7). 927 
+
+Network inference and baselines 928 
+
+We evaluated 8 scFMs and 1 statistical baseline under a zero-shot setting. For scBERT, 929 
+
+Geneformer series, scGPT and CellFM series, gene-gene associations were derived 930 
+
+from model attention matrices. For scFoundation and GeneCompass, networks were 931 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
+
+inferred by cosine similarity between gene embeddings following their native designs. 932 
+
+As a baseline without pretrained priors, we L2-normalized single-cell expression 933 
+
+vectors and computed cosine similarities to obtain a gene association matrix. All 934 
+
+association matrices were evaluated using an identical pipeline. 935 
+
+Downstream protocol and evaluation 936 
+
+For each TF, gene association matrices were aggregated separately for perturbed and 937 
+
+control cells by averaging across cells. Dynamic regulatory strength from the TF to 938 
+
+each gene was defined as the absolute difference between the two mean matrices. 939 
+
+After excluding TF self-loops, genes were ranked by this score. We evaluated 940 
+
+high-confidence recovery using Jaccard index and F1 at a Top-K threshold (top 5%), 941 
+
+and assessed ranking quality using AUPRC, denoted as Jaccard, F1-score and AUPRC 942 
+
+in the text. 943 
+
+Robustness perturbations and dataset features 944 
+
+We generated 167 perturbed variants across the TF datasets, totaling 67,503 cells. 945 
+
+Perturbations included (i) gene subsampling (80%, 60%, 40%, 20%) while retaining 946 
+
+the target TF, (ii) proportional cell subsampling applied to both perturbed and control 947 
+
+conditions (80%, 60%, 40%, 20%), and (iii) imbalanced subsampling where the 948 
+
+perturbed-to-control cell ratio was shifted to 2:1 or 1:2 under the same downsampling 949 
+
+gradients. We repeated the GRN pipeline for all perturbations and computed dataset 950 
+
+features including gene count, cell count, imbalance ratio (case/control) and target 951 
+
+gene count for factor analysis (Supplementary Table 7). 952 
+
+Computational resources 953 
+
+All experiments were conducted on a Linux server running Ubuntu 22.04.5 LTS, 954 
+
+equipped with an AMD 32-core CPU and 503 GB system memory. GPU was a 955 
+
+NVIDIA A100 PCIe GPU (40 GB). The CUDA toolkit version was 12.2. In addition, 956 
+
+we profiled computational cost for two zero-shot representation stages: (i) cell 957 
+
+embedding extraction, where each model produced cell-level embeddings from the 958 
+
+input expression matrix without any task-specific fine-tuning; and (ii) gene 959 
+
+association matrix extraction, where models produced gene-gene association matrices 960 
+
+under the same zero-shot setting. 961 
+
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 962
+
+Acknowledgments 963 
+
+General : We thank the providers of open-access databases whose resources made this 964 
+
+study possible. 965 
+
+Author contributions : T.L., H.L. and Y.Z. conceived and designed the study. T.L. 966 
+
+and T.F. developed the methodology, implemented the software, performed the 967 
+
+investigation and conducted the formal analyses. T.L. curated the datasets. T.L. and 968 
+
+T.F. prepared the visualizations. X.P., Y.C. and L.R. provided resources. T.L. wrote the 969 
+
+original draft. T.L., T.F., L.R., X.Y., H.L. and Y.Z. reviewed and edited the manuscript. 970 
+
+X.Y., H.L. and Y.Z. supervised the study. All authors read and approved the 971 
+
+manuscript. 972 
+
+Funding : This study was supported by the National Natural Science Foundation of 973 
+
+China (62471071, 62202069, 62501117), Natural Science Foundation of Sichuan 974 
+
+Province (2026NSFSC0422), Chengdu Health Commission-Chengdu University of 975 
+
+Traditional Chinese Medicine Joint Research Fund (WXLH202402041), the JSPS 976 
+
+KAKENHI Grant Number JP23H03411 and JP22K12144, and the JST Grant Number 977 
+
+JPMJPF2017. 978 
+
+Competing interests : The authors declare that they have no competing interests. 979 
+
+> 980
+
+Data availability : All datasets used in this study were obtained from publicly 981 
+
+accessible databases and are summarized in Supplementary Table S8. The scripts used 982 
+
+in this study are available via GitHub at https://github.com/ShellyCoder/scFMBench. 983 
+
+> 984
+
+REFERENCES 985 
+
+> 1.  A. Szalata, K. Hrovatin, S. Becker, A. Tejada-Lapuerta, H. Cui, B. Wang, F. J. Theis, 986
+> Transformers in single-cell omics: a review and new perspectives.  Nat Methods  21 ,987
+> 1430-1443 (2024). 988
+> 2.  C. Z. I. C. S. Program, S. Abdulla, B. Aevermann, P. Assis, S. Badajoz, S. M. Bell, E. 989
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint Bezzi, B. Cakir, J. Chaffer, S. Chambers, J. M. Cherry, T. Chi, J. Chien, L. Dorman, P. 990
+> Garcia-Nieto, N. Gloria, M. Hastie, D. Hegeman, J. Hilton, T. Huang, A. Infeld, A. M. 991
+> Istrate, I. Jelic, K. Katsuya, Y. J. Kim, K. Liang, M. Lin, M. Lombardo, B. Marshall, B. 992
+> Martin, F. McDade, C. Megill, N. Patel, A. Predeus, B. Raymor, B. Robatmili, D. 993
+> Rogers, E. Rutherford, D. Sadgat, A. Shin, C. Small, T. Smith, P. Sridharan, A. 994
+> Tarashansky, N. Tavares, H. Thomas, A. Tolopko, M. Urisko, J. Yan, G. Yeretssian, J. 995
+> Zamanian, A. Mani, J. Cool, A. Carr, CZ CELLxGENE Discover: a single-cell data 996
+> platform for scalable exploration, analysis and modeling of aggregated data.  Nucleic 997
+> acids research  53 , D886-D900 (2025). 998
+> 3.  L. Sikkema, C. Ramirez-Suastegui, D. C. Strobl, T. E. Gillett, L. Zappia, E. Madissoon, 999
+> N. S. Markov, L. E. Zaragosi, Y. Ji, M. Ansari, M. J. Arguel, L. Apperloo, M. Banchero, 1000
+> C. Becavin, M. Berg, E. Chichelnitskiy, M. I. Chung, A. Collin, A. C. A. Gay, J. 1001
+> Gote-Schniering, B. Hooshiar Kashani, K. Inecik, M. Jain, T. S. Kapellos, T. M. Kole, S. 1002
+> Leroy, C. H. Mayr, A. J. Oliver, M. von Papen, L. Peter, C. J. Taylor, T. Walzthoeni, C. 1003
+> Xu, L. T. Bui, C. De Donno, L. Dony, A. Faiz, M. Guo, A. J. Gutierrez, L. Heumos, N. 1004
+> Huang, I. L. Ibarra, N. D. Jackson, P. Kadur Lakshminarasimha Murthy, M. Lotfollahi, 1005
+> T. Tabib, C. Talavera-Lopez, K. J. Travaglini, A. Wilbrey-Clark, K. B. Worlock, M. 1006
+> Yoshida, C. Lung Biological Network, M. van den Berge, Y. Bosse, T. J. Desai, O. 1007
+> Eickelberg, N. Kaminski, M. A. Krasnow, R. Lafyatis, M. Z. Nikolic, J. E. Powell, J. 1008
+> Rajagopal, M. Rojas, O. Rozenblatt-Rosen, M. A.  Seibold, D.  Sheppard, D. P. 1009
+> Shepherd, D. D. Sin, W. Timens, A. M. Tsankov, J. Whitsett, Y. Xu, N. E. Banovich, P. 1010
+> Barbry, T. E. Duong, C. S. Falk, K. B. Meyer, J. A. Kropski, D. Pe'er, H. B. Schiller, P. 1011
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint R. Tata, J. L. Schultze, S. A. Teichmann, A. V. Misharin, M. C. Nawijn, M. D. Luecken, 1012
+> F. J. Theis, An integrated cell atlas of the lung in health and disease.  Nat Med  29 ,1013
+> 1563-1577 (2023). 1014
+> 4.  M.  G.  Keefe,  M.  R.  Steyert,  T.  J.  Nowakowski,  Lineage-resolved  atlas  of  the 1015
+> developing human cortex.  Nature  647 , 194-202 (2025). 1016
+> 5.  J. Kang, J. H. Lee, H. Cha, J. An, J. Kwon, S. Lee, S. Kim, M. Y. Baykan, S. Y. Kim, D. 1017
+> An, A. Y. Kwon, H. J. An, S. H. Lee, J. K. Choi, J. E. Park, Systematic dissection of 1018
+> tumor-normal single-cell ecosystems across a thousand tumors of 30 cancer types. 1019
+> Nature communications  15 , 4067 (2024). 1020
+> 6.  F. Xie, B. Zhao, S. Xu, Z. Wang, J. J. Moon, L. X. Garmire, Overcoming barriers to the 1021
+> wide adoption of single-cell large language models in biomedical research.  Nature 1022
+> Biotechnology  43 , 1758-1762 (2025). 1023
+> 7.  N. Rane, S. Choudhary, J. Rane, Gemini versus ChatGPT: applications, performance, 1024
+> architecture, capabilities, and implementation.  Journal of Applied Artificial Intelligence 1025
+> 5, 69-93 (2024). 1026
+> 8.  W. Liang, Y. Zhang, Z. Wu, H. Lepp, W. Ji, X. Zhao, H. Cao, S. Liu, S. He, Z. Huang, D. 1027
+> Yang, C. Potts, C. D. Manning, J. Zou, Quantifying large language model usage in 1028
+> scientific papers.  Nat Hum Behav  9, 2599-2609 (2025). 1029
+> 9.  Q. Chen, Y. Hu, X. Peng, Q. Xie, Q. Jin, A. Gilson, M. B. Singer, X. Ai, P. T. Lai, Z. 1030
+> Wang, V. K. Keloth, K. Raja, J. Huang, H. He, F. Lin, J. Du, R. Zhang, W. J. Zheng, R. 1031
+> A. Adelman, Z. Lu, H. Xu, Benchmarking large language models for biomedical natural 1032
+> language processing applications and recommendations.  ArXiv , (2025). 1033
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 10.  M. Hao, J. Gong, X. Zeng, C. Liu, Y. Guo, X. Cheng, T. Wang, J. Ma, X. Zhang, L. 1034
+> Song, Large-scale foundation model on single-cell transcriptomics.  Nat Methods  21 ,1035
+> 1481-1491 (2024). 1036
+> 11.  H. Cui, C. Wang, H. Maan, K. Pang, F. Luo, N. Duan, B. Wang, scGPT: toward 1037
+> building a foundation model for single-cell multi-omics using generative AI.  Nat 1038
+> Methods  21 , 1470-1480 (2024). 1039
+> 12.  C. V. Theodoris, L. Xiao, A. Chopra, M. D. Chaffin, Z. R. Al Sayed, M. C. Hill, H. 1040
+> Mantineo, E. M. Brydon, Z. Zeng, X. S. Liu, P. T. Ellinor, Transfer learning enables 1041
+> predictions in network biology.  Nature  618 , 616-624 (2023). 1042
+> 13.  X. Yang, G. Liu, G. Feng, D. Bu, P. Wang, J. Jiang, S. Chen, Q. Yang, H. Miao, Y. 1043
+> Zhang, Z. Man, Z. Liang, Z. Wang, Y. Li, Z. Li, Y. Liu, Y. Tian, W. Liu, C. Li, A. Li, J. 1044
+> Dong, Z. Hu, C. Fang, L. Cui, Z. Deng, H. Jiang, W. Cui, J. Zhang, Z. Yang, H. Li, X. 1045
+> He, L. Zhong, J. Zhou, Z. Wang, Q. Long, P. Xu, X. C. Consortium, H. Wang, Z. Meng, 1046
+> X. Wang, Y. Wang, Y. Wang, S. Zhang, J. Guo, Y. Zhao, Y. Zhou, F. Li, J. Liu, Y. 1047
+> Chen,  G.  Yang,  X.  Li,  GeneCompass:  deciphering  universal  gene  regulatory 1048
+> mechanisms with a knowledge-informed cross-species foundation model.  Cell Res  34 ,1049
+> 830-845 (2024). 1050
+> 14.  Y. Zeng, J. Xie, N. Shangguan, Z. Wei, W. Li, Y. Su, S. Yang, C. Zhang, J. Zhang, N. 1051
+> Fang, H. Zhang, Y. Lu, H. Zhao, J. Fan, W. Yu, Y. Yang, CellFM: a large-scale 1052
+> foundation model pre-trained on transcriptomics of 100 million human cells.  Nature 1053
+> communications  16 , 4679 (2025). 1054
+> 15.  Y. Chen, J. Zou, Simple and effective embedding model for single-cell biology built 1055
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint from ChatGPT.  Nat Biomed Eng  9, 483-493 (2025). 1056
+> 16.  G. Heimberg, T. Kuo, D. J. DePianto, O. Salem, T. Heigl, N. Diamant, G. Scalia, T. 1057
+> Biancalani, S. J. Turley, J. R. Rock, H. Corrada Bravo, J. Kaminker, J. A. Vander 1058
+> Heiden, A. Regev, A cell atlas foundation model for scalable search of similar human 1059
+> cells.  Nature  638 , 1085-1094 (2025). 1060
+> 17.  H. Wen, W. Tang, X. Dai, J. Ding, W. Jin, Y. Xie, J. Tang, CellPLM: Pre-training of Cell 1061
+> Language Model Beyond Single Cells.  bioRxiv , 2023.2010.2003.560734 (2023). 1062
+> 18.  Y. Rosen, Y. Roohani, A. Agrawal, L. Samotor čan, T. S. Consortium, S. R. Quake, J. 1063
+> Leskovec, Universal Cell Embeddings: A Foundation Model for Cell Biology.  bioRxiv ,1064
+> 2023.2011.2028.568918 (2024). 1065
+> 19.  H. Shen, J. Liu, J. Hu, X. Shen, C. Zhang, D. Wu, M. Feng, M. Yang, Y. Li, Y. Yang, W. 1066
+> Wang, Q. Zhang, J. Yang, K. Chen, X. Li, Generative pretraining from large-scale 1067
+> transcriptomes for single-cell deciphering.  iScience  26 , 106536 (2023). 1068
+> 20.  F. Yang, W. Wang, F. Wang, Y. Fang, D. Tang, J. Huang, H. Lu, J. Yao, scBERT as a 1069
+> large-scale pretrained deep language model for cell type annotation of single-cell 1070
+> RNA-seq data.  Nature Machine Intelligence  4, 852-866 (2022). 1071
+> 21.  J. Wu, Q. Ye, Y. Wang, R. Hu, Y. Zhu, M. Yin, T. Wang, J. Wang, C.-Y. Hsieh, T. Hou, 1072
+> Biology-driven insights into the power of single-cell foundation models.  Genome 1073
+> Biology  26 , 334 (2025). 1074
+> 22.  K. Z. Kedzierska, L. Crawford, A. P. Amini, A. X. Lu, Zero-shot evaluation reveals 1075
+> limitations of single-cell foundation models.  Genome Biol  26 , 101 (2025). 1076
+> 23.  P. Qiu, Q. Chen, H. Qin, S. Fang, Y. Zhang, Y. Zhang, T. Xia, L. Cao, Y. Zhang, X. 1077
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint Fang,  Y.  Li,  L.  Hu,  BioLLM:  A standardized  framework  for  integrating  and 1078
+> benchmarking single-cell foundation models.  Patterns (N Y)  6, 101326 (2025). 1079
+> 24.  R. Boiarsky, N. M. Singh, A. Buendia, A. P. Amini, G. Getz, D. Sontag, Deeper 1080
+> evaluation  of  a single-cell  foundation  model.  Nature  Machine  Intelligence  6,1081
+> 1443-1446 (2024). 1082
+> 25.  T. Liu, K. Li, Y. Wang, H. Li, H. Zhao, Evaluating the Utilities of Foundation Models in 1083
+> Single-cell Data Analysis.  bioRxiv , 2023.2009.2008.555192 (2024). 1084
+> 26.  C. Ahlmann-Eltze, W. Huber, S. Anders, Deep-learning-based gene perturbation 1085
+> effect prediction does not yet outperform simple linear baselines.  Nature Methods  22 ,1086
+> 1657-1661 (2025). 1087
+> 27.  W. Macnair, D. Calini, E. Agirre, J. Bryois, S. Jäkel, R. S. Smith, P. Kukanja, N. 1088
+> Stokar-Regenscheit, V. Ott, L. C. Foo, L. Collin, S. Schippling, E. Urich, E. Nutma, M. 1089
+> Marzin,  F.  Ansaloni,  S.  Amor,  R.  Magliozzi,  E.  Heidari,  M.  D.  Robinson,  C. 1090
+> ffrench-Constant, G. Castelo-Branco, A. Williams, D. Malhotra, snRNA-seq stratifies 1091
+> multiple sclerosis patients into distinct white matter glial responses.  Neuron  113 ,1092
+> 396-410.e399 (2025). 1093
+> 28.  G. S. Franca, M. Baron, B. R. King, J. P. Bossowski, A. Bjornberg, M. Pour, A. Rao, A. 1094
+> S. Patel, S. Misirlioglu, D. Barkley, K. H. Tang, I. Dolgalev, D. A. Liberman, G. Avital, F. 1095
+> Kuperwaser, M. Chiodin, D. A. Levine,  T. Papagiannakopoulos,  A. Marusyk, T. 1096
+> Lionnet, I. Yanai, Cellular adaptation to cancer therapy along a resistance continuum. 1097
+> Nature  631 , 876-883 (2024). 1098
+> 29.  I. M. P. Badia, L. Wessels, S. Muller-Dott, R. Trimbour, R. O. Ramirez Flores, R. 1099
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint Argelaguet, J. Saez-Rodriguez, Gene regulatory network inference in the era of 1100
+> single-cell multi-omics.  Nat Rev Genet  24 , 739-754 (2023). 1101
+> 30.  J. Wang, A. Ma, Y. Chang, J. Gong, Y. Jiang, R. Qi, C. Wang, H. Fu, Q. Ma, D. Xu, 1102
+> scGNN is a novel graph neural network framework for single-cell RNA-Seq analyses. 1103
+> Nature communications  12 , 1882 (2021). 1104
+> 31.  M. D. Luecken, M. Buttner, K. Chaichoompu, A. Danese, M. Interlandi, M. F. Mueller, 1105
+> D. C. Strobl, L. Zappia, M. Dugas, M. Colome-Tatche, F. J. Theis, Benchmarking 1106
+> atlas-level data integration in single-cell genomics.  Nat Methods  19 , 41-50 (2022). 1107
+> 32.  Y. H. Hao, S. Hao, E. Andersen-Nissen, W. M. Mauck, S. W. Zheng, A. Butler, M. J. 1108
+> Lee, A. J. Wilk, C. Darby, M. Zager, P. Hoffman, M. Stoeckius, E. Papalexi, E. P. 1109
+> Mimitou, J. Jain, A. Srivastava, T. Stuart, L. M. Fleming, B. Yeung, A. J. Rogers, J. M. 1110
+> McElrath, C. A. Blish, R. Gottardo, P. Smibert, R. Satija, Integrated analysis of 1111
+> multimodal single-cell data.  Cell  184 , 3573-+ (2021). 1112
+> 33.  X. Liu, J. Yi, T. Li, J. Wen, K. Huang, J. Liu, G. Wang, P. Kim, Q. Song, X. Zhou, 1113
+> DRMref: comprehensive reference map of drug resistance mechanisms in human 1114
+> cancer.  Nucleic acids research  52 , D1253-D1264 (2024). 1115
+> 34.  I. Korsunsky, N. Millard, J. Fan, K. Slowikowski, F. Zhang, K. Wei, Y. Baglaenko, M. 1116
+> Brenner, P. R. Loh, S. Raychaudhuri, Fast, sensitive and accurate integration of 1117
+> single-cell data with Harmony.  Nat Methods  16 , 1289-1296 (2019). 1118
+> 35.  E. Sjostedt, W. Zhong, L. Fagerberg, M. Karlsson, N. Mitsios, C. Adori, P. Oksvold, F. 1119
+> Edfors, A. Limiszewska, F. Hikmet, J. Huang, Y. Du, L. Lin, Z. Dong, L. Yang, X. Liu, H. 1120
+> Jiang, X. Xu, J. Wang, H. Yang, L. Bolund, A. Mardinoglu, C. Zhang, K. von Feilitzen, 1121
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint C. Lindskog, F. Ponten, Y. Luo, T. Hokfelt, M. Uhlen, J. Mulder, An atlas of the 1122
+> protein-coding genes in the human, pig, and mouse brain.  Science (New York, N.Y.) 1123
+> 367 , (2020). 1124
+> 36.  C. De Donno, S. Hediyeh-Zadeh, A. A. Moinfar, M. Wagenstetter, L. Zappia, M. 1125
+> Lotfollahi, F. J. Theis, Population-level integration of single-cell datasets enables 1126
+> multi-scale analysis across samples.  Nat Methods  20 , 1683-1692 (2023). 1127
+> 37.  V. Svensson, R. Vento-Tormo, S. A. Teichmann, Exponential scaling of single-cell 1128
+> RNA-seq in the past decade.  Nat Protoc  13 , 599-604 (2018). 1129
+> 38.  S. Choudhary, R. Satija, Comparison and evaluation of statistical error models for 1130
+> scRNA-seq.  Genome Biol  23 , 27 (2022). 1131
+> 39.  C. Xiao, J. Cai, W. Zhao, B. Lin, G. Zeng, J. Zhou, Z. Zheng, X. Han, Z. Liu, M. Sun, 1132
+> Densing law of LLMs.  Nature Machine Intelligence  7, 1823-1833 (2025). 1133
+> 40.  T.  T.  S.  Consortium,  S.  R. Quake,  Tabula Sapiens reveals transcription factor 1134
+> expression, senescence effects, and sex-specific features in cell types from 28 human 1135
+> organs and tissues.  bioRxiv , 2024.2012.2003.626516 (2025). 1136
+> 41.  Y. Hao, T. Stuart, M.  H. Kowalski, S. Choudhary, P. Hoffman, A. Hartman, A. 1137
+> Srivastava, G. Molla, S. Madad, C. Fernandez-Granda, R. Satija, Dictionary learning 1138
+> for  integrative,  multimodal  and  scalable  single-cell  analysis.  Nat  Biotechnol  42 ,1139
+> 293-304 (2024). 1140
+> 42.  S. Kim, J. Chen, T. Cheng, A. Gindulyte, J. He, S. He, Q. Li, B. A. Shoemaker, P. A. 1141
+> Thiessen, B. Yu, L. Zaslavsky, J. Zhang, E. E. Bolton, PubChem 2025 update.  Nucleic 1142
+> acids research  53 , D1516-D1525 (2025). 1143
+> .CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint 43.  H. T. N. Tran, K. S. Ang, M. Chevrier, X. Zhang, N. Y. S. Lee, M. Goh, J. Chen, A 1144
+> benchmark of batch-effect correction methods for single-cell RNA sequencing data. 1145
+> Genome Biol  21 , 12 (2020). 1146
+> 44.  S. Aibar, C. B. Gonzalez-Blas, T. Moerman, V. A. Huynh-Thu, H. Imrichova, G. 1147
+> Hulselmans, F. Rambow, J. C. Marine, P. Geurts, J. Aerts, J. van den Oord, Z. K. Atak, 1148
+> J. Wouters, S. Aerts, SCENIC: single-cell regulatory network inference and clustering. 1149
+> Nat Methods  14 , 1083-1086 (2017). 1150
+> 1151
+> 1152
+> 1153
+
+.CC-BY-NC-ND 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted July 13, 2026. ;https://doi.org/10.64898/2026.06.18.733285 doi: bioRxiv preprint
