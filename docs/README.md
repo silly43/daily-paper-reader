@@ -6,38 +6,49 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-19
-- 运行时间：2026-07-19 20:28:21 UTC
+- 最新运行日期：2026-07-20
+- 运行时间：2026-07-20 21:12:50 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：4
-- 速读区：2
+- 本次总论文数：9
+- 精读区：5
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读《DriftWorld: Fast World Modeling through Drifting》（10分）与《FoMoVLA: Bridging Visual Foresight and Motion Guidance for Vision-Language-Action Models》（9分），聚焦世界模型与视觉-语言-动作模型的突破。最值得关注的是快速世界建模与融合视觉预见的新方法。建议跟进这两篇论文的后续实验与开源代码，验证其在机器人或自动驾驶中的实际效果。
-- 详情：[/202607/19/README](/202607/19/README)
+今日精读聚焦驾驶场景层次世界模型与多智能体对抗运动规划，速读覆盖视觉量化、细粒度分类及无监督跨模态行人重识别。  
+最值得关注《Orbis 2》的层次世界模型架构及《World Models as Adversaries》的多智能体自我博弈方法，为鲁棒运动规划提供新范式。  
+建议普通读者优先理解世界模型在对抗训练中的机制，并尝试将其迁移至自动驾驶仿真或决策提升场景。
+- 详情：[/202607/20/README](/202607/20/README)
 
 ### 精读区论文标签
-1. [DriftWorld: Fast World Modeling through Drifting](/202607/19/2607.15065v1-driftworld-fast-world-modeling-through-drifting)  
+1. [Orbis 2: A Hierarchical World Model for Driving](/202607/20/2607.15898v1-orbis-2-a-hierarchical-world-model-for-driving)  
    标签：评分：10.0/10、query:world-models
-   evidence：基于漂移生成模型的预测世界模型用于机器人控制
-2. [FoMoVLA: Bridging Visual Foresight and Motion Guidance for Vision-Language-Action Models](/202607/19/2607.14739v1-fomovla-bridging-visual-foresight-and-motion-guidance-for-vision-language-action-models)  
+   evidence：用于驾驶的分层世界模型，预测未来状态
+2. [World Models as Adversaries: Multi-Agent Self-Play Fine-Tuning for Robust Motion Planning](/202607/20/2607.10630v1-world-models-as-adversaries-multi-agent-self-play-fine-tuning-for-robust-motion-planning)  
    标签：评分：9.0/10、query:world-models
-   evidence：明确的世界动态预测和未来状态预见
-3. [BadWAM: When World-Action Models Dream Right but Act Wrong](/202607/19/2607.15207v1-badwam-when-world-action-models-dream-right-but-act-wrong)  
+   evidence：用于运动规划对抗训练的世界模型
+3. [Constructed Reality, Contested Priors: Decoupling and the Architecture of Cognitive Relapse Under the Free Energy Principle](/202607/20/2607.11958v1-constructed-reality-contested-priors-decoupling-and-the-architecture-of-cognitive-relapse-under-the-free-energy-principle)  
    标签：评分：9.0/10、query:world-models
-   evidence：世界-行动模型将动作生成与未来世界预测相结合，直接研究世界模型的对齐问题
-4. [Context-dependent utility and robustness of pretrained single-cell foundation model representations across analytical tasks](/202607/19/biorxiv-10-64898-2026-06-18-733285-v2-context-dependent-utility-and-robustness-of-pretrained-single-cell-foundation-model-representations-across-analytical-tasks)  
-   标签：评分：8.0/10、query:ssl
-   evidence：评估预训练单细胞基础模型表示的零样本性能，这些模型是自监督学习的
+   evidence：使用变分自编码器和循环潜变量预测器构建世界模型
+4. [ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series](/202607/20/2607.12391v1-reditt-retrieval-augmented-conditional-diffusion-transformers-for-asynchronous-time-series)  
+   标签：评分：9.0/10、query:world-models
+   evidence：使用潜在扩散预测未来事件，时间序列世界模型
+5. [DSWorld: A Data Science World Model for Efficient Autonomous Agents](/202607/20/2607.15901v1-dsworld-a-data-science-world-model-for-efficient-autonomous-agents)  
+   标签：评分：9.0/10、query:world-models
+   evidence：数据科学世界模型预测环境状态转移
 
 ### 速读区论文标签
-1. [Rethinking Speech Foundation Model Fine-tuning: Better SFT or Better Match?](/202607/19/2607.13864v1-rethinking-speech-foundation-model-fine-tuning-better-sft-or-better-match)  
+1. [Distributional Matching for Vector Quantization: A Unified Theoretical and Empirical Framework](/202607/20/2607.15933v1-distributional-matching-for-vector-quantization-a-unified-theoretical-and-empirical-framework)  
+   标签：评分：7.0/10、query:ssl
+   evidence：改进了自监督表示学习中常用的向量量化技术
+2. [CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification](/202607/20/2607.13437v1-clip-guided-label-free-discriminative-region-scoring-for-fine-grained-classification)  
    标签：评分：6.0/10、query:ssl
-   evidence：研究自监督语音表示的微调，与自监督学习方法相关
-2. [ProtBLIP2-SST: Protein Function Prediction via BLIP2 with Sequence, Structure, and Text](/202607/19/biorxiv-10-64898-2026-07-10-737551-v1-protblip2-sst-protein-function-prediction-via-blip2-with-sequence-structure-and-text)  
+   evidence：应用CLIP（对比自监督模型）到细粒度分类
+3. [Structural-Semantic Reciprocal Learning for Unsupervised Visible-Infrared Person Re-Identification](/202607/20/2607.15220v1-structural-semantic-reciprocal-learning-for-unsupervised-visible-infrared-person-re-identification)  
    标签：评分：6.0/10、query:ssl
-   evidence：使用序列与文本之间的对比对齐进行蛋白质功能预测
+   evidence：无人监督的再识别表示学习，采用互学习机制
+4. [Frozen Protein Foundation-Model Embeddings Improve Antibody-Antigen ΔΔG Ranking](/202607/20/biorxiv-10-64898-2026-07-13-738250-v1-frozen-protein-foundation-model-embeddings-improve-antibody-antigen-g-ranking)  
+   标签：评分：6.0/10、query:ssl
+   evidence：展示了从自回归蛋白质基础模型提取冻结自监督表示用于排名任务
 
 
 <div class="dpr-home-promo-card">
