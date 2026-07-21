@@ -6,49 +6,67 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-20
-- 运行时间：2026-07-20 21:12:50 UTC
+- 最新运行日期：2026-07-21
+- 运行时间：2026-07-21 21:52:11 UTC
 - 运行状态：成功
-- 本次总论文数：9
-- 精读区：5
-- 速读区：4
+- 本次总论文数：15
+- 精读区：8
+- 速读区：7
 
 ### 今日简报（AI）
-今日精读聚焦驾驶场景层次世界模型与多智能体对抗运动规划，速读覆盖视觉量化、细粒度分类及无监督跨模态行人重识别。  
-最值得关注《Orbis 2》的层次世界模型架构及《World Models as Adversaries》的多智能体自我博弈方法，为鲁棒运动规划提供新范式。  
-建议普通读者优先理解世界模型在对抗训练中的机制，并尝试将其迁移至自动驾驶仿真或决策提升场景。
-- 详情：[/202607/20/README](/202607/20/README)
+1) 今日精读2篇满分论文，聚焦世界模型在强化学习和移动网络控制中的前沿应用。  
+2) 最值得关注：世界模型结合动作探索突破物理交互（PAVXploreRL），以及世界模型优化移动网络控制。  
+3) 建议普通读者关注世界模型如何赋予机器人更灵活的决策能力，并思考其落地于自动驾驶或工业网络的潜力。
+- 详情：[/202607/21/README](/202607/21/README)
 
 ### 精读区论文标签
-1. [Orbis 2: A Hierarchical World Model for Driving](/202607/20/2607.15898v1-orbis-2-a-hierarchical-world-model-for-driving)  
+1. [PAVXploreRL: Physical-Action-Visual World Model Reinforcement Learning with Action Exploration](/202607/21/2607.16602v1-pavxplorerl-physical-action-visual-world-model-reinforcement-learning-with-action-exploration)  
    标签：评分：10.0/10、query:world-models
-   evidence：用于驾驶的分层世界模型，预测未来状态
-2. [World Models as Adversaries: Multi-Agent Self-Play Fine-Tuning for Robust Motion Planning](/202607/20/2607.10630v1-world-models-as-adversaries-multi-agent-self-play-fine-tuning-for-robust-motion-planning)  
+   evidence：物理-动作-视觉世界模型强化学习与动作探索
+2. [Mobile Network Control with a World Model](/202607/21/2607.17747v1-mobile-network-control-with-a-world-model)  
+   标签：评分：10.0/10、query:world-models
+   evidence：直接世界模型用于网络控制
+3. [Certifiable Safe Model-Based Reinforcement Learning with Control-Affine Dynamics Approximation](/202607/21/2607.16501v1-certifiable-safe-model-based-reinforcement-learning-with-control-affine-dynamics-approximation)  
    标签：评分：9.0/10、query:world-models
-   evidence：用于运动规划对抗训练的世界模型
-3. [Constructed Reality, Contested Priors: Decoupling and the Architecture of Cognitive Relapse Under the Free Energy Principle](/202607/20/2607.11958v1-constructed-reality-contested-priors-decoupling-and-the-architecture-of-cognitive-relapse-under-the-free-energy-principle)  
+   evidence：提出一个可证明安全的基于模型的强化学习框架，学习控制仿射动力学作为世界模型。
+4. [Learning from World Feedback: Why Model Uncertainty Fails as a Risk Signal in Model-Based RL](/202607/21/2607.16591v1-learning-from-world-feedback-why-model-uncertainty-fails-as-a-risk-signal-in-model-based-rl)  
    标签：评分：9.0/10、query:world-models
-   evidence：使用变分自编码器和循环潜变量预测器构建世界模型
-4. [ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series](/202607/20/2607.12391v1-reditt-retrieval-augmented-conditional-diffusion-transformers-for-asynchronous-time-series)  
+   evidence：基于模型的强化学习中的世界模型；世界反馈信号
+5. [An Explicit World Model Based on Data-First Ontology: DaoQL Multimodal Storage Validation and Counterfactual Reasoning Evaluation](/202607/21/2607.17269v1-an-explicit-world-model-based-on-data-first-ontology-daoql-multimodal-storage-validation-and-counterfactual-reasoning-evaluation)  
    标签：评分：9.0/10、query:world-models
-   evidence：使用潜在扩散预测未来事件，时间序列世界模型
-5. [DSWorld: A Data Science World Model for Efficient Autonomous Agents](/202607/20/2607.15901v1-dsworld-a-data-science-world-model-for-efficient-autonomous-agents)  
+   evidence：提出基于数据优先本体的显式世界模型
+6. [Beyond Objective Expressivity: Geometry Preservation in Multimodal Contrastive Learning](/202607/21/2607.17673v1-beyond-objective-expressivity-geometry-preservation-in-multimodal-contrastive-learning)  
+   标签：评分：9.0/10、query:ssl
+   evidence：提出用于多模态对比学习的几何保持编码器
+7. [BrainNext: A General-Purpose Self-Supervised Foundation Model for Brain MRI Analysis](/202607/21/2607.17782v1-brainnext-a-general-purpose-self-supervised-foundation-model-for-brain-mri-analysis)  
+   标签：评分：9.0/10、query:ssl
+   evidence：使用掩码自编码器（MAE）进行脑MRI的自监督预训练
+8. [SAGE: Subgoal-Conditioned Action Generation for Latent World Model Planning](/202607/21/2607.17973v1-sage-subgoal-conditioned-action-generation-for-latent-world-model-planning)  
    标签：评分：9.0/10、query:world-models
-   evidence：数据科学世界模型预测环境状态转移
+   evidence：明确研究潜在世界模型规划，提出子目标条件动作生成
 
 ### 速读区论文标签
-1. [Distributional Matching for Vector Quantization: A Unified Theoretical and Empirical Framework](/202607/20/2607.15933v1-distributional-matching-for-vector-quantization-a-unified-theoretical-and-empirical-framework)  
+1. [VTM-Nav: Hierarchical Visual-Topological Memory for Cross-Episode Object-Goal Navigation](/202607/21/2607.14514v1-vtm-nav-hierarchical-visual-topological-memory-for-cross-episode-object-goal-navigation)  
+   标签：评分：8.0/10、query:world-models
+   evidence：代理通过视觉拓扑记忆跨场景保留自获取经验
+2. [When to Plan: Learning to Select Between Reactive Control and Deliberative Planning](/202607/21/2607.16421v1-when-to-plan-learning-to-select-between-reactive-control-and-deliberative-planning)  
+   标签：评分：8.0/10、query:world-models
+   evidence：学习在反应式控制和基于模型的规划之间选择
+3. [Value-Aware Prediction for Robust Multi-Agent Coordination Under Communication Loss](/202607/21/2607.17914v1-value-aware-prediction-for-robust-multi-agent-coordination-under-communication-loss)  
+   标签：评分：8.0/10、query:world-models
+   evidence：针对通信丢失的多智能体协调的价值感知预测模型，内部模型预测缺失状态
+4. [Pseudo-label distillation for discriminative anomalous sound detection](/202607/21/2607.16678v1-pseudo-label-distillation-for-discriminative-anomalous-sound-detection)  
    标签：评分：7.0/10、query:ssl
-   evidence：改进了自监督表示学习中常用的向量量化技术
-2. [CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification](/202607/20/2607.13437v1-clip-guided-label-free-discriminative-region-scoring-for-fine-grained-classification)  
-   标签：评分：6.0/10、query:ssl
-   evidence：应用CLIP（对比自监督模型）到细粒度分类
-3. [Structural-Semantic Reciprocal Learning for Unsupervised Visible-Infrared Person Re-Identification](/202607/20/2607.15220v1-structural-semantic-reciprocal-learning-for-unsupervised-visible-infrared-person-re-identification)  
-   标签：评分：6.0/10、query:ssl
-   evidence：无人监督的再识别表示学习，采用互学习机制
-4. [Frozen Protein Foundation-Model Embeddings Improve Antibody-Antigen ΔΔG Ranking](/202607/20/biorxiv-10-64898-2026-07-13-738250-v1-frozen-protein-foundation-model-embeddings-improve-antibody-antigen-g-ranking)  
-   标签：评分：6.0/10、query:ssl
-   evidence：展示了从自回归蛋白质基础模型提取冻结自监督表示用于排名任务
+   evidence：基于自监督学习的无标签方法和伪标签蒸馏
+5. [Semi-Supervised Conditional Generative Learning through Stochastic Interpolation and Sufficient Representations](/202607/21/2607.16725v1-semi-supervised-conditional-generative-learning-through-stochastic-interpolation-and-sufficient-representations)  
+   标签：评分：7.0/10、query:ssl
+   evidence：提出半监督条件生成模型，结合随机插值，与生成式自监督学习相关
+6. [Hierarchical Wireless Foundation Model for Multi-Task Optimization](/202607/21/2607.16877v1-hierarchical-wireless-foundation-model-for-multi-task-optimization)  
+   标签：评分：7.0/10、query:ssl
+   evidence：使用自监督掩码重建作为核心技术
+7. [Vision Normalizing Flows for the probability-informed detection of banana diseases from in-field images](/202607/21/biorxiv-10-64898-2026-07-19-739426-v1-vision-normalizing-flows-for-the-probability-informed-detection-of-banana-diseases-from-in-field-images)  
+   标签：评分：7.0/10、query:ssl
+   evidence：应用自监督DINOv3嵌入进行病害检测
 
 
 <div class="dpr-home-promo-card">

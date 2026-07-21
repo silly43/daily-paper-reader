@@ -1,0 +1,1355 @@
+Title: Hierarchical Wireless Foundation Model for Multi-Task Optimization
+
+URL Source: https://arxiv.org/pdf/2607.16877v1
+
+Published Time: Tue, 21 Jul 2026 00:42:42 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# Hierarchical Wireless Foundation Model for Multi-Task Optimization 
+
+Yangjing Wang, Ouya Wang, Shenglong Zhou, and Geoffrey Ye Li 
+
+Abstract —The increasing complexity of next-generation wire-less networks has driven the integration of artificial intelligence (AI) into wireless communications. However, most existing studies focus on developing task-specific deep learning techniques for single scenarios, which limits their ability to generalize across diverse tasks, channel conditions, and system configurations. To address this generalization bottleneck, we propose a hierarchical wireless foundation model (WFM) for multi-task optimization. The proposed WFM couples an upstream foundation channel encoder (FCE) with a downstream foundation optimization decoder (FOD) via geometry-aware cross-attention. Specifically, the FCE extracts task-agnostic channel representations via self-supervised masked reconstruction while the FOD generates multi-task optimization decisions through differentiable output heads. Moreover, a hybrid supervised-to-unsupervised training strategy is employed to overcome the performance ceiling of purely supervised learning, and the modular architecture of the WFM enables efficient adaptation to unseen communication tasks with minimal parameter overhead. Simulation results show that the proposed WFM learns high-fidelity channel representations and achieves competitive multi-task optimization performance while substantially reducing optimization inference latency rela-tive to numerical baselines. Furthermore, it exhibits robust gener-alization to unseen propagation environments, varying constraint parameters, and heterogeneous system configurations. 
+
+Index Terms —Wireless foundation model, channel representa-tion learning, multi-task optimization, modular task adaptation. 
+
+I. I NTRODUCTION 
+
+The upcoming sixth-generation (6G) wireless networks aim to provide advanced services, such as ubiquitous connectivity and ultra-reliable low-latency communications. To support these services, 6G networks need to integrate massive antenna arrays and exploit extremely wide bandwidths at high frequen-cies, such as millimeter wave (mmWave) and terahertz (THz). However, these advancements create significant challenges for conventional models and algorithms. Massive antenna arrays introduce prohibitive computational complexity, rendering tra-ditional approaches highly inefficient; operating at such high frequencies breaks the narrowband and far-field propagation assumptions these conventional approaches depend on, causing them to fail entirely [1], [2]. To overcome these challenges, recent studies have explored a variety of deep learning (DL) approaches. DL models dras-tically reduce computational overhead by mapping complex 
+
+Yangjing Wang, Ouya Wang, and Geoffrey Ye Li are with the Department of Electrical and Electronic Engineering, Faculty of Engineering, Impe-rial College London, SW7 2BX London, U.K. (e-mail: {yangjing.wang25, ouya.wang20, geoffrey.li }@imperial.ac.uk). Shenglong Zhou is with the School of Mathematics and Statistics, Beijing Jiaotong University, China (e-mail: shlzhou@bjtu.edu.cn). (Corresponding author: Ouya Wang.) 
+
+network observations directly to decision variables. Moreover, by learning entirely from data, DL models do not rely on any assumptions required by conventional approaches [3]–[5]. However, these models are often designed for task-specific scenarios, as different downstream applications necessitate distinct modeling strategies. This fragmentation increases the complexity of deployment, limits scalability and general-ity in practical settings, and is highly inefficient and time-consuming. While knowledge transfer and fine-tuning allow a single model to adapt to multiple tasks, they only perform well when those tasks are highly similar [6]–[8]. These limitations highlight the need for a general and scalable wireless learning framework that can support diverse tasks and network settings, rather than rely on fragmented task-specific models. Here, scalability means that the system maintains strong performance and manageable computational costs as down-stream tasks (e.g., channel estimation, beamforming) change, or as data dimensions vary across system configurations (e.g., users, antennas, and subcarriers). Without sufficient scalability, handling heterogeneous multi-task settings or massive data dimensions would be computationally intractable, making real-world 6G deployment infeasible. Moreover, generality means that the system maintains robust and accurate performance across diverse downstream tasks, channel distributions, and system constraints. Strong generality enables a “train once, deploy everywhere” paradigm: a single model architecture can adapt to multiple tasks, channels, or constraints with minimal fine-tuning, or even be applied directly with no retraining. Foundation models have emerged as a highly effective paradigm for achieving both scalability and generality. These large-scale, pre-trained backbones can be efficiently adapted to diverse tasks. For example, large language models (LLMs) serve as foundation models for diverse language processing tasks. Their adaptability comes from a shared and general-ized backbone that extracts universal features, combined with lightweight, task-specific modules for downstream applica-tions [9], [10]. Inspired by this paradigm, the wireless foun-dation model (WFM) has been proposed to handle multiple physical-layer wireless tasks within a single framework. Recent studies on WFMs can be divided into two categories, as shown in Table I. The first category is Wireless LLM, which uses pre-trained LLM architectures as the feature extraction backbone. The key technique enabling LLMs to perform well in wireless tasks is mapping physical wireless data (e.g., coordinates and azimuths for beam selection) directly into the discrete LLM token space [11]. This mapping translates diverse wireless data into a common language that the LLM natively understands, allowing the same LLM backbone to arXiv:2607.16877v1 [eess.SP] 18 Jul 2026 2                                                                                                     
+
+> TABLE I COMPARISON OF EXISTING FOUNDATION MODELS AND THE PROPOSED FRAMEWORK
+> Models Refs. Class Target Tasks Key Architecture Contributions Limitations
+> Category I: Text Tokens - Wireless Data Alignment
+> Channel prediction LLM [12] Wireless LLM Channel prediction Pre-trained LLM + CSI embedding a, c 1, 2, 4 Beam prediction LLM [11] Wireless LLM Beam prediction Pre-trained LLM + Tokenizer a, c 1, 2, 4 Multi-task framework [13] Wireless LLM Heterogeneous tasks Prompt-as-prefix conditioning a, b 1, 2, 3 MUSE-FM [14] Wireless LLM Cross-scenario tasks Multimodal contextual inputs b, c, d 1, 2, 3
+> Category II: Wireless Data Pre-training
+> WiFo [15] WFM Channel prediction Masked autoencoder (MAE) a, c 4, 5 WiFo-CF [16] WFM CSI feedback Mixture-of-experts (MoE) a, c 4, 5 Multi-task WFM [17] WFM Channel, angle, traffic pred. Univariate decomposition b, c, d 4, 5 Task-agnostic FCM [18] FCM Representation learning Masked channel modeling d, e 5, 6, 7 WirelessGPT [19] FCM Representation learning Tri-domain attention fusion d, e 3, 5, 6, 7 App-oriented FCM [20] FCM Regression & classification Masked reconstruction d, e 5, 6, 7
+> Hierarchical WFM Ours Hierarchical WFM Multi-task optimization Asymmetric FCE + Prompt FOD b, c, d, e, f, g -Contributions: (a) Single-task performance enhancement; (b) Multi-task learning; (c) New scenario/configuration generalizability; (d) New task adaptation;
+> (e) Universal channel representation learning; (f) Accelerated inference; (g) Multi-task optimization capability.
+> Limitations: (1) Modality gap between textual tokens and wireless signals; (2) Prohibitive inference overhead for real-time deployment; (3) Suboptimal performance due to causal self-attention; (4) Restriction to predefined task clusters; (5) Failure to fully exploit the spatial-frequency redundancy of CSI; (6)
+> Neglect of phase fidelity; (7) Lack of explicit mechanisms to model the multi-user dimension.
+
+extract different task features simply by changing the input prompts. However, mapping continuous wireless signals into discrete textual tokens creates an inherent modality gap that degrades performance. Moreover, the massive inference over-head of LLMs remains prohibitive for real-time deployment. To overcome these limitations, the second category of research focuses on native WFMs. These native WFMs have lightweight architectures and are pre-trained from scratch using wireless data, thereby reducing inference overhead and eliminating the modality gap. Early WFMs focused on single-task generalization across varying system configurations, uti-lizing a masked autoencoder (MAE) framework for channel prediction [15] and a mixture-of-experts (MoE) architecture for channel state information (CSI) feedback [16]. Subsequent work has extended WFMs to multi-task paradigms, which unify heterogeneous prediction tasks and demonstrate zero-shot generalization to new tasks [17]. However, their zero-shot generalization degrades on tasks dissimilar to those seen during pre-training. This degradation occurs because these WFMs tightly couple general channel features with specific task objectives. To address this challenge, foundation channel models (FCMs) have been developed to decouple universal channel feature extraction from downstream task objectives. This decoupling allows them to extract universal, task-agnostic features, achieving significantly broader cross-domain gener-alizability for diverse multi-task applications [18]. Native WFMs are well-suited for physical-layer multi-task optimization. Conventionally, these optimization tasks are tackled by isolated algorithms or task-specific DL models. Because these tasks share the same propagation environment, processing them independently forces the system to repeat-edly extract identical environmental features. This redundant computation creates a severe bottleneck, causing massive delays that violate strict 6G real-time latency requirements. To overcome this, we must exploit the intrinsic correlation among these tasks. Despite their distinct mathematical objectives, these tasks share a dependence on the same wireless environ-ment, naturally motivating a unified optimization foundation model. By extracting a universal representation just once and reusing it across multiple optimization tasks within a single framework, this approach eliminates redundant computations, substantially reduces processing latency, and enables practical real-time deployment. However, existing WFMs face critical limitations when applied to physical-layer multi-task optimization because they  
+
+> •
+
+target narrow sets of related tasks under fixed system configurations, thereby limiting their adaptability and generalizability across varying constraints and heteroge-neous system configurations;  
+
+> •
+
+rely on causal self-attention, which restricts attention to only past tokens rather than the full channel observation context, thereby rendering these models suboptimal for instantaneous optimization decisions;  
+
+> •
+
+process CSI through encoder-only architectures, which leaves the high spatial-frequency redundancy underex-ploited, thereby significantly increasing inference latency and preventing real-time decision-making;  
+
+> •
+
+represent CSI solely over the spatial-frequency domain without an explicit user dimension, which limits their ability to capture inter-user coupling and generalize across varying user counts in multi-user optimization;  
+
+> •
+
+focus on amplitude reconstruction while neglecting phase fidelity in their pre-training objectives, which discards es-sential directional signal information, thereby degrading performance on phase-sensitive tasks. Therefore, we develop a hierarchical WFM to address these limitations systematically. 3
+
+II. C ONTRIBUTIONS 
+
+In this work, we propose a hierarchical WFM designed to meet the scalability and generality requirements of next-generation networks. Scalability is achieved through a modular architecture that supports adaptation to new tasks and system configurations with minimal overhead, while generality is en-abled by a pre-trained backbone that performs robustly across diverse tasks and unseen conditions. This unified design offers both low-latency inference and strong adaptability, providing a practical foundation for 6G networks. The key contributions are fourfold.  
+
+> •
+
+Achieving scalability and generality via a hierarchical architecture: We propose a hierarchical architecture that decouples channel feature extraction from task-specific optimization. Specifically, an upstream foundation chan-nel encoder (FCE) extracts universal channel features, while a downstream foundation optimization decoder (FOD) maps these features to task-specific decisions. Therefore, this framework directly achieves scalability by maintaining low computation and inference overhead as the number of downstream tasks grows, and generality by supporting tasks with fundamentally different objectives and constraints.  
+
+> •
+
+Learning universal channel features with efficiency and phase fidelity: The upstream FCE adopts an MAE framework with a high masking ratio to fully exploit the spatial-frequency redundancy of CSI. To accommo-date a variable number of users, a per-user patching scheme decouples the permutation-invariant user dimen-sion from the spatial-frequency grid. Furthermore, aphase-sensitive pre-training scheme jointly preserves am-plitude and phase fidelity. Therefore, the FCE efficiently learns universal channel representations that generalize across varying user counts and retain the directional in-formation essential for phase-sensitive downstream tasks.  
+
+> •
+
+Enabling multi-task optimization through prompt-conditioned cross-attention: The downstream FOD en-codes task identities and user-specific constraints into a composite prompt, which queries universal channel fea-tures via geometry-aware cross-attention. Differentiable output heads then map the decoded representations to physically feasible solutions. Therefore, the FOD sup-ports heterogeneous tasks within a single decoder, enables zero-shot generalization across varying system configura-tions, and produces instantaneous optimization decisions conditioned on the full channel observation.  
+
+> •
+
+Validating scalability and generality via extensive ex-periments: Experiments across four representative tasks validate the scalability and generality of the proposed WFM. For scalability, the WFM adapts to new tasks with minimal parameter overhead and achieves substantially lower inference latency than numerical baselines. For generality, it delivers competitive multi-task performance and robust zero-shot generalization to unseen propagation environments, varying constraint parameters, and hetero-geneous system configurations. Ablation studies further confirm the effectiveness of its key design components. III. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+We consider a multi-user multiple-input single-output or-thogonal frequency-division multiplexing (MU-MISO-OFDM) system operating in time-division duplex (TDD) mode, where a base station (BS) equipped with M antennas serves K
+
+single-antenna users over N orthogonal subcarriers. Let 
+
+hk,n ∈ CM denote the downlink channel vector from the BS to user k on subcarrier n, and define wk,n ∈ CM as the corresponding precoding vector. The aggregate CSI tensor over all users and subcarriers is denoted as H ∈ CK×N ×M ,and the index set of users is expressed as K = {1, . . . , K }.Based on the system model, the received signal at user k
+
+on subcarrier n is given by 
+
+yk,n = hHk,n wk,n xk,n + hHk,n 
+
+X 
+
+> j̸=k
+
+wj,n xj,n + zk,n , (1) where xk,n denotes the transmitted data symbol for user k on subcarrier n, satisfying E[|xk,n |2] = 1 , and zk,n ∼ CN (0 , σ 2)
+
+is the corresponding additive white Gaussian noise (AWGN). The noise variance is assumed identical across users and subcarriers. Thus, the signal-to-interference-plus-noise ratio (SINR) for user k on subcarrier n is obtained as 
+
+γk,n = |hHk,n wk,n |2
+
+P  
+
+> j̸=k
+
+|hHk,n wj,n |2 + σ2 , (2) and the corresponding achievable rate of user k is written as 
+
+Rk =
+
+> N
+
+X
+
+> n=1
+
+log 2(1 + γk,n ). (3) 
+
+A. Beamforming 
+
+Under the assumption of perfect CSI at the BS, the beam-forming task aims to maximize the system sum rate by jointly optimizing the precoding vectors across all users and subcarriers. The optimization problem is formulated as 
+
+max 
+
+> W
+> K
+
+X
+
+> k=1
+
+Rk, (4a) s.t. 
+
+> K
+
+X
+
+> k=1
+> N
+
+X
+
+> n=1
+
+∥wk,n ∥2 ≤ Pmax , (4b) where W ∈ CK×N ×M represents the aggregate precoding tensor, and Pmax is the maximum transmission power at the BS. Due to the non-concavity of the objective, conventional iterative algorithms typically converge to locally optimal so-lutions and incur computational costs that scale unfavorably with K and N , motivating learning-based approaches. 
+
+B. User Scheduling 
+
+When the number of users exceeds that of BS antennas, serving all users simultaneously induces severe multi-user interference, motivating the selection of an active subset for transmission. Let sk ∈ { 0, 1} denote the scheduling indicator of user k, with global scheduling vector s = [ s1, . . . , s K ]T .For the scheduled users, we adopt regularized zero-forcing 4
+
+(RZF) precoding with equal power allocation as the fixed scheme. The SINR for user k on subcarrier n is given by 
+
+γk,n (s) = sk|hHk,n wk,n |2
+
+P  
+
+> j̸=k
+
+sj |hHk,n wj,n |2 + σ2 , (5) and the corresponding achievable rate of user k is written as 
+
+Rk(s) = 
+
+> N
+
+X
+
+> n=1
+
+log 2 (1 + γk,n (s)) . (6) Thus, the user scheduling problem is formulated as 
+
+max 
+
+> s
+> K
+
+X
+
+> k=1
+
+Rk(s), (7a) s.t. skRk(s) ≥ skRmin , ∀k ∈ K , (7b) 
+
+sk ∈ { 0, 1}, ∀k ∈ K , (7c) where Rmin denotes the minimum rate requirement for each scheduled user to satisfy its quality-of-service (QoS) con-straint. The binary scheduling variables render the problem combinatorial with an exhaustive search complexity of O(2 K ).
+
+C. Channel Estimation 
+
+By exploiting TDD channel reciprocity, the BS acquires the downlink CSI via uplink pilot transmissions. Let P ⊆{1, . . . , N } denote the index set of pilot subcarriers with cardinality Np = |P| , defining the pilot ratio as rp = Np/N .With orthogonal pilot sequences across users and unit pilot transmission power, the interference-free observation for user 
+
+k on subcarrier n can be obtained as 
+
+yk,n = hk,n + nk,n , (8) where nk,n ∼ CN (0, σ 2 
+
+> p
+
+IM ) denotes the effective AWGN. The corresponding least-squares (LS) estimate is given by 
+
+hLS  
+
+> k,n
+
+=
+
+(
+
+yk,n , n ∈ P ,
+
+0, n / ∈ P . (9) Stacking these estimates over all users and subcarriers yields LS estimate tensor HLS ∈ CK×N ×M , which is sparse along the frequency dimension. The channel estimation task aims to recover global CSI tensor H from HLS , and the accuracy of recovered estimate ˆH is evaluated by the normalized mean-squared error (NMSE) with respect to H. This task can be viewed as a joint denoising and interpolation problem over the spatial-frequency domain. 
+
+D. Beam Selection 
+
+In analog and hybrid beamforming architectures, the analog beamforming vectors are typically constrained to frequency-flat beams selected from a finite codebook since the analog phase-shifting network cannot realize arbitrary frequency-selective precoding. Assuming a uniform linear array (ULA) at the BS, we adopt a DFT codebook C = {c0, . . . , c|C|− 1}
+
+with oversampling factor os and cardinality |C| = osM , where 
+
+ci = 1
+
+√M
+
+h
+
+1, e j2πi/ |C| , . . . , e j2πi (M −1) /|C| iT
+
+. (10) Let ik denote the codeword index assigned to user k, and 
+
+i = [ i1, . . . , i K ]T . Under equal power allocation, the SINR for user k on subcarrier n is obtained as 
+
+γk,n (i) = |hHk,n cik |2
+
+P  
+
+> j̸=k
+
+|hHk,n cij |2 + KN σ 2/P max 
+
+, (11) and the corresponding achievable rate of user k is written as 
+
+Rk(i) = 
+
+> N
+
+X
+
+> n=1
+
+log 2(1 + γk,n (i)) . (12) Thus, the beam selection problem is formulated as 
+
+max 
+
+> i
+> K
+
+X
+
+> k=1
+
+Rk(i), (13a) s.t. ik ∈ { 0, . . . , |C| − 1}, ∀k ∈ K . (13b) This discrete combinatorial assignment has a search space of 
+
+|C| K , rendering exhaustive search computationally prohibitive as |C| and K grow. Each of the above four tasks has been extensively studied using conventional algorithms, including weighted minimum mean-square error (WMMSE) precoding for beamforming [21], zero-forcing-based greedy selection for user scheduling [22], LS and linear MMSE (LMMSE) estimators for channel estimation [23], and hierarchical codebook search for beam selection [24]. More recently, task-specific DL models have been developed to learn direct mappings from channel obser-vations to task-specific outputs [3], [25]. However, both lines of work address each task independently, leaving the shared channel structure underlying these tasks unexploited. IV. H IERARCHICAL WIRELESS FOUNDATION MODEL 
+
+Although the four tasks formulated in the previous section involve heterogeneous objectives and decision variables, they all rely on the same underlying CSI tensor H. To exploit this shared dependence while accommodating task heterogeneity, the proposed WFM adopts a hierarchical architecture that decouples task-agnostic channel representation learning from task-conditioned decision-making. As illustrated in Fig. 1, the upstream FCE encodes CSI tensor H into universal channel representations that are inde-pendent of any downstream objective. The downstream FOD constructs task-specific prompts from user anchors, task em-beddings, and constraint encodings. Through geometry-aware cross-attention, these prompts extract task-relevant information from universal channel representations and generate decisions for the target task. Since task conditioning is confined to the FOD, each channel realization is encoded only once and reused across multiple downstream tasks, avoiding repeated feature extraction and reducing multi-task inference overhead. The overall framework is trained and extended in three stages. First, the FCE is pre-trained via self-supervised masked reconstruction on a multi-scenario CSI corpus. Second, with the pre-trained FCE frozen, the FOD is trained for beamform-ing and user scheduling using supervised warm-up followed by unsupervised fine-tuning. Third, the pre-trained backbone is extended to channel estimation through upstream FCE 5Input CSI                    
+
+> M
+> Global CSI Tensor Global CSI Tensor
+> Universal Channel
+> Representations
+> Upstream FCE
+> Self -Supervised
+> Masked Reconstruction
+> Patch Embedding
+> Lightweight Decoder Lightweight Decoder
+> Structured Masking Structured Masking
+> 2D RoPE Encoder yy2D RoPE Encoder y
+> N
+> K
+> N
+> K
+> Downstream FOD
+> Supervised Warm -Up →
+> Unsupervised Fine -Tuning
+> Prompt -Based Input
+> Constraint
+> Encodings
+> Task
+> Embeddings
+> User
+> Anchors
+> Constraint
+> Encodings
+> Task
+> Embeddings
+> User
+> Anchors
+> Multi -Task Output Heads Multi -Task Output Heads
+> Geometry -Aware Cross -Attention
+> Beamforming
+> User 2 User 1 User KUser 2 User 1 User K
+> User Scheduling
+> User 2 User 1 User KUser 2 User 1 User KDownstream Adaptation:
+> Beam Selection
+> Upstream Adaptation:
+> Channel Estimation
+> Model
+> Input
+> Shared
+> Backbone
+> Multiple
+> Tasks
+> Input CSI
+> M
+> Global CSI Tensor
+> Universal Channel
+> Representations
+> Upstream FCE
+> Self -Supervised
+> Masked Reconstruction
+> Patch Embedding
+> Lightweight Decoder
+> Structured Masking
+> 2D RoPE Encoder y
+> N
+> K
+> Downstream FOD
+> Supervised Warm -Up →
+> Unsupervised Fine -Tuning
+> Prompt -Based Input
+> Constraint
+> Encodings
+> Task
+> Embeddings
+> User
+> Anchors
+> Multi -Task Output Heads
+> Geometry -Aware Cross -Attention
+> Beamforming
+> User 2 User 1 User K
+> User Scheduling
+> User 2 User 1 User KDownstream Adaptation:
+> Beam Selection
+> Upstream Adaptation:
+> Channel Estimation
+> Model
+> Input
+> Shared
+> Backbone
+> Multiple
+> Tasks
+
+Fig. 1. Overall workflow of the proposed hierarchical WFM. 
+
+adaptation and to beam selection through downstream FOD adaptation, with only lightweight task-specific modules up-dated. The following three sections detail these stages in turn. V. F OUNDATION CHANNEL ENCODER 
+
+As the upstream representation learning module, the FCE extracts universal channel representations from global CSI tensor H via a self-supervised MAE framework [26], which exploits the high spatial-frequency redundancy of CSI. In this section, we first present the network architecture of the FCE, as shown in Fig. 2, and then introduce a phase-sensitive training scheme that jointly optimizes amplitude and phase fidelity. 
+
+A. Input Preprocessing 
+
+Since channel amplitudes span several orders of magnitude across diverse propagation environments, raw CSI samples are rescaled to a numerically stable range to facilitate gradient-based optimization. We define a global scaling factor as the reciprocal of the q-quantile of the absolute amplitudes aggre-gated over the training corpus. As this quantile-based scaling is robust against outliers and preserves relative magnitude differences across users, antennas, and subcarriers, the large-scale fading information is retained for downstream tasks. The normalized complex-valued tensor is then split into real and imaginary components, yielding real-valued representation ˜H.
+
+B. Per-User Patching and Embedding 
+
+In contrast to the structured correlations along the frequency and spatial dimensions, the user dimension exhibits inherent permutation invariance. Therefore, we apply patching to each user’s channel independently. Following the patch-based tok-enization paradigm [27], each per-user tensor ˜Hk ∈ R2×N ×M
+
+is partitioned into non-overlapping 2D patches of size (n, m )
+
+along the frequency and spatial dimensions. Patching and linear projection are jointly implemented via a shared 2D convolution 
+
+Ek = Flatten 
+
+
+
+Conv2d( ˜Hk)
+
+
+
+, (14) where Conv2d( ·) represents a 2D convolution operator with both kernel size and stride set to (n, m ), mapping two real-valued input channels to denc output channels, and Flatten( ·)
+
+reshapes the convolutional output into Ek ∈ RLk ×denc with 
+
+Lk = Nn × Mm . Since this shared convolutional operator is applied independently to each user, the per-user embeddings remain permutation-equivariant and naturally accommodate a variable number of users K across samples. 
+
+C. Structured Masking Strategy 
+
+Due to the high spatial-frequency redundancy of CSI, ran-dom patch masking can allow masked patches to be trivially reconstructed via local interpolation, preventing the encoder from learning robust long-range representations. We therefore adopt a block-wise masking strategy [28] to mask contiguous blocks of patches, suppressing short-range information leakage and compelling the encoder to exploit the global spatial-frequency context. Moreover, applying a masking ratio jointly over all users’ patches induces user-level variance in the masked proportion, leading to imbalanced supervision across users. To mitigate this effect, block-wise masking is performed independently for each user. Specifically, we iteratively sample non-overlapping blocks until the target masking ratio is at-tained, yielding a visible index set Ivis 
+
+k and a masked index set 6Quantile Scaling +                     
+
+> Complex -to -Real
+> Global CSI Input CSI
+> Patch Embedding Block -wise Masking 2D RoPE
+> LayerNorm Self -Attention
+> (2D RoPE) MLP LayerNorm
+> User 1
+> Linear Mapping
+> Insert Mask Tokens Insert Mask Tokens
+> User K
+> Insert Mask Tokens
+> Prediction
+> head
+> LayerNorm Self -Attention
+> (2D RoPE) MLP LayerNorm
+> Predicted Masked Matrix Ground -truth Masked Matrix
+> Amplitude Loss Phase Loss
+> (Cosine Similarity)
+> 2D RoPE
+> Quantile Scaling +
+> Complex -to -Real
+> Global CSI Input CSI
+> Patch Embedding Block -wise Masking 2D RoPE
+> LayerNorm Self -Attention
+> (2D RoPE) MLP LayerNorm
+> User 1
+> Linear Mapping
+> Insert Mask Tokens
+> User K
+> Insert Mask Tokens
+> Prediction
+> head
+> LayerNorm Self -Attention
+> (2D RoPE) MLP LayerNorm
+> Predicted Masked Matrix Ground -truth Masked Matrix
+> Amplitude Loss Phase Loss
+> (Cosine Similarity)
+> 2D RoPE
+
+Fig. 2. Network architecture of the proposed FCE. 
+
+Imask  
+
+> k
+
+with |I vis  
+
+> k
+
+| + |I mask  
+
+> k
+
+| = Lk. Accordingly, user embedding 
+
+Ek is partitioned as 
+
+Evis  
+
+> k
+
+= Ek[Ivis  
+
+> k
+
+], Emask  
+
+> k
+
+= Ek[Imask  
+
+> k
+
+], (15) where Lvis  
+
+> k
+
+= |I vis  
+
+> k
+
+|, Lmask  
+
+> k
+
+= |I mask  
+
+> k
+
+|, Evis  
+
+> k
+
+∈ RLvis   
+
+> k×denc
+
+and 
+
+Emask  
+
+> k
+
+∈ RLmask   
+
+> k×denc
+
+denote the visible and masked embed-dings, respectively. The visible embeddings are forwarded to the encoder while the masked embeddings are discarded and the corresponding original CSI patches are retained as reconstruction targets during pre-training. 
+
+D. Shared Positional Embedding 
+
+Since self-attention without positional information is permutation-equivariant, positional encodings are required to inject the geometric structure of the spatial-frequency grid. To enable zero-shot generalization across heterogeneous con-figurations (N, M ), we employ a shared 2D rotary position embedding (RoPE) strategy that factorizes the frequency and spatial axes. We define a coordinate matrix C ∈ RLk ×2 shared across users, where the l-th row (ul, v l) denotes the frequency and spatial indices of the l-th patch. This shared coordinate matrix ensures that patches with identical physical roles re-ceive identical positional encodings. To encode the two axes independently, a feature vector xl ∈ R1×dh within an attention head of dimension dh is evenly split into xl = [ xl,f , xl,s ],where xl,f and xl,s denote the frequency-selective and spatial-correlation features, respectively. Let RΘ(p) denote the stan-dard 1D rotation matrix [29], parameterized by a position scalar p and a rotary-frequency basis Θ. The axis-factorized rotary embedding is then given by 
+
+fRoPE (xl, u l, v l) = Concat( xl,f RΘ(ul), xl,s RΘ(vl)) . (16) This factorization assigns independent embedding subspaces to the frequency and spatial axes, enabling the model to disentangle frequency selectivity from spatial correlations and adapt to arbitrary grid sizes (N, M ).
+
+E. Encoder 
+
+To capture inter-user interference, the FCE encoder jointly processes the global visible embedding while its coordinate matrix provides patch coordinates for the subsequent 2D RoPE. The encoder comprises a stack of Transformer blocks [30], each integrating positional context into multi-head self-attention (MSA) via 2D RoPE. For the i-th head, the block input is linearly projected into the query, key, and value matri-ces Qi, Ki, and Vi, respectively. Based on the corresponding coordinate (ul, v l), the query and key vectors of patch l are rotated as 
+
+˜ql,i = fRoPE (ql,i , u l, v l), ˜kl,i = fRoPE (kl,i , u l, v l). (17) Stacking the rotated vectors into ˜Qi and ˜Ki, the scaled dot-product attention for head i is formulated as 
+
+head i = softmax 
+
+ ˜Qi ˜KTi
+
+√dh
+
+
+
+Vi. (18) The outputs of all heads are concatenated and linearly pro-jected to form the MSA output. After passing through all blocks, the encoder yields context-aware universal represen-tation Zenc , transforming independent user embeddings into a system-level representation through self-attention. 
+
+F. Decoder 
+
+The decoder reconstructs the masked CSI patches from the encoded representations. Unlike the encoder that jointly pro-cesses visible patches across all users, the decoder operates on each user’s representation independently. This asymmetric de-sign forces the encoder to capture inter-user interference while confining the decoder to per-user reconstruction. To reinforce this asymmetry, the decoder is instantiated as a lightweight Transformer network with model dimension ddec ≪ denc .The global representation Zenc is partitioned into per-user representations and linearly projected into the decoder feature space. A learnable mask token fills the masked positions, and the visible and masked tokens are restored to their original order according to Ivis  
+
+> k
+
+and Imask  
+
+> k
+
+. Then, the shared coordinate matrix is applied to 2D RoPE in the decoder MSA, and a linear prediction head maps the decoder output to the patch space. Masked-position predictions Ymask  
+
+> k
+
+are concatenated across users to form the reconstructed masked-patch matrix 
+
+ˆHm = Concat  Ymask  
+
+> 1
+
+, . . . , Ymask 
+
+> K
+
+. (19) 7
+
+The corresponding ground-truth matrix Hm ∈ RLmask ×dpatch is obtained by extracting and flattening the original normalized CSI patches at the same indices, where Lmask = PKk=1 Lmask 
+
+> k
+
+and dpatch = 2 × n × m.
+
+G. Pre-Training Strategy 
+
+The FCE is pre-trained via self-supervised reconstruction over a heterogeneous CSI corpus. Since system dimensions 
+
+(K, N, M ) vary substantially across scenarios, we adopt a homogeneous batching strategy, where each mini-batch is drawn exclusively from a single (K, N, M ) subset to ensure dimensional consistency. These subsets are sampled with probabilities proportional to their corpus frequencies, thereby preserving the native configuration distribution and avoiding the over-representation of rare configurations. Regarding the optimization objective, the standard MSE is dominated by high-power channel entries and thus under-weights the reconstruction errors of low-power entries, whose phase information remains critical to phase-sensitive down-stream tasks, such as beamforming and channel estimation. To mitigate this bias, we complement the MSE with a cosine-similarity term, yielding the pre-training objective 
+
+L = 1
+
+Nmask 
+
+∥Hm − ˆHm∥2 
+
+> F
+
++ β
+
+
+
+1 − ⟨Hm, ˆHm⟩∥Hm∥F ∥ ˆHm∥F
+
+
+
+, (20) where Nmask = Lmask × dpatch and β is a weighting coefficient. The MSE term enforces element-wise reconstruction accuracy, while the cosine-similarity term emphasizes the global angular alignment between the predicted and target tensors. VI. F OUNDATION OPTIMIZATION DECODER 
+
+As the downstream reasoning module, the FOD maps the universal channel representations to task-specific solutions via prompt-conditioned cross-attention, thereby enabling unified modeling of heterogeneous tasks across varying system config-urations. In this section, we first detail the network architecture of the FOD, as shown in Fig. 3, and then introduce a hybrid multi-task training scheme. 
+
+A. Prompt-Based Input Embedding 
+
+To facilitate zero-shot generalization across varying con-straints and user counts, we formulate decoder input Xin ∈
+
+RKmax ×dmodel as a composite prompt, where Kmax denotes the maximum scheduling capacity of the BS and dmodel is the model dimension of the FOD. Inactive queries are masked during attention to decouple the input shape from varying K.Since optimization objectives are inherently user-centric, each query is assigned to a specific user slot and integrates three contextual components. 
+
+a) Learnable User Anchors: A learnable matrix A ∈
+
+RKmax ×dmodel is introduced, where each row serves as a se-mantic anchor for a fixed user slot. This design decouples user indexing from varying user counts, enabling the parallel generation of all user-specific outputs without architectural reconfiguration. 
+
+b) Task Embeddings: Discrete task index t is mapped to a vector et ∈ R1×dmodel via a learnable lookup table and broadcast across all queries as Et ∈ RKmax ×dmodel , thereby conditioning the subsequent cross-attention on the current task. 
+
+c) Constraint Encodings: System constraints delineate the boundaries of the feasible solution space. Let c ∈ RKmax ×1
+
+denote the per-user constraint vector with zero-padding for inactive queries. To allow distinct tasks to process identical scalar constraints along task-specific directions, we adopt a task-conditional affine encoding. For each task t, we learn a direction vector bt ∈ R1×dmodel and an offset vector ot ∈
+
+R1×dmodel to yield the constraint embedding 
+
+Ec = cb t + 1Kmax ot, (21) where bt specifies the direction along which the constraint magnitude modulates the embedding, and ot defines the base-line at c = 0. The linearity of this mapping facilitates robust extrapolation to constraints beyond the training range. The three components are summed element-wise to form the composite input embedding 
+
+Xin = A + Et + Ec, (22) where each user query jointly encodes its semantic identity, current task, and individual constraint. 
+
+B. Geometry-Aware Cross-Attention 
+
+To integrate prompt-based input embeddings with universal channel representations, multi-head cross-attention (MCA) is employed. Since the FCE adopts a shared coordinate matrix, patches of different users may occupy identical geometric indices. To resolve this semantic ambiguity, a learnable user identity embedding uk ∈ R1×denc is injected into each patch of user k prior to projection, yielding augmented representation 
+
+Z′
+
+> enc
+
+. Let Xj−1 denote the input of the j-th block, initialized as X0 = Xin . For the i-th head, 
+
+Qi = Xj−1WiQ, Ki = Z′
+
+> enc
+
+WiK , Vi = Z′
+
+> enc
+
+WiV , (23) where WiQ, WiK and WiV are learnable projection matrices. Beyond semantic disambiguation, user-centric queries are aligned with patch-level keys in a unified geometric space via 2D RoPE. A learnable anchor (uk, v k) serves as the query coordinate for user k, whereas the patch coordinate (ul, v l)
+
+is obtained from Cvis 1. The rotary embedding fRoPE is then applied to both the query and key vectors, 
+
+˜qk,i = fRoPE (qk,i , u k, v k), ˜kl,i = fRoPE (kl,i , u l, v l), (24) so that the RoPE-induced geometric modulation of the atten-tion logits is governed by the relative displacement between the user anchor and each patch, implicitly biasing the model toward spatially proximate channel regions. Substituting ˜Qi,
+
+˜Ki, and Vi into (18), the per-head outputs are concatenated and linearly projected to form the MCA output. After passing through all blocks, decoded representation X ∈ RKmax ×dmodel 
+
+is produced. 
+
+> 1To enable zero-shot generalization to system dimensions, position inter-polation linearly rescales the patch indices into the pre-trained range, keeping all coordinates within the interpolation regime of the RoPE basis [31]. 8FCE Output
+> User Embeddings
+> User Anchors
+> Task Embeddings
+> Constraint Encodings
+> Multi -head Cross -attention
+> LayerNorm
+> LayerNorm
+> Per -user representations
+> Feed -forward Network
+> Dropout
+> GELU
+> Linear Linear Linear
+> Linear Linear
+> 2D RoPE 2D RoPE
+> LayerNorm
+> 2D RoPE
+> LayerNorm
+> 2D RoPE
+> Multi -head Cross -attention
+> LayerNorm
+> LayerNorm
+> Per -user representations
+> Feed -forward Network
+> Dropout
+> GELU
+> Linear
+> Linear
+> 2D RoPE
+> LayerNorm
+> 2D RoPE
+> Beamforming Head
+> User Scheduling Head
+> Shared
+> Training
+> (Gumbel -Sigmoid
+> +STE)
+> Inference
+> Fourier Features
+> Concat
+> Shared Shared
+> Beamforming Head
+> User Scheduling Head
+> Shared
+> Training
+> (Gumbel -Sigmoid
+> +STE)
+> Inference
+> Fourier Features
+> Concat
+> Shared
+> FCE Output
+> User Embeddings
+> User Anchors
+> Task Embeddings
+> Constraint Encodings
+> Multi -head Cross -attention
+> LayerNorm
+> LayerNorm
+> Per -user representations
+> Feed -forward Network
+> Dropout
+> GELU
+> Linear
+> Linear
+> 2D RoPE
+> LayerNorm
+> 2D RoPE
+> Beamforming Head
+> User Scheduling Head
+> Shared
+> Training
+> (Gumbel -Sigmoid
+> +STE)
+> Inference
+> Fourier Features
+> Concat
+> Shared
+
+Fig. 3. Network architecture of the proposed FOD. 
+
+C. Multi-Task Output Heads 
+
+The task-specific output heads map the per-user decoded representation xk to heterogeneous optimization variables. 
+
+1) Beamforming Head: The beamforming task maximizes the system sum rate by optimizing precoding tensor W. The optimal downlink precoder admits a closed-form structure [32]: 
+
+wk,n = √pk,n 
+
+ IM + PKj=1 μj,n hj,n hHj,n 
+
+−1hk,n 
+
+ IM + PKj=1 μj,n hj,n hHj,n 
+
+−1hk,n 
+
+, (25) where pk,n is the power allocated to user k on subcarrier n,and μk,n denotes the corresponding regularization parameter. This decomposition reduces the high-dimensional beamform-ing task to the joint optimization of two low-dimensional matrices: a regularization matrix μ and a power allocation matrix P.To decouple the head from varying N while preserving the frequency-domain correlations of wideband channels, we parameterize the per-subcarrier predictions as a continuous function of normalized coordinates {ξn}Nn=1 ⊂ [0 , 1] via an implicit neural representation (INR) [33]. However, directly feeding ξn into a multi-layer perceptron (MLP) incurs aspectral bias toward low-frequency functions. Therefore, each coordinate is lifted into a high-frequency feature space via a learnable frequency vector b
+
+ϕ(ξn) = [sin(2 πξ nb), cos(2 πξ nb)] . (26) For each user k and subcarrier n, the head concatenates the user latent state with the Fourier embedding to produce two pre-activation scalars 
+
+(˜ μk,n , ˜pk,n ) = MLP BF (Concat( xk, ϕ (ξn))) . (27) The non-negativity of regularization parameters is enforced by 
+
+μk,n = softplus(˜ μk,n ) and the total power constraint is im-posed via a differentiable simplex projection P = Proj S ( ˜P),where S is the feasible power set and ˜P denotes the power pre-activation matrix. To preclude power leakage, pre-activations on inactive user slots are masked prior to projection. 
+
+2) User Scheduling Head: The user scheduling task is formulated as a binary subset selection problem over the candidate users. The output consists of K binary decisions and is independent of system dimension (N, M ). Since MCA has already embedded the multi-user context into latent state 
+
+xk, the scheduling head requires no additional inter-user interaction module and employs a shared per-user MLP that maps each xk to a selection logit lk and its probability πk:
+
+lk = MLP US (xk), πk = sigmoid( lk). (28) To enable end-to-end backpropagation through discrete vari-able sk, we adopt the Gumbel-Sigmoid relaxation [34] during training. Perturbing each logit with additive logistic noise yields the soft selection variable 
+
+˜sk = sigmoid 
+
+ lk + ℓk
+
+τ
+
+
+
+, ℓk = log Uk −log(1 −Uk), (29) where Uk ∼ U (0 , 1) , ℓk follows a standard logistic distribu-tion, and the temperature τ > 0 is annealed over training to tighten ˜sk toward its discrete limit. To enable binary inputs in the sum-rate evaluation while preserving gradient flow, we apply the straight-through estimator (STE) [35]: 
+
+sk = I(˜ sk > 0.5) − sg(˜ sk) + ˜ sk, (30) where I(·) is the indicator function and sg( ·) denotes the stop-gradient operator. The forward pass yields hard decisions consistent with the physical interference model while the backward pass propagates surrogate gradients through ˜sk. At 9
+
+inference, stochastic sampling is replaced by deterministic thresholding sk = I(πk > 0.5) , and the per-user decisions are stacked into the global scheduling vector s = [ s1, . . . , s K ]T .
+
+D. Hybrid Multi-Task Training 
+
+Training the FOD for multi-task optimization faces three primary challenges: the heterogeneity of task objectives, lim-ited generalization under varying constraints, and the lack of optimal labels. To address these challenges, we propose a hybrid training strategy comprising three complementary components:  
+
+> •
+
+an interleaved mini-batch protocol that mitigates conflict-ing task gradients;  
+
+> •
+
+a dynamic constraint sampling scheme that exposes the decoder to a continuum of constraint settings;  
+
+> •
+
+a two-stage curriculum that transitions from supervised warm-up to unsupervised fine-tuning. To coordinate heterogeneous objectives, we adopt an in-terleaved mini-batch protocol. Specifically, we sample a task index at each iteration and construct the mini-batch from the corresponding data distribution, so that each parameter update is driven solely by the gradient of the active task. This temporal decoupling prevents tasks with large-magnitude losses from dominating the updates, thereby promoting balanced conver-gence across tasks. To improve generalization over the feasible solution space, we further introduce a dynamic constraint sampling scheme. At each iteration, user-specific constraints are drawn from a continuous uniform distribution and serve a dual role: they parameterize the input prompts and define the corresponding thresholds in the loss functions. This scheme enables the FOD to learn a generalized mapping from dynamic constraints to constraint-conditioned policies. Building upon these two training strategies, we present the two-stage curriculum. 
+
+1) Supervised Warm-Up: To stabilize early-stage optimiza-tion, we begin with a supervised warm-up phase, thereby providing a well-conditioned initialization for the subsequent unsupervised fine-tuning. 
+
+a) Beamforming: Since the beamforming head predicts 
+
+(μ, P) rather than the precoding tensor directly, we super-vise these two parameter matrices using targets obtained by decomposing the WMMSE solution. Because μ and P differ substantially in scale, we adopt an NMSE criterion to provide scale-normalized supervision: 
+
+LBF-SL = ∥μ − μ∗∥2
+
+> F
+
+∥μ∗∥2
+
+> F
+
++ ∥P − P∗∥2
+
+> F
+
+∥P∗∥2
+
+> F
+
+, (31) where μ∗ ∈ RK×N and P∗ ∈ RK×N denote the target regu-larization matrix and power allocation matrix, respectively. 
+
+b) User Scheduling: For the discrete scheduling task, we adopt label smoothing [36] to mitigate overconfident sigmoid predictions and define an MSE loss against the smoothed algorithmic labels: 
+
+LUS-SL = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+(πk − ˜s∗
+
+> k
+
+)2 , (32) where ˜s∗ 
+
+> k
+
+denotes the smoothed target of the binary label generated by the greedy scheduling algorithm. By keeping the targets away from the hard limits, label smoothing mitigates sigmoid saturation, thereby facilitating the transition to the Gumbel-Sigmoid relaxation in the unsupervised stage. 
+
+2) Unsupervised Fine-Tuning: To surpass the performance ceiling imposed by algorithmic supervision, we fine-tune the FOD with unsupervised objectives that directly optimize the system utility. 
+
+a) Beamforming: To maximize the system sum rate, the unsupervised beamforming loss is formulated as 
+
+LBF-UL = − 1
+
+KN 
+
+> K
+
+X
+
+> k=1
+> N
+
+X
+
+> n=1
+
+log 2(1 + γk,n ). (33) The normalization converts the objective into the average per-user per-subcarrier rate, making the loss magnitude compara-ble across different dimensions (K, N ).
+
+b) User Scheduling: To promote per-user QoS satisfaction, we adopt an augmented Lagrangian formulation and define the unsupervised loss as 
+
+LUS-UL = 1
+
+KN 
+
+
+
+−
+
+> K
+
+X
+
+> k=1
+
+Rk(s)+ 
+
+> K
+
+X
+
+> k=1
+
+λkCk + ρ
+
+2
+
+> K
+
+X
+
+> k=1
+
+C2
+
+> k
+
+
+
+, (34) where Ck = sk ReLU( Rmin − Rk(s)) , λk denotes the dual variable, and ρ is the penalty coefficient. The dual variables are updated once per epoch via projected dual ascent 
+
+λe+1  
+
+> k
+
+= clip ( λek + ρ¯ck, 0, λ max ) , (35) where ¯ck = E[sk(Rmin − Rk(s))] denotes the epoch-averaged signed residual, and λmax caps the dual variables to avoid unbounded growth. When the QoS constraints are satisfied with slack, the signed residual becomes negative, thereby enabling the policy to explore more aggressive scheduling decisions. VII. M ODULAR TASK ADAPTATION 
+
+The modular WFM architecture enables efficient adaptation to communication tasks beyond the pre-training objectives. We present two adaptation pathways: upstream FCE adaptation for channel estimation via pilot-aware input reformulation, and downstream FOD adaptation for beam selection via parameter-efficient fine-tuning. 
+
+A. Upstream Adaptation: Channel Estimation 
+
+To assess the representational fidelity of the FCE, we recast pilot-based channel estimation as a masked reconstruction problem that recovers full CSI from the sparse LS estimate. 
+
+1) Adaptation Architecture: Since the patch-embedding layer of the FCE is designed for fully observed CSI, it is replaced with a pilot-aware input adapter. For each user k, the adapter forms a three-channel input by stacking the real and imaginary parts of Hk 
+
+> LS
+
+with a binary pilot mask p ∈ { 0, 1}N
+
+broadcast along the antenna dimension. This input is then projected into the encoder dimension through a learnable 2D convolution, and a noise-level embedding is added to each 10 
+
+patch token, thereby conditioning the reconstruction on the operating SNR. Unlike the joint multi-user encoding used in FCE pre-training, channel estimation is performed on a per-user basis. The encoder processes the per-user patch sequence without masking, allowing zero-filled non-pilot positions to serve as contextual placeholders. A pilot-aware partitioning scheme then reconstructs the input of the decoder: patches containing at least one pilot subcarrier are forwarded to the decoder while fully unobserved patches are replaced by learnable mask tokens. The decoder is initialized from the pre-trained weights and reconstructs all patches, with the LS estimate added residually to the output: 
+
+ˆH = Unpatch  fpred (Zdec ) + HLS , (36) where Zdec denotes the decoder output representation, fpred (·)
+
+is the linear prediction head, and Unpatch( ·) maps the patch predictions to the original CSI dimensions. This formulation allows the network to learn a residual correction over the LS estimate, facilitating convergence and training stability. During adaptation, the pre-trained encoder remains frozen and only the input adapter, the decoder, and the prediction head are updated, keeping the encoding pathway shared with the downstream tasks intact. 
+
+2) Training Objective: Since the NMSE does not explicitly enforce phase coherence, we train the model with a composite loss that augments the NMSE with a phase-alignment term 
+
+LCE = ∥H − ˆH∥2
+
+> F
+
+∥H∥2
+
+> F
+
++ λ
+
+
+
+1 − ⟨H, ˆH⟩
+
+∥H∥F ∥ ˆH∥F
+
+
+
+, (37) where λ controls the relative weight of the phase-alignment term. The loss is evaluated over both pilot and non-pilot positions, while the pilot ratio rp and SNR are resampled per batch to expose the model to diverse observation conditions. 
+
+B. Downstream Adaptation: Beam Selection 
+
+To assess the cross-task adaptability of the FOD, we adapt it to beam selection, which is structurally distinct from the pre-training tasks. 
+
+1) Adaptation Architecture: To prevent catastrophic forget-ting and reduce trainable parameter overhead, the FCE encoder and the FOD backbone remain frozen while adaptation is confined to a small set of newly introduced parameters. At the input stage, a new entry is appended to the shared task-embedding lookup table, and a corresponding pair of direction and offset vectors is added to the constraint encoder. At the output stage, a task-specific head is appended to map decoder latent representations to per-user selection logits over the codebook. 
+
+2) Beam Selection Head: To provide an initialization for selection, we construct a single-user gain prior ¯gk ∈ R|C| by applying per-user normalization to the DFT-codeword gains computed from the subcarrier-averaged channel. The output head then augments this prior with a learnable multi-user residual correction δk to produce the per-user selection logits 
+
+ℓk = ¯ gk + η δk, (38) where η scales the residual correction relative to the gain prior. To decouple the number of trainable parameters from |C| ,we parameterize δk in a low-dimensional Fourier angular basis. A shared feature extractor followed by a linear pro-jection maps the latent state xk into the Fourier coefficients 
+
+ak ∈ R2L. Basis matrix Φ ∈ R|C|× 2L evaluates the first L
+
+angular harmonics at the codebook angles θi = 2 πi/ |C| . The row associated with codeword i is given by 
+
+Φi = 1
+
+√L [cos( θi), sin( θi), . . . , cos( Lθ i), sin( Lθ i)] , (39) so that δk = Φa k. Zero-initializing the linear projection makes the output reduce to the gain prior at initialization, providing a warm start for residual learning. Since the formulation does not enforce codeword exclusivity among users, we apply the Hungarian algorithm [37] as a post-processing step at inference when |C| ≥ K, yielding a one-to-one user-codeword assignment. 
+
+3) Training Objective: To enable gradient flow through the discrete selection, we apply the Gumbel-Softmax relaxation with temperature annealing and the STE to obtain differ-entiable surrogates for the per-user selection vectors. The model is trained in an unsupervised manner by minimizing the normalized loss function: 
+
+LBS-UL = − 1
+
+KN 
+
+> K
+
+X
+
+> k=1
+> N
+
+X
+
+> n=1
+
+log 2
+
+ 1 + γk,n (i), (40) where γk,n (i) is evaluated with the straight-through selection vectors during training and the Hungarian-assigned codewords at inference. VIII. N UMERICAL RESULTS 
+
+In this section, we evaluate the proposed WFM on four tasks to validate the fidelity of the learned channel representations and the effectiveness of modular task adaptation. For each task, we examine training convergence across random seeds and evaluate task performance under varying constraints. We then assess zero-shot generalization to unseen propagation environments and system configurations, and finally compare inference latency with task-specific baselines. 
+
+A. Simulation Setup and Datasets 
+
+Channel realizations are drawn from the DeepMIMO dataset [38], which leverages the Wireless InSite ray-tracer to model site-specific propagation. As shown in Fig. 4, we curate a corpus of 60 urban scenarios, split into 30 scenarios for training and in-domain validation and 30 for cross-scenario generalization. The corpus exhibits wide variations in RMS delay spread and line-of-sight (LoS) probability, exposing the model to heterogeneous propagation conditions. To assess adaptability across system configurations, we define a seen system dimension grid ( K ∈ { 4, 8, 12 }, N ∈ { 32 , 64 , 128 },
+
+M ∈ {8, 16 , 32 }) and an unseen grid ( K ∈ {6, 11 , 16 },
+
+N ∈ { 48 , 96 , 192 }, M ∈ { 12 , 24 , 48 }), each spanning 27 distinct (K, N, M ) combinations. Within the unseen grid, two values along each dimension fall within the seen range while 11 Training scenarios Test scenarios 
+
+> Tokyo (Taito)
+> Amsterdam
+> Saint Petersburg
+> Rome (Colosseum)
+> Gurbchen
+> Istanbul
+> Marrakesh
+> Rome (Popolo)
+> Buenos Aires
+> Toronto (Casa Loma)
+> Kyoto
+> Chicago (Loop)
+> Montreal
+> Rio de Janeiro
+> Edinburgh
+> Mumbai
+> Singapore
+> Barcelona
+> Hong Kong
+> Cairo
+> Havana
+> Taipei
+> Jerusalem
+> Cape Town
+> Philadelphia
+> Columbus
+> Bangkok
+> Florence
+> Chicago (West Loop)
+> Stockholm
+> Sydney
+> Tokyo (Sumida)
+> Fort Worth
+> Miami
+> New York
+> Los Angeles
+> Madrid
+> Seattle
+> San Diego
+> Houston
+> Santa Clara
+> Phoenix
+> San Francisco (Parkside)
+> Toronto (Downtown)
+> Lisbon
+> Denver
+> Jakarta
+> Austin
+> Dubai
+> San Francisco (Wharf)
+> Indianapolis
+> Prague
+> San Francisco (Sunset)
+> Charlotte
+> New Delhi
+> Dallas
+> Mexico City
+> Oklahoma City
+> Seoul
+> Beijing 10 −1
+> 10 0
+> 10 1
+> 10 2
+> RMS delay spread (ns)
+> Median
+> LoS
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Relative density
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> LoS probability
+
+Fig. 4. Overview of the multi-scenario CSI corpus. The upper panel maps the geographic distribution of the urban scenarios, while the lower panel shows the per-scenario distributions of RMS delay spread as a column-normalized density heatmap, with the strip above it encoding the LoS probability. 
+
+the third extends beyond it, which covers both interpolation and extrapolation. Combining the scenario sets with the configuration grids yields one in-domain set and three zero-shot evaluation sets. The in-domain set (seen scenarios, seen configurations) con-tains 5000 CSI samples per scenario, of which 4500 and 500 are used for training and validation, respectively. Each zero-shot evaluation set contains 500 CSI samples per scenario: 
+
+• the cross-scenario set (unseen scenarios, seen configura-tions); 
+
+• the cross-configuration set (seen scenarios, unseen con-figurations); 
+
+• the joint set (unseen scenarios, unseen configurations). For the hyperparameter settings, the FCE comprises a 12-layer encoder ( denc = 512 , 8 heads) and a 4-layer decoder (ddec = 256 , 8 heads), with a patch size of (n, m ) = (4 , 2) 
+
+and a masking ratio of 75%. The FOD adopts a 6-layer MCA decoder ( dmodel = 512 , 8 heads) with Kmax = 16 user slots. All trainable modules are optimized using AdamW with a cosine learning rate schedule and linear warm-up. To evaluate the WFM across different tasks, we compare it with the following task-specific baselines, including numerical algorithms and learning-based methods: 
+
+• LS: LS channel estimation on pilot subcarriers, followed by linear interpolation over non-pilot subcarriers. 
+
+• LMMSE: LMMSE channel estimation using the oracle frequency-domain correlation matrix for joint denoising and interpolation [23]. 
+
+• WMMSE: A precoding algorithm for weighted sum-rate maximization that alternates among receive filters, MSE weights, and transmit precoders [21]. 
+
+• Greedy Scheduling: Sequentially selects the user that yields the largest marginal sum-rate gain while satisfying per-user QoS constraints. 
+
+• DFT Greedy: Each user independently selects the DFT codeword that maximizes its single-user channel gain, without accounting for inter-user interference. 
+
+• Seq Greedy: Sequentially assigns each user the codeword that maximizes the sum rate given the codewords already assigned to previous users. 
+
+• Transformer: A dimension-agnostic encoder-only Trans-former trained from scratch for each task, using the same input-output formulation and task objective as the WFM. 
+
+• WLLM: A baseline that replaces the FOD decoder with a pre-trained GPT-2 backbone adapted with LoRA, while keeping the remaining WFM pipeline unchanged. 
+
+B. Pre-Training and Channel Estimation 
+
+Fig. 5 illustrates the convergence behavior of FCE pre-training and channel estimation fine-tuning. In Fig. 5(a), the FCE loss decreases steadily, with closely matched training and validation curves and narrow shaded bands, indicating stable convergence across random seeds. In Fig. 5(b), fine-tuning for channel estimation reduces the validation NMSE by more 12 25 50 75 100    
+
+> Epoch
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> Loss
+> (a) FCE Pre-training
+> Training Loss
+> Val Loss
+> 20 40 60
+> Epoch
+> −12.5
+> −10.0
+> −7.5
+> −5.0
+> −2.5
+> 0.0
+> 2.5
+> NMSE (dB)
+> (b) CE Fine-tuning
+> Training NMSE
+> Val NMSE
+> Fig. 5. Training convergence curves for (a) FCE pre-training and (b) channel estimation fine-tuning. Shaded regions indicate standard deviations over three random seeds.
+
+than 10 dB, demonstrating the fidelity of the learned channel representations. Fig. 6 evaluates channel estimation performance across varying SNRs and pilot ratios. In Fig. 6(a), WFM-CE achieves its largest gain over LMMSE in the moderate-SNR regime, even though LMMSE exploits oracle channel statistics. This advantage diminishes at both extremes: in the low-SNR out-of-distribution (OOD) regime, the two methods perform com-parably; at high SNRs, the residual error becomes increas-ingly dominated by interpolation rather than noise, allowing LMMSE to recover an advantage over WFM-CE. In Fig. 6(b), LS is largely insensitive to pilot density, whereas WFM-CE and LMMSE both improve with denser pilots. Moreover, WFM-CE consistently outperforms LMMSE, with the gap narrowing at the sparsest pilot setting. Across both subfigures, WFM-CE and Transformer perform comparably within the training range, but Transformer degrades markedly in the low-SNR and sparse-pilot OOD regimes, indicating that WFM-CE generalizes more reliably to unseen system parameters. The close alignment between the in-domain and cross-scenario WFM-CE curves demonstrates robust generalization to unseen propagation scenarios. 
+
+C. Multi-Task Optimization 
+
+Fig. 7 shows the convergence behavior of FOD pre-training and beam selection fine-tuning. In Fig. 7(a), the sum rate in-creases rapidly during supervised learning (SL) and continues to improve during unsupervised learning (UL), indicating that UL provides additional gains beyond SL. In Fig. 7(b), the sum rate improves quickly during SL but saturates shortly after the transition to UL, implying that SL already captures most of the sum-rate gain. In Fig. 7(c), the QoS satisfaction improves throughout both phases, highlighting the role of UL in enhancing QoS satisfaction. In Fig. 7(d), fine-tuning for beam selection converges rapidly, and the validation rate remains higher than the training rate due to inference-only Hungarian post-processing, which resolves beam collisions not prevented by Gumbel-Softmax sampling during training. Fig. 8 evaluates FOD performance under varying constraint parameters. In Fig. 8(a), WFM-FOD and WLLM closely track WMMSE across the entire power range on both the in-domain and cross-scenario sets, whereas Transformer con-sistently underperforms. Fig. 8(b) and (c) jointly reveal a rate-QoS trade-off as Rmin tightens: WFM-FOD and WLLM progressively trade off sum-rate performance to maintain high QoS satisfaction, whereas Transformer holds the sum rate nearly constant at the cost of a pronounced QoS degradation. This contrast indicates that WFM-FOD reliably enforces the per-user QoS constraint, whereas Transformer fails to adapt as the constraint tightens. Fig. 9 evaluates beam selection performance versus Pmax .Across the entire power range, WFM-BS performs on par with WLLM and closely tracks Transformer, while all three learning-based methods substantially outperform DFT Greedy, indicating that the learned representations effectively capture the multi-user interference structure. Although Seq Greedy attains the highest sum rate, WFM-BS maintains a moderate performance gap while requiring only a single forward pass rather than a sequential search. Furthermore, the consistent performance trend of WFM-BS on the cross-scenario set demonstrates robust generalization to unseen scenarios and power constraints. 
+
+D. Generalizability 
+
+Fig. 10 evaluates zero-shot generalization across 27 unseen 
+
+(K, N, M ) configurations. In Fig. 10(a), WFM-CE outper-forms LS and Transformer while remaining comparable to LMMSE. In Fig. 10(b) and (c), WFM-FOD remains com-petitive with the WMMSE and Greedy baselines, respec-tively, while matching WLLM and surpassing Transformer. In Fig. 10(d), WFM-BS remains on par with WLLM and consistently outperforms Transformer, while narrowing the performance gap to the Seq Greedy baseline. Across all four tasks, the WFM exhibits only minor shifts in both median and dispersion between the cross-configuration and joint sets, in-dicating robust generalization to unseen system configurations and propagation environments. 
+
+E. Computational Complexity and Latency 
+
+Table II reports the computational complexity, inference latency and performance of the WFM and the corresponding baselines across four tasks. Since the FCE is shared across downstream tasks, the reported parameters, FLOPs and la-tencies of WFM-FOD and WFM-BS exclude the FCE and account only for the FOD backbone and task-specific heads. For channel estimation, WFM-CE incurs higher latency than LS and LMMSE due to the FCE encoder-decoder overhead, but achieves substantially lower NMSE without requiring oracle channel statistics. For the pre-training tasks, WFM-FOD runs approximately 39 × faster than WMMSE and 14 ×
+
+faster than Greedy Scheduling, while incurring only a marginal performance loss. For beam selection, WFM-BS is 2.3× faster than Seq Greedy with a moderate performance gap. Across all tasks, the WFM achieves performance on par with WLLM while requiring a substantially smaller parameter count and incurring lower FLOPs and latency. Although task-specific Transformer is more compact, it must be trained and deployed separately for each task, while the WFM supports all four tasks with a single shared backbone, thereby achieving a favorable complexity-latency-performance trade-off. 13 −10 0 10 20 30 40 
+
+SNR (dB) 
+
+−30 
+
+−20 
+
+−10 
+
+0
+
+10 
+
+> NMSE (dB)
+
+(a) NMSE vs SNR 
+
+> WFM-CE
+> Transformer
+> LS
+> LMMSE
+
+1/2 1/4 1/8 1/16 1/32 
+
+Pilot Ratio 
+
+−15 
+
+−10 
+
+−5 
+
+0
+
+5
+
+> NMSE (dB)
+
+(b) NMSE vs Pilot Ratio 
+
+> WFM-CE
+> Transformer
+> LS
+> LMMSE
+
+Fig. 6. Channel estimation performance of WFM-CE against baseline methods: (a) NMSE versus SNR and (b) NMSE versus pilot ratio. Solid and dashed curves denote results on the in-domain and cross-scenario sets, respectively, while pink shaded regions indicate OOD regimes outside the training range. 20 40 60 80               
+
+> Epoch
+> 1.2
+> 1.3
+> 1.4
+> 1.5
+> 1.6
+> Val Sum Rate (bps/Hz)
+> (a) Beamforming
+> SL UL
+> 20 40 60 80
+> Epoch
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> Val Sum Rate (bps/Hz)
+> (b) US Rate
+> SL UL
+> 20 40 60 80
+> Epoch
+> 60
+> 70
+> 80
+> 90
+> 100
+> Val QoS Satisfaction (%)
+> (c) US QoS
+> SL UL
+> 10 20 30 40 50 60
+> Epoch
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> Sum Rate (bps/Hz)
+> (d) BS Fine-tuning
+> Training
+> Validation
+
+Fig. 7. Training convergence curves for (a) FOD beamforming, (b) user scheduling rate, (c) user scheduling QoS satisfaction, and (d) beam selection fine-tuning. Blue and pink backgrounds in (a)-(c) denote the SL and UL training phases while shaded regions indicate standard deviations over three random seeds. 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0            
+
+> Pmax (W)
+> 600
+> 800
+> 1000
+> 1200
+> 1400
+> Sum Rate (bps/Hz)
+> (a) Beamforming
+> WFM-FOD
+> WLLM
+> Transformer
+> WMMSE
+> 0.25 0.50 1.00 1.50 2.00
+> Rmin (bps/Hz)
+> 800
+> 900
+> 1000
+> 1100
+> 1200
+> Sum Rate (bps/Hz)
+> (b) User Scheduling Rate
+> WFM-FOD
+> WLLM
+> Transformer
+> Greedy
+> 0.25 0.50 1.00 1.50 2.00
+> Rmin (bps/Hz)
+> 82.5
+> 85.0
+> 87.5
+> 90.0
+> 92.5
+> 95.0
+> 97.5
+> 100.0
+> QoS Satisfaction (%)
+> (c) User Scheduling QoS
+> WFM-FOD
+> WLLM
+> Transformer
+> Greedy
+
+Fig. 8. Performance of WFM-FOD against baseline methods: (a) beamforming sum rate versus Pmax , (b) user scheduling sum rate versus Rmin , and (c) user scheduling QoS satisfaction versus Rmin . Solid and dashed curves denote results on the in-domain and cross-scenario sets, respectively, while pink shaded regions indicate OOD regimes outside the training range. 
+
+F. Ablation Study 
+
+Table III presents an ablation study of the proposed WFM. Removing geometry-aware cross-attention or super-vised warm-up causes severe degradation across all regimes, confirming the indispensability of the former for query-to-representation alignment and the necessity of the latter for sta-ble convergence. Omitting unsupervised fine-tuning increases the US rate but reduces the BF rate and QoS satisfac-tion, indicating that this phase improves upon the supervised beamforming solution while trading scheduling rate for QoS enforcement. Removing affine constraint encoding leaves in-domain performance intact but causes degradation in the constraint OOD regime, identifying it as a key driver of cross-constraint generalization. Finally, replacing multi-task training with task-specific FODs marginally improves the BF rate but degrades the US rate and QoS satisfaction, indicating that the WFM consolidates pre-training tasks into a single shared backbone at negligible cost. IX. C ONCLUSION 
+
+In this paper, we proposed a hierarchical WFM that de-couples task-agnostic channel representation learning from task-conditioned decision-making for multi-task optimization. The proposed framework integrates an upstream FCE that learns universal channel representations with a downstream FOD that maps these representations to task-specific decisions 14 
+
+TABLE II COMPUTATIONAL COMPLEXITY , I NFERENCE LATENCY , AND PERFORMANCE COMPARISON 
+
+Task Method Params (M) FLOPs (G) Latency (ms) Perf. Task Method Params (M) FLOPs (G) Latency (ms) Perf. Channel Estimation 
+
+WFM-CE 41.37 378.24 1.87 -13.3 dB 
+
+Beamforming 
+
+WFM-FOD 19.59 31.51 2.67 98.5% 
+
+Transformer 2.71 24.53 0.86 -14.0 dB Transformer 1.21 7.30 0.52 90.8% LS – – 0.22 1.50 dB WLLM 128.66 52.46 3.82 99.0% LMMSE – – 0.39 -8.98 dB WMMSE – – 104 100% User Scheduling 
+
+WFM-FOD 19.19 29.50 2.22 93.2 / 98.7% 
+
+Beam Selection 
+
+WFM-BS 19.08 29.50 0.95 83.6% 
+
+Transformer 1.04 5.47 0.43 94.3 / 96.2% Transformer 1.06 5.47 0.45 84.8% WLLM 128.27 50.45 3.37 94.1 / 99.1% WLLM 128.15 50.45 2.17 83.7% Greedy – – 30.4 100 / 100% Seq Greedy – – 2.15 100% 
+
+Note: The performance metric is NMSE for channel estimation, the normalized sum rate for beamforming and beam selection, and the normalized sum rate / QoS satisfaction for user scheduling. TABLE III ABLATION STUDY OF THE PROPOSED WFM 
+
+Variant BF Rate (%) ↑ US Rate (%) ↑ US QoS (%) ↑
+
+ID Constr Config ID Constr Config ID Constr Config 
+
+Full WFM 98.5 97.4 96.6 93.2 94.4 88.3 98.7 98.0 98.4 
+
+w/o FOD multi-task training 99.6 98.7 97.2 92.4 91.9 87.4 97.1 96.7 97.0 w/o FOD supervised warm-up 74.7 71.8 69.7 44.4 44.8 34.0 58.6 53.6 52.3 w/o FOD unsupervised fine-tuning 94.8 92.9 92.8 96.3 96.5 92.6 95.3 95.5 89.1 w/o Affine constraint encoding 98.4 92.8 96.3 92.9 92.4 87.6 98.9 98.7 98.7 w/o Geometry-aware cross-attention 76.0 73.6 71.1 42.7 42.9 32.7 58.7 53.1 53.3 
+
+Note: BF and US denote beamforming and user scheduling, respectively. ID denotes the in-domain set, while Constr and Config denote the constraint and configuration OOD regimes on the seen scenarios, respectively. BF Rate and US Rate are normalized by the corresponding numerical baselines. 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0  
+
+> Pmax (W)
+> 200
+> 300
+> 400
+> 500
+> 600
+> 700
+> 800
+> Sum Rate (bps/Hz)
+> WFM-BS
+> WLLM
+> Transformer
+> DFT Greedy
+> Seq Greedy
+
+Fig. 9. Beam selection performance of WFM-BS against baseline methods versus Pmax . Solid and dashed curves denote results on the in-domain and cross-scenario sets, respectively, while pink shaded regions indicate OOD regimes outside the training range. 
+
+via prompt-conditioned cross-attention. A hybrid supervised-to-unsupervised training scheme further shifts training from heuristic imitation toward direct performance maximization while a lightweight modular adaptation design extends the pre-trained backbone to channel estimation and beam selection with minimal parameter overhead. Simulation results demon-strate that the proposed framework learns high-fidelity chan-nel representations, attains competitive multi-task optimiza-tion performance, and substantially reduces inference latency relative to numerical baselines. In addition, it generalizes robustly across unseen propagation environments, varying con-straint parameters, and heterogeneous system configurations. Although this work focuses on TDD systems, the proposed framework is not inherently restricted to TDD operation. Extending it to FDD systems, where compact representations learned by the FCE may facilitate CSI feedback and uplink-to-downlink extrapolation, is a promising direction. REFERENCES [1] W. Saad, M. Bennis, and M. Chen, “A vision of 6G wireless systems: Applications, trends, technologies, and open research problems,” IEEE Netw. , vol. 34, no. 3, pp. 134–142, May 2020. [2] L. Dai, R. Jiao, F. Adachi, H. V. Poor, and L. Hanzo, “Deep learning for wireless communications: An emerging interdisciplinary paradigm,” 
+
+IEEE Wireless Commun. , vol. 27, no. 4, pp. 133–139, Aug. 2020. [3] H. Ye, G. Y. Li, and B.-H. Juang, “Power of deep learning for channel estimation and signal detection in OFDM systems,” IEEE Wireless Commun. Lett. , vol. 7, no. 1, pp. 114–117, Feb. 2018. [4] Z. Qin, H. Ye, G. Y. Li, and B.-H. F. Juang, “Deep learning in physical layer communications,” IEEE Wireless Commun. , vol. 26, no. 2, pp. 93–99, Apr. 2019. [5] O. Wang, J. Gao, and G. Y. Li, “Learn to adapt to new environments from past experience and few pilot blocks,” IEEE Trans. Cogn. Commun. Netw. , vol. 9, no. 2, pp. 373–385, Apr. 2023. [6] N. Van Huynh and G. Y. Li, “Transfer learning for signal detection in wireless networks,” IEEE Wireless Commun. Lett. , vol. 11, no. 11, pp. 2325–2329, Nov. 2022. [7] O. Wang, S. Zhou, and G. Y. Li, “Frameworks on few-shot learning with applications in wireless communication,” IEEE Trans. Signal Process. ,vol. 73, pp. 3857–3871, 2025. [8] O. Wang et al. , “Fast adaptation for deep learning-based wireless communications,” IEEE Commun. Mag. , vol. 63, no. 10, pp. 158–164, Oct. 2025. 15 WFM-CE Trans LS LMMSE          
+
+> −20
+> −10
+> 0
+> 10
+> NMSE (dB)
+> (a) Channel Estimation
+> WFM-FOD WLLM Trans WMMSE
+> 1000
+> 2000
+> 3000
+> 4000
+> Sum Rate (bps/Hz)
+> (b) Beamforming
+> WFM-FOD WLLM Trans Greedy
+> 1000
+> 2000
+> 3000
+> 4000
+> Sum Rate (bps/Hz)
+> (c) User Scheduling
+> WFM-BS WLLM Trans Seq Greedy
+> 500
+> 1000
+> 1500
+> Sum Rate (bps/Hz)
+> (d) Beam Selection
+
+Fig. 10. Generalizability of the WFM against corresponding baselines across four tasks: (a) channel estimation, (b) beamforming, (c) user scheduling, and (d) beam selection. Dark and light boxes denote results on the cross-configuration and joint sets, respectively. [9] L. Liang et al. , “Large language models for wireless communications: From adaptation to autonomy,” IEEE Commun. Mag. , vol. 64, no. 5, pp. 140–147, May 2026. [10] J. Guo, Y. Cui, S. Jin, and J. Zhang, “Large AI models for wireless physical layer,” IEEE Commun. Mag. , vol. 64, no. 5, pp. 148–155, May 2026. [11] Y. Sheng, K. Huang, L. Liang, P. Liu, S. Jin, and G. Y. Li, “Beam prediction based on large language models,” IEEE Wireless Commun. Lett. , vol. 14, no. 5, pp. 1406–1410, May 2025. [12] B. Liu, X. Liu, S. Gao, X. Cheng, and L. Yang, “LLM4CP: Adapting large language models for channel prediction,” J. Commun. Inf. Netw. ,vol. 9, no. 2, pp. 113–125, Jun. 2024. [13] T. Zheng and L. Dai, “Large language model enabled multi-task physical layer network,” IEEE Trans. Commun. , vol. 74, pp. 307–321, 2026. [14] T. Zheng, J. Guo, L. Dai, S. Jin, and J. Zhang, “MUSE-FM: Multi-task environment-aware foundation model for wireless communications,” 
+
+arXiv preprint arXiv:2509.01967 , 2025. [15] B. Liu, S. Gao, X. Liu, X. Cheng, and L. Yang, “WiFo: Wireless foundation model for channel prediction,” Sci. China Inf. Sci. , vol. 68, no. 6, p. 162302, May 2025. [16] X. Liu, S. Gao, B. Liu, X. Cheng, and L. Yang, “WiFo-CF: Wireless foundation model for CSI feedback,” arXiv preprint arXiv:2508.04068 ,2025. [17] Y. Sheng et al. , “A wireless foundation model for multi-task prediction,” 
+
+arXiv preprint arXiv:2507.05938 , 2025. [18] S. Alikhani, G. Charan, and A. Alkhateeb, “Large wireless model: A foundation model for wireless channels,” arXiv preprint arXiv:2411.08872 , 2024. [19] T. Yang et al. , “WirelessGPT: A generative pre-trained multi-task learning framework for wireless communication,” IEEE Netw. , vol. 39, no. 5, pp. 58–65, Sep. 2025. [20] L. Jing, T. Yang, H. Zhang, Y. Shi, C. Zhang, and B. Zhang, “Signal compression for wireless communication and sensing: A general ap-proach utilizing pretrained wireless foundation models,” IEEE Trans. Mobile Comput. , early access, 2026. [21] Q. Shi, M. Razaviyayn, Z.-Q. Luo, and C. He, “An iteratively weighted MMSE approach to distributed sum-utility maximization for a MIMO interfering broadcast channel,” IEEE Trans. Signal Process. , vol. 59, no. 9, pp. 4331–4340, Sep. 2011. [22] T. Yoo and A. Goldsmith, “On the optimality of multiantenna broad-cast scheduling using zero-forcing beamforming,” IEEE J. Sel. Areas Commun. , vol. 24, no. 3, pp. 528–541, Mar. 2006. [23] J.-J. van de Beek, O. Edfors, M. Sandell, S. K. Wilson, and P. O. B¨ orjesson, “On channel estimation in OFDM systems,” in Proc. IEEE Veh. Technol. Conf. (VTC) , vol. 2, 1995, pp. 815–819. [24] A. Alkhateeb, O. El Ayach, G. Leus, and R. W. Heath, “Channel estimation and hybrid precoding for millimeter wave cellular systems,” 
+
+IEEE J. Sel. Topics Signal Process. , vol. 8, no. 5, pp. 831–846, Oct. 2014. [25] W. Xia, G. Zheng, Y. Zhu, J. Zhang, J. Wang, and A. P. Petropulu, “A deep learning framework for optimization of MISO downlink beam-forming,” IEEE Trans. Commun. , vol. 68, no. 3, pp. 1866–1880, Mar. 2020. [26] K. He, X. Chen, S. Xie, Y. Li, P. Doll´ ar, and R. Girshick, “Masked autoencoders are scalable vision learners,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2022, pp. 16000–16009. [27] A. Dosovitskiy et al. , “An image is worth 16x16 words: Transformers for image recognition at scale,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2021. [28] H. Bao, L. Dong, S. Piao, and F. Wei, “BEiT: BERT pre-training of image Transformers,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2022. [29] J. Su, M. Ahmed, Y. Lu, S. Pan, W. Bo, and Y. Liu, “RoFormer: En-hanced Transformer with rotary position embedding,” Neurocomputing ,vol. 568, p. 127063, Feb. 2024. [30] A. Vaswani et al. , “Attention is all you need,” in Adv. Neural Inf. Process. Syst. (NeurIPS) , 2017. [31] S. Chen, S. Wong, L. Chen, and Y. Tian, “Extending context window of large language models via positional interpolation,” arXiv preprint arXiv:2306.15595 , 2023. [32] E. Bj¨ ornson, M. Bengtsson, and B. Ottersten, “Optimal multiuser trans-mit beamforming: A difficult problem with a simple solution structure,” 
+
+IEEE Signal Process. Mag. , vol. 31, no. 4, pp. 142–148, Jul. 2014. [33] M. Tancik et al. , “Fourier features let networks learn high frequency functions in low dimensional domains,” in Adv. Neural Inf. Process. Syst. (NeurIPS) , 2020, pp. 7537–7547. [34] E. Jang, S. Gu, and B. Poole, “Categorical reparameterization with Gumbel-Softmax,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2017. [35] Y. Bengio, N. L´ eonard, and A. Courville, “Estimating or propagating gradients through stochastic neurons for conditional computation,” arXiv preprint arXiv:1308.3432 , 2013. [36] C. Szegedy, V. Vanhoucke, S. Ioffe, J. Shlens, and Z. Wojna, “Rethinking the inception architecture for computer vision,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2016, pp. 2818–2826. [37] H. W. Kuhn, “The Hungarian method for the assignment problem,” Nav. Res. Logist. Q. , vol. 2, no. 1–2, pp. 83–97, 1955. [38] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for millimeter wave and massive MIMO applications,” arXiv preprint arXiv:1902.06435 , 2019.

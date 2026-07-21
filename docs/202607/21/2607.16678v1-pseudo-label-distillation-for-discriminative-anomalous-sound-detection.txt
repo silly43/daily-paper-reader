@@ -1,0 +1,1595 @@
+Title: Pseudo-label distillation for discriminative anomalous sound detection
+
+URL Source: https://arxiv.org/pdf/2607.16678v1
+
+Published Time: Tue, 21 Jul 2026 00:28:18 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+> Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.
+> Digital Object Identifier 10.1109/ACCESS.2024.0429000
+
+# Pseudo-label distillation for discriminative anomalous sound detection 
+
+TAKUYA FUJIMURA 1 AND TOMOKI TODA 1, (Senior Member, IEEE)  
+
+> 1Nagoya University, Nagoya 464-8601, Japan
+> Corresponding author: Takuya Fujimura (e-mail: fujimura.takuya@g.sp.m.is.nagoya-u.ac.jp). This work was partly supported by JSPS KAKENHI Grant Number JP25KJ1439.
+
+ABSTRACT Discriminative anomalous sound detection (ASD) methods train a feature extractor through a classification task using machine-information labels. They then detect anomalies in the resulting feature space based on distances to normal samples. The discriminative feature space effectively captures machine characteristics, leading to high ASD performance. However, this approach benefits from detailed labels, which are costly to obtain. An alternative is a self-supervised learning (SSL)-based label-free approach. This approach directly uses SSL features for ASD and has shown competitive performance. However, SSL models are typically large and computationally expensive. To address these problems, we propose a simple pseudo-label distillation framework. The proposed method generates pseudo labels from SSL features and trains a compact discriminative feature extractor using these pseudo labels. To suppress the effect of noise on pseudo-label generation, we also propose lightweight noise-robust feature transformation (NRFT) methods utilizing a small amount of clean machine-sound data or isolated noise data. We conducted comprehensive evaluations and analyses on the DCASE 2020–2025 Task 2 datasets using four SSL models. The results demonstrate that pseudo-label distillation not only transfers the performance of SSL models to a compact model but also further improves performance by leveraging available coarse labels and data augmentation. Also, our NRFT methods provide further gains. 
+
+INDEX TERMS Anomalous sound detection, discriminative learning, pseudo label, self-supervised learning 
+
+I. INTRODUCTION 
+
+Anomalous sound detection (ASD) plays an important role in machine condition monitoring by automatically detecting mechanical failures from acoustic signals emitted by ma-chines [1]–[6]. Since it is difficult to collect rare and diverse anomalous sounds, the ASD task is typically formulated in an unsupervised setting, in which only normal sounds are available for system development. ASD systems typically consist of a frontend and a back-end [7]. The frontend first extracts features from input ma-chine sounds. The backend then computes an anomaly score based on the nearest-neighbor distance between a test sample and the normal training samples in the feature space. In this framework, anomalous sounds are expected to be distant from the normal sounds in the feature space and yield high anomaly scores. Therefore, it is crucial to construct a feature space that effectively captures the differences between normal and anomalous sounds. There are two representative frontend approaches: dis-criminative learning [8]–[14] and self-supervised learning (SSL) [15]–[21]. The discriminative approach uses machine-information labels, such as machine type (e.g., gearbox and bearing) and operating parameters (e.g., voltage and rotation speed). This approach trains a classification model on normal data using these labels, and the intermediate discriminative features are then used in the backend. These discriminative features effectively capture rich machine-specific informa-tion and lead to high ASD performance [11]–[13]. However, there is a clear trade-off between performance and annotation cost [22], [23]. For example, when each machine has its own microphone, as is often the case, machine-type labels can be easily obtained from the microphone index. However, such coarse labels are insufficient for learning an effective feature space. Detailed labels, such as operating parameters, can greatly improve performance [22], [23], but collecting them requires additional monitoring systems or costly human annotation. SSL is a promising label-free approach [15]–[18]. SSL models are trained on large-scale unlabeled audio datasets to learn general-purpose audio representations [24]–[29]. These     
+
+> VOLUME 11, 2023 1arXiv:2607.16678v1 [eess.AS] 18 Jul 2026 T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 1. Generate pseudo labels
+> 2. Distillation through classification task
+> Normal data
+> SSL frontend
+> Noise-robust feature transformation ∗
+> Clustering (K-means)
+> Normal data
+> Data aug. (mixup)
+> Discriminative frontend Loss
+> Pseudo label
+> Coarse label (machine type)
+> Pseudo label
+> FIGURE 1. Overview of pseudo-label distillation. First, SSL features are extracted and optionally further transformed into noise-robust features (∗: requires a small number of clean machine sounds or isolated noise samples). Next, pseudo labels are generated by applying clustering to the resulting features. Finally, a compact discriminative frontend is trained using the pseudo labels together with available coarse labels and data augmentation.
+
+representations effectively capture acoustic characteristics and have achieved strong performance across various audio tasks, including ASD. Although discriminative fine-tuning on machine sound datasets using machine-information labels can further improve performance [19]–[21], the original SSL features already provide competitive performance without using any label information [15]–[17]. However, SSL models are computationally expensive. Typical SSL models [24], [25], [28], [29] have approximately 90M parameters, and re-cent scaled-up models exceed 1B parameters [26]. In contrast, typical discriminative feature extractors [11], [12], [14], [22] have only a few million parameters, corresponding to less than 10% of the parameter count of a typical SSL model. In this paper, we introduce pseudo-label distillation to address the insufficient performance obtained using coarse labels and the high computational cost of SSL models (see Fig. 1). This approach first extracts SSL features from training data consisting of normal machine sounds and then gener-ates pseudo labels by applying clustering to the extracted features. Next, a smaller discriminative frontend is trained using these pseudo labels. During training, available coarse labels (e.g., machine-type labels) and data augmentation are jointly used to further improve performance. Additionally, we propose lightweight noise-robust feature transformation (NRFT) methods as a preprocessing step to suppress the effects of noise contained in the training data. NRFT uses a linear transformation estimated using a small amount of clean machine-sound data or isolated noise data. The pseudo-label distillation approach itself was proposed in our previous work [22]. Subsequent studies have also explored related techniques, including iterative pseudo-label generation in a discriminative feature space [30], multi-pseudo-label assignment [31], and domain-adaptive pre-training of teacher SSL models [32]. In contrast, this paper fo-cuses on the original, simple pseudo-label distillation frame-work and conducts comprehensive evaluations and analyses to provide a deeper understanding. Our contributions are summarized as follows:  
+
+> •
+
+We conduct comprehensive evaluations across the DCASE 2020–2025 datasets using four state-of-the-art (SOTA) SSL models. The experimental results show that pseudo-label distillation effectively transfers the performance of SSL models to smaller discriminative frontends while reducing the number of parameters and multiply-accumulate operations (MACs) to less than 10% of those of the original SSL models.  
+
+> •
+
+We show that pseudo-label distillation can achieve even better performance than the original SSL models by utilizing available coarse labels and data augmentation.  
+
+> •
+
+We further show that the performance gains from pseudo-label distillation are observed not only when training small discriminative frontends from scratch but also when fine-tuning SSL models.  
+
+> •
+
+We propose lightweight NRFT methods that construct noise-robust feature spaces for pseudo-label generation using a small amount of clean machine sounds or iso-lated noise samples.  
+
+> •
+
+We publish the code in ASDKit 1 [7]. 
+
+II. RELATED WORK 
+
+Many methods have been proposed to obtain effective fea-ture spaces for ASD. Discriminative approaches have been improved in terms of loss functions, data augmentation, and network architectures. In terms of loss functions, angular-margin losses such as ArcFace [33] and AdaCos [34] have been commonly employed for the ASD task. These losses encourage the features of each class to form compact and well-separated clusters, which has been shown to be effective for the downstream ASD task [23]. In addition, less restrictive feature distributions have been shown to further improve ASD performance. Such distributions can be learned using Sub-cluster AdaCos (SCAC) [23], which introduces multiple class centers for each class, and trainable class centers rather than fixed centers [7]. For data augmentation, mixup [35] has been widely used and shown to improve ASD performance [7]. Re-garding network architectures, lightweight CNN-based net-works have been commonly used [2], [3], [11], [12], [14], [36]. The DCASE Challenge Task 2 baseline [2], [3] em-ployed MobileNetV2 [36] with log-mel spectrogram input, and an extension using waveform input has been shown to improve performance [14]. Multi-branch architectures com-prising spectrogram and spectrum branches have also been widely adopted [11], [12], with further improvements re-ported using multi-resolution spectrogram inputs [22]. These discriminative models are trained from scratch on machine-sound datasets and are considerably more lightweight than SSL models. For SSL-based approaches, many SSL models have been employed for ASD. BEATs [24] is one of the most widely used SSL models for various audio tasks, including ASD [16], [17], [19], [37]. It is trained through masked audio prediction in a discrete token space, with the tokenizer and SSL model iteratively updated through knowledge distillation. EAT [25] is another SSL model widely used for ASD [16], [17], [37]. It   
+
+> 1https://github.com/TakuyaFujimura/dcase-asd-toolkit
+> 2VOLUME 11, 2023 T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection
+
+is based on a masked bootstrapping framework and employs a CLS token and an utterance-level loss to capture global information. Dasheng is a recent large-scale SSL model with approximately 1.2B parameters. It is trained using a masked autoencoder framework on 272k hours of audio data. These audio SSL models are trained on diverse audio datasets spanning speech, music, and environmental sounds and have been shown to achieve better ASD performance than speech-and music-specific SSL models [21], [27]. More recently, SSL models specifically designed for machine signals have also been proposed [27], [38]. These models are designed to handle arbitrary sampling rates and have shown strong performance on fault-diagnosis benchmarks. Despite these advantages, the aforementioned general-purpose audio SSL models have still demonstrated comparable or better ASD performance [27], highlighting their strong generalization capabilities. 
+
+> III. PSEUDO-LABEL DISTILLATION
+> A. OVERVIEW
+
+Pseudo-label distillation first extracts SSL features from nor-mal training data. We employ the following four SSL models: BEATs [24] ( BEATs_iter3.pt ), a version of BEATs fine-tuned for audio tagging ( BEATs_iter3_plus_AS2M_finetuned_on_ AS2M_cpt1.pt ), EAT [25] ( EAT-base_epoch10_pt.pt ), and Dasheng [26] ( dasheng-1.2B ). These SSL models receive a sequence of mel-spectrogram patches or segments and output the corresponding feature sequence. For BEATs and Dasheng, we average the SSL feature sequence to obtain a single feature vector for each audio sample, whereas for EAT, we use the CLS token. To generate pseudo labels, we apply k-means clustering, with the number of clusters determined from the number of training samples using the cluster ratio r. We evaluate several values of r, as well as an oracle setting in which the best value of r is selected separately for each machine type. To not only reduce computational cost but also further improve performance, we jointly use available coarse labels during pseudo-label distillation. In the experiments, we use the machine-type labels provided in the DCASE datasets [1]– [6] as coarse labels. Using these coarse labels, we perform clustering separately for each coarse-label class and com-bine the resulting pseudo labels to construct a multi-class classification task for distillation. For example, the DCASE 2023 dataset contains 14 machine types, each with 1,000 normal training samples. Thus, setting r = 0 .2% yields 2 pseudo-label classes per machine type, resulting in a multi-class classification task with 28 classes in total. Additionally, motivated by the Noisy Student framework [39], we employ mixup as data augmentation during pseudo-label distillation. 
+
+> B. NOISE-ROBUST FEATURE TRANSFORMATION (NRFT)
+
+In the experimental evaluations in Sect. IV, we show that pseudo-label distillation can sometimes degrade perfor-mance. This degradation occurs because the training data consist of noisy machine sounds, and the SSL features capture not only machine characteristics but also noise characteris-tics. When noise conditions vary across training samples and the noise dominates the machine sound, the resulting pseudo labels primarily reflect differences in noise conditions rather than machine characteristics. Such noise-dependent pseudo labels make the student frontend sensitive to noise variations, thereby degrading performance. To address this issue, we propose a lightweight noise-robust feature transformation (NRFT) method for pseudo-label generation. In general, improving noise robustness re-quires auxiliary information about either noise or clean target sounds. In this work, we consider the setting of DCASE 2025 Task 2 [6], where a small number of either clean machine-sound samples or isolated noise samples are available for each machine type. For the case where clean machine sounds are available, we propose a principal component analysis (PCA)-based subspace projection. We first extract SSL features from the clean machine sounds and apply PCA to the extracted clean features. We then construct a projection matrix V ∈ RD×K
+
+using the top K principal components, where D denotes the feature dimension. The SSL features of the noisy machine sounds in the training data are projected onto this subspace, and clustering is then performed to obtain pseudo labels. This projection suppresses components that are less representative of the clean machine sounds and are therefore likely to reflect noise-related variations. For the case where isolated noise samples are available, we propose a generalized eigenvalue decomposition (GEVD)-based method. We aim to obtain a feature transformation that preserves variations in noisy machine sounds while sup-pressing directions dominated by noise. The corresponding transformation direction v ∈ RD is obtained by solving the following optimization problem: 
+
+max 
+
+> v
+
+v⊤Rxvv⊤Rnv , (1) where Rx ∈ RD×D and Rn ∈ RD×D denote the covariance matrices of the SSL features of the noisy machine sounds and the isolated noise samples, respectively. This problem is solved by GEVD, leading to the following problem: 
+
+Rxv = λRnv. (2) The eigenvalue λ represents the ratio of the variance of the noisy machine sound features to that of the noise features along direction v. The transformation matrix V ∈ RD×K
+
+is constructed from the eigenvectors corresponding to the K
+
+largest eigenvalues. These eigenvectors are normalized such that V⊤RnV = I, where I denotes the identity matrix. When K < D, this transformation projects the features onto a noise-robust subspace. When K = D, the transformation corresponds to whitening with respect to the noise covariance matrix Rn, without dimensionality reduction. In practice, due to the limited size of the isolated-noise dataset, we first perform PCA using the features of both the noisy machine   
+
+> VOLUME 11, 2023 3T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection
+
+sounds and isolated noise samples, reducing the feature di-mension to D = 64 . We then solve Eq. (1) in the reduced feature space. 
+
+IV. EXPERIMENTAL EVALUATION 
+
+We conduct extensive analyses of pseudo-label distilla-tion. In Sect. IV-B1, we comprehensively evaluate pseudo-label distillation across the DCASE 2020–2025 datasets us-ing four SSL models and analyze its computational cost. In Sect. IV-B2, we analyze the effects of using coarse machine-type labels and mixup during pseudo-label distil-lation. In Sect. IV-B3, we also evaluate the use of pseudo labels for fine-tuning SSL models, focusing on perfor-mance improvement rather than computational cost reduc-tion. In Sect. IV-B4, we evaluate our NRFT methods. 
+
+A. SETUPS 
+
+We conducted experimental evaluations on the DCASE 2020–2025 Task 2 datasets [1]–[6]. These datasets are con-structed from different data sources: [40] and [41] for 2020; [42] and [43] for 2021; [44] and [43] for 2022; [44], [43], and [45] for 2023; [44], [43], [46], and [47] for 2024; and [44], [43], and [48] for 2025. The recordings are 6–18-second single-channel audio samples recorded at 16 kHz. Each dataset contains several machine types. The DCASE 2020– 2022 datasets include 6–7 machine types, and each machine type has 6–7 subsets called sections . Each section consists of training data with approximately 1,000 normal-sound sam-ples and test data with approximately 100–200 samples for each of the normal and anomalous conditions. The DCASE 2023–2025 datasets include 14–16 machine types, and each machine type has a single section. The DCASE 2025 dataset additionally provides 100 samples of clean machine sounds or isolated noise for each machine type, which can be used for NRFT. For all datasets, sections and machine types are grouped into dev and eval subsets, and the evaluation results are aggregated and reported separately for each subset. We followed the official evaluation metrics for each dataset. In DCASE 2020, area under the receiver operating characteristic (ROC) curve (AUC) and partial AUC (pAUC) with p = 0 .1 are calculated for each section. These scores are then aggregated by taking the arithmetic mean across sections and machine types to obtain machine-type-wise scores and dev/eval-wise scores. For DCASE 2021–2025, a domain shift problem [49] has been introduced, in which the recording environments and machine operating conditions differ be-tween the source and target domains. While the target domain includes only approximately 1% as many training samples as the source domain, the test data include the same number of samples from both domains, requiring models to generalize across domains. In DCASE 2021, AUC and pAUC are cal-culated for each domain. These scores are then aggregated by taking the harmonic mean across sections, domains, and machine types. In DCASE 2022–2025, AUC is calculated for each domain, whereas pAUC is calculated using samples from both domains. These scores are aggregated using the              
+
+> TABLE 1. Methods used in the experiments. The suffix of each
+> Dis-single-* ,Dis-multi-* , and Dis-SSL-* is either machine ,GT ,PL , or NRFT ,indicating the use of coarse machine-type labels, detailed ground-truth labels, pseudo labels, or pseudo labels generated with NRFT, respectively.
+> Method name Description Dis-single-* Discriminative frontend using a single-resolution spectrogram Dis-multi-* Discriminative frontend using multi-resolution spectrograms Raw-SSL Direct use of original SSL features Dis-SSL-* Discriminative fine-tuning of an SSL model
+
+harmonic mean. Further details of the task setups are provided in the original papers [1]–[6], and the setups for DCASE 2020–2024 are also summarized in [7]. The DCASE datasets include coarse machine-type labels and more detailed labels (e.g., machine IDs and attributes). To simulate unlabeled conditions, we concealed all labels except for the machine-type labels. In the DCASE 2024 and 2025 datasets, approximately half of the machine types are orig-inally provided with only machine-type labels, and we also conducted evaluations using these public benchmark setups. For pseudo-label generation, we varied the cluster ratio r over 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, and 12.8%. For the student discriminative frontend, we used two multi-branch architectures [11], [12], [22]. One used spectrum and single-resolution spectrogram inputs computed using a short-time Fourier transform (STFT) with a discrete Fourier trans-form (DFT) size of 1024, whereas the other used spectrum and multi-resolution spectrogram inputs [22] computed using STFTs with DFT sizes of 256, 1024, and 4096. The hop size for each STFT was set to half the corresponding DFT size. We trained each network for 16 epochs using SCAC with 16 sub-clusters, the AdamW optimizer [50], a fixed learning rate of 0.001, and a batch size of 64. The mixup probability was set to 0.5. For fine-tuning BEATs and EAT in Sect. IV-B3, we used low-rank adaptation (LoRA) [51]. For BEATs, we introduced LoRA parameters into the query and key projections in the Transformer layers. The output feature sequence was trans-formed into a single 256-dimensional discriminative feature using an attentive statistics pooling layer [52] and a linear layer. For EAT, we introduced LoRA parameters into the query, key, and value projections. The CLS token was trans-formed into a single 256-dimensional discriminative feature using a linear layer. We fine-tuned the models for 25 epochs using SCAC, the AdamW optimizer, a batch size of 8, and a LoRA rank of 64. During the initial 5,000 steps, the learning rate was increased linearly from 0 to 0.0001. For the backend, we employed a standard nearest-neighbor-based approach with SMOTE oversampling [7]. We calculated the nearest-neighbor distance between a test sample and normal training samples in the feature space as the anomaly score. To mitigate the data imbalance between the source and target domains, SMOTE oversampling [53] was applied to the target-domain training samples in the fea-ture space. Specifically, we oversampled the target-domain samples using two nearest neighbors until the number of  
+
+> 4VOLUME 11, 2023
+
+T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection dev eval Dis-multi-machine BEATs Raw-SSL (cosine) Raw-SSL (euclid) Dis-multi-PL (r=0.8%) +ensemble Dis-multi-PL (oracle) BEATs-FT Raw-SSL (cosine) Raw-SSL (euclid) Dis-multi-PL (r=0.8%) +ensemble Dis-multi-PL (oracle) EAT Raw-SSL (cosine) Raw-SSL (euclid) Dis-multi-PL (r=0.8%) +ensemble Dis-multi-PL (oracle) Dasheng-1.2B Raw-SSL (cosine) Raw-SSL (euclid) Dis-multi-PL (r=0.8%) +ensemble Dis-multi-PL (oracle) Dis-multi-GT 
+
+76.27  
+
+> (0.65)
+
+80.94 
+
+> (1.88)
+
+70.43 71.40 71.09 72.08 75.86  
+
+> (0.74)
+
+79.80 
+
+> (1.16)
+
+76.86 80.98 78.79  
+
+> (1.01)
+
+81.86 
+
+> (0.52)
+
+64.93 67.27 64.67 66.80 73.28  
+
+> (0.84)
+
+75.76 
+
+> (0.54)
+
+73.85 76.58 75.05  
+
+> (0.32)
+
+77.72 
+
+> (0.31)
+
+66.04 68.85 66.81 70.23 73.64  
+
+> (1.16)
+
+77.74 
+
+> (1.48)
+
+74.42 78.77 75.20  
+
+> (0.99)
+
+79.54 
+
+> (0.54)
+
+62.28 62.14 62.67 62.80 73.28  
+
+> (0.97)
+
+76.16 
+
+> (0.89)
+
+74.53 77.44 75.49  
+
+> (1.55)
+
+77.86 
+
+> (0.88)
+
+91.65  
+
+> (0.65)
+
+92.84 
+
+> (1.19)
+
+2020 
+
+dev eval 
+
+59.66  
+
+> (0.78)
+
+60.41 
+
+> (1.75)
+
+62.85 58.12 62.92 58.65 60.08  
+
+> (0.75)
+
+59.25 
+
+> (0.47)
+
+60.59 59.74 61.19  
+
+> (0.68)
+
+61.27 
+
+> (0.59)
+
+56.86 57.00 56.76 56.96 59.76  
+
+> (0.33)
+
+60.10 
+
+> (1.00)
+
+60.32 60.93 60.80  
+
+> (0.73)
+
+61.98 
+
+> (0.82)
+
+57.80 57.90 56.39 57.34 58.72  
+
+> (0.28)
+
+58.95 
+
+> (0.63)
+
+59.15 59.66 59.73  
+
+> (0.13)
+
+61.62 
+
+> (0.24)
+
+57.74 55.91 58.27 56.13 59.15  
+
+> (0.49)
+
+60.62 
+
+> (0.25)
+
+59.64 61.20 60.81  
+
+> (0.84)
+
+61.76 
+
+> (0.69)
+
+69.80  
+
+> (1.19)
+
+67.13 
+
+> (0.83)
+
+2021 
+
+dev eval 
+
+60.41  
+
+> (1.49)
+
+56.77 
+
+> (0.60)
+
+61.86 57.08 61.94 57.36 64.04  
+
+> (1.03)
+
+63.69 
+
+> (0.30)
+
+65.08 64.39 67.75  
+
+> (1.57)
+
+65.08 
+
+> (0.70)
+
+59.34 55.38 59.52 55.36 64.16  
+
+> (1.75)
+
+61.59 
+
+> (1.10)
+
+65.24 62.39 67.64  
+
+> (0.58)
+
+63.98 
+
+> (0.86)
+
+58.35 57.09 57.89 56.43 63.55  
+
+> (0.86)
+
+62.45 
+
+> (0.46)
+
+64.33 62.93 66.91  
+
+> (1.01)
+
+64.08 
+
+> (1.37)
+
+58.41 55.41 58.52 55.95 64.09  
+
+> (0.37)
+
+62.23 
+
+> (0.89)
+
+65.20 62.81 66.37  
+
+> (1.91)
+
+64.24 
+
+> (1.05)
+
+71.74  
+
+> (0.80)
+
+68.99 
+
+> (0.63)
+
+2022 
+
+dev eval 
+
+58.04  
+
+> (1.56)
+
+57.22 
+
+> (0.97)
+
+60.71 64.15 60.91 63.60 62.56  
+
+> (0.90)
+
+61.72 
+
+> (0.30)
+
+63.58 62.31 66.05  
+
+> (0.58)
+
+68.19 
+
+> (1.60)
+
+59.44 57.91 59.46 58.40 63.50  
+
+> (0.83)
+
+61.68 
+
+> (0.81)
+
+64.43 62.70 66.01  
+
+> (1.41)
+
+65.48 
+
+> (1.42)
+
+56.60 60.97 57.10 60.37 61.77  
+
+> (0.66)
+
+59.25 
+
+> (1.56)
+
+62.25 59.57 64.16  
+
+> (1.25)
+
+65.24 
+
+> (0.55)
+
+59.68 61.88 59.56 61.35 60.23  
+
+> (0.59)
+
+60.02 
+
+> (2.02)
+
+60.84 61.21 64.48  
+
+> (1.13)
+
+65.42 
+
+> (0.90)
+
+66.08  
+
+> (3.27)
+
+68.60 
+
+> (1.19)
+
+2023 
+
+dev eval 
+
+58.26  
+
+> (0.69)
+
+51.69 
+
+> (0.90)
+
+55.52 57.21 56.19 57.74 60.54  
+
+> (0.63)
+
+55.04 
+
+> (2.13)
+
+61.34 55.36 63.79  
+
+> (2.29)
+
+56.88 
+
+> (1.40)
+
+58.05 56.28 57.92 56.10 59.32  
+
+> (0.72)
+
+55.25 
+
+> (1.15)
+
+60.30 55.90 62.08  
+
+> (1.67)
+
+57.79 
+
+> (0.95)
+
+54.67 57.75 55.41 58.05 58.78  
+
+> (1.20)
+
+53.90 
+
+> (1.96)
+
+59.53 54.21 60.89  
+
+> (1.43)
+
+57.05 
+
+> (1.16)
+
+57.75 57.45 58.03 57.41 61.10  
+
+> (1.35)
+
+54.12 
+
+> (1.65)
+
+61.90 54.77 63.57  
+
+> (0.71)
+
+56.98 
+
+> (0.75)
+
+64.80  
+
+> (1.52)
+
+59.43 
+
+> (2.81)
+
+2024 
+
+dev eval 
+
+54.01  
+
+> (2.11)
+
+52.05 
+
+> (2.43)
+
+58.54 55.58 59.36 54.93 59.18  
+
+> (0.87)
+
+55.11 
+
+> (0.87)
+
+60.20 55.67 61.35  
+
+> (0.91)
+
+59.25 
+
+> (0.14)
+
+59.54 55.85 59.27 56.00 58.23  
+
+> (1.01)
+
+55.90 
+
+> (1.17)
+
+58.94 56.51 60.58  
+
+> (0.79)
+
+58.31 
+
+> (0.97)
+
+60.04 58.93 61.42 58.56 58.88  
+
+> (1.22)
+
+56.54 
+
+> (1.28)
+
+59.49 57.33 60.66  
+
+> (1.12)
+
+59.20 
+
+> (0.61)
+
+58.67 54.90 59.18 55.06 59.43  
+
+> (1.36)
+
+55.99 
+
+> (2.05)
+
+60.14 56.64 60.85  
+
+> (0.17)
+
+58.62 
+
+> (0.93)
+
+60.44  
+
+> (1.72)
+
+57.51 
+
+> (1.64)
+
+2025 
+
+20-25 21-25 
+
+60.48 56.85 61.12 59.16 61.40 59.36 63.07 60.12 63.84 60.83 65.95 63.08 58.99 57.57 58.93 57.57 62.38 59.95 63.17 60.77 64.79 62.47 59.58 58.01 59.67 57.90 62.01 59.28 62.64 59.84 64.52 61.95 58.52 57.78 58.74 57.95 62.20 59.70 63.03 60.43 64.70 62.31 69.92 65.45 
+
+Average 
+
+0.65 0.70 0.75 0.80 0.85 0.90 
+
+0.56 0.58 0.60 0.62 0.64 0.66 0.68 
+
+0.56 0.58 0.60 0.62 0.64 0.66 0.68 0.70 
+
+0.58 0.60 0.62 0.64 0.66 0.68 
+
+0.52 0.54 0.56 0.58 0.60 0.62 0.64 
+
+0.54 0.56 0.58 0.60 
+
+0.58 0.60 0.62 0.64 0.66 0.68 
+
+FIGURE 2. Official evaluation scores on the DCASE 2020–2025 datasets using four SSL models. Average scores are reported separately for all datasets (DCASE 2020–2025) and for DCASE 2021–2025 because DCASE 2020 exhibits a different trend from those of the other datasets. 
+
+TABLE 2. Computational cost, measured in MACs, for a 10-second input, and the number of parameters. 
+
+BEATs EAT Dasheng Dis-single Dis-multi MACs (G) 44.81 43.71 283.34 0.44 1.17 Params (M) 90.31 85.25 1133.66 2.50 5.00 
+
+target-domain samples reached 20% of the number of source-domain samples. All discriminative training was performed across four trials with different random seeds. We report the average perfor-mance and the 95% confidence interval across the trials. Also, we show the ensemble results obtained by averaging the anomaly scores across the trials. Table 1 summarizes the methods and their names used in the experiments. Dis-single-* and Dis-multi-* denote dis-criminative frontends using single- and multi-resolution spec-trograms, respectively, where the suffix indicates the labels used for training: machine for coarse machine-type labels, 
+
+GT for detailed ground-truth labels, PL for pseudo labels, and NRFT for pseudo labels generated with NRFT. Raw-SSL 
+
+denotes the direct use of the original SSL features, and Dis-SSL-* denotes discriminative fine-tuning of an SSL model with the corresponding labels. Since we used SCAC, a cosine-distance-based classification loss, for discriminative training, cosine distance was used in the backend for Dis-single, Dis-
+
+TABLE 3. Evaluation results on the original DCASE 2024 and 2025 datasets. ORG denotes the original label setting with partially missing labels. 
+
+Method 24dev 24eval 25dev 25eval Average Dis-multi-ORG 63.05 
+
+(1.58) 56.73 
+
+(2.93) 58.97 
+
+(0.80) 54.86 
+
+(4.15) 58.40 BEATs Raw-SSL (euclid) 56.19 57.74 59.36 54.93 57.06 Dis-multi-PL ( r = 0 .8% ) 63.28 
+
+(1.31) 55.97 
+
+(1.07) 60.78 
+
+(1.50) 57.69 
+
+(0.89) 59.43 Dis-multi-PL (oracle) 65.49 
+
+(1.96) 60.17 
+
+(1.45) 62.63 
+
+(0.93) 60.13 
+
+(1.17) 62.11 
+
+EAT Raw-SSL (euclid) 55.41 58.05 61.42 58.56 58.36 Dis-multi-PL ( r = 0 .8% ) 62.38 
+
+(1.18) 56.26 
+
+(1.78) 59.21 
+
+(1.59) 57.89 
+
+(1.23) 58.94 Dis-multi-PL (oracle) 64.72 
+
+(1.76) 59.46 
+
+(2.24) 62.75 
+
+(1.27) 59.77 
+
+(1.77) 61.67 Dis-multi-GT 64.80 
+
+(1.52) 59.43 
+
+(2.81) 60.44 
+
+(1.72) 57.51 
+
+(1.64) 60.54 
+
+multi, and Dis-SSL. For Raw-SSL, we evaluated both cosine and Euclidean distances. 
+
+B. RESULTS 
+
+1) Comprehensive evaluation 
+
+Figure 2 shows the evaluation results on the DCASE 2020– 2025 datasets, where Dis-multi-* was used as the student discriminative frontend. First, the large performance gap be-tween the models trained with machine labels and those trained with GT labels indicates that coarse machine labels alone are insufficient for learning a feature space effective for ASD. On the other hand, Raw-SSL methods achieve compet-
+
+VOLUME 11, 2023 5T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 
+
+itive performance without using any label information. For example, on DCASE 2025, all Raw-SSL methods outperform Dis-multi-machine. Moreover, Raw-SSL with BEATs outper-forms Dis-multi-machine in terms of average performance across all datasets. These results support our motivation for introducing pseudo-label distillation. Pseudo-label distillation effectively transfers the perfor-mance of Raw-SSL to the discriminative frontends. Specif-ically, on the DCASE 2022 eval subset, Dis-multi-machine achieves 56.77%, Raw-SSL with BEATs achieves 57.08%, and Dis-multi-PL with a fixed cluster ratio of r = 0.8% 
+
+achieves 63.69%, yielding an improvement of approximately 6 percentage points. Also, Dis-multi-PL achieves the best average performance across all datasets for each of the SSL models. Even when excluding the exceptional case of DCASE 2020, in which machine labels provide a large performance gain and Dis-multi-machine and Dis-multi-PL substantially outperform Raw-SSL, Dis-multi-PL still achieves the best average performance, demonstrating its general effectiveness. We analyze the factors behind this performance improve-ment in Sect. IV-B2. The performance of pseudo-label dis-tillation is further improved by ensembling the results of multiple training trials, which are easier to perform owing to the low computational cost of the student discriminative frontends. Also, the results obtained using the oracle cluster ratio demonstrate the potential for substantial performance improvement by selecting an appropriate cluster ratio for each machine type. Table 2 shows the number of MACs required to process a 10-second audio signal and the number of parameters for each frontend. BEATs and EAT require over 40 GMACs and 85M parameters, and Dasheng requires even more computational resources. In contrast, Dis-multi requires only 1.17 GMACs and 5M parameters. Moreover, Dis-single further reduces the computational cost; we show that it still achieves competitive performance in Sect. IV-B2. Table 3 shows the evaluation results under the original DCASE 2024 and 2025 setups. We generated pseudo labels for machine types with only machine-type labels, while us-ing the original detailed labels for the other machine types. From the table, we can still see the effectiveness of pseudo-label distillation, even though detailed labels are available for half of the machine types. For example, in terms of av-erage performance, Dis-multi-ORG, which uses the original partially missing labels, achieves 58.40%, Raw-SSL with BEATs achieves 57.06%, and Dis-multi-PL achieves 59.43%. Also, for DCASE 2025, Dis-multi-PL achieves performance comparable to that of Dis-multi-GT by using pseudo labels together with the available detailed labels. Furthermore, as in Fig. 2, pseudo-label distillation substantially improves perfor-mance with the oracle cluster ratio. Overall, the experimental results across multiple settings demonstrate that pseudo-label distillation effectively trans-fers the benefits of computationally expensive SSL models to compact discriminative frontends, while enabling these frontends to outperform Dis-multi-machine and Raw-SSL. 65              
+
+> 70
+> 75
+> 20dev
+> 70
+> 80
+> 20eval
+> 55
+> 60
+> 21dev
+> 56
+> 58
+> 60
+> 21eval
+> 60
+> 65
+> 22dev
+> 57.5
+> 60.0
+> 62.5
+> 22eval
+> 57.5
+> 60.0
+> 62.5
+> 23dev
+> 50
+> 60
+> 23eval
+> 57.5
+> 60.0
+> 24dev
+> 52.5
+> 55.0
+> 57.5
+> 24eval
+> 0.2 0.4 0.8 1.6 3.2 6.4 12.8
+> Cluster ratio [%]
+> 55
+> 60
+> 25dev
+> 0.2 0.4 0.8 1.6 3.2 6.4 12.8
+> Cluster ratio [%]
+> 52.5
+> 55.0
+> 57.5
+> 25eval
+> Dis-multi-PL w/ machine w/ mixup
+> Dis-single-PL w/ machine w/ mixup
+> Dis-single-PL w/o machine w/ mixup
+> Dis-single-PL w/o machine w/o mixup
+> Dis-multi-machine w/ mixup
+> Raw-SSL (euclid)
+> FIGURE 3. Ablation study on the effects of machine-type labels and mixup in pseudo-label distillation using BEATs. The average official evaluation scores across four trials are shown for each cluster ratio.
+
+2) Analysis of performance gains from pseudo-label distillation 
+
+Figure 3 compares different distillation configurations using BEATs, examining the effects of multi-resolution spectro-grams, machine labels, and mixup. First, although Dis-multi achieves the best performance in most cases, Dis-single also achieves competitive performance while providing a more compact and efficient frontend, as shown in Table 2. Second, both machine labels and mixup improve performance, par-ticularly on the DCASE 2020–2022 datasets. To investigate why their benefits differ across datasets, we analyze the orig-inal BEATs feature spaces. Figure 4 shows the UMAP [54] visualizations for the DCASE 2020–2025 datasets. The visu-alizations show that, in the DCASE 2020–2022 datasets, the BEATs features of different machine types are more exten-sively intermixed than those in the other datasets. Figure 5 shows spectrograms of audio samples selected from the solid and dashed rectangles in the DCASE 2020 visualization of Fig. 4. These examples indicate that samples from different machine types share similar background noise components and consequently form clusters based on noise characteristics.        
+
+> 6VOLUME 11, 2023 T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 50510 15 20
+> 10
+> 0
+> 10
+> Dim. 2
+
+2020       
+
+> 10 50510 15 20
+> 10
+> 0
+> 10
+> Dim. 2
+
+2021        
+
+> 15 10 50510 15 20
+> 0
+> 10
+> 20
+> Dim. 2
+
+2022      
+
+> 10 50510 15
+> 10
+> 0
+> 10
+> 20
+> Dim. 2
+
+2023       
+
+> 10 50510 15 20
+> 10
+> 0
+> 10
+> 20
+> Dim. 2
+
+2024      
+
+> 10 50510 15
+
+Dim. 1 
+
+> 10
+> 0
+> 10
+> 20
+> Dim. 2
+
+2025  
+
+> FIGURE 4. UMAP visualizations of the original BEATs features for the DCASE 2020–2025 datasets. Colors indicate machine types. Spectrograms corresponding to the samples from the solid and dashed rectangles in the DCASE 2020 visualization are shown in Fig. 5.
+
+In such cases, machine-type classification can encourage the frontend to ignore noise and learn a noise-robust feature space, thereby improving ASD performance [23]. However, this benefit is smaller for DCASE 2023–2025, in which the feature spaces are already separated by machine type. We also analyze differences in the effectiveness of pseudo-label distillation across machine types. Figure 6 shows machine-wise analyses for four machine types from the DCASE 2023 dataset. We can see that the characteristics of the feature space differ across machine types, resulting in dif-ferences in the effectiveness of pseudo-label distillation and the optimal cluster ratio. For Vacuum and bearing, the BEATs feature spaces clearly reflect the ground-truth attributes, and pseudo-label distillation substantially improves performance. In contrast, for grinder and shaker, the feature spaces do not clearly reflect the attributes, resulting in only limited performance gains. In this section, we showed that machine-type labels and 0 5 10                        
+
+> Time [s]
+> 0
+> 2
+> 4
+> 6
+> 8
+> Frequency [kHz]  fan
+> 0510
+> Time [s]
+> fan
+> 0510
+> Time [s]
+> pump
+> 0510
+> Time [s]
+> pump
+> 0510
+> Time [s]
+> slider
+> 0510
+> Time [s]
+> slider 0510
+> Time [s]
+> 0
+> 2
+> 4
+> 6
+> 8
+> Frequency [kHz]  fan
+> 0510
+> Time [s]
+> fan
+> 0510
+> Time [s]
+> pump
+> 0510
+> Time [s]
+> pump
+> 0510
+> Time [s]
+> slider
+> 0510
+> Time [s]
+> slider
+> FIGURE 5. Spectrograms of the samples selected from the solid (top) and dashed (bottom) rectangles in Fig. 4, respectively. The spectrograms in the top row exhibit similar stationary noise components, for example, around 1 kHz, whereas those in the bottom row exhibit similar non-stationary noise components around 6 kHz.
+
+mixup contribute to performance improvements. We also mentioned that the performance benefits of pseudo-label dis-tillation depend on the SSL feature space, particularly on how well it captures the ground-truth attributes and how robust it is to noise variations. 
+
+3) Effectiveness on fine-tuning SSL models 
+
+Figure 7 shows the evaluation results for fine-tuning SSL models using pseudo labels, where each SSL model is fine-tuned using pseudo labels generated from the original SSL model. First, fine-tuning using only machine labels can de-grade performance compared with the Raw-SSL method, sug-gesting that catastrophic forgetting can occur. For example, on the DCASE 2023 eval subset, Raw-SSL with BEATs achieves 63.60%, whereas Dis-SSL-machine yields a sub-stantially lower score of 53.78%. In contrast, Dis-SSL-PL preserves the performance of Raw-SSL and can further im-prove upon it. Specifically, Dis-SSL-PL with BEATs achieves 65.37% on the same subset and achieves the best average performance. 
+
+4) Noise-robust feature transformation 
+
+Figure 8 shows the evaluation results for NRFT, where all labels other than the machine-type labels were concealed. The results demonstrate the general effectiveness of NRFT, as it outperforms the standard Dis-multi-PL across different cluster ratios and SSL models. We can also see that Dis-multi-NRFT achieves performance comparable to that of Dis-multi-GT. The results aggregated over the clean-data-available case show that smaller values of K are more effective, indicat-ing that restricting the feature space to a lower-dimensional clean-sound subspace effectively removes noise-related vari-ations. The results aggregated over the noise-data-available case show that NRFT is still effective with K = D = 64  
+
+> VOLUME 11, 2023 7
+
+T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+70 
+
+80 
+
+90 
+
+> Official [%]
+
+Vacuum 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+57.5 
+
+60.0 
+
+62.5 
+
+bearing 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+55 
+
+60 
+
+65 
+
+grinder 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+60 
+
+80 
+
+shaker 
+
+10 0 10 
+
+Dim. 1 
+
+10 
+
+0
+
+10 
+
+> Dim. 2
+
+car_A1_spd_M 
+
+car_A2_spd_H 
+
+car_B1_spd_Lb 
+
+car_B2_spd_Mb 
+
+0 10 
+
+Dim. 1 
+
+10 
+
+0
+
+10 
+
+20 
+
+vel_13 
+
+vel_16 
+
+vel_17 
+
+vel_21 
+
+vel_5 
+
+vel_8 
+
+vel_9 
+
+5 0 5 10 
+
+Dim. 1 
+
+0
+
+5
+
+10 
+
+grindstone_1 
+
+grindstone_2 
+
+grindstone_3 
+
+0 5 10 
+
+Dim. 1 
+
+2.5 
+
+0.0 
+
+2.5 
+
+5.0 
+
+speed_1000 speed_1500 
+
+Dis-multi-PL Dis-multi-machine Raw-SSL (euclid) 
+
+FIGURE 6. Machine-wise analysis of pseudo-label distillation using BEATs on the DCASE 2023 dataset. From left to right, the columns correspond to Vacuum, bearing, grinder, and shaker. The top row shows the official evaluation scores averaged over four trials for each cluster ratio. The bottom row visualizes the original BEATs feature space of the source-domain training samples, with colors indicating the ground-truth attribute labels. dev eval BEATs Raw-SSL (euclid) Dis-SSL-machine Dis-SSL-PL (r=0.8%) +ensemble Dis-SSL-GT EAT Raw-SSL (euclid) Dis-SSL-machine Dis-SSL-PL (r=0.8%) +ensemble Dis-SSL-GT 
+
+71.09 72.08 74.12  
+
+> (1.29)
+
+78.55 
+
+> (1.01)
+
+76.52  
+
+> (0.29)
+
+80.28 
+
+> (0.48)
+
+77.04 80.86 90.47  
+
+> (0.93)
+
+93.46 
+
+> (0.62)
+
+66.81 70.23 73.00  
+
+> (0.65)
+
+77.80 
+
+> (0.30)
+
+72.46  
+
+> (0.67)
+
+76.44 
+
+> (0.58)
+
+72.82 76.78 90.71  
+
+> (0.68)
+
+93.46 
+
+> (0.77)
+
+2020  
+
+> dev eval
+
+62.92 58.65 60.27  
+
+> (1.37)
+
+59.59 
+
+> (0.70)
+
+64.06  
+
+> (0.33)
+
+61.04 
+
+> (0.41)
+
+64.44 61.33 73.07  
+
+> (0.62)
+
+67.40 
+
+> (0.58)
+
+56.39 57.34 58.97  
+
+> (1.33)
+
+59.00 
+
+> (0.75)
+
+61.18  
+
+> (0.39)
+
+60.59 
+
+> (0.26)
+
+61.47 60.85 72.59  
+
+> (0.72)
+
+67.36 
+
+> (1.16)
+
+2021  
+
+> dev eval
+
+61.94 57.36 59.71  
+
+> (1.06)
+
+54.11 
+
+> (1.17)
+
+64.69  
+
+> (0.38)
+
+63.06 
+
+> (0.27)
+
+64.97 63.38 72.71  
+
+> (0.64)
+
+68.68 
+
+> (0.62)
+
+57.89 56.43 58.69  
+
+> (1.00)
+
+53.15 
+
+> (1.22)
+
+62.54  
+
+> (0.30)
+
+61.77 
+
+> (0.39)
+
+62.77 62.05 73.85  
+
+> (1.24)
+
+69.57 
+
+> (0.29)
+
+2022  
+
+> dev eval
+
+60.91 63.60 57.46  
+
+> (0.46)
+
+53.78 
+
+> (2.12)
+
+62.25  
+
+> (0.85)
+
+65.37 
+
+> (0.66)
+
+62.48 65.91 62.88  
+
+> (1.14)
+
+70.76 
+
+> (0.60)
+
+57.10 60.37 58.18  
+
+> (1.51)
+
+53.39 
+
+> (1.88)
+
+59.71  
+
+> (0.30)
+
+60.03 
+
+> (1.46)
+
+59.98 60.22 63.97  
+
+> (2.40)
+
+71.96 
+
+> (0.97)
+
+2023  
+
+> dev eval
+
+56.19 57.74 55.09  
+
+> (0.44)
+
+52.15 
+
+> (0.32)
+
+55.65  
+
+> (1.06)
+
+58.31 
+
+> (0.76)
+
+55.88 58.69 63.80  
+
+> (1.05)
+
+61.79 
+
+> (0.83)
+
+55.41 58.05 55.11  
+
+> (1.97)
+
+51.96 
+
+> (0.89)
+
+54.73  
+
+> (0.83)
+
+58.43 
+
+> (0.43)
+
+54.93 58.68 66.46  
+
+> (1.01)
+
+62.02 
+
+> (1.74)
+
+2024  
+
+> dev eval
+
+59.36 54.93 57.51  
+
+> (1.08)
+
+51.86 
+
+> (1.62)
+
+60.12  
+
+> (0.67)
+
+55.92 
+
+> (0.35)
+
+60.38 56.20 62.49  
+
+> (0.73)
+
+61.02 
+
+> (0.62)
+
+61.42 58.56 54.81  
+
+> (2.76)
+
+52.51 
+
+> (2.07)
+
+60.27  
+
+> (0.62)
+
+55.99 
+
+> (0.41)
+
+60.43 56.31 63.77  
+
+> (0.54)
+
+59.57 
+
+> (2.30)
+
+2025  
+
+> 20-25 21-25
+
+61.40 59.36 59.52 56.15 63.94 61.05 64.30 61.37 70.71 66.46 59.67 57.90 58.88 55.58 62.01 59.52 62.27 59.77 71.27 67.11 
+
+Average 
+
+> 0.70 0.75 0.80 0.85 0.90
+> 0.58 0.60 0.62 0.64 0.66 0.68 0.70 0.72
+> 0.550 0.575 0.600 0.625 0.650 0.675 0.700 0.725
+> 0.550 0.575 0.600 0.625 0.650 0.675 0.700
+> 0.52 0.54 0.56 0.58 0.60 0.62 0.64 0.66
+> 0.52 0.54 0.56 0.58 0.60 0.62
+> 0.56 0.58 0.60 0.62 0.64 0.66 0.68 0.70
+
+FIGURE 7. Official evaluation scores of SSL models fine-tuned using pseudo labels. Average scores are reported separately for all datasets (DCASE 2020–2025) and for DCASE 2021–2025 because DCASE 2020 exhibits a different trend from those of the other datasets. 
+
+(i.e., without dimensionality reduction), indicating that noise covariance whitening itself contributes to suppressing the effects of noise on pseudo-label generation. Figure 9 shows machine-wise analyses of four machine types in the DCASE 2025 dataset. Both the GEVD-based method using isolated noise samples (e.g., for Polisher) and the PCA-based method using clean machine sounds (e.g., for valve) improve performance. In particular, for Polisher, the original BEATs feature space reflects both machine and noise characteristics, causing samples with the same attribute to be fragmented into multiple noise-dependent clusters. NRFT successfully suppresses these noise-related variations and merges the fragmented clusters into attribute-wise clus-ters, resulting in a substantial performance improvement. For valve, NRFT also reduces noise-related variations and im-proves performance, although some noise-dependent clusters remain. For gearbox, NRFT suppresses noise-related vari-ations and improves performance, but the resulting feature space still does not clearly reflect the attributes due to the limited representational capability of BEATs. For AutoTrash, the original feature space already reflects the attributes to some extent, and NRFT does not degrade the performance. 
+
+V. CONCLUSION 
+
+In this paper, we proposed pseudo-label distillation for dis-criminative ASD. The proposed framework generates pseudo labels by clustering SSL features and trains a compact dis-criminative frontend using the pseudo labels together with available machine-type labels and mixup. We also proposed lightweight NRFT methods to improve the robustness of pseudo labels to noise variations in the training data. NRFT estimates a noise-robust feature transformation using a small amount of clean machine sounds or isolated noise sam-ples. Comprehensive evaluations on the DCASE 2020–2025 
+
+8 VOLUME 11, 2023 T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 55 
+
+60 
+
+> BEATs
+
+dev 
+
+52.5 
+
+55.0 
+
+57.5 
+
+eval 
+
+55 
+
+60 
+
+65 
+
+clean 
+
+52.5 
+
+55.0 
+
+noise 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+55 
+
+60 
+
+> EAT
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+52.5 
+
+55.0 
+
+57.5 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+55 
+
+60 
+
+65 
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+52.5 
+
+55.0 
+
+57.5 
+
+Dis-multi-PL 
+
+Dis-multi-NRFT 
+
+(K=8) 
+
+Dis-multi-NRFT 
+
+(K=32) 
+
+Dis-multi-NRFT 
+
+(K=64) 
+
+Dis-multi-machine 
+
+Dis-multi-GT 
+
+Raw-SSL (euclid) 
+
+FIGURE 8. Evaluation results of the NRFT methods using BEATs and EAT on the DCASE 2025 dataset. The first and second columns show the results aggregated over the dev and eval subsets, respectively, whereas the third and fourth columns show the results aggregated over the clean-data-available and noise-data-available cases, respectively. 0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+50 
+
+55 
+
+> Official [%]
+
+Polisher (noise)       
+
+> 10 010 20
+> 10
+> 0
+> 10
+> Dim. 2
+> 20 10 010
+
+Dim. 1 
+
+> 10
+> 5
+> 0
+> 5
+> 10
+> Dim. 2
+> pow_1
+> pow_3
+> pow_5
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+60 
+
+80 
+
+valve (clean)     
+
+> 010 20
+> 5
+> 0
+> 5
+> 10
+> 15
+> 10 010
+
+Dim. 1 
+
+> 2
+> 0
+> 2
+> 4
+> 6
+> v1pat_00_v2pat_05
+> v1pat_04_v2pat_00
+> v1pat_05_v2pat_00
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+55 
+
+60 
+
+gearbox (noise)        
+
+> 50510
+> 5.0
+> 7.5
+> 10.0
+> 12.5
+> 15.0 pro_A
+> pro_B
+> pro_C
+> pro_D
+> pro_E
+> pro_F
+> 10 010 20
+
+Dim. 1 
+
+> 20
+> 10
+> 0
+
+0.2 0.4 0.8 1.6 3.2 6.4 12.8 
+
+Cluster ratio [%] 
+
+50 
+
+75 
+
+AutoTrash (clean)      
+
+> 0510
+> 2
+> 4
+> 6
+> 8
+> 10
+> id_A1_spd_1
+> id_A2_spd_1
+> id_B1_spd_1
+> id_B2_spd_1
+> 0.0 2.5 5.0 7.5
+
+Dim. 1 
+
+> 2
+> 4
+> 6
+> 8
+
+Dis-multi-PL Dis-multi-NRFT (K=8) Dis-multi-machine Dis-multi-GT Raw-SSL (euclid) 
+
+FIGURE 9. Machine-wise analysis of pseudo-label distillation using BEATs with NRFT on the DCASE 2025 dataset. From left to right, the columns correspond to Polisher, valve, gearbox, and AutoTrash. The labels (clean) and (noise) indicate that clean machine sounds and isolated noise samples, respectively, are available as supplementary data. The top row shows the official evaluation scores averaged over four trials for each cluster ratio. The middle and bottom rows visualize the original BEATs feature space and the feature space after NRFT, respectively, for source-domain training samples, with colors indicating ground-truth attribute labels. 
+
+datasets using four SSL models showed that pseudo-label distillation outperformed both the original SSL models and discriminative models trained using only machine-type la-bels, while reducing the number of parameters and MACs to less than 10% of those of the original SSL models. The analyses further showed that both machine-type labels and mixup contributed to performance improvements, that pseudo labels were also effective for fine-tuning SSL models, and that the NRFT methods further improved performance. 
+
+REFERENCES 
+
+[1] Y. Koizumi, Y. Kawaguchi, K. Imoto, T. Nakamura, Y. Nikaido, R. Tanabe, H. Purohit, K. Suefusa, T. Endo, M. Yasuda, and N. Harada, ‘‘Description and discussion on DCASE2020 challenge task2: Unsupervised anomalous sound detection for machine condition monitoring,’’ in Proc. DCASE ,2020, pp. 81–85. [2] Y. Kawaguchi, K. Imoto, Y. Koizumi, N. Harada, D. Niizumi, K. Dohi, R. Tanabe, H. Purohit, and T. Endo, ‘‘Description and discussion on DCASE 2021 challenge task 2: Unsupervised anomalous detection for machine condition monitoring under domain shifted conditions,’’ in Proc. DCASE , 2021, pp. 186–190. [3] K. Dohi, K. Imoto, N. Harada, D. Niizumi, Y. Koizumi, T. Nishida, H. Puro-hit, R. Tanabe, T. Endo, M. Yamamoto, and Y. Kawaguchi, ‘‘Description and discussion on DCASE 2022 challenge task 2: Unsupervised anoma- 
+
+> VOLUME 11, 2023
+
+9T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection 
+
+lous sound detection for machine condition monitoring applying domain generalization techniques,’’ in Proc. DCASE , 2022, pp. 1–5. [4] K. Dohi, K. Imoto, N. Harada, D. Niizumi, Y. Koizumi, T. Nishida, H. Puro-hit, R. Tanabe, T. Endo, and Y. Kawaguchi, ‘‘Description and discussion on DCASE 2023 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitoring,’’ in Proc. DCASE , 2023, pp. 31–35. [5] T. Nishida, N. Harada, D. Niizumi, D. Albertini, R. Sannino, S. Pradolini, F. Augusti, K. Imoto, K. Dohi, H. Purohit, T. Endo, and Y. Kawaguchi, ‘‘Description and discussion on DCASE 2024 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitor-ing,’’ in Proc. DCASE , 2024, pp. 111–115. [6] ——, ‘‘Description and discussion on DCASE 2025 challenge task 2: First-shot unsupervised anomalous sound detection for machine condition monitoring,’’ in Proc. DCASE , 2025, pp. 55–59. [7] T. Fujimura, K. Wilkinghoff, K. Imoto, and T. Toda, ‘‘ASDKit: A toolkit for comprehensive evaluation of anomalous sound detection methods,’’ in 
+
+Proc. DCASE , 2025, pp. 40–44. [8] J. A. Lopez, H. Lu, P. Lopez-Meyer, L. Nachman, G. Stemmer, and J. Huang, ‘‘A speaker recognition approach to anomaly detection,’’ in Proc. DCASE , 2020, pp. 96–99. [9] R. Giri, S. V. Tenneti, F. Cheng, K. Helwani, U. Isik, and A. Krishnaswamy, ‘‘Self-supervised classification for detecting anomalous sounds,’’ in Proc. DCASE , 2020, pp. 46–50. [10] P. Primus, V. Haunschmid, P. Praher, and G. Widmer, ‘‘Anomalous sound detection as a simple binary classification problem with careful selection of proxy outlier examples,’’ in Proc. DCASE , 2020, pp. 170–174. [11] K. Wilkinghoff, ‘‘Design choices for learning embeddings from auxiliary tasks for domain generalization in anomalous sound detection,’’ in Proc. ICASSP , 2023, pp. 1–5. [12] ——, ‘‘Self-supervised learning for anomalous sound detection,’’ in Proc. ICASSP . IEEE, 2024, pp. 276–280. [13] I. Kuroyanagi, T. Hayashi, K. Takeda, and T. Toda, ‘‘Serial-OE: Anomalous sound detection based on serial method with outlier exposure capable of using small amounts of anomalous data for training,’’ APSIPA Trans. Signal Inf. Process. , vol. 14, no. 1, 2025. [14] Y. Liu, J. Guan, Q. Zhu, and W. Wang, ‘‘Anomalous sound detection using spectral-temporal information fusion,’’ in Proc. ICASSP . IEEE, 2022, pp. 816–820. [15] P. Saengthong and T. Shinozaki, ‘‘Deep generic representations for domain-generalized anomalous sound detection,’’ in Proc. ICASSP . IEEE, 2025, pp. 1–5. [16] ——, ‘‘Sub-band spectral matching with localized score aggregation for robust anomalous sound detection,’’ arXiv preprint arXiv:2603.13749 ,2026. [17] K. Wilkinghoff, S. Yadav, and Z.-H. Tan, ‘‘Temporal pooling strategies for training-free anomalous sound detection with self-supervised audio embeddings,’’ arXiv preprint arXiv:2603.04605 , 2026. [18] K. Wilkinghoff and F. Fritz, ‘‘On using pre-trained embeddings for de-tecting anomalous sounds with limited training data,’’ in Proc. EUSIPCO ,2023, pp. 186–190. [19] A. Jiang, B. Han, Z. Lv, Y. Deng, W.-Q. Zhang, X. Chen, Y. Qian, J. Liu, and P. Fan, ‘‘AnoPatch: Towards better consistency in machine anomalous sound detection,’’ in Proc. Interspeech , 2024, pp. 107–111. [20] X. Zheng, A. Jiang, B. Han, Y. Qian, P. Fan, J. Liu, and W.-Q. Zhang, ‘‘Im-proving anomalous sound detection via low-rank adaptation fine-tuning of pre-trained audio models,’’ in Proc. SLT . IEEE, 2024, pp. 969–974. [21] B. Han, A. Jiang, X. Zheng, W.-Q. Zhang, J. Liu, P. Fan, and Y. Qian, ‘‘Exploring self-supervised audio models for generalized anomalous sound detection,’’ IEEE Trans. Audio, Speech, Lang. Process. , 2025. [22] T. Fujimura, I. Kuroyanagi, and T. Toda, ‘‘Improvements of discriminative feature space training for anomalous sound detection in unlabeled condi-tions,’’ in Proc. ICASSP . IEEE, 2025, pp. 1–5. [23] K. Wilkinghoff and F. Kurth, ‘‘Why do angular margin losses work well for semi-supervised anomalous sound detection?’’ IEEE/ACM Trans. Audio, Speech, Lang. Process. , 2023. [24] S. Chen, Y. Wu, C. Wang, S. Liu, D. Tompkins, Z. Chen, W. Che, X. Yu, and F. Wei, ‘‘BEATs: Audio pre-training with acoustic tokenizers,’’ in Proc. ICML , vol. 202, 2023, pp. 5178–5193. [25] W. Chen, Y. Liang, Z. Ma, Z. Zheng, and X. Chen, ‘‘EAT: Self-supervised pre-training with efficient audio transformer,’’ in Proc. IJCAI , K. Larson, Ed., 2024, pp. 3807–3815. [26] H. Dinkel, Z. Yan, Y. Wang, J. Zhang, Y. Wang, and B. Wang, ‘‘Scaling up masked audio encoder learning for general audio classification,’’ in Proc. Interspeech , 2024. [27] P. Fan, A. Jiang, S. Zhang, X. Zheng, Z. Lv, B. Han, W. Liang, J. Li, W.-Q. Zhang, Y. Qian et al. , ‘‘FISHER: A foundation model for multimodal industrial signal comprehensive representation,’’ IEEE Trans. Ind. Inform. ,2026. [28] D. Niizumi, D. Takeuchi, Y. Ohishi, N. Harada, and K. Kashino, ‘‘Masked Modeling Duo: Towards a universal audio pre-training framework,’’ 
+
+IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 32, pp. 2391–2406, 2024. [29] Y. Gong, C.-I. Lai, Y.-A. Chung, and J. Glass, ‘‘SSAST: Self-supervised audio spectrogram transformer,’’ in Proc. AAAI , 2022, pp. 10 699–10 709. [30] I. Kuroyanagi, T. Fujimura, K. Takeda, and T. Toda, ‘‘Improving anoma-lous sound detection through pseudo-anomalous set selection and pseudo-label utilization under unlabeled conditions,’’ APSIPA Trans. Signal Inf. Process. , vol. 14, no. 1, pp. 1–28, 2025. [31] Z. Chen, Y. Zhang, and M. Li, ‘‘Improving anomalous sound detection with top-m pseudo-labeling,’’ in Proc. Man-Mach. Speech Commun. , J. Jia, Z. Wu, L. Gao, G. Huang, and Y. Li, Eds., 2026, pp. 129–137. [32] X. Fang, G. Zhong, Q. Wang, F. Chu, L. Wang, M. Qian, M. Cai, J. Wu, J. Gao, and J. Du, ‘‘Improving anomalous sound detection with attribute-aware representation from domain-adaptive pre-training,’’ in 
+
+Proc. ICASSP . IEEE, 2026, pp. 15 892–15 896. [33] J. Deng, J. Guo, N. Xue, and S. Zafeiriou, ‘‘ArcFace: Additive angular margin loss for deep face recognition,’’ in Proc. CVPR , 2019, pp. 4690– 4699. [34] X. Zhang, R. Zhao, Y. Qiao, X. Wang, and H. Li, ‘‘AdaCos: Adaptively scaling cosine logits for effectively learning deep face representations,’’ in 
+
+Proc. CVPR , 2019, pp. 10 823–10 832. [35] H. Zhang, M. Cisse, Y. N. Dauphin, and D. Lopez-Paz, ‘‘mixup: Beyond empirical risk minimization,’’ in Proc. ICLR , 2018. [36] M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, ‘‘Mo-bileNetv2: Inverted residuals and linear bottlenecks,’’ in Proc. CVPR , 2018, pp. 4510–4520. [37] T. Fujimura, I. Kuroyanagi, and T. Toda, ‘‘Discriminative anomalous sound detection using pseudo labels, target signal enhancement, and ensemble feature extractors,’’ in Proc. DCASE , 2025, pp. 180–184. [38] Y. Zhang, J. Liu, and M. Li, ‘‘ECHO: Frequency-aware hierarchical encod-ing for variable-length signals,’’ in Proc. ICASSP , 2026, pp. 4301–4305. [39] Q. Xie, M.-T. Luong, E. Hovy, and Q. V. Le, ‘‘Self-training with noisy student improves ImageNet classification,’’ in Proc. CVPR , 2020, pp. 10 687–10 698. [40] H. Purohit, R. Tanabe, T. Ichige, T. Endo, Y. Nikaido, K. Suefusa, and Y. Kawaguchi, ‘‘MIMII Dataset: Sound dataset for malfunctioning indus-trial machine investigation and inspection,’’ in Proc. DCASE , 2019, pp. 209–213. [41] Y. Koizumi, S. Saito, H. Uematsu, N. Harada, and K. Imoto, ‘‘ToyADMOS: A dataset of miniature-machine operating sounds for anomalous sound detection,’’ in Proc. WASPAA , 2019, pp. 308–312. [42] R. Tanabe, H. Purohit, K. Dohi, T. Endo, Y. Nikaido, T. Nakamura, and Y. Kawaguchi, ‘‘MIMII DUE: Sound dataset for malfunctioning industrial machine investigation and inspection with domain shifts due to changes in operational and environmental conditions,’’ in Proc. WASPAA , 2021, pp. 21–25. [43] N. Harada, D. Niizumi, D. Takeuchi, Y. Ohishi, M. Yasuda, and S. Saito, ‘‘ToyADMOS2: Another dataset of miniature-machine operating sounds for anomalous sound detection under domain shift conditions,’’ in Proc. DCASE , 2021, pp. 1–5. [44] K. Dohi, T. Nishida, H. Purohit, R. Tanabe, T. Endo, M. Yamamoto, Y. Nikaido, and Y. Kawaguchi, ‘‘MIMII DG: Sound dataset for mal-functioning industrial machine investigation and inspection for domain generalization task,’’ in Proc. DCASE , 2022. [45] N. Harada, D. Niizumi, D. Takeuchi, Y. Ohishi, and M. Yasuda, ‘‘ToyAD-MOS2+: New ToyADMOS data and benchmark results of the first-shot anomalous sound event detection baseline,’’ in Proc. DCASE , 2023, pp. 41–45. [46] D. Niizumi, N. Harada, Y. Ohishi, D. Takeuchi, and M. Yasuda, ‘‘ToyAD-MOS2#: Yet another dataset for the DCASE2024 challenge task 2 first-shot anomalous sound detection,’’ in Proc. DCASE , 2024, pp. 106–110. [47] D. Albertini, F. Augusti, K. Esmer, A. Bernardini, and R. Sannino, ‘‘IMAD-DS: A dataset for industrial multi-sensor anomaly detection under domain shift conditions,’’ in Proc. DCASE , 2024, pp. 1–5.   
+
+> 10 VOLUME 11, 2023 T. Fujimura et al. : Pseudo-label distillation for discriminative anomalous sound detection
+
+[48] N. Harada, D. Niizumi, Y. Ohishi, D. Takeuchi, and M. Yasuda, ‘‘ToyAD-MOS2025: The evaluation dataset for the DCASE2025T2 first-shot unsu-pervised anomalous sound detection for machine condition monitoring,’’ in Proc. DCASE , 2025, pp. 230–234. [49] K. Wilkinghoff, T. Fujimura, K. Imoto, J. Le Roux, Z.-H. Tan, and T. Toda, ‘‘Handling domain shifts for anomalous sound detection: A review of DCASE-related work,’’ in Proc. DCASE , 2025, pp. 20–24. [50] I. Loshchilov and F. Hutter, ‘‘Decoupled weight decay regularization,’’ in 
+
+Proc. ICLR , 2019. [51] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, ‘‘LoRA: Low-rank adaptation of large language models,’’ in 
+
+Proc. ICLR , 2022. [52] K. Okabe, T. Koshinaka, and K. Shinoda, ‘‘Attentive statistics pooling for deep speaker embedding,’’ in Proc. Interspeech , 2018, pp. 2252–2256. [53] N. V. Chawla, K. W. Bowyer, L. O. Hall, and W. P. Kegelmeyer, ‘‘SMOTE: synthetic minority over-sampling technique,’’ J. Artif. Intell. Res. , vol. 16, pp. 321–357, 2002. [54] L. McInnes, J. Healy, N. Saul, and L. Grossberger, ‘‘UMAP: Uniform manifold approximation and projection,’’ J. Open Source Softw. , vol. 3, no. 29, 2018, 63 pages. 
+
+TAKUYA FUJIMURA received an M.E. degree in informatics from Nagoya University, Nagoya, Japan, in 2024. He is currently working toward a Ph.D. degree in informatics at Nagoya University. His research interests include audio signal processing and machine learning. He is a student member of the Acoustical Society of Japan (ASJ). He received the 21st Best Student Presentation Award of ASJ in 2020 and the DCASE Challenge Task 2 Judges’ Award in 2025. 
+
+TOMOKI TODA received his B.E. degree from Nagoya University, Nagoya, Japan, in 1999, and the M.E. and D.E. degrees from the Nara Institute of Sci-ence and Technology (NAIST), Ikoma, Japan, in 2001 and 2003, respectively. From 2003 to 2005, he was a Research Fellow with the Japan Society for the Promotion of Science. He was an Assistant Professor, from 2005 to 2011, and an Associate Professor, from 2011 to 2015, with NAIST. Since 2015, he has been a Professor with the Information Technology Center, Nagoya University. His research focuses on statistical approaches to speech and audio processing. He was the recipient of more than ten article/achievement awards, including the IEEE SPS 2009 Young Author Best Paper Award and the 2013 EURASIP-ISCA Best Paper Award (Speech Communication).
