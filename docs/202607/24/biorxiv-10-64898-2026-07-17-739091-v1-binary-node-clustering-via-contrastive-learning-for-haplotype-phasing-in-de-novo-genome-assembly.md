@@ -1,0 +1,25 @@
+---
+title: Binary node clustering via contrastive learning for haplotype phasing in de novo genome assembly
+title_zh: 基于对比学习的二部节点聚类用于从头基因组组装中的单倍型定相
+authors: "Schmitz, M., Rauschning, L., Kawaguchi, K., Sikic, M."
+date: 2026-07-21
+pdf: "https://www.biorxiv.org/content/10.64898/2026.07.17.739091v1.full.pdf"
+tags: ["query:ssl"]
+score: 7.0
+evidence: 在基因组组装中应用对比学习进行节点聚类，展示了对比学习方法论。
+tldr: 单倍型分型对高质量基因组组装至关重要，但无亲本数据的从头分型极具挑战。本文将其转化为增强unitig图上的节点聚类问题，引入对比学习框架训练图Transformer模型grapHiC，无需参考基因组即可分型父本、母本及纯合节点。在人基因组规模图上，grapHiC实现高准确率聚类，其预测可有效引导DipGNNome组装器进行从头组装，所得结果在连续性和分型质量上与现有技术相当。grapHiC是首个基于机器学习的无参考单倍型分型方法，直接处理原始unitig图，克服传统方法需要简化图或亲本数据的局限，具有重要意义。
+source: biorxiv
+selection_source: fresh_fetch
+figures_json: "[{\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-001.webp\", \"caption\": \"\", \"page\": 0, \"index\": 1, \"width\": 1771, \"height\": 1272, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-002.webp\", \"caption\": \"\", \"page\": 0, \"index\": 2, \"width\": 1677, \"height\": 770, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-003.webp\", \"caption\": \"\", \"page\": 0, \"index\": 3, \"width\": 1781, \"height\": 1042, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-004.webp\", \"caption\": \"\", \"page\": 0, \"index\": 4, \"width\": 1758, \"height\": 1987, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-005.webp\", \"caption\": \"\", \"page\": 0, \"index\": 5, \"width\": 1753, \"height\": 953, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/fig-006.webp\", \"caption\": \"\", \"page\": 0, \"index\": 6, \"width\": 1700, \"height\": 768, \"label\": \"Figure\"}]"
+tables_json: "[{\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-001.webp\", \"caption\": \"\", \"page\": 0, \"index\": 1, \"width\": 1446, \"height\": 629, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-002.webp\", \"caption\": \"\", \"page\": 0, \"index\": 2, \"width\": 1335, \"height\": 1371, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-003.webp\", \"caption\": \"\", \"page\": 0, \"index\": 3, \"width\": 535, \"height\": 480, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-004.webp\", \"caption\": \"\", \"page\": 0, \"index\": 4, \"width\": 1339, \"height\": 593, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-005.webp\", \"caption\": \"\", \"page\": 0, \"index\": 5, \"width\": 1385, \"height\": 479, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-17-739091-v1/table-006.webp\", \"caption\": \"\", \"page\": 0, \"index\": 6, \"width\": 640, \"height\": 620, \"label\": \"Table\"}]"
+motivation: 针对无亲本数据的从头单倍型分型难题，现有方法需简化图或依赖参考，本文旨在直接对原始unitig图进行无参考分型。
+method: 将分型问题转化为增强unitig图上的节点聚类，利用对比学习训练图Transformer模型grapHiC，结合序列重叠和Hi-C信息分型父本、母本及纯合节点。
+result: 在人基因组规模图上grapHiC实现高准确率聚类，其预测引导DipGNNome组装可获得与现有技术相当的连续性和分型质量。
+conclusion: grapHiC是首个基于机器学习的无参考单倍型分型方法，能直接对原始unitig图进行分型，无需亲本数据或图简化，为复杂基因组从头组装提供了新方案。
+---
+
+## 摘要
+准确的单倍型定相对于高质量基因组组装至关重要，但在没有亲本数据的情况下对复杂基因组进行从头定相仍然具有挑战性。我们将单倍型定相公式化为一个节点聚类问题，在增广的unitig图上具有重叠簇，其中节点代表连续的、无分支的DNA序列片段，两种边类型可以编码序列重叠或Hi-C邻近信息。我们引入了一个带有自定义目标函数的对比学习框架，并训练了一个基于图变换器的模型（称为grapHiC），用于定相父本、母本和纯合unitig节点。grapHiC是第一个基于机器学习的方法实现无参考单倍型定相，也是第一个无需预先简化直接对原始unitig图进行定相的方法。我们展示了grapHiC能够准确地在人类基因组规模的图上聚类节点，并且其预测可以有效引导定相的从头基因组组装，当与DipGNNome组装器集成时，产生连续性和定相质量与现有技术相当的人类组装结果。
+
+## Abstract
+Accurate haplotype phasing is essential for high-quality genome assembly, yet de novo phasing of complex genomes without parental data remains challenging. We formulate haplotype phasing as a node clustering problem with overlapping clusters on augmented unitig graphs, where nodes represent contiguous, non-branching DNA sequence fragments and two edge types can encode sequence overlap or Hi-C proximity information. We introduce a contrastive learning framework with a custom objective function and train a graph-transformer-based model, termed grapHiC, to phase paternal, maternal, and homozygous unitig nodes. grapHiC is the first machine-learning-based method to perform reference-free haplotype phasing and the first approach to directly phase raw unitig graphs without prior simplification. We show that grapHiC accurately clusters nodes on human-genome-scale graphs and that its predictions can effectively guide phased de novo genome assembly, producing human assemblies with contiguity and phasing quality comparable to the state of the art when integrated with the DipGNNome assembler.
