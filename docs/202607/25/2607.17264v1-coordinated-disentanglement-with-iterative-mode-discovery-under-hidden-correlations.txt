@@ -1,0 +1,1454 @@
+Title: Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations
+
+URL Source: https://arxiv.org/pdf/2607.17264v1
+
+Published Time: Tue, 21 Jul 2026 01:22:03 GMT
+
+Number of Pages: 33
+
+Markdown Content:
+# Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Rong Hu 1 2 Ling Chen 1 2 
+
+## Abstract 
+
+Disentangled representation learning is a power-ful paradigm for robust attribute prediction. While recent methods address attribute correlations, hid-den correlations remain underexplored, where data under the value of a certain attribute exhibit underlying modes correlated with other attributes. To preserve mode information and achieve dis-entanglement, we jointly discover modes and en-force mode-based conditional independence. Yet, the interdependency between these two modules may lead to error amplification under naive it-erations. We propose Coordinated Disentangle-ment with Iterative mode Discovery (CoDID), an end-to-end framework featuring a dynamic archi-tecture that adapts to evolving number of modes, and a coordination mechanism that mitigates error amplification via meta-optimization. Empirical re-sults demonstrate the state-of-the-art performance on diverse tasks. 
+
+## 1. Introduction 
+
+Supervised disentangled representation learning (DRL) aims to learn the representation of each data attribute under label supervision, such that a representation only changes when its corresponding attribute changes, while being invariant to changes in other attributes (Bengio et al., 2013). While DRL methods usually assume independence between at-tributes, this assumption is often violated in real-world data, e.g., human activity and user identity (ID) attributes may be correlated due to personal habits (Figure 1(a)). Under at-tribute correlations, enforcing representation independence causes the loss of attribute information, whereas enforcing conditional representation independence via attribute-based 
+
+> 1
+
+State Key Laboratory of Blockchain and Data Security, Zhe-jiang University, Hangzhou, China 2College of Computer Science and Technology, Zhejiang University, Hangzhou, China. Corre-spondence to: Ling Chen <lingchen@cs.zju.edu.cn >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). walking  
+
+> Walking mode
+> stroll run
+> Activity
+> A
+> B
+> User ID
+> running
+> brisk walk
+> (a) Attribute correlations
+> (b) Hidden correlations under activity “walking”
+
+Figure 1. Human activity example. The distributions of (a) “walk-ing” / “running” and (b) “stroll” / “brisk walk” differ between users, exhibiting attribute and hidden correlations, respectively. Since the “brisk walk” mode resembles “running”, a model trained under such hidden correlations may over-encode user ID to better distinguish them, i.e., associating user B with “running” on these samples, as user B hardly performs “brisk walk”. Under correla-tion shift, e.g., when user B frequently performs “brisk walk” at test time, this may lead to misclassification. 
+
+conditional mutual information minimization (A-CMI) can yield disentanglement (Funke et al., 2022). Existing methods overlook the underlying variations of at-tributes: under a value of a certain attribute, variations re-lated to this attribute may lead to a complex multi-modal 
+
+data distribution, characterized by multiple high-density re-gions, with each referred to as a mode ; these modes may be correlated with other attributes, referred to as hidden corre-lations . For example, variations of pace, stride, and posture may lead to different modes under “walking” activity, the casual “stroll” and energetic “brisk walk”; these modes may be correlated with user ID attribute due to subtle differences in personal habits (Figure 1(b)). In this case, minimizing attribute-based CMI may cause the loss of mode informa-tion, which is important for attribute prediction (Nie et al., 2020; Sugiyama, 2021; Li et al., 2017). The modes under different attribute values may form adjacent or interleaved cluster structures, where preserving such structures bene-fits attribute prediction, e.g., the high-intensity “brisk walk” mode resembles “running” activity, and encoding this easily confused mode helps distinguish walking from running. To preserve mode information under hidden correlations, disentanglement can be achieved by minimizing mode-1arXiv:2607.17264v1 [cs.AI] 19 Jul 2026 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+based CMI. This requires mode labels for conditioning, which are often unavailable in real practice. A straight-forward approach is to perform clustering on pre-trained representations to discover underlying modes, and then use cluster labels as proxies for mode labels in DRL. Since the pre-trained representations of the certain attribute are not disentangled, these representations might contain incom-plete information about this attribute or redundant informa-tion about other attributes. Consequently, the clusters on these representations might misrepresent the true underlying modes, leading to clustering errors and compromising DRL. Iteratively disentangling representations and discovering modes appears to be a promising solution, which can estab-lish interactions between these two modules: disentangling representations could facilitate mode discovery, and the discovered modes could provide better guidance for mini-mizing mode-based CMI during disentanglement. However, the two modules might also compromise each other, poten-tially leading to catastrophic error amplification (Song et al., 2022): disentanglement based on inaccurate cluster labels might degrade the quality of representations, which in turn makes mode discovery more error-prone. In addition, pre-specifying the number of clusters under each attribute value demands heavy computational overhead (Wang et al., 2018). While nonparametric clustering can reduce this overhead, abrupt changes in the number of clusters may cause training instability and increase the risk of error amplification. To address the above challenges, we propose Co ordinated D isentanglement with I terative mode D iscovery (CoDID) for supervised disentanglement under hidden correlations. CoDID pioneers iterative mode discovery and disentangle-ment under hidden correlations, featuring a theoretically grounded coordination mechanism that prevents error am-plification. Our main contributions are: • Theoretical Insights : We identify that error amplifi-cation primarily stems from within-cluster correlation ,where a cluster contains data from multiple true modes that are correlated with other attributes. This correla-tion induces mode information loss during CMI min-imization, hindering representation disentanglement; the resulting representations exhibit ambiguous mode boundaries, causing clustering errors and creating a detrimental cycle of error amplification. • Iterative Framework : We propose an iterative frame-work of disentanglement and mode discovery, estab-lishing interactions between them, which (1) performs iterative clustering to infer the number of modes and mode labels end-to-end, eliminating pre-specification overhead, and (2) minimizes CMI based on cluster la-bels to achieve disentanglement, using a dynamic archi-tecture that seamlessly adapts to the evolving number of clusters, while maintaining training stability. • Meta-Coordination : We propose a meta-coordination mechanism : (1) to disentangle representations while preserving mode information, it learns the weights of marginal representations in CMI minimization via meta-optimization; (2) to refine clustering and mitigate within-cluster correlation, it utilizes these weights to differentiate correlated modes within clusters and guide cluster splits, thus enabling mutual enhancement. • Extensive Evaluations : Experiments on seven datasets demonstrate the superiority of CoDID for ro-bust attribute prediction under correlation shift and out-of-distribution tasks, outperforming the best baseline by an average of 7.8% in accuracy and 7.9% in macro F1 score. Comprehensive investigations reveal the in-dicative patterns of the learned weights, and validate improved disentanglement and clustering. 
+
+## 2. Related Work 
+
+Disentangled Representation Learning. DRL meth-ods can be roughly divided into unsupervised, weakly-supervised, and supervised DRL. Unsupervised DRL learns independent representation dimensions that each correspond to an unknown attribute by self-supervision, e.g., variational auto-encoding (Kim & Mnih, 2018; Chen et al., 2018). Yet, the feasibility of purely unsupervised disentanglement has been questioned (Locatello et al., 2019), which prompts DRL with weak supervision, e.g., similarity (Chen & Bat-manghelich, 2020) or grouping information (Bouchacourt et al., 2018). Supervised DRL learns one multi-dimensional representation subspace for each labeled attribute (Qian et al., 2021; Yuan et al., 2021). Generally, DRL methods assume attribute independence and enforce representation independence between different attributes for disentangle-ment, e.g., MI minimization for supervised DRL (Yuan et al., 2021; Su et al., 2022). Under correlations, enforcing independence constraints hinders disentanglement, causing representation entanglement for unsupervised DRL (Tr ¨auble et al., 2021), and hurting representation informativeness for supervised DRL (Funke et al., 2022). 
+
+DRL Under Correlations. For DRL under attribute correla-tions, partial supervision (Tr ¨auble et al., 2021; Dittadi et al., 2021), relaxed independence constraints (Roth et al., 2023; Wang & Jordan, 2024), and graph modeling of attribute re-lations (Xie et al., 2024) have shown some success, but lack guarantees for disentanglement. Conditional independence constraints has been proven to be sufficient for DRL under correlations in linear regression cases (Funke et al., 2022), but requires supervision of the conditioning variables. For example, A-CMI (Funke et al., 2022) minimizes CMI based on known attribute labels; CMID (Dunion et al., 2023) min-imizes CMI based on known history variables to bypass unknown current variables. Under mode-related hidden cor-relations, DRL can be achieved by minimizing CMI based 2Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+on estimated mode labels. Since mode discovery and disen-tanglement modules are mutually dependent, it is non-trivial to design an end-to-end method that can iteratively refine mode estimation for achieving DRL. 
+
+## 3. Methodology 
+
+3.1. Problem Definition 
+
+In supervised DRL, we are given data x with Q labeled attributes a = ( a1, a 2, ..., a Q) ∈ A 1 × A 2 × ... × A Q.When a certain attribute aq (1 ≤ q ≤ Q) takes a value 
+
+aq = α, the underlying variations related to aq might lead to a multi-modal data distribution p(x|ak = α), e.g., a Gaussian mixture. Each high - density region of the distri-bution is referred to as a mode . The number of modes under aq = α is denoted as Km(α). The modes are in-dexed as 0, 1, ..., P 
+
+> α
+
+Km(α). The categorical variable mq
+
+indicates which mode each sample comes from. Mutual information is used to measure correlations between vari-ables, denoted as I(· ; ·). This certain aq may exhibit various correlations with other attributes a−q = {aj }j̸ =q , including attribute correlations I(aq ; a−q ), and hidden correlations 
+
+I(mq ; a−q |aq ) = P 
+
+> α
+
+paq (aq = α)I(mq ; a−q |aq = α)
+
+concerning the modes under each attribute value α. Take human activity data as an example, the activity attribute and user ID attribute can be denoted as a1, a 2, respectively, and the modes under each activity can be denoted as m1, as shown in Figure 1. See the corresponding data generation process in Appendix B. We focus on learning the disentangled representation zq
+
+for this certain attribute aq under hidden correlations and attribute correlations, where representations z ∈ RQ×dz
+
+of dimension dz are obtained by the mapping f (x) =
+
+z = ( z1, z2, ..., zQ). For simplicity, we focus on the two-attribute case ( Q = 2 , q = 1 ), which can be extended to multiple attributes ( Q > 2), as shown in Appendix E, F.5. 
+
+3.2. The Cause of Error Amplification 
+
+Mode-based CMI is a natural solution for handling hidden correlations with underlying modes. Yet, true mode labels are often unavailable. To estimate mode labels, one could perform clustering, and the obtained cluster labels c1 can be used as proxies. In this case, the effectiveness of CMI mini-mization depends on whether clustering can provide proper guidance. Before introducing the iterative framework, we validate mode-based CMI minimization as the proper con-ditional independence constraint for DRL, and analyze the potential errors in using cluster labels as proxies. 
+
+Motivating Mode-based CMI Minimization. We show that mode-based CMI minimization is the proper indepen-dence constraint under hidden correlations with the follow-ing results: 1 Attribute-based CMI minimization causes the loss of mode or attribute information under hidden correlations. 2 Mode-based conditional independence 
+
+I(zl1; zl2|m1) = 0 is a property of the latent representa-tions zl1, zl2 that generate the data. These results extend the propositions in (Funke et al., 2022) by introducing modes 
+
+m1 under a1. See propositions in Appendix C. 
+
+The Harm of Within-Cluster Correlations. Consider the clustering error where data from multiple modes are mixed into one cluster. Due to the local patterns of hidden correla-tions, this cluster may exhibit correlations between modes and the other attribute. We define within-cluster correla-tions as the expectation of such correlations over clusters 
+
+c1, i.e., I(m1; a2|c1) = P 
+
+> k
+
+I(m1; a2|c1 = k). Under such correlations, clustering misguides CMI minimization and degrades representation informativeness, as formalized in Proposition 1. Specifically, representations z1 might lose mode information, which makes the mode boundaries more ambiguous, escalates clustering errors and within-cluster correlations, and creates a cycle of error amplification. 
+
+Proposition 1. If I(m1; a2|c1) > 0, then enforcing 
+
+I(z1; z2|c1) = 0 leads to at least one of I(z1; m1) <H(m1) or I(z2; a2) < H (a2).
+
+This proposition extends the results in (Funke et al., 2022), see Appendix D.1 for the proof. The MI between a rep-resentation and an attribute measures the amount of infor-mation the representation contains about the attribute, and 
+
+I(z1; m1) < H (m1), I(z2; a2) < H (a2) indicate that 
+
+z1, z2 lose mode/attribute information about m1, a 2, re-spectively. The other type of clustering error, where data from one mode are divided into multiple clusters, does not degrade informativeness and can be mitigated as DRL pro-gresses, as demonstrated in Appendix D. 
+
+Interpretations. Since I(z1; z2|c1) = 0 if and only if p(z1, z2|c1) = p(z1|c1)p(z2|c1), minimizing CMI equals to aligning the joint distribution p(z1, z2|c1) and the marginal distribution p(z1|c1)p(z2|c1) of representations 
+
+(z1, z2). For the corresponding labels (m1, a 2), within-cluster correlations indicate a mismatch between their joint and marginal distributions, i.e., I(m1; a2|c1) > 0 →
+
+p(m1; a2|c1)̸ = p(m1|c1)p(a2|c1), as shown in Figure 2(a). As a result, to exactly align the joint and marginal distri-butions of representations, input data of different (m1, a 2)
+
+labels must be mapped to the same regions in the latent space, corrupting the mode/attribute patterns in the learned representations, as shown in Figure 2(b). 
+
+Our Solution. To preserve mode information, we intro-duce weighting for marginal representations in the CMI minimization objective (Figure 2(c)). By meta-optimization, weights are learned to maximize the informativeness of the resulting representations after CMI minimization. The informativeness of representations can only be preserved 3Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations (a) Mismatched label distributions.  (b) Exact alignment.  (c) Weighted alignment.                                               
+
+> Figure 2. Within-cluster correlations .(a): In cluster k, for labels (m1, a 2) = ( i, 0) ,(i, 1) ,(j, 0) ,(j, 1) , their joint distribution
+> p(m1, a 2) = 12 .5% ,37 .5% ,37 .5% ,12 .5% , respectively, which reflects mode-specific conditional probabilities of a2under within-cluster correlations; their marginal distribution p(m1)p(a2) = 25% for each label combination, as p(m1=i) = p(m1=j) = p(a2=0) = p(a2= 1) = 50% . (b): Exact alignment causes cross-label mapping due to the mismatched joint and marginal label distributions. (c): Weighted alignment can avoid this issue if the ideal mode-specific weights are assigned, i.e., w= 0 .5,1.5for marginal representations with a2= 0 ,1in mode i, respectively, and w= 1 .5,0.5for marginal representations with a2= 0 ,1in mode j, respectively.
+
+when the weighted marginal label distribution matches the joint label distribution, i.e., when weights w sat-isfy w · p(m1|c1)p(a2|c1) ∝ p(m1, a 2|c1). This yields 
+
+w|a2,m 1=i,c 1=k : w|a2,m 1=j,c 1=k = p(a2|m1 = i, c 1 =
+
+k) : p(a2|m1 = j, c 1 = k), which shows that, for a given 
+
+a2 value in cluster k, the weights across modes reflect mode-specific conditional probabilities under within-cluster cor-relations. Such weight patterns naturally differentiate cor-related modes, and can be used to guide cluster splits for mitigating within-cluster correlations. 
+
+3.3. Coordinated Disentanglement with Mode Discovery 
+
+The framework of CoDID is presented in Figure 3, which consists of disentanglement module for learning the dis-entangled representation of attribute a1, mode discovery module for inferring the mode labels under each value of 
+
+a1, and meta-coordination mechanism for preventing error amplification. Our framework is architecture-agnostic and adaptable to various applications. 
+
+Disentanglement module. Representations are extracted from data by encoder F , i.e., z = ( z1, z2) = F (x), then passed to the following subnetworks: attribute predictors 
+
+C1, C 2 and mode predictor Cm1 for supervised learning, where cluster labels are used as proxies for mode labels, decoder R for learning to reconstruct data, and discrimina-tor D for minimizing weighted CMI based on cluster la-bels. When the number of clusters changes, only the layers that take cluster labels as input conditions or output related probabilities are reconfigured, while other layers remain unchanged (Appendix F.4), avoiding abrupt changes. For weighted CMI minimization, representations are sam-pled from their joint distribution p(z1, z2|c1) and marginal distribution p(z1|c1)p(z2|c1) by the following procedure: The samples in each mini-batch are partitioned by cluster labels c1; in each cluster, the joint representations are formu-lated by concatenating z1, z2 from the same sample, and the marginal representations are formulated by concatenating 
+
+z1 with the z2 shuffled within this cluster. Then, represen-tations and the cluster labels are passed to discriminator D
+
+to align the distributions with adversarial training (Belghazi et al., 2018; Funke et al., 2022; Dunion et al., 2023). 
+
+Mode discovery module. Under each attribute value 
+
+a1 = α, we perform non-parametric clustering on repre-sentations z1 using a Dirichlet Process Gaussian Mixture Model (DPGMM) (Ronen et al., 2022), which adaptively determines the number of clusters Kc(α) and outputs clus-ter probabilities rc. For each z1, each dimension of vector 
+
+rc indicates the probability of z1 being assigned to a clus-ter under an attribute value. Cluster labels are obtained as 
+
+c1 = arg max k rc
+
+> k
+
+. Clustering results are iteratively refined after every Ncl epochs of disentanglement module training. To learn the number of clusters Kc, cluster split/merge operations are proposed and are accepted based on the Hast-ings ratio (Hastings, 1970). For split operations, each clus-ter is modeled with a 2-component GMM, which identi-fies potential subclusters and outputs subcluster probabil-ities rsc = ( rsc 1 , r sc 2 ) for each z1. rsc is sent into meta-coordination mechanism to calculate the refined subcluster probabilities, which are used in split proposals. See Ap-pendix G for more details about DPGMM. 
+
+Meta-Coordination Mechanism. At the core of our frame-work lies the meta-coordination mechanism, which consists of weight net W for preventing the harm of within-cluster correlations in disentanglement, and subclustering net S for mitigating within-cluster correlations in mode discovery. Weight net W compute the weights w of marginal represen-tations (z1, z2) using three inputs: (1) conditioning labels 
+
+(c1, a 2), as the ideal weights with w · p(m1|c1)p(a2|c1) ∝
+
+p(m1, a 2|c1) are dependent on the cluster c1 and attribute 
+
+a2; (2) the discrimination loss of marginal representations, as low similarity of marginal representations to joint repre-sentations may indicate underlying label distribution mis-match; (3) the prediction losses of z1 and z2 to assess rep-resentation quality, following (Shu et al., 2019; Cai et al., 4Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations Data  Shuffle     
+
+> Joint Marginal
+> Variables
+> of
+> Cluster
+> label
+> Cluster
+> probability
+> …
+> Meta -coordination Disentanglement
+> …
+> …
+> …
+> …
+> …
+> … …
+> Cluster
+> label Zcz c
+> DPGMM
+> merge
+> split
+> Mode discovery
+> Weights
+> Clustering results
+> Subcluster
+> probability
+> …
+> …
+> Subcluster
+> means
+> Weight
+> summary
+> Encoder
+> Predictors Discriminator
+> Weight net
+> & Decoder
+> Subcluster net
+> ⨀
+
+Figure 3. The framework of CoDID : mode discovery module produces clustering results for disentanglement; disentanglement module outputs representations for mode discovery. Clustering is performed under each a1 value, α. “ ⊙” denotes element-wise multiplication. 
+
+2020). Configured as a multi-layer perceptron, W is capable of learning expressive weighting functions that adapt to data patterns while preserving theoretical constraints. Subcluster net S refines DPGMM subcluster probabilities 
+
+rsc by computing subcluster probabilities ˆrsc = (ˆ rsc 1 , ˆrsc 2 )
+
+from representation z1 and its cluster label c1. While DPGMM relies solely on representation distributions and may fail to identify meaningful subclusters when mode structures are ambiguous, S leverages weight summaries 
+
+to capture the mode-identifying patterns from the learned weights. This enables S to differentiate correlated modes and assign them to distinct subclusters, enabling cluster splits that mitigate within-cluster correlations. 
+
+Losses. The losses for disentanglement module are formu-lated as follows. See Appendix F.5 for the training process. (1) To learn informative representations, the informative loss 
+
+Linfo combines reconstruction loss Lre to retain data seman-tics (including attributes and underlying modes) (Zeng et al., 2023), and attribute prediction loss Lap , mode prediction loss Lmp to encode attribute and mode information: 
+
+Lap = Ex[P2
+
+> i=1
+
+hce (Ci(zi), a i)] (1) 
+
+Lmp = Ex[hkld (Cm1 (z1), rc)] (2) 
+
+Lre = Ex[hmse (R(z1, z2), x)] (3) 
+
+Linfo = Lap + λmp · L mp + λre · L re (4) where λmp , λ re are loss coefficients, hce (·), hmse (·), hkld (·)
+
+indicate cross-entropy, mean-squared error, and Kullback-Leibler Divergence, respectively, and cluster probabilities 
+
+rc are used as soft proxies for mode labels. (2) To enforce conditional independence for disentangle-ment, we formulate weighted discrimination loss Lwd . This loss evaluates the Jensen-Shannon Divergence between the joint and marginal representation distributions (Hjelm et al., 2019), with weights w assigned to marginal representations: 
+
+Lwd = Ec1 [E(z1,z2)|c1 [lbce (D(z1, z2, c 1), 1)] + Ez1|c1,z2|c1 [w · lbce (D(z1, z2, c 1), 0)]] (5) where hbce (·) denotes binary cross-entropy. For a marginal representation (z1, z2), we denote its attribute and mode prediction losses as lap  
+
+> i
+
+= hce (Ci(zi), a i), i = 1, 2,
+
+lmp 1 = hce (Cm1 (z1), r1), and its discrimination loss as 
+
+ld = lbce (D(z1, z2, c 1), 0) . The weight is computed as: 
+
+w = W (lap 1 , l ap 2 , l mp 1 , l d, c 1, a 2) (6) (3) To learn proper weights that preserve representa-tion informativeness during CMI minimization, we for-mulate meta-informativeness loss Lmeta based on meta-optimization, which uses one optimization process to tune another. For clarity, we only track the encoder parame-ters ϕf and weight net parameters ϕw in the computations. First, we optimize encoder parameters ϕf w.r.t. weighted discrimination loss Lwd with learning rate β, obtaining ˜ϕf :
+
+˜ϕf (ϕw) = ϕf − β∇ϕf Lwd (ϕf , ϕw) (7) Then, we calculate Lmeta to evaluate the informativeness of representation ˜z1 obtained after the optimization step w.r.t. CMI minimization, ( ˜ z1(ϕw), ˜z2(ϕw)) = F (x; ˜ϕf (ϕw)) .Attribute prediction loss and reconstruction loss are used to assess whether ˜z1 retains the information for predict-ing attribute a1 and for encoding mode structures in data distributions. Lmeta is formulated with coefficient λmr as: 
+
+Lmeta (ϕw) = Ex[hce (C1( ˜ z1(ϕw)) , a 1)+ λmr · hmse (R( ˜ z1(ϕw), ˜z2(ϕw)) , x)] (8) (4) To obtain the refined subcluster probabilities, we train subcluster net S to reproduce the subclustering of DPGMM. For a representation z1 with cluster label c1 and subcluster means {μsc  
+
+> c1,j
+
+}2
+
+> j=1
+
+, S learns to assign z1 to the subcluster whose center is closer to z1, aligning with DPGMM (Ronen et al., 2022). We formulate isotropic loss Liso as: 
+
+Liso = Ex[P2 
+
+> j=1
+
+ˆrsc  
+
+> j
+
+· || z1 − μsc  
+
+> c1,j
+
+|| 2 
+
+> ℓ2
+
+] (9) We formulate weight summaries for refining the outputs of subcluster net. Recall that the ideal weights have the 5Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+property w|a2,m 1=i,c 1=k : w|a2,m 1=j,c 1=k = p(a2|m1 =
+
+i, c 1 = k) : p(a2|m1 = j, c 1 = k), i.e., in a cluster c1 = k,marginal representations of the same a2 label will have dif-ferent weights across modes m1 = i, j under within-cluster correlations. To infer whether two z1 samples are from the same mode, we first construct a weight summary Pw
+
+for each z1 sample to record the weight distribution under each a2 label: Pw = { N (μ(η), σ 2(η)) }η∈A 2 , where we gather z2 samples of label a2 = η, calculate the weights of 
+
+(z1, z2), and fit these weights with a Gaussian distribution 
+
+w ∼ N (μ(η), σ 2(η)) for each η.Under the same a2 label, z1 samples with more divergent weight distributions are more likely to originate from differ-ent modes, thus S is encouraged to assign them to different subclusters via weight alignment loss Lwa . This loss and the overall subclustering loss Lsc are formulated as follows, with coefficient λwa , Jensen-Shannon divergence hjsd (·)
+
+and the sample-size weighted average ¯hjsd (·) over η:             
+
+> Lwa =Ec1[Ez1,i |c1,z1,j |c1,z2|c1[hjsd (ˆ rsc
+> i,ˆrsc
+> j)/¯hjsd (Pw
+> i,Pw
+> j)]]
+> (10)
+
+Lsc = Liso + λwa · L wa (11) 
+
+## 4. Experiments 
+
+4.1. Experimental Setup Datasets. We evaluate on toy data and seven real-world datasets, i.e., Colored MNIST ( CMNIST ) (Ar-jovsky et al., 2019a), Colored Fashion-MNIST ( CFashion-MNIST ) (Xiao et al., 2017), Canine-Background ( Canine-BG ) constructed from ImageNet (Deng et al., 2009), UCI-HAR (Anguita et al., 2013), RealWorld (Sztyler & Stuck-enschmidt, 2016), HHAR (Stisen et al., 2015), and MFD 
+
+(Lessmeier et al., 2016). Attributes a1, a 2 represent the parity (“even”, “odd”) and color of digits on CMNIST, the style (“sporty”, “chic”) and color of clothing on CFashion-MNIST, the functional categories (“work”, “pet”) and image backgrounds (“indoors”, “outdoors”) of dogs on Canine-BG, fault type and operating condition on MFD, and activity and user ID on other human activity datasets. On CMNIST, CFashion-MNIST, and Canine-BG, we construct modes un-der each a1 value as digits (e.g., “8” under parity “even”), clothing category (e.g., “sneaker” under style “sporty”), and dog breeds (e.g., “standard poodle” under functional category “pet”), respectively; on time series datasets, we assume natural underlying multi-modal data distributions. See Appendix F.1 for details. 
+
+Evaluation Protocols. We evaluate under introduced or nat-ural correlations. On CMNIST and CFashion-MNIST, and Canine-BG with constructed modes, we introduce correla-tions by sampling . We train on correlated data and evaluate on three test sets with increasing train-test correlation shifts, test 1 (same correlations), test 2 (no correlations), and test 3 (anticorrelations). In Table 1, we train under both attribute and hidden correlations and report the results on test 3 (see Appendix H for full results). On time series datasets, we assume natural correlations (Wu et al., 2025). By leave-one-group-out validation based on a2, training and test sets show data distribution shifts on disjoint a2 values, e.g., dif-ferent training/test users with distinct behaviors and various correlations with activities. See details in Appendix F.2. 
+
+Metrics. Our task is to learn the disentangled representation of a1 for robust attribute prediction, evaluated by accuracy (Acc.) and macro F1 score (Mac. F1). This reflects disentan-glement, as only disentangled representations can support robust prediction under various train-test shifts (Funke et al., 2022). Other disentanglement and clustering metrics are reported in Appendix A.1, A.4. For statistical tests, each experiment is repeated using 5 varying seeds. 
+
+Baselines and Implementations. The code of CoDID is available at GitHub 1. We compare with common DRL and invariant learning methods ( MMD (Lin et al., 2020), DANN 
+
+(Ganin et al., 2016), CORAL (Sun & Saenko, 2016), IRM 
+
+(Arjovsky et al., 2019b), REx (Krueger et al., 2021), DTS 
+
+(Li et al., 2022), IDE-VC (Yuan et al., 2021), MI (Cheng et al., 2022), and ID-FaceVC (Rong & Liu, 2025)), and the DRL methods that address correlations ( A-CMI (Funke et al., 2022), HFS (Roth et al., 2023), DIOSC (Oublal et al., 2024a), and CODA (Ou & Zhang, 2024)). For reference, we also include BASE with only supervised learning. Details of baselines, implementations, network architectures, and hyperparameters are in Appendix F. 
+
+4.2. Baseline Comparison 
+
+The baseline comparison results in Table 1 show that: (1) CoDID consistently outperforms the best DRL baseline by an average of 7.8% accuracy and 7.9% macro F1 score across all datasets, and consistently outperforms BASE by an average of 10.3% accuracy and 10.4% macro F1 score across all datasets. This indicates that minimizing mode-based CMI can preserve important mode information, and that our iterative framework with meta-coordination mech-anism can effectively prevent catastrophic error amplifica-tion, yielding reliable clustering and robust representations for attribute prediction. Under introduced correlations, the significant advantage on Canine-BG indicates better gener-alization on complex image data under attribute and hidden correlation shifts. Under natural correlations, the significant advantage on UCI-HAR and MFD demonstrates the practi-cal value in improving generalization on real-world OOD data with underlying multi-modal distributions. (2) In contrast, the baselines underperform BASE in some cases. Common DRL and invariant representation learning 
+
+> 1https://github.com/Rxannro/CoDID
+
+6Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Table 1. Baseline comparison (mean±std.). “*” indicates that CoDID is statistically superior to the baseline by pairwise t-test at a 95% significance level. The best results are bold . The runner-up results are underlined . The improvement over the best baseline is calculated. 
+
+Method CMNIST CFashion-MNIST Canine-BG UCI-HAR Realworld HHAR MFD Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 BASE 79.2 ±0.9 * 78.3 ±0.9 * 77.8 ±1.5 * 77.1 ±1.5 * 55.6 ±2.0 * 54.6 ±2.3 * 71.2 ±2.8 * 69.7 ±3.6 * 64.6 ±1.4 * 65.4 ±1.4 * 80.8 ±1.6 * 80.9 ±2.0 * 72.7 ±1.6 * 76.3 ±0.9 *MMD 57.3 ±2.7 * 41.2 ±7.0 * 63.5 ±3.6 * 62.7 ±3.7 * 54.1 ±6.7 * 52.1 ±9.4 * 70.3 ±3.7 * 66.2 ±3.5 * 66.0 ±1.9 * 65.2 ±2.3 * 80.9 ±1.2 * 80.5 ±1.7 * 78.2 ±1.9 * 79.1 ±1.6 *DANN 58.3 ±2.9 * 56.9 ±2.6 * 63.8 ±2.5 * 62.5 ±2.8 * 29.8 ±4.4 * 29.6 ±4.8 * 67.8 ±3.1 * 65.1 ±3.0 * 66.0 ±1.7 * 65.1 ±2.0 * 77.1 ±1.8 * 76.7 ±1.5 * 74.0 ±2.1 * 76.3 ±1.4 *CORAL 58.6 ±3.2 * 57.6 ±3.0 * 68.0 ±3.4 * 67.3 ±3.0 * 51.0 ±3.5 * 33.8 ±3.2 * 74.4 ±2.8 * 72.7 ±3.3 * 64.8 ±1.9 * 65.9 ±1.6 * 81.0 ±1.4 * 81.2 ±1.7 * 77.3 ±1.8 * 77.9 ±1.5 *IRM 81.0 ±3.5 * 80.3 ±3.2 * 79.3 ±2.6 * 78.9 ±2.5 * 54.3 ±5.6 * 54.3 ±5.1 * 70.9 ±3.0 * 69.6 ±3.4 * 65.4 ±1.6 * 65.4 ±1.5 * 82.5 ±1.3 * 82.5 ±1.2 * 78.4 ±1.7 * 79.9 ±1.3 *REx 81.7 ±3.3 * 80.9 ±3.6 * 76.3 ±3.5 * 75.9 ±3.2 * 56.0 ±5.2 * 56.0 ±5.7 * 73.7 ±2.5 * 73.2 ±2.8 * 65.1 ±1.5 * 65.3 ±1.7 * 80.6 ±1.5 * 80.4 ±1.6 * 78.8 ±1.9 * 80.3 ±1.4 *DTS 55.6 ±3.0 * 44.0 ±1.9 * 61.2 ±2.0 * 60.1 ±2.0 * 41.8 ±4.7 * 35.7 ±2.3 * 72.8 ±3.3 * 70.1 ±2.6 * 64.4 ±2.3 * 64.9 ±1.5 * 79.8 ±2.4 * 79.7 ±1.7 * 67.0 ±2.2 * 67.4 ±1.5 *IDE-VC 54.2 ±4.0 * 49.1 ±2.9 * 58.7 ±3.8 * 57.1 ±4.3 * 49.1 ±2.2 * 45.7 ±2.0 * 73.6 ±3.1 * 73.2 ±3.4 * 65.2 ±1.3 * 65.0 ±1.7 * 80.7 ±2.0 * 80.6 ±1.4 * 74.1 ±1.8 * 76.3 ±1.1 *MI 56.9 ±4.0 * 45.2 ±2.8 * 62.1 ±3.0 * 60.7 ±3.0 * 52.3 ±4.8 * 51.0 ±4.4 * 74.9 ±2.1 * 74.5 ±2.7 * 66.0 ±1.8 * 65.5 ±1.6 * 80.9 ±1.7 * 80.7 ±2.1 * 76.3 ±1.2 * 77.6 ±1.6 *A-CMI 58.5 ±2.3 * 41.2 ±5.9 * 61.8 ±5.3 * 60.0 ±6.5 * 53.0 ±8.2 * 52.8 ±8.1 * 71.4 ±3.4 * 70.0 ±3.0 * 65.4 ±1.5 * 65.5 ±1.2 * 80.2 ±1.8 * 80.3 ±2.3 * 78.8 ±1.4 * 79.8 ±0.7 *HFS 66.5 ±2.1 * 64.9 ±2.1 * 66.2 ±3.6 * 65.3 ±3.1 * 46.8 ±3.7 * 46.2 ±4.1 * 67.1 ±3.5 * 65.1 ±4.0 * 48.9 ±1.8 * 39.8 ±1.5 * 78.2 ±1.2 * 78.3 ±1.5 * 75.4 ±1.7 * 71.0 ±1.3 *CODA 69.8 ±1.9 * 68.3 ±2.3 * 72.5 ±1.5 * 71.3 ±1.9 * 43.9 ±2.2 * 43.9 ±2.3 * 71.1 ±4.2 * 70.4 ±5.0 * 65.3 ±0.7 * 66.7 ±0.6 * 77.9 ±1.7 * 77.6 ±1.8 * 62.5 ±0.8 * 54.6 ±1.2 *ID-FaceVC 58.1 ±2.2 * 56.2 ±2.4 * 63.6 ±1.4 * 62.5 ±1.7 * 42.1 ±6.2 * 41.3 ±6.7 * 68.0 ±8.1 * 68.0 ±9.3 * 65.2 ±1.5 * 66.2 ±1.8 * 78.6 ±1.2 * 77.8 ±1.3 * 71.1 ±1.9 * 71.6 ±1.6 *DIOSC 73.4 ±0.7 * 72.6 ±1.0 * 73.2 ±1.6 * 72.8 ±1.4 * 42.5 ±5.4 * 42.0 ±5.3 * 74.6 ±3.0 * 74.5 ±3.7 * 65.2 ±1.3 * 66.3 ±1.2 * 79.0 ±1.4 * 78.6 ±1.5 * 68.9 ±1.6 * 67.9 ±1.4 *CoDID 85.2 ±2.7 84.6 ±3.0 84.1 ±3.2 83.5 ±3.3 68.3 ±5.2 68.2 ±5.7 86.2 ±0.5 86.7 ±0.6 70.9 ±1.3 71.7 ±1.0 88.4 ±1.1 88.3 ±1.1 90.7 ±1.7 91.9 ±1.7 
+
+Improvement +3.5 % +3.7 % +4.8 % +4.6 % +12.3 % +12.2 % +11.3 % +12.2 % +4.9 % +5.0 % +5.9 % +5.8 % +11.9 % +11.6 % 
+
+Table 2. Variant comparison (mean±std.). The notations follow Table 1. 
+
+Method Design choices CMNIST CFashion-MNIST Canine-BG UCI-HAR Realworld HHAR MFD 
+
+Lmp Ld IC IN Lwd Lsc UP Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 BASE - - - - - - - 79.2 ±0.9 * 78.3 ±0.9 * 77.8 ±1.5 * 77.1 ±1.5 * 55.6 ±2.0 * 54.6 ±2.3 * 71.2 ±2.8 * 69.7 ±3.6 * 64.6 ±1.4 * 65.4 ±1.4 * 80.8 ±1.6 * 80.9 ±2.0 * 72.7 ±1.6 * 76.3 ±0.9 *CoDID-km-MP ! % % % % % % 74.2 ±1.9 * 73.6 ±1.5 * 74.2 ±2.0 * 73.7 ±2.1 * 63.2 ±4.6 * 62.2 ±4.2 * 77.6 ±5.3 * 77.5 ±4.5 * 63.7 ±0.9 * 63.3 ±0.8 * 83.5 ±1.2 * 83.4 ±1.2 * 78.4 ±2.6 * 80.1 ±2.5 *CoDID-km-MC % ! % % % % % 73.0 ±1.4 * 72.1 ±1.4 * 71.6 ±1.5 * 70.2 ±1.3 * 60.9 ±3.2 * 60.2 ±3.4 * 80.2 ±3.3 * 79.7 ±4.4 * 68.4 ±0.8 68.0 ±0.9 83.8 ±1.4 * 83.2 ±1.5 * 81.1 ±2.1 * 80.2 ±2.3 *CoDID-km-ID ! ! % % % % % 77.1 ±1.0 * 76.7 ±1.2 * 73.6 ±1.4 * 72.8 ±1.3 * 62.6 ±4.9 * 62.5 ±4.7 * 77.6 ±1.8 * 76.8 ±2.3 * 68.3 ±1.2 * 67.8 ±1.1 * 77.2 ±1.9 * 75.5 ±1.5 * 80.6 ±1.7 * 80.9 ±1.2 *CoDID-km-SD ! ! % % % % % 76.3 ±1.7 * 75.6 ±1.5 * 72.9 ±1.6 * 72.3 ±1.6 * 61.5 ±3.5 * 61.4 ±3.6 * 77.4 ±1.5 * 76.8 ±1.8 * 66.2 ±1.3 * 66.6 ±1.8 * 81.0 ±2.4 * 81.2 ±1.8 * 79.2 ±1.8 * 79.2 ±1.3 *CoDID-km ! ! % % % % % 79.0 ±1.8 * 78.3 ±1.6 * 77.4 ±2.3 * 76.9 ±2.2 * 64.9 ±2.3 * 64.5 ±2.2 * 83.0 ±3.0 * 83.3 ±3.6 * 69.8 ±1.9 69.9 ±1.4 84.5 ±2.3 * 84.2 ±1.5 * 82.5 ±2.0 * 82.5 ±1.5 *CoDID-itkm ! ! ! % % % % 76.5 ±1.0 * 75.1 ±1.2 * 76.6 ±1.5 * 76.0 ±1.5 * 60.5 ±5.5 * 60.0 ±5.6 * 79.4 ±1.6 * 79.1 ±1.6 * 66.1 ±1.8 * 65.2 ±1.8 * 80.5 ±0.7 * 80.4 ±0.8 * 79.6 ±0.9 * 80.0 ±0.5 *CoDID-itdpm ! ! ! ! % % ! 77.6 ±2.0 * 77.0 ±2.1 * 77.4 ±1.3 * 76.8 ±1.4 * 61.4 ±3.2 * 61.1 ±3.5 * 83.2 ±0.5 * 83.7 ±0.6 * 65.7 ±1.3 * 66.0 ±1.6 * 83.8 ±0.3 * 83.5 ±0.3 * 82.2 ±0.9 * 84.5 ±1.2 *CoDID-w/o-SC ! ! ! ! ! % ! 79.1 ±0.8 * 78.4 ±0.7 * 78.4 ±1.6 * 77.9 ±1.6 * 64.5 ±3.7 * 64.4 ±3.7 * 83.5 ±0.3 * 84.0 ±0.4 * 65.4 ±1.9 * 65.3 ±1.9 * 85.3 ±0.8 * 85.0 ±0.8 * 82.9 ±1.3 * 85.1 ±1.3 *CoDID-UA ! ! ! ! ! ! % 82.0 ±0.7 * 81.3 ±0.5 * 79.4 ±1.9 * 78.9 ±1.9 * 66.2 ±3.9 * 65.9 ±3.4 * 84.2 ±3.2 * 84.6 ±3.6 * 69.6 ±1.4 70.9 ±1.5 86.0 ±1.2 * 85.7 ±1.3 * 85.8 ±2.4 * 86.9 ±2.0 *CoDID ! ! ! ! ! ! ! 85.2 ±2.7 84.6 ±3.0 84.1 ±3.2 83.5 ±3.3 68.3 ±5.2 68.2 ±5.7 86.2 ±0.5 86.7 ±0.6 70.9 ±1.3 71.7 ±1.0 88.4 ±1.1 88.3 ±1.1 90.7 ±1.7 91.9 ±1.7 
+
+Notes. “!” indicates the design choice is adopted, and “ %” indicates the alternative setting:  
+
+> -
+
+Lmp and Ld denote adopting these losses, where Ld denotes the unweighted discrimination loss that removes the weights from Lwd . 
+
+> -
+
+IC and IN denote iterative refinement of cluster assignments and the number of clusters, respectively; otherwise, these are fixed after pre-training.  
+
+> -
+
+Lwd and Lsc denote adopting these losses; otherwise, unweighted discrimination loss and DPGMM subcluster probability-based cluster split are adopted instead, respectively.  
+
+> -
+
+PR denotes partial network reconfiguration when the number of clusters changes (only the related input/output neurons); otherwise, all layers are reconfigured or re-initialized. 
+
+methods do not consider correlations and enforce indepen-dence or invariance constraints on representations, which might degrade representation informativeness under hidden correlations. A-CMI addresses attribute correlations but overlooks modes and hidden correlations under attribute values, thus losing mode information. The disadvantage of these baselines is pronounced on CMNIST, CFashion-MNIST, and Canine-BG, where train-test correlation shifts are prominent. IRM and REx enforce invariant predictions rather than invariant representations, and HFS deals with general correlations. Yet, they lack explicit mode modeling. 
+
+4.3. Comparison with Variants 
+
+We compare with two sets of variants to systematically analyze our design: The CoDID-km variants perform k-means (parametric clustering) on pre-trained representa-tions, which investigate the design of disentanglement mod-ule, including the mode-related losses and the discirminator architectures; The other variants perform iterative cluster-ing, which investigate the design related to iterations and coordinations. CoDID-km-ID/SD use individual discrim-inators and one shared discriminator for different modes, respectively, while other variants shares discriminator pa-rameters among the modes under the same attribute value. 
+
+CoDID-itkm performs iterative k-means during DRL, and 
+
+CoDID-itdpm performs iterative DPGMM (non-parametric clustering) during DRL. On image datasets, the ground-truth number of modes are provided to parametric cluster-ing methods as a prior knowledge, which is unknown for non-parametric methods. The results and other variant de-scriptions are in Table 2, which show that: (1) CoDID-km-MC/MP consistently underperform CoDID-km, showing that both discrimination loss and mode predic-tion loss are crucial for disentanglement. Mode prediction loss guides the representations to encode mode information, and discrimination loss enforces conditional independence to remove redundant information about other attributes. (2) CoDID-km-ID/SD consistently underperform CoDID-km, indicating that proper discriminator parameter sharing between different modes benefits mode-based CMI mini-7Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 0.00 1.66 3.31 4.97 6.63 8.28       
+
+> JSD w
+> 0
+> 25
+> 50
+> 75
+> 100
+> pm (%)
+> 96 89 88 82
+> 69 61 56
+> 45
+> 30 20
+
+(a) Weight patterns 1 2 3 4   
+
+> iteration
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Acc. sc
+> Snet DPGMM
+
+(b) Subclustering accuracy True modes DPGMM subclusters S net subclusters     
+
+> mode 0 mode 1 subcluster 0 subcluster 1
+
+(c) Subclustering visualization 
+
+Figure 4. Weight and subclustering analysis on CMNIST. The cluster k in (c) exhibits statistically significant within-cluster correlations based on the χ2-test ( p = 4 .22 × 10 −15 ), and DPGMM and S net achieve subcluster accuracies of 0.678 and 0.892, respectively. 
+
+mization. Excessive parameter sharing may limit the ability to capture distinctions among modes, and removing param-eter sharing may fail to leverage their commonality. (3) The iterative CoDID-itkm/itdpm generally underper-form the non-iterative CoDID-km, regardless of whether the number of clusters is updated. This is likely due to error amplification, i.e., clustering errors hinder representa-tion disentanglement, which in turn makes clustering more error-prone, leading to more errors than a fixed clustering. (4) CoDID-w/o-SC outperforms CoDID-dpm, showing the effectiveness of introducing weighted CMI minimization, which can preserve the informativeness of representations under within-cluster correlations. Further, CoDID outper-forms CoDID-w/o-SC, demonstrating the benefits of intro-ducing the refined subcluster probabilities for cluster splits, which can mitigate within-cluster correlations. (5) CoDID outperforms CoDID-UA, indicating that adapt-ing to the evolving number of clusters while reducing network reconfiguration facilitates better disentanglement, likely because avoiding abrupt changes enables stable train-ing. On image datasets, CoDID outperforms CoDID-km and CoDID-itkm, despite their access to the ground-truth number of modes, demonstrating the strong end-to-end per-formance of CoDID without prior knowledge. 
+
+## 5. Model Investigation 
+
+Toy Decision Boundary. We investigate the effect of mode-based and attribute-based CMI minimization on toy data, where CoDID-T uses the ground-truth mode labels for DRL. The decision boundaries and a1 prediction accuracy are shown in Figure 5, where: (1) The upper right boundaries of BASE surround the clusters at x2 = 1 , and its performance decreases as the correlation shift enlarges from test 1 to 3, indicating that BASE over-encodes a2 and lacks general-ization ability. (2) The decision boundaries of A-CMI span across the clusters at x2 = 0 , 1 without excluding either value, but fail to separate interleaving clusters of different modes. The performance is low but robust across 3 test sets, indicating that A-CMI does not over-encode a2, but loses important mode information. (3) The decision boundaries of CoDID-T conform to vertical lines x1 = b, b ∈ [0 , 5] 
+
+that distinguish interleaving clusters of different modes, and CoDID-T shows robustness and superiority across 3 test sets, indicating that CoDID-T can learn mode information about a1, and exclude irrelevant information about a2.01                          
+
+> x2
+> BASE (Acc. 0.773) A-CMI (Acc. 0.692) CoDID-T (Acc. 0.937)
+> 01
+> x2
+> BASE (Acc. 0.681) A-CMI (Acc. 0.662) CoDID-T (Acc. 0.921)
+> 012345
+> x1
+> 01
+> x2
+> BASE (Acc. 0.59)
+> 012345
+> x1
+> A-CMI (Acc. 0.669)
+> 012345
+> x1
+> CoDID-T (Acc. 0.926)
+> a1= 0 a1= 1 a1= 0 a1= 1
+> test 1 test 2 test 3
+
+Figure 5. Toy decision boundary. Attributes a1, a 2 control data dimensions x1, x2, respectively. Clusters centered at x1 = 0 , 2, 4
+
+and 1, 3, 5 represent modes under a1 = 0 and 1, respectively. 
+
+Weight pattern analysis. We examine whether the learned weights encode mode-specific patterns by analyzing the association between weight divergence and the ground-truth mode labels of z1. The weight divergence of a pair of z1
+
+samples (z1,i , z1,j ) is denoted as JSD w = ¯hjsd (Pwi , Pwj )
+
+(Equation 11). We randomly sample within-cluster z1 pairs on CMNIST, group them by weight divergence into equal-width bins, and calculate the proportion of pairs from the same modes, denoted as pm = p(m1,i = m1,j ). As shown in Figure 4(a), pm decreases as JSD w increases, indicating that representations with a larger weight divergence are less likely to originate from the same modes, exhibiting mode-identifying weight patterns. 
+
+Subclustering analysis. We evaluate subclustering on CM-NIST using the average per-cluster subclustering accuracy (Acc. sc ). As shown in Figure 4(b), subcluster net S con-sistently yields better subclusterings than DPGMM. This 8Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+indicates that weight alignment loss Lwa , which encourages representations with larger weight divergence to be assigned to different subclusters, can effectively utilize the mode-identifying weight patterns to better distinguish modes un-der within-cluster correlations. Figure 4(c) visualizes the subclusters from a cluster selected for splitting with t-SNE. DPGMM fails to separate ambiguous modes solely based on the representation distribution, while subcluster net can identify the underlying modes using weight patterns and guide a split that mitigates within-cluster correlation. 
+
+Evolution of Representation Distributions. We visualize the training dynamics of representation distributions using t-SNE, focusing on the two modes of digits 3 and 9 under parity “odd” on CMNIST. Figure 6 shows that: (1) Dur-ing training, the clustering gradually achieves inter-mode separation and intra-mode compactness, indicating effec-tive mode discovery and preservation of mode information by avoiding error amplification. (2) At epoch 20, the rep-resentations of different a2 values are clearly separable, suggesting that z1 over-encodes a2 after pre-training. This separation diminishes as training proceeds, indicating the removal of the information of a2. (3) Under hidden corre-lations, the information of a2 is partially shared with m1,and the conditional distribution p(a2 | m1) differs across modes ( a2 = 0 , 1 at the probability of (90% , 10%) in mode 
+
+0, and (10% , 90%) in mode 1 in this case). CoDID only removes the redundant information of a2, while preserving correlation-induced shared information, thus is able to keep 
+
+p(a2 | c1) close to p(a2 | m1). In contrast, the variants of CoDID exhibit error amplification (see Appendix A.5). 
+
+Figure 6. Representation distributions of z1 in CoDID. At epoch 20, pre-training is completed, and clustering is initialized. Colors indicate labels a2, m1, or c1. Black-edged diamond markers with numbers indicate the cluster centroids and their indices. 
+
+Computational Complexity We compare the number of parameters and the training duration of CoDID with the baselines on CFashion-MNIST: (1) Figure 7(a) shows that CoDID contains the largest number of parameters due to its comprehensive architecture, including decoder, discrimina-tor, weight net, and subclustering net. These components are essential for achieving disentanglement under hidden corre-lations, while the parameter increase compared to methods that also use decoders and discriminators (e.g., CODA) re-mains moderate. Subclustering net is a simple classifier; DPGMM mainly includes the means and variances of each Gaussian component; weight net is a light MLP that only oc-cupies 0.07% of the total parameters. (2) Figure 7(b) shows that A-CMI and CoDID have the longest training durations, mainly due to the neural estimation and minimization of CMI (Belghazi et al., 2018). DPGMM clustering is compu-tationally efficient (0.57% of the training duration), because each iteration only requires a few computation steps us-ing GPU vectorization. The training efficiency of CoDID benefits from the following design choices: discriminator parameter sharing across the modes under the same attribute value, vectorized parallel forward computation across all modes, and the partial network reconfiguration correspond-ing to cluster merge/split (See details in Appendix F.4). BASE MMD DANN CORAL IRM REx DTS IDE-VC MI A-CMI HFS CODA ID-FaceVC DIOSC CoDID 0
+
+> 5
+> 10
+> 15 Parameter count (e5)
+> weight net DPGMM subclustering net discriminator decoder encoder & predictor
+
+(a) Number of parameters BASE MMD DANN CORAL IRM REx DTS IDE-VC MI A-CMI HFS CODA ID-FaceVC DIOSC CoDID 0
+
+> 200
+> 400
+> 600
+> 800
+> 1000 Training duration (s)
+> clustering meta-optimization CMI minimization data loading & logging (self-)supervised learning
+
+(b) Training duration 
+
+Figure 7. Computational complexity comparison. 
+
+## 6. Conclusions 
+
+In this work, we propose CoDID, a supervised disentan-glement method under hidden correlations, which uses an iterative framework of disentanglement and mode discov-ery modules to learn the disentangled representations of a certain attribute with underlying modes. Theoretically, we reveal the cause of error amplification in this iterative framework, and design a meta-coordination mechanism to promote mutual enhancement between the two modules. Comprehensive experiments show the superiority of CoDID under correlation shifts and OOD tasks. 9Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+## Impact Statement 
+
+This research focuses on disentanglement representation learning, aiming to encode one single data attribute in each representation subspace, which holds great promise in en-hancing generalization to unseen scenarios and enabling controllable generative modeling. It is essential to note that our work focuses solely on scientific issues, and we also ensure that ethical considerations are carefully taken into account. All the used datasets are publicly available for scientific research. Thus, we believe that there is no ethical risk associated with our research. 
+
+## References 
+
+Anguita, D., Ghio, A., Oneto, L., Perez, X. P., and Or-tiz, J. L. R. A public domain dataset for human activ-ity recognition using smartphones. In Proceedings of the International European Symposium on Artificial Neu-ral Networks, Computational Intelligence and Machine Learning , pp. 437–442, 2013. Arjovsky, M., Bottou, L., Gulrajani, I., and Lopez-Paz, D. Invariant risk minimization. arXiv preprint arXiv:1907.02893 , 2019a. Arjovsky, M., Bottou, L., Gulrajani, I., and Lopez-Paz, D. Invariant risk minimization. arXiv preprint arXiv:1907.02893 , 2019b. Belghazi, M. I., Baratin, A., Rajeshwar, S., Ozair, S., Ben-gio, Y., Courville, A., and Hjelm, D. Mutual information neural estimation. In Proceedings of the International Conference on Machine Learning , volume 80, pp. 531– 540, 2018. Bengio, Y., Courville, A., and Vincent, P. Representation learning: A review and new perspectives. IEEE Transac-tions on Pattern Analysis and Machine Intelligence , 35 (8):1798–1828, 2013. Bouchacourt, D., Tomioka, R., and Nowozin, S. Multi-level variational autoencoder: Learning disentangled represen-tations from grouped observations. Proceedings of the AAAI Conference on Artificial Intelligence , 32(1), 2018. Cai, Q., Pan, Y., Wang, Y., Liu, J., Yao, T., and Mei, T. Learning a unified sample weighting network for object detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2020. Chai, L., Wulff, J., and Isola, P. Using latent space regres-sion to analyze and leverage compositionality in {gan }s. In Proceedings of the International Conference on Learn-ing Representations , 2021. Chen, J. and Batmanghelich, K. Weakly supervised dis-entanglement by pairwise similarities. Proceedings of the AAAI Conference on Artificial Intelligence , 34(04): 3495–3502, 2020. Chen, R. T. Q., Li, X., Grosse, R., and Duvenaud, D. Iso-lating sources of disentanglement in VAEs. Advances in Neural Information Processing Systems , pp. 2615–2625, 2018. Cheng, M., Liao, X., Liu, Q., Ma, B., Xu, J., and Zheng, B. Learning disentangled representations for counterfactual regression via mutual information minimization. In Pro-ceedings of the International ACM SIGIR Conference on Research and Development in Information Retrieval , pp. 1802–1806, 2022. Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., and Fei-Fei, L. Imagenet: A large-scale hierarchical image database. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , pp. 248–255, 2009. Dittadi, A., Tr ¨auble, F., Locatello, F., Wuthrich, M., Agrawal, V., Winther, O., Bauer, S., and Sch ¨olkopf, B. On the transfer of disentangled representations in realistic settings. In Proceedings of the International Conference on Learning Representations , 2021. Dunion, M., McInroe, T., Luck, K. S., Hanna, J. P., and Al-brecht, S. V. Conditional mutual information for disentan-gled representations in reinforcement learning. Advances in Neural Information Processing Systems , 2023. Eastwood, C. and Williams, C. K. I. A framework for the quantitative evaluation of disentangled representations. In 
+
+Proceedings of the International Conference on Learning Representations , 2018. Funke, C. M., Vicol, P., Wang, K.-C., K ¨ummerer, M., Zemel, R., and Bethge, M. Disentanglement and generalization under correlation shifts. In Proceedings of the Conference on Lifelong Learning Agents , 2022. Ganin, Y., Ustinova, E., Ajakan, H., Germain, P., Larochelle, H., Laviolette, F., Marchand, M., and Lempitsky, V. Domain-adversarial training of neural networks. Journal of Machine Learning Research , 17(1):2096–2030, 2016. Hastings, W. K. Monte carlo sampling methods using markov chains and their applications. Biometrika , 57 (1):97–109, 1970. Hjelm, R. D., Fedorov, A., Lavoie-Marchildon, S., Grewal, K., Bachman, P., Trischler, A., and Bengio, Y. Learning deep representations by mutual information estimation and maximization. In Proceedings of the International Conference on Learning Representations , 2019. Jain, S. and Neal, R. M. A split-merge markov chain monte carlo procedure for the dirichlet process mixture model. 10 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Journal of Computational and Graphical Statistics , 13: 158 – 182, 2004. Kim, H. and Mnih, A. Disentangling by factorising. In 
+
+Proceedings of the International Conference on Machine Learning , volume 80, pp. 2649–2658, 2018. Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In Proceedings of the International Confer-ence on Learning Representations , 2015. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A. C., Lo, W., Doll ´ar, P., and Girshick, R. Segment anything. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023. Krueger, D., Caballero, E., Jacobsen, J.-H., Zhang, A., Bi-nas, J., Zhang, D., Le Priol, R., and Courville, A. Out-of-distribution generalization via risk extrapolation. In 
+
+Proceedings of the International Conference on Machine Learning , pp. 5815–5826, 2021. Lessmeier, C., Kimotho, J. K., Zimmer, D., and Sextro, W. Condition monitoring of bearing damage in electrome-chanical drive systems by using motor current signals of electric motors: A benchmark data set for data-driven classification. In Proceedings of the PHM Society Euro-pean Conference , 2016. Li, X., Chen, M., Nie, F., and Wang, Q. Locality adap-tive discriminant analysis. In Proceedings of the Inter-national Joint Conference on Artificial Intelligence , pp. 2201–2207, 2017. Li, Y., Chen, Z., Zha, D., Du, M., Ni, J., Zhang, D., Chen, H., and Hu, X. Towards learning disentangled represen-tations for time series. In Proceedings of the SIGKDD Conference on Knowledge Discovery and Data Mining ,pp. 3270–3278, 2022. Lin, S., Li, C.-T., and Kot, A. Multi-domain adversarial feature generalization for person re-identification. IEEE Transactions on Image Processing , 30:1596–1607, 2020. Locatello, F., Bauer, S., Lucic, M., Raetsch, G., Gelly, S., Sch ¨olkopf, B., and Bachem, O. Challenging common assumptions in the unsupervised learning of disentan-gled representations. In Proceedings of the International Conference on Machine Learning , pp. 4114–4124, 2019. Meil ˘a, M. Comparing clusterings—an information based distance. Journal of Multivariate Analysis , 98(5):873– 895, 2007. Nie, F., Wang, Z., Wang, R., Wang, Z., and Li, X. Adaptive local linear discriminant analysis. ACM Transactions on Knowledge Discovery from Data , 14(1), 2020. Ou, Z. and Zhang, Z. CODA: A correlation-oriented disen-tanglement and augmentation modeling scheme for better resisting subpopulation shifts. In Advances in Neural Information Processing Systems , 2024. Oublal, K., Ladjal, S., Benhaiem, D., BORGNE, E. L., and Roueff, F. Disentangling time series representations via contrastive based l-variational inference. In Proceedings of the International Conference on Learning Representa-tions , 2024a. Oublal, K., Ladjal, S., Benhaiem, D., BORGNE, E. L., and Roueff, F. Disentangling time series representations via contrastive based l-variational inference. In Proceedings of the International Conference on Learning Representa-tions , 2024b. Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., Killeen, T., Lin, Z., Gimelshein, N., Antiga, L., et al. Pytorch: An imperative style, high-performance deep learning library. In Proceedings of the International Conference on Neural Information Processing Systems ,pp. 8026–8037, 2019. Pearl, J. Causality: Models, Reasoning, and Inference .Cambridge University Press, 2nd edition, 2009. Pitman, J. Combinatorial stochastic processes. Lecture notes Technical Report 621, Department of Statistics, University of California, Berkeley, 2002. Qian, H., Pan, S. J., and Miao, C. Latent independent excita-tion for generalizable sensor-based cross-person activity recognition. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 35, pp. 11921–11929, 2021. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., and Sutskever, I. Learning transferable visual models from natural language supervision. In 
+
+Proceedings of the International Conference on Machine Learning , volume 139, pp. 8748–8763, 2021. Ronen, M., Finder, S. E., and Freifeld, O. DeepDPM: Deep clustering with an unknown number of clusters. In Pro-ceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pp. 9861–9870, 2022. Rong, Y. and Liu, L. Seeing your speech style: A novel zero-shot identity-disentanglement face-based voice conver-sion. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, pp. 25092–25100, 2025. Roth, K., Ibrahim, M., Akata, Z., Vincent, P., and Boucha-court, D. Disentanglement of correlated factors via haus-dorff factorized support. In Proceedings of the Interna-tional Conference on Learning Representations , 2023. 11 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Sagawa, S., Koh, P. W., Hashimoto, T. B., and Liang, P. Distributionally robust neural networks. In Proceedings of the International Conference on Learning Representa-tions , 2020. Shu, J., Xie, Q., Yi, L., Zhao, Q., Zhou, S., Xu, Z., and Meng, D. Meta-Weight-Net: Learning an explicit map-ping for sample weighting. In Advances in Neural Infor-mation Processing Systems , volume 32, 2019. Song, H., Kim, M., Park, D., Shin, Y., and Lee, J.-G. Learn-ing from noisy labels with deep neural networks: A sur-vey. IEEE Transactions on Neural Networks and Learn-ing Systems , 34(11):8135–8153, 2022. Stisen, A., Blunck, H., Bhattacharya, S., Prentow, T. S., Kjærgaard, M. B., Dey, A., Sonne, T., and Jensen, M. M. Smart devices are different: Assessing and mitigating mobile sensing heterogeneities for activity recognition. In Proceedings of the ACM Conference on Embedded Networked Sensor Systems , pp. 127–140, 2015. Su, J., Wen, Z., Lin, T., and Guan, Y. Learning disentangled behaviour patterns for wearable-based human activity recognition. Proceedings of the ACM on Interactive, Mo-bile, Wearable and Ubiquitous Technologies , 6(1), 2022. Sugiyama, M. Local fisher discriminant analysis for su-pervised dimensionality reduction. In Proceedings of the International Conference on Machine Learning , pp. 905–912, 2021. Sun, B. and Saenko, K. Deep CORAL: Correlation align-ment for deep domain adaptation. In European Confer-ence on Computer Vision Workshops , 2016. Suter, R., Miladinovic, D., Sch ¨olkopf, B., and Bauer, S. Robustly disentangled causal mechanisms: Validating deep representations for interventional robustness. In 
+
+Proceedings of the International Conference on Machine Learning , volume 97, pp. 6056–6065, 2019. Sztyler, T. and Stuckenschmidt, H. On-body localization of wearable devices: An investigation of position-aware activity recognition. In Proceedings of the IEEE Interna-tional Conference on Pervasive Computing and Commu-nications , pp. 1–9, 2016. Tr ¨auble, F., Creager, E., Kilbertus, N., Goyal, A., Locatello, F., Sch ¨olkopf, B., and Bauer, S. On disentangled repre-sentations learned from correlated data. In Proceedings of the International Conference on Machine Learning , pp. 10401–10412, 2021. Wang, Y. and Jordan, M. I. Desiderata for representation learning: A causal perspective. Journal of Machine Learn-ing Research , 25(275):1–65, 2024. Wang, Y., Shi, Z., Guo, X., Liu, X., Zhu, E., and Yin, J. Deep embedding for determining the number of clusters. In Proceedings of the AAAI Conference on Artificial In-telligence , volume 32, 2018. Wu, B., Huang, J., Shang, Z., and Chen, L. ST-Hyper: Learning high-order dependencies across multiple spatial-temporal scales for multivariate time series forecasting. In Proceedings of the ACM International Conference on Information and Knowledge Management , pp. 3333– 3343, 2025. Xiao, H., Rasul, K., and Vollgraf, R. Fashion-MNIST: A novel image dataset for benchmarking machine learning algorithms. arXiv preprint arXiv:1708.07747 , 2017. Xie, B., Chen, Q., Wang, Y., Zhang, Z., Jin, X., and Zeng, W. Graph-based unsupervised disentangled representation learning via multimodal large language models. Advances in Neural Information Processing Systems , 37:103101– 103130, 2024. Yuan, S., Cheng, P., Zhang, R., Hao, W., Gan, Z., and Carin, L. Improving zero-shot voice style transfer via disen-tangled representation learning. In Proceedings of the International Conference on Learning Representations ,2021. Zeng, P., Li, Y., Hu, P., Peng, D., Lv, J., and Peng, X. Deep fair clustering via maximizing and minimizing mutual in-formation: Theory, algorithm and metric. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 23986–23995, 2023. Zhou, B., Lapedriza, A., Khosla, A., Oliva, A., and Tor-ralba, A. Places: A 10 million image database for scene recognition. IEEE Transactions on Pattern Analysis and Machine Intelligence , 40(6):1452–1464, 2018. 12 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+## A. Additional Experiments and Results 
+
+A.1. Clustering Evaluation with Ground-Truth Mode Labels 
+
+We evaluate mode discovery using the average clustering accuracy (Acc. c), adjusted rand index (ARI), and Normalized Mutual Information (NMI) under each a1 value, as summarized in Table 3. Iterative variants (CoDID-itkm, CoDID-itdpm) underperform CoDID-km, indicating error amplification in mode discovery, which is consistent with the trend in attribute prediction (Table 2). CoDID-w/o-SC offers little improvement over CoDID-itdpm, whereas CoDID achieves a substantial gain by refining subclustering, showing that weighted CMI alone preserves informativeness, but does not improve clustering without subclustering refinement using the weight patterns. Moreover, CoDID outperforms CoDID-UA, suggesting that maintaining training stability benefits mode discovery as well. For completeness, we report the clustering metrics at each iteration in Appendix A.2, which shows that all iterative variants degrade over iterations, except CoDID and CoDID-UA, which steadily improve and converge. This indicates the key role of subclustering refinement for enhancing mode discovery. 
+
+Table 3. Clustering metrics. 
+
+Method CMNIST CFashion-MNIST Canine-BG Acc. c ARI NMI Acc. c ARI NMI Acc. c ARI NMI CoDID-km 0.714 0.339 0.379 0.700 0.417 0.449 0.173 0.065 0.146 CoDID-itkm 0.435 0.002 0.004 0.342 0.014 0.034 0.087 0.032 0.075 CoDID-itdpm 0.563 0.256 0.253 0.602 0.448 0.482 0.129 0.054 0.103 CoDID-w/o-SC 0.583 0.276 0.263 0.602 0.451 0.490 0.113 0.050 0.094 CoDID-UA 0.622 0.395 0.388 0.649 0.462 0.497 0.204 0.137 0.186 CoDID 0.819 0.594 0.545 0.739 0.534 0.537 0.256 0.153 0.235 
+
+A.2. Convergence 
+
+We analyze training dynamics on CMNIST using learning curves for CoDID and variants that consider hidden correlations. Figure 8(a) and (b) plot clustering metrics for mode discovery and the prediction loss of a1 for disentangled representation learning, respectively. The following tendencies can be observed: (1) Figure 8(a) shows that only CoDID and CoDID-UA improve and converge over iterations, while iterative variants without subcluster refinement degrade, indicating that subcluster-refined cluster splits are key to improving mode discovery. (2) Figure 8(b) shows that iterative methods exhibit abrupt changes due to cluster refinement at certain iterations. CoDID shows the smoothest trajectory toward the end of training, which is more stable than the non-iterative CoDID-km and indicates superior convergence. We attribute the convergence of CoDID to the mutual enhancement between disentanglement and mode discovery, which drives gradual improvement and thus steady convergence, whereas other methods accumulate irreducible errors that cause the two modules to interfere with each other, hindering convergence. 0 1 2 3 4    
+
+> iteration
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Acc. c
+> 01234
+> iteration
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> ARI
+> CoDID-km
+> CoDID-itkm
+> CoDID-itdpm
+> CoDID-w/o-SC
+> CoDID-UA
+> CoDID
+
+(a) Clustering metrics 0 10 20 30 40 50  
+
+> epoch
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> ap, 1
+> CoDID-km
+> CoDID-itkm
+> CoDID-itdpm
+> CoDID-w/o-SC
+> CoDID-UA
+> CoDID
+
+(b) Attribute prediction loss for a1
+
+Figure 8. Learning curves on CMNIST. 
+
+A.3. The Number of Clusters 
+
+We summarize the number of clusters for CoDID and variants in Table 4. For CoDID-km and CoDID-itkm with parametric k-means, we set the number of clusters to the ground-truth on CMNIST and CFashion-MNIST, and use hyperparameter 13 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+tuning on datasets with unknown modes. For non-parametric DPGMM-based methods, the number of clusters is inferred from data. The results show that: On CMNIST, CFashion-MNIST, and Canine-BG, the inferred mode count of CoDID is closest to the ground truth, indicating effective mode discovery. Other methods generally overestimate the number of modes, likely due to the lack of compactness in intra-mode representation distributions. 
+
+Table 4. Comparison with variants on the total number of modes (mean±std.). 
+
+Method Dataset CMNIST CFashion-MNIST Canine-BG UCI-HAR RealWorld HHAR MFD Ground-truth 5 7 20 - - - -
+
+Parametric clustering (pre-specified with ground-truth value or hyperparameter tuning) CoDID-km 5 7 20 48 24 12 6CoDID-itkm 5 7 20 48 24 12 6
+
+Non-parametric clustering (inferred from data, reporting mean ±std. )CoDID-itdpm 7.8 ±1.6 8.0 ±1.0 25.9 ±3.2 54.4 ±3.6 25.0 ±2.8 32.3 ±0.5 13.3 ±1.2 
+
+CoDID-w/o-SC 8.0 ±1.6 9.4 ±0.9 26.5 ±3.1 58.6 ±4.3 20.8 ±2.0 29.7 ±1.7 12.7 ±0.9 
+
+CoDID-UA 7.4 ±1.5 11.4 ±0.9 16.4 ±2.7 55.2 ±3.9 15.0 ±1.2 31.3 ±0.5 14.0 ±1.4 
+
+CoDID 5.8 ±1.9 8.0 ±1.7 22.4 ±2.8 51.0 ±3.2 15.0 ±3.0 32.7 ±1.7 13.0 ±1.4 
+
+A.4. Disentanglement Evaluation under Hidden Correlations 
+
+We train on correlated data and evaluate MI and DCI-I (Eastwood & Williams, 2018) on uncorrelated test sets, following (Funke et al., 2022). The results are reported in Table 5. We observe that methods with non-mode-conditioned independence constraints achieve low MI but exhibit high DCI-I due to the loss of mode information under hidden correlations. In contrast, methods that avoid improper independence constraints (CODA, HFS, DIOSC) yield lower DCI-I by preserving informativeness, but exhibit higher MI for retaining redundant information. CoDID attains the lowest DCI-I while keeping a relatively low MI, demonstrating disentanglement by striking a better balance between enforcing independence and preserving informativeness, likely due to the mode-conditioned independence constraint and the coordination of mode discovery and disentanglement. 
+
+Table 5. Disentanglement metrics.                                                                                 
+
+> Method MNIST CFashion-MNIST Canine-BG MI ↓DCI-I ↓MI ↓DCI-I ↓MI ↓DCI-I ↓
+> BASE 0.406 0.119 0.599 0.133 0.344 0.296
+> MMD 0.160 0.345 0.256 0.213 0.387 0.464 DTS 0.236 0.369 0.276 0.268 0.224 0.501 IDEVC 0.230 0.381 0.200 0.246 0.278 0.507 MI 0.224 0.377 0.294 0.223 0.251 0.326 A-CMI 0.237 0.350 0.235 0.231 0.279 0.492 HFS 0.880 0.211 0.882 0.200 0.845 0.339 CODA 0.555 0.187 0.843 0.163 0.413 0.500 ID-FaceVC 0.341 0.268 0.336 0.215 0.386 0.486 DIOSC 0.560 0.169 0.851 0.162 0.548 0.495 CoDID 0.297 0.101 0.219 0.106 0.267 0.317
+
+A.5. Visualization of Representation Distributions and Time Series Modes Representation distributions for OOD tasks with unknown modes. We use t-SNE visualization to examine the training and test representation distribution on MFD dataset, calculate the silhouette score (Sil.) to evaluate the cluster structure, and compute the A-distance ( dA) to measure the discrepancy between training and test representation distributions. Figure 9 shows that: (1) For CoDID-km and CoDID-itkm, training representations are separated in several clusters with relatively low silhouette scores, and training and test representations lie in disjoint regions with large dA, indicating that the discovered modes are 14 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations train train & test      
+
+> a1= 0 a1= 1 a1= 2
+
+(a) CoDID-km (Sil. = 0.574, dA = 1.99) train train & test       
+
+> a1= 0 a1= 1 a1= 2
+
+(b) CoDID-itkm (Sil. = 0.401, dA = 1.97) train train & test       
+
+> a1= 0 a1= 1 a1= 2
+
+(c) CoDID (Sil. = 0.629, dA = 1.78) 
+
+Figure 9. Machine fault representation distributions on MFD. Different colors, i.e., red, orange, and blue, indicate different machine fault types a1, i.e., healthy, inner-bearing damage, and outer-bearing damage, respectively. Different shades of a color indicate different modes under the a1 value. Points with white edges indicate training data, and points with black edges indicate test data. 
+
+(a) CoDID-km (b) CoDID-itkm (c) CoDID 
+
+Figure 10. Digit representation distributions of z1 for the two modes (digit 3 and 9) under a1 = 1 (parity “odd”) on CMNIST during training. CoDID-itkm and CoDID complete pre-training and conduct initial clustering at epoch 20. CoDID-km is trained from scratch at epoch 0 using mode labels estimated by a pre-trained BASE model. Colors indicate labels a2, m1, or c1. Black-edged diamond markers with numbers indicate the cluster centroids and their indices. 
+
+misaligned with the data and fail to generalize, probably due to the inaccurate initial mode discovery and error amplification. (2) In contrast, CoDID discovers compact mode structures on the training set with the highest silhouette score, and train and test representations largely overlap with the smallest dA, suggesting that the discovered modes well reflect the data distribution structure and generalize across distribution shifts. This is probably due to the flexible, data-driven mode discovery module and the effective mechanism for preventing error amplification. 
+
+Evolution of Representation Distributions with Ground-Truth Mode Labels. We additionally visualize the training dynamics of representation distributions for the variants of CoDID, as an extension of Figure 6. Figure 10 shows that: (1) Although the ground-truth number of modes is provided, CoDID-km and CoDID-itkm representations of different modes become increasingly mixed during training (columns 2, 3 of Figure 10(a)(b)), indicating loss of mode information and mode estimation errors. CoDID-km suffers from the constant clustering errors on pre-trained representations, and CoDID-itkm is affected by the amplified clustering errors over iterations, hindering disentanglement and causing loss of mode information. (2) The representations of different a2 values are clearly separable for CoDID and CoDID-itkm at epoch 20 (column 1 of Figure 10(a)(c)), indicating the over-encoding of a2 in representations z1 at the end of pre-training. As training proceeds, a2
+
+values become harder to distinguish for all methods, indicating the removal of the information of a2. In contrast to CoDID, CoDID-km and CoDID-itkm remove too much information of a2, including the part shared with m1, which disrupts the mode-specific conditional distribution and corrupts the mode information in z1.
+
+Visualizations of the Discovered Modes. We visualize the data of estimated modes on the training set of RealWorld. The results in Figure 11 show that the signals of the three walking modes differ in mean values and volatility, possibly due to 15 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+varying paces, strides, and postures in the walking activity. This justifies the presence of underlying modes within complex time series data. 1        
+
+> 011
+> 01075 150
+> time step
+> 1
+> 01075 150
+> time step
+> 075 150
+> time step
+> signal x signal y signal z mode 0 mode 1 mode 2
+
+Figure 11. 3-channel accelerometer signals of three walking modes (20 random samples per mode with xyz channels). The x-axis indicates time steps, and the y-axis indicates normalized signals. 
+
+A.6. Robustness Under Varying Noise Levels and Correlation Strengths 0.0 0.1 0.2 0.3 0.4               
+
+> cor h
+> 0.6 0.7 0.8 0.9 1.0
+> Acc.
+> test 1, correlated
+> 0.0 0.1 0.2 0.3 0.4
+> cor h
+> 0.6 0.7 0.8 0.9 1.0 test 2, uncorrelated
+> 0.0 0.1 0.2 0.3 0.4
+> cor h
+> 0.6 0.7 0.8 0.9 1.0 test 3, anticorrelated
+> BASE CoDID-km CoDID-itkm CoDID-T CoDID
+
+(a) Hidden correlation cor h0.0 0.1 0.2 0.3 0.4                
+
+> 0.6 0.7 0.8 0.9 1.0
+> Acc.
+> test 1, correlated
+> 0.0 0.1 0.2 0.3 0.4
+> 0.6 0.7 0.8 0.9 1.0 test 2, uncorrelated
+> 0.0 0.1 0.2 0.3 0.4
+> 0.6 0.7 0.8 0.9 1.0 test 3, anticorrelated
+> BASE CoDID-km CoDID-itkm CoDID-T CoDID
+
+(b) Noise level σ
+
+Figure 12. Comparison under varying correlation strengths and noise levels on CFashion-MNIST. 
+
+We compare different methods under varying train correlation strengths cor h = I(m1; a2|a1) and noise levels σ on CFashion-MNIST to investigate method robustness, as shown in Figure 12. For reference, we compare with BASE with only supervised learning, and CoDID-T, which uses the ground-truth mode labels for disentanglement. The following tendencies can be observed: (1) Overall, the advantage of CoDID over CoDID-km and CoDID-itkm becomes more pronounced as the train–test correlation shift increases. This is reflected by the increasing performance gain across test sets, i.e., from test 1 to test 3 with increased correlation shift from the training set, and across correlation strengths, i.e., as cor h increases and induces larger correlation shifts on test 2, 3 in Figure 12(a). This indicates that CoDID achieves disentanglement better, being more robust under large correlation shifts. (2) The advantage of CoDID over CoDID-km and CoDID-itkm remains stable as noise level increases, as shown in Figure 12(b), test 2, 3. Noises hinder mode discovery, making the initial clustering more error-prone and causing error amplification during iterations. These problems might cause the variants to only perform comparably to the BASE method, but could be mitigated by our meta-coordination mechanism, making CoDID more robust under large noises. (3) CoDID performs comparably to CoDID-T with the ground-truth mode labels in most cases, which demonstrates the superiority of CoDID as a data-driven method without relying on prior knowledge. In some cases, CoDID outperforms CoDID-T, probably because the self-supervised learning with reconstruction tasks enhances the generalization ability. CoDID underperforms CoDID-T at high noise levels ( σ ≥ 0.3), where modes are unidentifiable and clustering is infeasible. This gap reflects an intrinsic limitation of the data that constrains all clustering methods. 
+
+A.7. Hyperparameter Sensitivity 
+
+We analyze the hyperparameter sensitivity of the initial number of clusters Kc, and coefficients λmr of the reconstruction loss during meta-optimization, λmp of the mode prediction loss, λre of the reconstruction loss, and λwa of the weight alignment loss on CFashion-MNIST. The accuracy on test 3 is reported in Figure 13. We observe that: 16 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+(1) In Figure 13(a), the performance is stable with respect to Kc. This indicates that CoDID is robust to the initial choice of the number of clusters and can converge over a wide range of Kc. The slightly lower performance at Kc = 2 is probably because a small number of clusters increases the chance that true modes are mixed within a single cluster, which raises within-cluster correlations. (2) Figures 13(b)-(e) show that performance peaks at intermediate values of the loss coefficients. This suggests that each loss term plays a meaningful role during learning, and choosing appropriate coefficients enhances DRL performance. 2 4 6 8 10 12 
+
+> Kc
+> 0.6
+> 0.8
+> 1.0
+> Acc.
+
+(a) 0.6 0.8 1.0 1.2 1.4  
+
+> mr
+> 0.6
+> 0.8
+> 1.0
+> Acc.
+
+(b) 0.3 0.5 0.7 0.9 1.1  
+
+> mp
+> 0.6
+> 0.8
+> 1.0
+> Acc.
+
+(c) 0.5 0.7 0.9 1.1 1.3  
+
+> re
+> 0.6
+> 0.8
+> 1.0
+> Acc.
+
+(d) 0.1 0.2 0.3 0.4 0.5  
+
+> wa
+> 0.6
+> 0.8
+> 1.0
+> Acc.
+
+(e) Figure 13. Hyperparameter sensitivity analysis. 
+
+A.8. Experiments on Multiple Attributes with Hidden Correlations 
+
+We conduct experiments on a multi-attribute toy dataset to validate the effectiveness of CoDID in a more complex scenario. 
+
+Data Construction. We construct 4-dimensional toy data with 4 attributes ( ai, 1 ≤ i ≤ 4), where 2 attributes ( a1, a 2)exhibit underlying modes. This setting allows us to observe the impact on complex attributes with multi-modal distributions and simple attributes with uni-modal distributions. This dataset extends the simple toy dataset used in the main paper. Similarly, each data axis is controlled by one attribute, i.e., xi is affected by ai and unaffected by other attributes a−i.Here, a1 and a2 with underlying modes are constructed the same as the a1 in the simple toy data, with 3 modes under each attribute value; a3 and a4 are constructed the same as the a2 in the simple toy data. The mappings from attribute/mode labels to the corresponding data axis remain the same. 
+
+Table 6. Prediction accuracy on toy data with multiple attributes. 
+
+BASE a1 a2 a3 a4
+
+test 1 0.965 0.871 0.999 0.999 test 2 0.757 0.697 0.997 0.998 test 3 0.539 0.585 0.997 0.994 
+
+A-CMI a1 a2 a3 a4
+
+test 1 0.510 0.593 0.998 0.525 test 2 0.507 0.537 0.997 0.507 test 3 0.507 0.518 0.996 0.476 
+
+CoDID-km a1 a2 a3 a4
+
+test 1 0.994 0.797 0.998 0.999 test 2 0.870 0.740 0.998 1.000 test 3 0.752 0.741 0.997 0.999 
+
+CoDID a1 a2 a3 a4
+
+test 1 0.994 0.997 0.996 0.999 test 2 0.930 0.940 0.997 0.999 test 3 0.872 0.881 0.997 0.999 
+
+CoDID-T a1 a2 a3 a4
+
+test 1 0.999 0.997 0.997 1.000 test 2 0.966 0.982 0.996 1.000 test 3 0.928 0.964 0.998 0.999 
+
+Experiment Settings. We use the same settings as the simple toy data, training on correlated data and evaluating on three test sets: test 1 with the same correlations, test 2 without correlations, and test 3 with anticorrelations. Complex attributes and hidden correlations are introduced in the training data, e.g., I(a2; a4) = 0 .07 , I (a3; a4) = 0 .13 , I (m1; a2|a1) = 
+
+17 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+0.14 , I (m1; a4|a1) = 0 .36 , I (m2; a3|a2) = 0 .28 . The task is to learn disentangled representations for each attribute. We compare CoDID with BASE, A-CMI, CoDID-km, and CoDID-T. For CoDID(-km/-T), we use mode-based CMI minimization for a1 and a2 with underlying modes, and attribute-based CMI minimization for a3 and a4. For A-CMI, attribute-based CMI minimization is used for all attributes. 
+
+Results and Discussions. The attribute prediction accuracy is reported in Table 6, showing that: (1) A-CMI performs poorly on a4, even though a4 does not exhibit underlying modes and is easily predicted by the BASE method. This is because, under hidden correlations I(m1; a4|a1), minimizing attribute-based CMI for a1 might degrade the representation quality for the correlated a4 as well, as indicated by Proposition 2. (2) CoDID-T outperforms CoDID by a larger margin, likely because: The increased complexity with more attributes makes mode discovery harder, resulting in more errors in mode-based CMI and mode prediction losses. Reduced Informativeness in one representation may impact the disentanglement of others. Thus, mode estimation errors for a1 and a2 not only harm the quality of their own representations, but also affect the representations of each other when they are jointly disentangled. (3) Still, CoDID generally shows superiority compared to BASE, A-CMI, and CoDID-km. For attributes a1, a 2 with underlying modes, CoDID explicitly accounts for hidden correlations by discovering and leveraging modes, thus better preserving mode information. For the simple attributes a3, a 4, considering their hidden correlations with the modes of other attributes, this also aids their disentanglement during the joint learning process. Due to the meta-learned weights, clustering errors would not harm representation informativeness, and multi-attribute joint disentanglement can be gradually achieved by removing redundant information while preserving mode information. 
+
+## B. Data Generation Process, Assumptions, and Scope of Applicability 
+
+Data Generation Process. We assume data are generated according to the causal process in Definition 1 (Figure 14) based on three key assumptions, as listed below. ……      
+
+> Figure 14. Causal graph of data generation un-der hidden correlations re-garding a certain aq.
+
+Definition 1. (Disentangled Causal Process). Consider a causal generative model p(x|a)
+
+for data x with Q attributes a = ( a1, a 2, ..., a Q). A certain attribute aq is associated with a categorical mode variable mq . Attributes a are influenced by L confounders ca = ( ca1, ..., c a
+
+> L
+
+).Conditioned on aq , mode variable mq and other attributes a−q are influenced by Q confounders 
+
+cm = ( cm1 , ..., c m 
+
+> Q
+
+). This causal model is called disentangled if and only if it follows a structural causal model (SCM) (Pearl, 2009) of the form: 
+
+ca ← nca , cm ← ncm 
+
+aj ← ha 
+
+> j
+
+(Sa 
+
+> j
+
+, S m 
+
+> j
+
+, na 
+
+> j
+
+), S a 
+
+> j
+
+⊂ { ca1, ..., c a
+
+> L
+
+}, S m 
+
+> j
+
+⊂ { cm1 , ..., c m 
+
+> Q
+
+}, j ̸ = qaq ← ha 
+
+> q
+
+(Sa 
+
+> q
+
+, na 
+
+> q
+
+), S a 
+
+> q
+
+⊂ { ca1, ..., c a
+
+> L
+
+}, q ∈ { 1, ..., Q }
+
+mq ← hm(aq , cm, nm)
+
+x ← g(a−q , m q , nx)
+
+(12) 
+
+with functions g, ha 
+
+> i
+
+, hm, jointly independent noises nca , ncm , na 
+
+> i
+
+, nm, nx, and confounder subsets Sa 
+
+> i
+
+, Sm 
+
+> j
+
+, for i = 1 , ..., Q, j = 1 , ..., Q, j ̸ = q. −q denotes the set of attribute indices {j}j̸ =q .
+
+Key Assumptions. Among the three key assumptions below, the first is a standard assumption in DRL that must strictly hold (Suter et al., 2019; Wang & Jordan, 2024), while the others are specific to our method but can be relaxed: 1 Each attribute is an elementary ingredient that has no causal effect on other attributes (Suter et al., 2019), i.e., interventions on one attribute do not influence others. 2 For some value α of attribute aq , p(x|aq = α) might be a multi-modal distribution .
+
+3 Correlations may arise from two confounder sets: ca induces attribute correlations I(ai; ai′ ), i ̸ = i′; cm induces hidden correlations I(mq ; a−q |aq ).
+
+Scope of Applicability. Our theoretical results are based on the data generation process of Definition 1, relying on the causal structure (Assumption 1 , attributes as elementary ingredients) and not restricted to specific functional forms or parameterizations. They naturally extend to (1) uni-modal distributions with attribute correlations , where only one mode exists under each attribute value (relaxation of Assumption 2 ), and mode-based CMI degrades to attribute-based CMI; and (2) uncorrelated data as correlation strengths vanish (relaxation of Assumption 3 ). Although our results strictly rely on the elementary-ingredient assumption, they extend to arbitrary parameterizations, numbers of attributes/modes, and correlation 18 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+types/strengths. 
+
+## C. Propositions and Proofs about Mode-based CMI Minimization 
+
+We give the theoretical results using knowledge of mutual information and causal graphs. Note that we use formal definitions of mutual information, where separators semicolon “;” and comma “,” should be distinguished from each other. Semicolon “;” separates groups of variables whose mutual information with respect to each other is being measured, while comma “,” denotes the joint distribution of the listed variables. 
+
+C.1. Proposition 2: A-CMI Fails Under Hidden Correlations 
+
+We show that enforcing attribute-based conditional independence (A-CMI), I(z1; z2|a1) = 0 , could hurt the predictive ability of representations, which is formalized in Proposition 2 as follows: 
+
+Proposition 2. If I(m1; a2|a1) > 0, then enforcing I(z1; z2|a1) = 0 leads to at least one of I(z1; m1) < H (m1) and 
+
+I(z2; a2) < H (a2).
+
+where H(·) denotes entropy, and the MI I(· ; ·) between a representation and an attribute measures the amount of information the representation contains about the attribute. I(z1; m1) < H (m1) indicates that z1 loses mode information about m1,which is important for predicting a1, while I(z2; a2) < H (a2) indicates that z2 loses attribute information for predicting 
+
+a2. Thus, minimizing attribute-based CMI hurts the predictive ability of representations under hidden correlations. 
+
+Relation to prior works. This is an extension of Proposition 3.1 in (Funke et al., 2022), which proves that minimizing unconditional MI harms representation informativeness under attribute correlations. In short, unconditional MI minimization fails under attribute correlations. These results convey a common message: when attributes or modes are correlated, enforcing independence between the associated representations degrades representation informativeness. 
+
+Proof. We prove by contradiction. Assuming I(z1; m1) = H(m1) and I(a2; z2) = H(a2) both stand, we have 
+
+H(m1|z1) = 0 and H(a2|z2) = 0 .Firstly, we prove that this leads to I(m1; a2; z1; z2|a1) > 0 with (1)(2)(3). (1) Since H(m1|z1) = 0 and H(m1|z1) − H(m1|a1, z1) = I(m1; a1|z1) ≥ 0 by definition of conditional mutual information, we have 0 ≤ H(m1|a1, z1) ≤ H(m1|z1) = 0 , we have H(m1|a1, z1) = 0 . By definition, H(m1|a1, z1) = 
+
+H(m1|a1, a 2, z1) + I(m1; a2|a1, z1) = 0 , which gives I(m1; a2|a1, z1) = 0 , as both terms are non-negative. Therefore: 
+
+I(m1; a2; z1|a1) = I(m1; a2|a1) − I(m1; a2|a1, z1)= I(m1; a2|a1) > 0
+
+(2) Similar to (1), since H(a2|z2) = 0 and 0 ≤ H(a2|a1, z2) ≤ H(a2|z2) = 0 , we have H(a2|a1, z2) = 0 . By definition, H(a2|a1, z2) = H(a2|m1, a 1, z2) + I(m1; a2|a1, z2) = 0 , which gives I(m1; a2|a1, z2) = 0 , as both terms are non-negative. Therefore: 
+
+I(m1; a2; z2|a1) = I(m1; a2|a1) − I(m1; a2|a1, z2)= I(m1; a2|a1) > 0
+
+(3) Given H(m1|z1) = 0 , we have H(m1|z1) = H(m1|z1, z2) + I(m1; z2|z1) = 0 and thus H(m1|z1, z2) = 0 , as both terms are non-negative. Similar to (1) that yields I(m1; a2; z1|a1) = I(m1; a2|a1) from H(m1|z1) = 0 , we can get I(m1; a2; z1|a1, z2) = I(m1; a2|a1, z2) from H(m1|z1, z2) = 0 by additionally conditioning on z2. Combined with 
+
+I(m1; a2; z2|a1) > 0 in (2), we have: 
+
+I(m1; a2; z1; z2|a1) = I(m1; a2; z1|a1) − I(m1; a2; z1|a1, z2)= I(m1; a2|a1) − I(m1; a2|a1, z2)= I(m1; a2; z2|a1) > 0
+
+Secondly, we prove I(m1; a2; z1; z2|a1) ≤ 0 with (4)(5)(6). 19 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+(4) Given H(m1|a1, z1) = 0 in (1), we have H(m1|a1, z1) = H(m1|a1, z1, z2) + I(m1; z2|a1, z1) = 0 and followingly, 
+
+I(m1; z2|a1, z1) = 0 , as both terms are non-negative. Therefore: 
+
+I(m1; z1; z2|a1) = I(m1; z2|a1) − I(m1; z2|a1, z1)= I(m1; z2|a1) ≥ 0
+
+(5) Since I(z1; z2|a1) = 0 , we have: 
+
+I(m1; z1; z2|a1) = I(z1; z2|a1) − I(z1; z2|m1, a 1)= −I(z1; z2|m1, a 1) ≤ 0
+
+(6) Combine I(m1; z1; z2|a1) ≥ 0 in (4) and I(m1; z1; z2|a1) ≤ 0 in (5), we have I(m1; z1; z2|a1) = 0 . Given 
+
+H(m1|a1, z1) = 0 in (1) and H(m1|a1, z1) = H(m1|a1, z1, z2) + I(m1; z2|a1, z1), we have H(m1|a1, z1, z2) = 0 as both terms are non-negative. Similar to (4) that yields I(m1; z1; z2|a1) = I(m1; z2|a1) from H(m1|a1, z1) = 0 , we can get I(m1; z1; z2|a1, a 2) = I(m1; z2|a1, a 2) from H(m1|a1, z1, z2) = 0 by additionally conditioning on z2. Therefore: 
+
+I(m1; a2; z1; z2|a1) = I(m1; z1; z2|a1) − I(m1; z1; z2|a1, a 2)= −I(m1; z2|a1, a 2) ≤ 0
+
+This is contradictory with I(m1; a2; z1; z2|a1) > 0. Therefore, if I(m1; a2|a1) > 0 and I(z1; z2|a1) = 0 , then at least one of I(m1; z1) < H (m1) and I(a2; z2) < H (a2) must hold. 
+
+C.2. The Property of the True Latent Representations 
+
+We build the causal graphs of data generation with the true latent representations zl
+
+> i
+
+, i = 1 , 2, where ca is the set of confounders that introduce attribute correlations between a1, a 2, and cm is the set of confounders that introduce hidden correlations between m1, a 2 given a1. For example, on human activity data with activity attribute a1, the latent zl1 encodes the body movements that characterize activities, which are unaffected by changes in user behavior patterns, yet activity and user ID attributes may be correlated due to confounding. Since the disentangled zi aims to recover the true latent 
+
+zl
+
+> i
+
+, the learned representations should retain the properties of the true latent representations. We show that the true latent 
+
+representations satisfy mode-based conditional independence, making it a necessary condition for disentanglement, and thus a proper independence constraint. According to causal graph theorems (Pearl, 2009), two variables X, Y are conditionally independent given a variable that blocks all backdoor paths between them, i.e., the paths that flow backward from X or Y . In Figure 15(a), we consider only attribute correlations as A-CMI, where a1 blocks the only backdoor path between zl1 and zl2. In comparison, we consider additional hidden correlations in Figure 15(b), where m1 blocks all backdoor paths , yet a1 fails to block the path via cm (consistent with the failure of A-CMI under hidden correlations). Thus, under hidden correlations and attribute correlations, the true latent representations are conditionally independent based on m1, a property the learned disentangled representations must retain: 
+
+I(zl1; zl2|m1) = 0 ⇒ If z1 is the disentangled representation of a1, then I(z1; z2|m1) = 0 (13) 
+
+(a)  (b)  (c) Figure 15. Causal graphs of representations. (a) and (b): Data generation with the true latent representations zl1, zl2, where Red arrows indicate the backdoor paths between them. (c): Representation learning that produces the learned representations z1, z2.
+
+20 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+## D. Propositions, Proofs, and Case Studies about the Impact of Clustering Errors 
+
+To thoroughly analyze the impact of clustering errors in the iterative framework, we expand the discussion in Section 3.2 to elaborate on the two types of clustering errors, and to explain why the second type does not require special attention in our iterative framework. Formally, clustering errors can be quantified by the Variation of Information (VI) (Meil ˘a, 2007) between the ground-truth modes m1 and learned clusters c1:
+
+VI( m1, c 1) = H(m1|c1) + H(c1|m1), (14) where H(m1|c1) measures cluster impurity caused by Type 1 errors (mixing modes in one cluster) and H(c1|m1) measures mode incompleteness caused by Type 2 errors (splitting a mode into several clusters). The two terms are complementary components of the overall VI (neither implies the other), and they are non-exclusive and might co-occur. In our iterative framework, Type 1 errors induce within-cluster correlations that lead to error amplification (Proposition 1; discussed in Section 3.2; proof in Section D.1), while Type 2 errors can be mitigated through iterative refinement (Proposition 3 and case study in Section D.2). Table 7 provides a systematic comparison. 
+
+Table 7. The two types of clustering errors.                   
+
+> Type 1 Description Data from multiple modes are mixed into one cluster.
+> VI terms H(m1|c1): reduced within-cluster purity.
+> Impact on subsequent DRL Hinders disentanglement by hurting Informativeness .
+> Impact over iterations Induces error amplifications.
+> Solution Cluster split : split mixed clusters.
+> Solution Realization Not promoted by subsequent DRL; requires explicit intervention.
+> Type 2 Description Data from one mode are divided into multiple clusters.
+> VI terms H(c1|m1): reduced mode completeness.
+> Impact on subsequent DRL Promotes disentanglement by approaching but not fully achieving Independence .
+> Impact over iterations Facilitates mutual enhancement.
+> Solution Cluster merge : merge clusters that originate from the same mode.
+> Solution Realization Promoted by subsequent DRL; emerges spontaneously.
+
+D.1. Proposition 1: The Negative Effects of Type 1 Clustering Error Proposition 1. If I(m1; a2|c1) > 0, then enforcing I(z1; z2|c1) = 0 leads to at least one of I(z1; m1) < H (m1) or 
+
+I(z2; a2) < H (a2).
+
+Proof. Proposition 1 can be proved by replacing a1 with c1 in Proposition 2 in Appendix C.1. The derivation is otherwise identical and is omitted for brevity. 
+
+D.2. Non-Amplifying Type 2 Clustering Errors That Vanish Over Iterations 
+
+As discussed in Section 3.2, disentanglement relies on a proper independence constraint that achieves Independence while preserving Informativeness (Funke et al., 2022). Type 1 clustering error induces within-cluster correlations, thus hurts informativeness in DRL, and causes error amplification. In contrast, under only Type 2 clustering error, each cluster only contains the data from one mode, leaving no variation of m1 within clusters, and within-cluster correlations regarding m1
+
+are naturally absent. Therefore, informativeness is not harmed, and errors will not be amplified. The limitation under Type 2 clustering error is that Independence cannot be fully achieved, i.e., a part of redundant information about a2 remains in representation z1, as shown in Proposition 3 in Appendix D.2.1. We show that this redundancy can be gradually reduced over iterations via a case study in Section D.2.2. D.2.1. P ROPOSITION 3: B ENEFITS AND LIMITATIONS OF TYPE 2 C LUSTERING ERROR 
+
+We prove that, without Type 1 error, i.e., H(m1|c1) = 0 , potential Type 2 error guides CMI minimization to promote disentanglement by approaching but not fully achieving Independence , as formalized in Proposition 3. 21 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Proposition 3. If H(m1|c1) = 0 , I(z1; c1) = H(c1), and I(z2; a2) = H(a2), then enforcing I(z1; z2|c1) = 0 leads to 
+
+I(z1; a2|c1) = 0 and I(z1; a2) = I(m1; a2) + I(c1; a2|m1).
+
+Interpretations. The conclusion I(z1; a2|c1) = 0 indicates that, knowing the cluster label c1, z1 contains no additional information about a2. Thus, minimizing the cluster-based CMI removes cluster-conditioned redundant information about a2
+
+and brings z1 closer to disentanglement. 
+
+I(z1; a2) should be able to account for hidden correlations I(m1; a2), while we have I(z1; a2) = I(m1; a2) + I(c1; a2|m1).Here, I(c1; a2|m1) is the residual information about a2 in z1, which quantifies the redundancy induced by Type 2 clustering error: When a single mode m1 = k is split into multiple clusters, cross-cluster variations c1|m1 = k within this mode may carry extra information about a2, i.e., I(c1; a2|m1 = k). Since CMI minimization is applied within each cluster, it cannot eliminate this dependence across clusters, thereby preventing full disentanglement. 
+
+Proof. The two conclusions are reached with separate proofs as given below. 
+
+(1) Proof of I(z1; a2|c1) = 0 . To reach this conclusion, we first prove that I(z1; z2|c1) ≥ I(z1; a2|c1).By definition of mutual information, we have H(z1|c1, z2) = H(z1|c1, a 2, z2) + I(z1; a2|c1, z2). Then, we have 
+
+I(z1; a2|c1, z2) = H(a2|z2, c 1) − H(a2|z1, z2, c 1) = 0 − 0 = 0 , which is based on H(a2|z2) = H(a2) − I(z2; a2) = 0 ,
+
+H(a2|z2) ≥ H(a2|z2, c 1), and H(a2|z2) ≥ H(a2|z1, z2, c 1). Therefore, we have (i) H(z1|c1, z2) = H(z1|c1, a 2, z2).By definition of mutual information, we have: 
+
+I(z1; z2|c1) − I(z1; a2|c1) = [ H(z1|c1) − H(z1|c1, z2)] − [H(z1|c1) − H(z1|c1, a 2)] = H(z1|c1, a 2) − H(z1|c1, z2)= H(z1|c1, a 2) − H(z1|c1, a 2, z2) (based on (i)) 
+
+≥ 0
+
+Therefore, we have I(z1; z2|c1) ≥ I(z1; a2|c1). By I(z1; z2|c1) = 0 , we conclude that I(z1; a2|c1) = 0 .
+
+(2) Proof of I(c1; a2) = I(m1; a2) + I(c1; a2|m1). First, we prove that I(z1; a2) = I(c1; a2) with (2.1-2.4), where (2.1)(2.2) proves I(c1; a2) ≥ I(z1; a2), (2.3) shows I(z1; a2) ≥ I(c1; a2), and (2.4) concludes the proof. 
+
+(2.1) Since H(a2|z2) = 0 , we have H(a2|z2) = H(a2|z1, z2) + I(z1; a2|z2) = 0 , and followingly I(z1; a2|z2) = 0 ,as both terms are non-negative. Therefore, by definition of interaction information, we have I(z1; z2; a2) = I(z1; a2) −
+
+I(z1; a2|z2) = I(z1; a2). Since I(z1; z2|c1) = 0 , we have I(z1; z2; a2|c1) = I(z1; z2|c1) − I(z1; z2|c1, a 2) = 
+
+−I(z1; z2|c1, a 2). Therefore: 
+
+I(z1; z2; c1; a2) = I(z1; z2; a2) − I(z1; z2; a2|c1)= I(z1; a2) + I(z1; z2|c1, a 2)
+
+≥ I(z1; a2)
+
+(2.2) i. Since H(a2|z2) = 0 , we have H(a2|z2) = H(a2|c1, z2) + I(c1; a2|z2) = 0 , and followingly I(c1; a2|z2) = 0 , as both terms are non-negative. ii. Since H(c1|z1) = 0 , we have H(c1|z1) = H(c1|z1, z2) + I(c1; z2|z1) = 0 , and followingly H(c1|z1, z2) = 0 ,as both terms are non-negative. Therefore, H(c1|z1, z2) = H(c1|z1, z2, a 2) + I(c1; a2|z1, z2) = 0 , and followingly 
+
+I(c1; a2|z1, z2) = 0 , as both terms are non-negative. iii. Given I(c1; a2|z2) = 0 in i. and I(c1; a2|z1, z2) = 0 in ii. as shown above, we have I(c1; a2; z1|z2) = I(c1; a2|z2) −
+
+I(c1; a2|z1, z2) = 0 .iv. Since H(c1|z1) = 0, by definition of conditional mutual information, we have H(c1|z1) = H(c1|z1, a 2) + 
+
+I(c1; a2|z1) = 0 , and followingly I(c1; a2|z1) = 0 , as both terms are non-negative. Thus I(c1; a2; z1) = I(c1; a2) −
+
+I(c1; a2|z1) = I(c1; a2).Given I(c1; a2; z1) = I(c1; a2) in iv. and I(c1; a2; z1|z2) = 0 in iii., we have: 
+
+I(z1; z2; c1; a2) = I(c1; a2; z1) − I(c1; a2; z1|z2)= I(c1; a2)
+
+22 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Given (2.1)(2.2), we have I(c1; a2) = I(z1; z2; c1; a2) ≥ I(z1; a2)
+
+(2.3) We prove I(z1; a2) ≥ I(c1; a2) as follows. i. Since H(c1|z1) = 0 , we have H(c1|z1) = H(c1|z1, a 2) + I(c1; a2|z1) = 0 , and followingly I(c1; a2|z1) = 0 , as both terms are non-negative. Thus, by chain rule of mutual information, we have: 
+
+I(c1, z1; a2) = I(z1; a2) + I(c1; a2|z1)= I(z1; a2)
+
+ii. We also have: 
+
+I(c1, z1; a2) = I(c1; a2) + I(z1; a2|c1)
+
+≥ I(c1; a2)
+
+Given I(c1, z1; a2) = I(z1; a2) in i. and , I(c1, z1; a2) ≥ I(c1; a2) in ii., we have I(z1; a2) ≥ I(c1; a2).
+
+(2.4) Finally, given I(c1; a2) ≥ I(z1; a2) with (2.1)(2.2) and I(z1; a2) ≥ I(c1; a2) in (2.3), the equality must hold that 
+
+I(z1; a2) = I(c1; a2).Followingly, by definition of mutual information, we have H(a2|c1) = I(a2; m1|c1) + H(a2|c1, m 1). Then, we have 
+
+I(a2; m1|c1) = H(m1|c1) − H(m1|a2, c 1) = 0 − 0 = 0 , based on H(m1|c1) = 0 and H(m1|c1) ≥ H(m1|a2, c 1).Therefore, we have (iii) H(a2|c1) = H(a2|c1, m 1).By definition of mutual information, we have: 
+
+I(c1; a2) = H(a2) − H(a2|c1)= H(a2) − H(a2|c1, m 1) (based on (iii)) 
+
+= H(a2) − H(a2|m1) + H(a2|m1) − H(a2|c1, m 1)= I(m1; a2) + I(c1; a2|m1)
+
+Finally, by (ii) I(z1; a2) = I(c1; a2) and I(c1; a2) = I(m1; a2) + I(c1; a2|m1), we have I(z1; a2) = I(m1; a2) + 
+
+I(c1; a2|m1).D.2.2. C ASE STUDY : T HE MITIGATION OF TYPE 2 C LUSTERING ERROR 
+
+To isolate the impact of Type 2 clustering error, we construct a toy dataset where the true latent representations for a1 are well separated across different modes, so that the clustering method is unlikely to assign data from different modes to one cluster, i.e., avoiding Type 1 error. 
+
+Toy data construction. As shown in Figure 16, we construct two-dimensional toy data with two attributes. Attribute 
+
+a1 takes three values 0, 1, 2 and exhibits a varying number of modes under each value. There are 2, 3, 4 modes under 
+
+a1 = 0 , 1, 2, respectively, which are indexed from 0 to 8 in the order of a1 = 0 ∼ 2. Attribute a2 takes two values 0, 1. Data are generated by linearly mapping (m1, a 2) to R2 and adding Gaussian noise n ∼ N (0, σ 2I) with noise level σ = 0 .02 :
+
+x = m1 · Wm + a2 · Wa + n , Wm =
+
+0 2 4 6 8 1 3 5 70 0 0 0 0 0 0 0 0
+
+
+
+, Wa =
+
+0 00 1
+
+
+
+. (15) where m1 and a2 are one-hot encodings of m1 and a2. The matrices Wm and Wa have all zero entries in different dimensions, so that m1 and a2 control data dimensions x1, x 2, respectively. We introduce hidden corelations between m1 and a2 by specifying the conditional distribution p(a2 | m1) in matrix Pa2|m1 ,where the (i, j )-th component corresponds to p(a2 = i | m1 = j):
+
+Pa2|m1 =
+
+0.8 0.2 0.8 0.1 0.6 0.3 0.8 0.2 0.70.2 0.8 0.2 0.9 0.4 0.7 0.2 0.8 0.3
+
+
+
+(16) 
+
+Experimental results of a simple iterative framework. We evaluate CoDID-dpm (the variant that uses DPGMM for iterative clustering without meta-coordination mechanism) on toy data. The results are reported in Table 8. The representation distribution of a1 at different iterations are visualized with t-SNE in Figure 17. The following tendencies can be observed: 23 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 0 1 2 3 4 5 6 7 8                
+
+> x1
+> 0
+> 2
+> x2
+> a1= 0 a1= 1 a1= 2
+> 012345678
+> x1
+> 0
+> 2
+> x2
+> a2= 0 a2= 1
+
+Figure 16. Toy data with various modes and hidden correlations under the values of attribute a1.
+
+Figure 17. Representation distribution of attribute a1 on toy data at clustering iterations. Different colors indicate different attribute values of a1 and a2. Different shades of a color indicate different modes or clusters under the a1 value. “ α − k” indicates mode or cluster k
+
+under a1 value α. “merge α − (k, l )” indicates merging clusters k, l under a1 value α into a new cluster. Black-edged diamond markers with numbers indicate the cluster centroids and their indices. 
+
+Table 8. Performance on toy data.                    
+
+> Method Attribute Prediction Acc. Clustering metrics test 1 test 2 test 3 Acc. cARI NMI BASE 0.835 0.797 0.742 –––CoDID-itdpm 0.974 0.969 0.964 1.000 1.000 1.000
+
+(1) In Table 8, as train-test correlation shift enlarges from test 1 to test 3, BASE (with supervised learning only) exhibits per-formance degradation, due to entanglement under hidden corre-lations; CoDID-itdpm exhibits robust and high accuracies that are close to 1, indicating disentanglement. CoDID-itdpm also achieves a perfect clustering with all clustering metrics reaching their optimal. This demonstrates an ideal iterative process that achieves both disentanglement and mode discovery. (2) Figure 17 shows that, at iteration 0 (the end of pre-training), representation z1 of one mode may be scattered and assigned into two clusters with a2 values 0, 1, e.g., the two lightest blue clusters of mode 5 under a1 = 2 in the left-middle area. This indicates over-encoding of a2. As training proceeds, the representations of the same mode become closer, e.g., the two clusters of mode 5 move closer from iteration 0 to 2, get merged at iteration 2, and become more compact by iteration 3. This illustrates CMI-minimization under Type 2 error: Although Independence cannot be fully achieved at first, Informativeness 
+
+can be preserved and redundancy about a2 can be reduced, pulling clusters closer and enabling merges within modes. After merging, CMI minimization can fully remove redundancy and achieve disentanglement. 
+
+## E. Theoretical Extension to Multiple Attributes 
+
+Our theoretical results, including Proposition 1 in Section 3.2, Proposition 2 in Appendix C.1, the property of the true latent representations in Appendix C.2, and Proposition 3 in Appendix D.2.1 can be generalized to multiple attributes. The extension mainly involves replacing m1, z1 with mq , zq , and replacing a2, z2 with the joint a−q , z−q , as the properties of mutual information and causal graphs remain the same for joint variables. 
+
+Proposition Extensions. Corollaries 1.1, 2.1, 3.1 extend Propositions 1, 2, 3 to multiple attribues: 24 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Corollary 1.1 If I(mq ; a−q |cq ) > 0, then enforcing I(zq ; z−q |cq ) = 0 leads to at least one of I(zq ; mq ) < H (mq ) or 
+
+I(z−q ; a−q ) < H (a−q ).
+
+Corollary 2.1 If I(mq ; a−q |aq ) > 0, then enforcing I(zq ; z−q |aq ) = 0 leads to at least one of I(zq ; mq ) < H (mq ) and 
+
+I(z−q ; a−q ) < H (a−q ).
+
+Corollary 3.1 If H(mq |cq ) = 0 , I(zq ; cq ) = H(cq ), and I(z−q ; a−q ) = H(a−q ), then enforcing I(zq ; z−q |cq ) = 0 leads to I(zq ; a−q |cq ) = 0 and I(zq ; a−q ) = I(mq ; a−q ) + I(cq ; a−q |mq ).
+
+The Extended Property of the True Latent Representations. Figure 15(a)(b) with two attributes is extended to Figure 18(a)(b) with K attributes, where the true latent representations satisfy the conditional independence as follows, yielding the necessary condition for disentanglement under hidden correlations and attribute correlations: 
+
+I(zl 
+
+> q
+
+; zl 
+
+> −q
+
+|mq ) = 0 ⇒ If zq is the disentangled representation of aq , then I(zq ; z−q |mq ) = 0 (17)                
+
+> (a) (b) (c) Figure 18. Causal graphs of representations. (a) and (b): Data generation with the true latent representations zl1,zl2, where Red arrows indicate the backdoor paths between them. (c): Representation learning that produces the learned representations z1,z2.
+
+## F. Experimental Setup and Implementation Details 
+
+F.1. Datasets 
+
+The detailed information of the datasets is summarized in Table 9. The datasets are described as follows: 
+
+Colored image datasets. Colored MNIST ( CMNIST ) is constructed by coloring and occluding a subset of MNIST (Arjovsky et al., 2019a). We define a1 as the parity of digits with a1 = 0 , 1 representing “even” and “odd”, and a2 as the color of digits with a2 = 0 , 1 representing “red” and “blue”. There are 3 and 2 modes under a1 = 0 , 1, respectively, i.e., digits 8, 4, and 2 under parity “even”, and digits 3 and 9 under parity “odd”. Colored Fashion-MNIST ( CFashion-MNIST )is constructed based on Fashion-MNIST (Xiao et al., 2017). We define a1 as the clothing style with a1 = 0 , 1 representing “sporty” and “chic”, and a2 as the color of clothing with a2 = 0 , 1 representing “red” and “blue”. There are 3 and 4 modes under a1 = 0 , 1, respectively, i.e., “sneaker”, “pullover”, and “shirt” under style “sporty”, and “sandal”, “dress”, “bag”, “ankle boot” under style “chic”. Noise is introduced in two forms to images: a random occlusion mask is applied to each image with occlusion ratio σ as the noise level (Chai et al., 2021); a random scalar multiplier is applied to the RGB channels of the digit/clothing foreground as the coloring noise. The generated data are shown in Figure 19. 
+
+Canine-BG. Canine-BG is constructed by combining canine images from ImageNet (Deng et al., 2009) with environmental backgrounds from the Places dataset (Zhou et al., 2018) following (Sagawa et al., 2020), as shown in Figure 20. Canines are combined with environments by the following procedure: First, SAM (Kirillov et al., 2023) is used to obtain segmentation masks of the canine image, and CLIP (Radford et al., 2021) is used to select the mask that best fits the semantics of the dog breeds with the prompt “a photo of a {dog breed }”; then, the canine foregrounds are combined with environment background to generate the images. Attribute a1 is defined as the functional categories of canines, i.e., a1 = 0 , 1 indicates “working dog” and “pet dog”; attribute a2 is defined as the environmental backgrounds, i.e., a2 = 0 , 1 indicates “indoors” (“living room” environment from Places dataset) and “outdoors” (“forest” environment from Places dataset). a1 has 10 modes under each attribute value, i.e., “Australian terrier”, “Briard”, “Welsh springer spaniel”, “Kelpie”, “Cairn terrier”, 25 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations a2 = 0                    
+
+> a1= 0, m1= 0 a1= 0, m1= 1 a1= 0, m1= 2 a1= 1, m1= 3 a1= 1, m1= 4
+> a2 = 1
+
+(a) CMNIST a2 = 0                            
+
+> a1= 0, m1= 0 a1= 0, m1= 1 a1= 0, m1= 2 a1= 1, m1= 3 a1= 1, m1= 4 a1= 1, m1= 5 a1= 2, m1= 6
+> a2 = 1
+
+(b) CFashion-MNIST 
+
+Figure 19. CMNIST and CFashion-MNIST data with occlusion and coloring noises. 
+
+Figure 20. Canine-BG data with environment backgrounds. 
+
+“Bedlington terrier”, “American Staffordshire terrier”, “Border collie”, “Bullmastiff”, “Irish water spaniel” under category “working dog”, and “Silky terrier”, “Tibetan terrier”, “Blenheim spaniel”, “Toy terrier”, “West Highland white terrier”, “Standard poodle”, “French bulldog”, “Cardigan Welsh corgi”, “Pug”, “Miniature poodle” under category “pet dog”. As a natural scenario, the environment of canines is often correlated to the functional categories and the specific canine breeds, e.g., working dogs are more likely to be outdoors. 
+
+Time series datasets. For wearable human activity recognition (WHAR) datasets UCI-HAR (Anguita et al., 2013), 
+
+RealWorld (Sztyler & Stuckenschmidt, 2016), and HHAR (Stisen et al., 2015), we use 3-axis acceleration data from smartphones placed on the waist (UCI-HAR and HHAR) or chest (RealWorld) of users. We define a1 as the human activity and a2 as the user ID. For the machine fault diagnosis dataset MFD (Lessmeier et al., 2016), we use vibration signals from bearing sensors. We define a1 as the fault type and a2 as the operating condition. Pre-processing includes removing invalid values, performing channel-wise normalization that scales signals to [-1, 1], and segmenting time series data using sliding windows. 26 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Table 9. Dataset descriptions. Dataset CMNIST CFashion-MNIST Canine-BG UCI-HAR RealWorld HHAR MFD                                                                                                                  
+
+> a1digit parity fashion style functional category activity activity activity incipient fault type # values of a12226863values of a1even, odd sporty, chic work, pet walking, walking upstairs, walking downstairs, sitting, standing, laying climbing stairs up, climbing stairs down, jumping, lying, standing, sitting, running, walking biking, sitting, standing, walking, stair up, stair down healthy, inner-bearing damage, outer-bearing dam-age
+> a2digit color clothing color background envi-ronment user user user operating condition # values of a222230 15 94
+> m1digit clothing dog breed activity modes activity modes activity modes fault modes # values of m15720 unknown unknown unknown unknown values of m1digit 8, 4, 2, 3, 9 sneaker, pullover, shirt, sandal, dress, bag, ankle boot Australian terrier, Briard, Welsh springer spaniel, Kelpie, Cairn terrier, Bedlington terrier, American Stafford-shire terrier, Border collie, Bullmastiff, Irish water spaniel, and Silky terrier, Tibetan terrier, Blenheim spaniel, Toy terrier, West Highland white terrier, Standard poodle, French bulldog, Cardigan Welsh corgi, Pug, Miniature poodle unknown unknown unknown unknown # samples 35000 49000 11884 11711 36980 14772 10916 # of groups ---5534# channels ---3331window length ---128 150 128 5120
+
+F.2. Evaluation Protocol 
+
+We introduce correlations to image datasets with constructed modes by sampling data with various correlations, and explore natural correlations on time series datasets with unknown modes by leave-one-group-out validation. 
+
+Image datasets. The number of samples for each mode is set to be equal, and hidden correlations are introduced by generating data with different conditional probabilities p(a2|m1) across modes. For the main comparison with baselines and variants, noise level σ is set to 0.2, and the conditional distribution p(a2 | m1) on the training data is set according to 
+
+Pa2|m1 , where the (i, j )-th component corresponds to p(a2 = i | m1 = j):
+
+Pa2|m1 =
+
+0.1 0.9 0.1 0.9 0.10.9 0.1 0.9 0.1 0.9
+
+
+
+(CMNIST) (18) 
+
+Pa2|m1 =
+
+0.9 0.1 0.1 0.1 0.9 0.9 0.10.1 0.9 0.9 0.9 0.1 0.1 0.9
+
+
+
+(CFahion-MNIST) (19) For Canine-BG, Pa2|m1 = [[0.1, 0.2, 0.3, 0.4, 0.1, 0.2, 0.2, 0.4, 0.3, 0.1, 0.9, 0.8, 0.7, 0.6, 0.9, 0.8, 0.8, 0.6, 0.7, 0.9], [0.9, 0.8, 0.7, 0.6, 0.9, 0.8, 0.8, 0.6, 0.7, 0.9, 0.1, 0.2, 0.3, 0.4, 0.1, 0.2, 0.2, 0.4, 0.3, 0.1]]. Test set 1 (correlated) follows the Pa2|m1 configuration above; test set 2 (uncorrelated) uses p(a2 = i | m1 = j) = 0 .5 for all i, j ; and test 3 (anticorrelated) uses 1 − Pa2|m1 to configure p(a2 | m1).
+
+Time series datasets. To construct out-of-distribution tasks, we perform leave-one-group-out validation. The data are grouped by attribute a2, with each group containing an equal number of a2 values. We loop over the groups: each group is selected as the test data once, and the rest groups serve as training and validation data with a ratio of 0.8:0.2. 27 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations   
+
+> Table 10. Network architectures. “Conv(out, k, s)” denotes a 1D convolution layer with its output channels, kernel size, and stride. “FC( ·)” denotes a fully connected layer with its output dimension. “LeakyReLU( ·)” denotes a LeakyReLU activation with its scale. “Reshape( ·,·)” transforms vectors into 2D matrices for convolutional inputs.
+
+Component Dataset Architectures Encoder subnetwork Colored image FC(128), BN → FC(128), BN Decoder Colored image FC(256), BN → FC(3 × 28 × 28) Encoder subnetwork Canine-BG ResNet18 Decoder Canine-BG Transposed convolutional network ( https://github.com/ Horizon2333/imagenet-autoencoder )Encoder subnetwork WHAR Conv(out=128, k=8, s=2), BN → Conv(out=256, k=5, s=2), BN 
+
+→ Conv(out=128, k=3, s=1), BN, MaxPool(2) Decoder WHAR FC( cdec × 32 ), BN, LeakyReLU(0.2) → Reshape( cdec , 32) →
+
+Conv(out=16, k=3, s=1), BN, LeakyReLU(0.2), Upsample(2) 
+
+→ Conv(out=8, k=3, s=1), BN, LeakyReLU(0.2), Upsample(2) 
+
+→ Conv(out=3, k=3, s=1), Tanh ( cdec = 41 for RealWorld and 35 for UCI-HAR and HHAR) Encoder subnetwork MFD Conv(out=64, k=32, s=6), BN → Conv(out=128, k=8, s=2), BN 
+
+→ Conv(out=128, k=8, s=2), BN, MaxPool(2) Decoder MFD FC(128 × 214), BN, LeakyReLU(0.2) → Reshape(128, 214) →
+
+Upsample(2), Conv(out=32, k=8, s=1), BN, LeakyReLU(0.2) →
+
+Upsample(2), Conv(out=8, k=8, s=1), BN, LeakyReLU(0.2) →
+
+Upsample(6), Conv(out=1, k=33, s=1), BN, LeakyReLU(0.2) Predictor All FC( ·), Softmax Discriminator subnetwork All FC(512), ReLu → FC(1), Sigmoid Weight Net subnetwork All FC(32), ReLu → FC(1), Sigmoid Subclustering Net subnetwork All FC(256), ReLu → FC(2) 
+
+F.3. Computing Environment 
+
+All methods are implemented in PyTorch 2 (Paszke et al., 2019) with Python 3.10. Model optimization is performed with Adam (Kingma & Ba, 2015). Experiments are conducted on Linux servers with the following hardware configurations: (1) Intel(R) Core(TM) i9-12900K CPU and NVIDIA RTX 3090 GPU, (2) AMD Ryzen 9 7950X3D 16-Core Processor CPU and NVIDIA GeForce RTX 4090 D GPU, and (3) AMD EPYC 9654 96-Core Processors with NVIDIA H100 HBM3 GPU. 
+
+F.4. Network Architectures 
+
+We summarize the network architectures in Table 10. Encoder and decoder are constructed as multi-layer perceptrons (MLPs) for image datasets CMNIST and CFashion-MNIST, as ResNet18 architectures for Canine-BG, and as convolutional networks for time series datasets. Encoder employs an individual subnetwork to learn the representations of each attribute, and decoder fuses the representations of different attributes to reconstruct data. Predictors, discriminator, weight net, and subclustering Net are constructed as MLPs. Discriminator, weight net, and subclustering Net employ an individual subnetwork for each attribute value, which receives the cluster labels under this attribute value as the conditional input, i.e., these networks use parameter sharing between the clusters under the same attribute value. Image datasets CMNIST and CFashion-MNIST share the same architectures, and wearable human activity recognition (WHAR) datasets UCI-HAR, RealWorld, and HHAR share similar architectures. 
+
+Architecture changes after clustering iterations. When the number of clusters changes during iterative clustering, only the neurons in four layers are adjusted by adding neurons that correspond to the emerging clusters after splitting, or removing neurons that correspond to the vanished clusters after merging. The adjusted layers are: (1) the output layer of mode predictor, (2) the output layer of subclustering net, (3) the conditional input layer in discriminator, and (4) the conditional input layer in weight net. Other network parameters remain unchanged, facilitating stable training. 28 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Algorithm 1 The training process of CoDID  
+
+> 1:
+
+Input: Training data x with attributes labels a1, a 2, the number of epochs Nptr , Ntr , Ncl , Nit , and the number of steps 
+
+Nd for discriminator updates, initial number of clusters Kc(α)(t=0)  
+
+> 2:
+
+Initialize encoder F , attribute predictors C1, C 2, mode predictor Cm1 , decoder R, discriminator D, weight net W , and sublcustering net S 
+
+> 3:
+
+for epoch = 1 to Nptr do  
+
+> 4:
+
+for mini-batch (x, a 1, a 2) do  
+
+> 5:
+
+Update encoder F , predictors C1, C 2, C m1 , and decoder R by minimizing Linfo in Equation 4  
+
+> 6:
+
+end for  
+
+> 7:
+
+end for  
+
+> 8:
+
+Under each value α of a1, initialize iteration t = 0 , initialize DPGMM clustering with the number of clusters Kc(α)(t=0) 
+
+on the output representations z1 of the pre-trained encoder, and get the cluster labels c(t=0) 1 
+
+> 9:
+
+for epoch = 1 to Ntr do  
+
+> 10:
+
+if epoch mod Ncl = 0 and epoch < N it then  
+
+> 11:
+
+t = t + 1  
+
+> 12:
+
+Refine DPGMM clustering to get the cluster labels c(t)1 and number of clusters Kc(α)(t), α ∈ A 1, make merge proposals at t = 0 , 2, 4, . . . and split proposals at t = 1 , 3, 5, . . .  
+
+> 13:
+
+Update the network architectures of predictor Cm1 , discriminator D, weight net W , and subclustering net S if any split or merge decisions are made  
+
+> 14:
+
+end if  
+
+> 15:
+
+for mini-batch (x, a 1, a 2, c (t)1 ) do  
+
+> 16:
+
+Update encoder F and predictors C1, C 2, C m1 , and decoder R by minimizing Linfo in Equation 4, update subclus-tering net S by minimizing Lsc in Equation 11  
+
+> 17:
+
+for step = 1 to Nd do  
+
+> 18:
+
+Update discriminator D by minimizing Lwd in Equation 5 with equal weights w′ = 1  
+
+> 19:
+
+end for  
+
+> 20:
+
+Update weight net W by minimizing Lmeta in Equation 8  
+
+> 21:
+
+Update encoder F by maximizing Lwd in Equation 5 with weights w from weight net  
+
+> 22:
+
+end for  
+
+> 23:
+
+end for  
+
+> 24:
+
+Output: Encoder F and predictor C1
+
+F.5. Training Process 
+
+We summarize the training process of CoDID in Algorithm 1. Alternative optimization steps are performed to minimize different losses. 
+
+Extension to multiple attributes. We focus on disentangling a certain attribute aq , q = 1 with underlying modes to facilitate downstream attribute prediction tasks, e.g., activity recognition that aims to predict the activity of users. Although we only include one other attribute a2 in our formulations, our model is capable of handling multiple other attributes a−q = {aj }j̸ =q .Our model can be extended to multiple attributes by adding the corresponding attribute predictors for each attribute in 
+
+a−q , using joint representations z−q in reconstruction, and using the joint representations of z−q in mode-based CMI minimization, i.e., minimizing I(zq ; z−q |cq ) instead (Funke et al., 2022). If the disentangled representations of some other attribute aj , j ̸ = q are required for the downstream task, our model can be extended by adding a conditional discriminator that minimizes the attribute/mode-based CMI between aj and a−j , depending on whether underlying modes exist under the values of this attribute. 
+
+F.6. Hyperparameter Settings 
+
+We specify the hyperparameter settings as follows. For all datasets, the mini-batch size is set to 128. For CMNIST, CFashion-MNIST, and time series datasets, the number of dimensions dz for representations z is set to 128. For Canine-BG, the number of dimensions dz for representations z is set to 512, corresponding to ResNet18. The number of epochs for pre-training, Nptr , the number of epochs for supervised DRL, Ntr , and the number of epochs before stopping clustering refinement, Nit , are set to 20, 30, 30 on image datasets, 50, 150, 150 on UCI-HAR and MFD, 50, 100, 100 on RealWorld, 29 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations                                        
+
+> Table 11. Hyperparameter search spaces and NNI settings. Hyperparameter Search space
+> λmp {10 −4,10 −3,10 −2,10 −1}or {0.1,0.3, . . . , 0.9}
+> λre {0.6,0.7, . . . , 1.4}
+> λmr {0.6,0.8, . . . , 1.4}
+> λwa {0.1,0.2, . . . , 0.5}
+> Kc(·)(0) {2,3, . . . , 10 }
+> ld{10 −4,3×10 −4,5×10 −4,7×10 −4,10 −3}
+> Nd{1,3, . . . , 17 }
+> Notes. For λmp , we observe that smaller values perform better on MFD and thus use the choice {10 −4,10 −3,10 −2,10 −1}; on other datasets, we use the choice {0.1,0.2, . . . , 0.9}.
+
+and 50, 150, 100 on HHAR, respectively. We use Neural Network Intelligence (NNI) 2 to tune a subset of hyperparameters with Tree-structured Parzen Estimator (TPE). The search spaces of the parameters are summarized in Table 11, and the selected values are as follows: The loss coefficients (λmp , λ re , λ mr , λ wa ) are set to (0.3, 1.1, 1, 0.3) on CMNIST, (0.7, 0.9, 1, 0.3) on CFashion-MNIST, (0.5, 1.2, 1, 0.1) on UCI-HAR, (0.1, 1, 1, 0.2) on RealWorld, (0.1, 0.8, 1, 0.2) on HHAR, and (0.01, 1, 1, 0.2) on MFD, respectively. The initial number of clusters Kc(α)(0) under each value α of a1 is set to (6,4), (6,8) on CMNIST and CFashion-MNIST under α = 0 , 1 (tuned separately under each α), and set to 6, 2, 3, and 4 on UCI-HAR, RealWorld, HHAR, and MFD under all a1 values (use a single shared value for all α and tuned as one parameter). The initial learning rate of Adam for discriminator, ld, is set to 0.0003, 0.0003, 0.0007, 0.0007, 0.0005, 0.001 on CMNIST, CFashion-MNIST, UCI-HAR, RealWorld, HHAR, and MFD, respectively. The initial learning rates for other networks are set to 0.001 on all datasets. The number of update steps Nd is set to 15, 15, 7, 7, 1, and 1 on CMNIST, CFashion-MNIST, UCI-HAR, RealWorld, HHAR, and MFD, respectively. 
+
+F.7. Baselines 
+
+For fairness, we implement all baselines with the same encoder–decoder backbone as CoDID, with appropriate adaptations for variational methods, i.e., Gaussian parameter outputs and reparameterization tricks. The descriptions of the baselines for DRL on attributes a1, a 2 are summarized below: • MMD (Lin et al., 2020) learns the generalized representations of attribute a1 by aligning its representation distribution across different values of a2.• DANN (Ganin et al., 2016) adversarially trains an attribute predictor to make a2 unpredictable from the representations of a1.• CORAL (Sun & Saenko, 2016) aligns the second-order statistics of the representations of a1 computed from data with any two distinct values of a2.• IRM (Arjovsky et al., 2019b) learns invariant representations of a1 by ensuring its optimal predictor is simultaneously optimal for all values of a2.• REx (Krueger et al., 2021) reduces the variance of the prediction risk of a1 across different values of a2.• DTS (Li et al., 2022) adversarially trains attribute predictors to make a1 unpredictable from the representations of a2,and vice versa. • IDE-VC (Yuan et al., 2021) minimizes the MI between the representations of a1, a 2 by adversarially training represen-tation estimators to make the representations of a2 unpredictable from the representations of a1.• MI (Cheng et al., 2022) minimizes the MI between the representations of a1, a 2 by adversarially training a discriminator to align the distributions of the joint and marginal representations. 
+
+> 2https://github.com/microsoft/nni
+
+30 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+• A-CMI (Funke et al., 2022) minimizes the attribute-based CMI between the representations of a1, a 2 by adversarially training two conditional discriminators, each conditioned on one attribute, to align the conditional distributions of the joint and marginal representations. • HFS (Roth et al., 2023) minimizes the Hausdorff distance between two representation sets to factorize the supports of the representations of a1, a 2, where we use Euclidean distance as the distance measure between representations with reference to (Oublal et al., 2024b). • CODA (Ou & Zhang, 2024) generates synthetic samples by decoding the combined representations from different instances, and enforces the model to deliver consistent predictions on the original and synthesized samples. • ID-FaceVC (Rong & Liu, 2025) minimizes the MI between the representations of a1, a 2 using a variational upper bound technique. • DIOSC (Oublal et al., 2024a) leverages weak contrastive learning to minimize the information overlap between representations and their negatives, while compelling similarity between representations and their augmented represen-tations. 
+
+## G. Preliminaries: Non-parametric DPGMM Clustering with Split/Merge Operations 
+
+We adopt an existing Dirichlet Process Gaussian Mixture Model (DPGMM) clustering model as the backbone of our mode-discovery module. A concise overview of the DPGMM we used is provided below. For full algorithmic details and the split/merge framework, please refer to the prior works (Ronen et al., 2022; Jain & Neal, 2004). We describe a DPGMM for generic input data x in this section. The notations here are standalone and independent of those used in our method. 
+
+The DPGMM model. DPGMM is a Bayesian non-parametric extension of the classic Gaussian Mixture Model (GMM). DPGMM uses a Dirichlet process prior, supporting an infinite mixture with weight πk and Gaussian parameters θk =(μk, Σk) for the k-th component: 
+
+p(x|(πk, μk, Σk)∞
+
+> k=1
+
+) = 
+
+> ∞
+
+X
+
+> k=1
+
+πkN (x; μk, Σk) (20) For N data points, X = ( xi)Ni=1 , xi ∈ Rd, let ci denote the cluster label of xi. We specify a DPGMM via the following generative process: 
+
+π = ( πk)∞ 
+
+> k=1
+
+∼ GEM (1 , α ⋆), (21) 
+
+θk = ( μk, Σk) iid 
+
+∼ N IW (μ⋆, κ ⋆, Ψ⋆, ν ⋆), k ∈ { 1, ... }, (22) 
+
+ci ∼ Cat( π), i ∈ { 1, ..., N } (23) 
+
+xi|ci ∼ N (xi; θci ), i ∈ { 1, ..., N } (24) The weights π = ( πk)∞ 
+
+> k=1
+
+are drawn from the Griffiths–Engen–McCloskey stick-breaking process (GEM) (Pitman, 2002) with a concentration parameter α⋆ > 0. The parameters θ = ( θk)∞ 
+
+> k=1
+
+are independent and identically distributed (i.i.d.) draws from a Normal–Inverse Wishart (NIW) distribution. For data x ∈ Rd, NIW hyperparameters are denoted as 
+
+λ = ( μ⋆, κ ⋆, Ψ⋆, ν ⋆): a vector μ⋆ ∈ Rd, a positive real number κ⋆ > 0, a symmetric positive-definite (SPD) matrix 
+
+Ψ⋆ ∈ Rd×d, and a positive real number ν⋆ > d − 1. Roughly speaking, the higher ν⋆ and κ⋆ are, the more the distribution is peaked around Ψ⋆ and μ⋆, respectively. While there may be infinite-many components, the number of clusters is bounded by the number of samples on a finite dataset. Thus, a truncated version with a finite cluster count is typically used in practice. DPGMM seeks to infer the cluster labels, involving the number of clusters K and parameters (πk, θk)Kk=1 . The inference is affected by the data as well as GEM and NIW hyperparameters. 
+
+Split/merge framework. Split/merge operations allow the change of K via the Metropolis-Hastings framework (Hastings, 1970): split proposes to divide a cluster into its two subclusters ( K ← K + 1 ); merge proposes to combine two clusters into one ( K ← K − 1). 31 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+For cluster split, each component (πk, θk) is augmented with two subcomponents ( ˜θ = ( ˜θk, 1, ˜θk, 2), ˜πk = (˜ πk, 1, ˜πk, 2) ) ,forming a 2-component GMM; each cluster label ci is augmented with a subcluster label ˜ci ∈ { 1, 2}. A split proposal for splitting a cluster k is accepted with probability min(1 , H s), where the Hastings ratio Hs is computed as: 
+
+Hs = α Γ( Nk, 1) fx(Xk, 1; λ) Γ( Nk, 2) fx(Xk, 2; λ)Γ( Nk) fx(Xk; λ) (2) where Γ is the Gamma function, Xk = ( xi)i:ci=k denotes the points in cluster k, Nk = |X k| denotes the number of points in cluster k, Xk,j = ( xi)i:( ci,˜ci)=( k,j ), j ∈ { 1, 2} denotes the points in subcluster j, Nk,j = |X k,j |, and fx( · ; λ) denotes the marginal likelihood under NIW hyperparameters λ (defined later). The ratio Hs can be interpreted as comparing the marginal likelihood of the data under the two subclusters with its marginal likelihood under the cluster. Similarly, a merge proposal for merging two clusters k1 and k2 is accepted with probability (1 , H m), where the Hastings ratio Hm is computed as: 
+
+Hm = 1
+
+Hs
+
+= Γ( Nk1 + Nk2 ) fx(X{k1,k 2}; λ)
+
+α Γ( Nk1 ) fx(Xk1 ; λ) Γ( Nk2 ) fx(Xk2 ; λ)
+
+where Xkj = ( xi)i:ci=kj , j ∈ { 1, 2} denotes the points in each cluster k1, k 2, Nkj = |X kj |, and X{k1,k 2} = ( xi)i: ci∈{ k1,k 2}
+
+denotes the points in clusters k1 and k2.The marginal likelihood of the data (xi)Nk 
+
+> i=1
+
+in a cluster k is obtained by marginalizing over the Gaussian parameters given the hyperparameters λ of the NIW prior: 
+
+fx
+
+
+
+(xi)Nk
+
+> i=1
+
+; λ
+
+
+
+=
+
+Z NkY
+
+> i=1
+
+N (xi | μk, Σk) N IW (μk, Σk; λ) d(μk, Σk) .
+
+Inferring process. In every iteration, cluster parameters are updated using the EM-algorithm with Maximum-a-Posteriori (MAP) estimates. Split and merge are proposed alternately every certain number of iterations. The marginal likelihood of data can be computed in closed form with the posterior NIW hyperparameters. For the computational details, please refer to (Ronen et al., 2022). 
+
+## H. Full Results on Three Test Sets of CMNIST and CFashion-MNIST 
+
+The full results on all three test sets for baseline comparisons on CMNIST and CFashion-MNIST are reported in Table 12, 13, 14, respectively. We observe that the advantage of CoDID becomes more prominent from test 1 to 3 with enlarging train-test correlation shifts, demonstrating the robustness of CoDID. 
+
+Table 12. Full comparison with baselines on CMNIST (mean±std., in percentage). The notations follow Table 1. Method Test 1 (correlated) Test 2 (uncorrelated) Test 3 (anticorrelated) Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 BASE 95.4 ±0.3 95.2 ±0.3 88.1 ±0.3 87.6 ±0.3 79.2 ±0.9 * 78.3 ±0.9 *MMD 73.6 ±1.2 * 61.8 ±2.0 * 65.5 ±2.8 * 52.4 ±4.7 * 57.3 ±2.7 * 41.2 ±7.0 *DANN 85.1 ±0.6 * 84.5 ±0.6 * 70.7 ±1.5 * 69.8 ±1.3 * 58.3 ±2.9 * 56.9 ±2.6 *CORAL 74.7 ±0.4 * 74.4 ±0.4 * 66.0 ±2.0 * 65.4 ±1.7 * 58.6 ±3.2 * 57.6 ±3.0 *IRM 95.5 ±0.8 95.3 ±0.8 88.3 ±2.3 87.8 ±2.0 81.0 ±3.5 * 80.3 ±3.2 *REx 96.0 ±0.5 95.8 ±0.5 88.3 ±1.4 87.8 ±1.1 81.7 ±3.3 * 80.9 ±3.6 *DTS 70.8 ±1.6 * 63.1 ±1.5 * 63.1 ±2.9 * 53.6 ±7.4 * 55.6 ±3.0 * 44.0 ±1.9 *IDEVC 72.0 ±2.1 * 68.8 ±2.4 * 61.9 ±1.5 * 57.4 ±1.0 * 54.2 ±4.0 * 49.1 ±2.9 *MI 67.8 ±1.5 * 60.4 ±1.7 * 62.3 ±1.9 * 52.8 ±5.4 * 56.9 ±4.0 * 45.2 ±2.8 *A-CMI 70.9 ±1.1 * 62.5 ±1.7 * 65.0 ±4.6 * 52.9 ±6.4 * 58.5 ±2.3 * 41.2 ±5.9 *HFS 91.2 ±0.5 * 90.8 ±0.4 * 78.9 ±1.6 * 77.9 ±1.6 * 66.5 ±2.1 * 64.9 ±2.1 *CODA 92.7 ±0.3 * 92.4 ±0.4 * 81.3 ±1.1 * 80.5 ±1.2 * 69.8 ±1.9 * 68.3 ±2.3 *ID-FaceVC 87.9 ±0.3 * 87.4 ±0.4 * 73.2 ±1.3 * 72.0 ±1.3 * 58.1 ±2.2 * 56.2 ±2.4 *DIOSC 93.0 ±0.4 92.7 ±0.3 83.1 ±0.3 * 82.6 ±0.3 * 73.4 ±0.7 * 72.6 ±1.0 *CoDID 95.4 ±0.9 95.2 ±0.9 89.9 ±1.2 89.6 ±1.3 85.2 ±2.7 84.6 ±3.0 
+
+Improvement -0.6 % -0.6 % +1.6 % +1.8 % +3.5 % +3.7 % 
+
+32 Coordinated Disentanglement with Iterative Mode Discovery Under Hidden Correlations 
+
+Table 13. Full comparison with baselines on CFashion-MNIST (mean±std., in percentage). The notations follow Table 1. Method Test 1 (correlated) Test 2 (uncorrelated) Test 3 (anticorrelated) Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 BASE 95.8 ±0.3 95.7 ±0.3 86.7 ±0.9 * 86.4 ±0.9 * 77.8 ±1.5 * 77.1 ±1.5 *MMD 94.3 ±0.3 94.1 ±0.2 78.7 ±1.8 * 78.3 ±1.9 * 63.5 ±3.6 * 62.7 ±3.7 *DANN 90.2 ±0.6 * 90.0 ±0.6 * 76.7 ±1.7 * 76.0 ±1.8 * 63.8 ±2.5 * 62.5 ±2.8 *CORAL 95.4 ±0.4 95.3 ±0.4 81.7 ±2.0 * 81.4 ±1.9 * 68.0 ±3.4 * 67.3 ±3.0 *IRM 95.7 ±0.8 95.7 ±0.8 87.4 ±2.3 87.2 ±2.2 79.3 ±2.6 * 78.9 ±2.5 *REx 95.8 ±0.5 95.7 ±0.5 86.1 ±1.3 * 85.9 ±1.1 * 76.3 ±3.5 * 75.9 ±3.2 *DTS 85.3 ±0.9 * 85.1 ±0.9 * 73.2 ±1.6 * 72.6 ±1.6 * 61.2 ±2.0 * 60.1 ±2.0 *IDEVC 92.4 ±0.3 * 92.2 ±0.3 * 75.4 ±2.3 * 74.6 ±2.5 * 58.7 ±3.8 * 57.1 ±4.3 *MI 92.0 ±1.0 * 91.8 ±1.1 * 77.7 ±1.8 * 77.0 ±2.0 * 62.1 ±3.0 * 60.7 ±3.0 *A-Cmi 91.9 ±1.6 * 91.7 ±1.7 * 76.9 ±3.3 * 76.1 ±3.7 * 61.8 ±5.3 * 60.0 ±6.5 *HFS 93.9 ±0.7 93.8 ±0.7 80.0 ±1.5 * 79.6 ±1.2 * 66.2 ±3.6 * 65.3 ±3.1 *CODA 94.6 ±0.5 94.4 ±0.5 83.7 ±0.8 * 83.2 ±1.0 * 72.5 ±1.5 * 71.3 ±1.9 *ID-FaceVC 93.5 ±0.2 93.3 ±0.2 78.5 ±0.4 * 77.9 ±0.6 * 63.6 ±1.4 * 62.5 ±1.7 *DIOSC 94.7 ±0.4 94.6 ±0.4 83.8 ±0.8 * 83.5 ±0.7 * 73.2 ±1.6 * 72.8 ±1.4 *CoDID 95.3 ±0.4 95.2 ±0.4 89.4 ±1.3 89.1 ±1.3 84.1 ±3.2 83.5 ±3.3 
+
+Improvement -0.5 % -0.5 % +2.0 % +1.9 % +4.8 % +4.6 % 
+
+Table 14. Full comparison with baselines on Canine-BG (mean±std., in percentage). The notations follow Table 1. Method Test 1 (correlated) Test 2 (uncorrelated) Test 3 (anticorrelated) Acc. Mac. F1 Acc. Mac. F1 Acc. Mac. F1 BASE 81.0 ±1.9 * 80.7 ±2.2 * 68.6 ±1.5 * 68.1 ±1.9 * 55.6 ±2.0 * 54.6 ±2.3 *MMD 51.1 ±5.5 * 49.0 ±7.4 * 52.6 ±5.9 * 50.7 ±8.2 * 54.1 ±6.7 * 52.1 ±9.4 *DANN 71.3 ±4.6 * 71.2 ±6.6 * 50.8 ±4.7 * 50.7 ±6.4 * 29.8 ±4.4 * 29.6 ±4.8 *CORAL 50.7 ±2.4 * 33.7 ±2.4 * 51.2 ±2.3 * 33.9 ±3.9 * 51.0 ±3.5 * 33.8 ±3.2 *IRM 83.9 ±3.8 83.9 ±3.8 69.1 ±4.5 * 69.1 ±3.1 * 54.3 ±5.6 * 54.3 ±5.1 *REx 84.1 ±4.5 84.1 ±5.5 70.2 ±4.6 * 70.2 ±3.3 * 56.0 ±5.2 * 56.0 ±5.7 *DTS 59.9 ±4.6 * 59.9 ±6.2 * 51.9 ±0.8 * 46.9 ±1.9 * 41.8 ±4.7 * 35.7 ±2.3 *IDE-VC 51.0 ±2.5 * 47.6 ±2.6 * 50.1 ±0.7 * 46.7 ±5.9 * 49.1 ±2.2 * 45.7 ±2.0 *MI 72.9 ±4.2 * 72.3 ±4.9 * 62.9 ±3.0 * 62.0 ±3.4 * 52.3 ±4.8 * 51.0 ±4.4 *A-CMI 73.0 ±2.6 * 72.9 ±2.6 * 63.8 ±5.2 * 63.6 ±5.2 * 53.0 ±8.2 * 52.8 ±8.1 *HFS 79.8 ±1.6 * 79.7 ±1.8 * 63.9 ±2.3 * 63.6 ±2.5 * 46.8 ±3.7 * 46.2 ±4.1 *CODA 59.2 ±1.3 * 59.2 ±1.3 * 51.9 ±0.8 * 51.9 ±0.8 * 43.9 ±2.2 * 43.9 ±2.3 *ID-FaceVC 59.9 ±6.6 * 59.4 ±6.6 * 49.4 ±1.3 * 49.1 ±1.8 * 42.1 ±6.2 * 41.3 ±6.7 *DIOSC 59.4 ±5.2 * 58.9 ±5.4 * 51.8 ±1.0 * 51.1 ±1.3 * 42.5 ±5.4 * 42.0 ±5.3 *CoDID 85.3 ±4.8 85.3 ±5.0 75.8 ±3.2 75.7 ±3.5 68.3 ±5.2 68.2 ±5.7 
+
+Improvement +1.2 % +1.2 % +5.6 % +5.5 % +12.3 % +12.2 % 
+
+33

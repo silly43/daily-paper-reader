@@ -1,0 +1,97 @@
+Title: 2026.07.21.739810v1.full.pdf
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.07.21.739810v1.full.pdf
+
+Number of Pages: 6
+
+Markdown Content:
+Proceedings of CIBB 2026 1
+
+# SpatialJEPA : JEPA-inspired graph-context distillation for spatially aware multiomics integration 
+
+## Dylan Mann-Krzisnik 1,3 and Yue Li ∗,1,2,3   
+
+> 1Quantitative Life Sciences, McGill University, Montr´ eal, QC, Canada.
+> 2School of Computer Science, McGill University, Montr´ eal, QC, Canada.
+> 3Mila – Institut qu´ eb´ ecois d’intelligence artificielle, Montr´ eal, QC, Canada. ORCID codes: DMK 0000-0003-2874-7272; YL 0000-0002-1163-3634.
+> ∗corresponding author: yueli@cs.mcgill.ca
+
+Keywords : (min 3 and max 5) spatial transcriptomics, self-supervised learning, multiomics integration. 
+
+Abstract. Computational frameworks for integrating spatial genomics modalities extend cell-based representation learning across molecular layers, but many paired RNA–ATAC datasets are dissociated and lack spatial coordinates. We introduce SpatialJEPA , a JEPA-inspired teacher–student framework for transferring spatial context from spatial multiomics data to non-spatial multiome data. In contrast to patch- or feature-masking objectives, SpatialJEPA 
+
+masks spatial context by replacing the teacher’s spatial neighborhood graph with a self-only identity graph during student training, making the spatial sample appear dissociated to the stu-dent. The student learns to match teacher embeddings from this graph-context-restricted view and can therefore be applied to dissociated RNA–ATAC data at inference time. In mouse brain multiomics, the resulting representation supports source–target alignment, recovers spatially organized transcriptomic and chromatin-accessibility programs, and shows concordance with ligand–receptor pathway structure compared with non-spatial references. 
+
+1 Introduction 
+
+Paired single-cell multiomics has expanded the study of gene regulatory programs by mea-suring complementary molecular layers within the same cells [ 1]. Spatial multiomics further links these chromatin and transcriptomic states to tissue organization, enabling models to learn representations reflecting both cell-intrinsic molecular state and local microenvironment [ 2]. However, many multiomics datasets are generated from dissociated tissue and therefore lack spatial coordinates, limiting the direct use of models whose representations depend on spatial neighborhood structure [3]. We introduce SpatialJEPA , a self-supervised framework inspired from the Joint-Embedding Predictive Architecture (JEPA, [ 4 , 5, 6 ]) for transferring spatial context from spatial multiomics data to non-spatial RNA–ATAC data. The JEPA analogy is that the student predicts a teacher latent representation from a deliberately context-restricted view. Rather than masking image patches, tokens, or molecular features, SpatialJEPA masks spatial graph context: the student receives the same spatial multiomics profiles as the teacher, but with the spatial neighborhood graph replaced by a self-only identity graph. This yields a student model that retains spatially informed structure while operating on dissociated multiomics data. 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 22, 2026. ;https://doi.org/10.64898/2026.07.21.739810 doi: bioRxiv preprint
+
+Proceedings of CIBB 2026 2
+
+2 Data and Methods 
+
+The SpatialJEPA framework is summarized in Fig. 1a, with integration visualizations in Fig. 1b–d and integration results in Fig. 1e. We use the P22 mouse brain spatial RNA–ATAC dataset to train the spatial teacher and student models [ 2 ], whereas the 10x Multiome mouse brain sample is used as the target non-spatial, dissociated single-cell dataset [ 7 ]. We use a custom PyTorch implementation of MultiGATE as the spatial multiomics backbone [ 3 ]. MultiGATE uses a dual-autoencoding architecture in which gene–peak links support feature-level attention before intra-modality cell–cell attention, and it combines reconstruction with multimodal contrastive objectives. The teacher model is trained with the full MultiGATE architecture, training objectives, and spatial neighborhood graph (Fig. 1a). The student uses the same encoder components but replaces the spatial graph with a self-only identity graph. This graph-context masking mimics dissociation while preserving the same molecular inputs. The student is trained to match frozen teacher embeddings via latent prediction by minimizing a mean squared error objective, 
+
+LMSE = 1
+
+> N
+
+PNi=1 ∥zs,i − sg( zt,i )∥22, where zs,i and zt,i denote student and teacher embeddings for cell/spot/pixel i. Teacher embeddings are frozen via the stop-gradient operator sg( ·). Thus, the prediction target contains spatial context learned by the teacher, whereas the student input explicitly excludes neighbor information. In more detail, after each teacher-training epoch, the frozen teacher generates modality-specific RNA and ATAC embeddings before multimodal contrastive alignment. The student encodes the same batch with self-only identity graphs and updates its encoder parameters against the distillation loss, so only the student learns to operate without spatial neighborhood information. Once the full teacher model and the student encoder are trained, a partial least-squares (PLS) decoder is trained post-hoc for the student to reconstruct genomic features x from latent embeddings zs.
+
+Article version: 7th July 2026 h23:03 CET 
+
+Figure 1: Overview of SpatialJEPA datasets, graph-context distillation, and integration performance. (a) Spatial teacher training with the full spatial graph and student distillation with a self-only identity graph that masks spatial neighborhood context. Data displayed in this panel are those used throughout this study. (b–d) Integration visualizations for source data embeddings using the teacher (b) and student (c) models, as well as zero-shot student embeddings on target data (d). (e) Baseline comparison using 1-FOSCTTM, iLISI, bio conservation, and total integration score; higher values indicate better performance. ZS: zero-shot, OT: optimal transport. 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 22, 2026. ;https://doi.org/10.64898/2026.07.21.739810 doi: bioRxiv preprint
+
+Proceedings of CIBB 2026 3With the trained student model, embedding is performed on non-spatial target data either zero-shot, or further co-embedded with spatial source data using optimal transport (OT) in the latent space [ 8 ], where embedded target nuclei are transported onto source nuclei for downstream analysis. Target-to-source OT alignment is performed on RNA and ATAC nuclei separately. 
+
+3 Results 
+
+Both the teacher (Fig. 1b) and graph-masked student (Fig. 1c) successfully integrate mouse brain spatial multiomics data. Moreover, the student also integrates target single-cell data either in a zero-shot fashion (Fig. 1d), or with embeddings further aligned to source data with OT (Fig. 2a). Teacher and student models applied to source and target data are compared based on metrics evaluated on embedded nuclei (Fig. 1e): 1-FOSCTTM measures cell-pairing accuracy across modalities, iLISI measures RNA–ATAC modality mixing, bio conservation measures preservation of annotated biological label structure, and total summarizes aggregate integration [ 9, 10 ]; higher values are better. On source data, the teacher and student models exhibit similar metrics and far outperform a ‘nonspatial’ baseline (i.e. MultiGATE trained directly on dissociated spatial data, bypassing SpatialJEPA distillation) indicating retained cross-modality matching after graph-context masking. On target data, zero-shot student embeddings preserve substantial cross-modality matching but weaker modality mixing; OT alignment between source and target data improves iLISI relative to the zero-shot embeddings. These results support the SpatialJEPA methodology of spatial teacher training and graph-context distillation. After OT alignment, source and target share a Leiden partition in physical and UMAP space (Fig. 2a), and representative markers ( Pde10a/Rgs9/Gng7 , Mobp/Mal ) show concordant localization (Fig. 2b). Per-cluster gene-rank correlations quantify transcriptomic agreement across domains (Fig. 2c). As a feature-level association analysis, we used the interpretable PLS decoder to relate the SpatialJEPA latent embedding to measured molecular features. PLS components were fitted from the OT-aligned MultiGATE embedding to RNA expression and ATAC accessibility, and component scores were projected onto spatial coordinates (Fig. 2d). The top-weighted features (Fig. 2e–f) and source–target PLS correlations (Fig. 2g–h) support the interpretation that individual axes recover spatially-organized and shared molecular programs. 
+
+Pde10a , a top-loading striatal gene, has multiple linked accessibility peaks (Fig. 2i–j), and its expression and aggregated peak accessibility track concordant patterns in source and aligned target views (Fig. 2k). We next compared SpatialJEPA embeddings to cell-cell interaction (CCI)-associated structure derived with Inflow from LIANA+ library [ 11 , 12 ]. Inflow combines spatial coordinates and a priori ligand–receptor (LR) knowledge, then decomposes the cell-by-LR matrix by non-negative matrix factorization (NMF). Inflow-NMF and SpatialJEPA Leiden clusters recover broadly consistent spatial domains (Fig. 3a–d). ARI and NMI agreement with Inflow-NMF Leiden was computed for five variants: teacher and student models on source data, zero-shot student on dissociated target data, and a non-spatial source reference with and without Scanpy UMAP-coordinate ingestion (Fig. 3e). These variants separate spatial teacher training, graph-context masking, and transfer to a dissociated target; non-spatial references control for molecular integration without spatial neighborhoods. Both spatial variants outperform the non-spatial reference on source data, and concordance is highest in the aligned target condition, suggesting that spatially trained and graph-distilled representations retain variation concordant with CCI-derived structure after transfer. Because the target data are evaluated after OT alignment to the spatial source, this comparison is best interpreted as evidence of CCI-concordant transferred structure rather than direct reconstruction of target physical neighborhoods. At the latent-dimension level, Spearman correlations between each SpatialJEPA Multi-
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 22, 2026. ;https://doi.org/10.64898/2026.07.21.739810 doi: bioRxiv preprint
+
+Proceedings of CIBB 2026 4
+
+Figure 2: OT alignment of the SpatialJEPA target embedding to the spatial source and feature-level association by PLS regression. Target spatial views are OT-aligned. (a) Source coordinates and UMAP with transferred target Leiden clusters. (b) Module scores of marker expression in source and aligned target. (c) Source–target gene-rank concordance. Grayscale hexbins cover global concordance, whereas colored traces reflect Leiden-specific concordance. (d) PLS projections fitted separately from OT-aligned embeddings to RNA and ATAC features. (e–h) Top RNA loadings and source–target PLS correlations. (i–k) Pde10a -linked accessibility peaks, locus links, expression, and linked-peak accessibility. Accessibility across peaks was aggregated via module scoring. 
+
+GATE dimension and each Inflow-NMF factor reveal block-structured positive and negative correlations (Fig. 3f), demonstrating that the model has learned a latent space that success-fully aligns with biologically interpretable axes of cell-cell interaction, effectively capturing coordinated ligand-receptor signaling programs alongside tissue-level spatial organization. To improve interpretability, we aggregated LIANA Inflow features into Hallmark genesets, yielding pathway-level CCI scores (Fig. 3g, [ 12 ]). PLS regression from the SpatialJEPA 
+
+embedding to these scores showed spatially structured components (Fig. 3h) with distinct pathway weights (Fig. 3i), supporting the interpretation that the transferred representation captures axes relevant to CCI, not only raw molecular abundance. 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 22, 2026. ;https://doi.org/10.64898/2026.07.21.739810 doi: bioRxiv preprint
+
+Proceedings of CIBB 2026 5
+
+Figure 3: SpatialJEPA representations are concordant with CCI-derived structure from LIANA Inflow-NMF modelling. (a–d) Spatial & UMAP views of Inflow-NMF (a–b) and SpatialJEPA (c–d) Leiden clusters, respectively. (e) ARI/NMI agreement across spatial teacher, graph-masked source student, zero-shot target stu-dent, non-spatial source reference, and Scanpy-ingested reference. (f) Clustered Spearman correlations between MultiGATE dimensions and most-correlated Inflow-NMF factors. (g) Hallmark ligand–receptor pathway scoring workflow. (h) Spatial projections of top-3 hallmark PLS components. (i) Pathway weights for all PLS components; pathways are ranked by signed PLS weight for each component. Nsp: non-spatial, †: use of Scanpy ingest method. 
+
+4 Conclusion 
+
+We introduced SpatialJEPA , a JEPA-inspired distillation framework for transferring spatial neighborhood context from a spatial multiomics teacher model to a student model that can operate on dissociated multiomics data. By training the student with self-only identity graphs while matching teacher embeddings, the framework preserves the MultiGATE representation interface without requiring spatial coordinates at inference time. In the P22 mouse brain setting, this strategy supported zero-shot integration of non-spatial RNA–ATAC data with spatial source embeddings after OT alignment, while retaining spatially organized transcriptomic, chromatin-accessibility, and ligand–receptor pathway structure. These results suggest that spatially learned representations can be reused beyond the datasets in which spatial coordinates were measured, enabling spatially informed analysis of standard single-cell multiome data. More broadly, SpatialJEPA provides a route for separating the acquisition of spatial context from its downstream use, making spatial multiomics representations more applicable to existing non-spatial atlases and future diagonal-integration settings [9]. 
+
+Conflict of interests 
+
+D.M.K. is a founder of Cervolve Inc. The authors declare no other competing interests. 
+
+> (which was not certified by peer review) is the author/funder. All rights reserved. No reuse allowed without permission. The copyright holder for this preprint this version posted July 22, 2026. ;https://doi.org/10.64898/2026.07.21.739810 doi: bioRxiv preprint
+
+Proceedings of CIBB 2026 6
+
+Funding 
+
+Y.L. is supported by Canada Research Chair (Tier 2) in Machine Learning for Genomics and Healthcare (CRC-2021-00547), Natural Sciences and Engineering Research Council (NSERC) Discovery Grant (RGPIN-2016-05174) and Canadian Institutes of Health Research (CIHR) Project Grant (PJT-540722). D.M.K. is supported by NSERC Canada Graduate Research Scholarship Doctoral (CGS D) scholarship. 
+
+Availability of data and software code 
+
+Code is made available at https://github.com/li-lab-mcgill/SpatialJEPA. Processed spatial RNA-ATAC data from p22 mouse brain are deposited in the Gene Expression Omnibus with accession code GSE205055 [ 2 ]. Mouse brain 10x multiome data are available from 10x sample data repository [7] via the “Batch download” tab. 
+
+References 
+
+[1] Yixuan Wang, Yimin Fan, Xuesong Wang, Tingyang Yu, Yongshuo Zong, Xinyuan Liu, Gaoyang Zhong, Meitong Liu, Qing Li, Kin Hei Lee, Khachatur Dallakyan, Zhichao Hu, Yaqian Qi, Junjie Huang, Gengjie Jia, Jiao Yuan, Ting-Fung Chan, Xin Gao, Irwin King, and Yu Li. SCMBench: benchmarking domain-specific and foundation models for single-cell multi-omics data integration. Nature Communications , May 2026. [2] Di Zhang, Yanxiang Deng, Petra Kukanja, Eneritz Agirre, Marek Bartosovic, Mingze Dong, Cong Ma, Sai Ma, Graham Su, Shuozhen Bao, Yang Liu, Yang Xiao, Gorazd B. Rosoklija, Andrew J. Dwork, J. John Mann, Kam W. Leong, Maura Boldrini, Liya Wang, Maximilian Haeussler, Benjamin J. Raphael, Yuval Kluger, Gon c¸ alo Castelo-Branco, and Rong Fan. Spatial epigenome–transcriptome co-profiling of mammalian tissues. 
+
+Nature , 616(7955):113–122, April 2023. [3] Jishuai Miao, Jinzhao Li, Jingxue Xin, Jiajuan Tu, Muyang Ge, Ji Qi, Xiaocheng Zhou, Ying Zhu, Can Yang, and Zhixiang Lin. MultiGATE: integrative analysis and regulatory inference in spatial multi-omics data via graph representation learning. Nature Communications , 16(1):9403, October 2025. [4] Randall Balestriero and Yann LeCun. LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics, November 2025. arXiv:2511.08544 [cs]. [5] Ali ElSheikh, Rui-Xi Wang, Weimin Wu, Yibo Wen, Payam Dibaeinia, Jennifer Yuntong Zhang, Jerry Yao-Chieh Hu, Mei Knudson, Sudarshan Babu, Shao-Hua Sun, Aly A. Khan, and Han Liu. Cell-JEPA: Latent Representation Learning for Single-Cell Transcriptomics, February 2026. arXiv:2602.02093 [cs]. [6] Xianhang Li, Chen Huang, Chun-Liang Li, Eran Malach, Josh Susskind, Vimal Thilak, and Etai Littwin. Rethinking JEPA: Compute-Efficient Video SSL with Frozen Teachers, September 2025. arXiv:2509.24317. [7] 10x Genomics. Mouse Brain Nuclei Isolated with Chromium Nuclei Isolation Kit, SaltyEZ Protocol, and 10x Complex Tissue DP (CT Sorted and CT Unsorted). https://www.10xgenomics.com/datasets/mouse-brain-nuclei-isolated-with-chromium-nuclei-isolation-kit-saltyez-protocol-and-10x-complex-tissue-dp-ct-sorted-and-ct-unsorted-1-standard. [8] Federico Gossi, Pushpak Pati, Panagiotis Chouvardas, Adriano Luca Martinelli, Marianna Kruithof-de Julio, and Maria Anna Rapsomaniki. Matching single cells across modalities with contrastive learning and optimal transport. Briefings in Bioinformatics , 24(3):bbad130, May 2023. [9] Dylan Mann-Krzisnik, Anjali Chawla, Gustavo Turecki, Corina Nagy, and Yue Li. ECLARE: multi-teacher contrastive learning via ensemble distillation for diagonal integration of single-cell multi-omic data. bioRxiv ,May 2026. ISSN: 2692-8205 Pages: 2025.01.24.634799 Section: New Results. [10] Jeffrey Niu, Carlos Vasquez-Rios, and Jiarui Ding. Single-cell multiomics data integration and generation with scPairing. Cell Reports Methods , page 101211, October 2025. [11] Erick Armingol, Hratch M. Baghdassarian, and Nathan E. Lewis. The diversification of methods for studying cell–cell interactions and communication. Nature Reviews Genetics , 25(6):381–400, June 2024. [12] Daniel Dimitrov, Philipp Sven Lars Sch ¨afer, Elias Farr, Pablo Rodriguez-Mier, Sebastian Lobentanzer, Pau Badia-i Mompel, Aurelien Dugourd, Jovan Tanevski, Ricardo Omar Ramirez Flores, and Julio Saez-Rodriguez. LIANA+ provides an all-in-one framework for cell–cell communication inference. Nature Cell Biology ,26(9):1613–1622, September 2024.
