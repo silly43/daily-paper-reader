@@ -1,0 +1,4541 @@
+Title: Toward a Unified Statistical Theory of Unsupervised Pretraining and Supervised Neural Knowledge Graph Learning
+
+URL Source: https://arxiv.org/pdf/2607.26346v1
+
+Published Time: Thu, 30 Jul 2026 00:17:08 GMT
+
+Number of Pages: 49
+
+Markdown Content:
+# Toward a Unified Statistical Theory of Unsupervised Pretraining and Supervised Neural Knowledge Graph Learning 
+
+Jifan Zhang 1, Mikl´ os Z. R´ acz 1,2 , and Suqi Liu 31Department of Statistics and Data Science, Northwestern University 
+
+> 2
+
+Department of Computer Science, Northwestern University 
+
+> 3
+
+Department of Statistics, University of California, Riverside 
+
+Abstract 
+
+Knowledge graph learning provides a powerful framework for representing and inferring structured knowledge, with broad practical applications. However, the scarcity of relation-specific labeled triples per entity hinders the training of expressive models, and the ad hoc design of scoring functions limits generalizability and lacks theoretical grounding. We address both issues with a theoretically grounded, end-to-end training framework that extends and subsumes existing methods. Our framework is a two-stage procedure: unsupervised pretraining over heterogeneous corpora followed by supervised learning with multiple relation types. We establish a nonasymptotic risk bound that disentangles pretraining representation error from labeled-sample complexity, formally quantifying the benefit of large-scale unlabeled data for downstream knowledge prediction. Synthetic experiments validate each theoretical component, and real-world experiments confirm the effectiveness of our approach on large-scale knowledge graph benchmarks. 
+
+# 1 Introduction 
+
+Knowledge graphs (KGs) organize world information as a structured network of entities and the relationships between them, and have become the standard representation for structured relational knowledge in domains ranging from question answering and recommendation to information ex-traction and biomedical discovery [Yang et al., 2022; Zhang et al., 2016; Huang et al., 2019; Bonner et al., 2022]. Large-scale KGs such as the Google Knowledge Graph and the Unified Medical Lan-guage System (UMLS) contain millions to billions of entities spanning dozens of heterogeneous relation types, making scalable and accurate KG prediction a central problem in machine learning [Ji et al., 2021]. Despite the large number of entities in real-world KGs, the observed triples are typically sparse relative to the space of all possible entity pairs, resulting in low information den-sity across the graph. This sparsity commonly hinders effective learning of KG prediction models. At the same time, entities in these graphs usually carry rich unlabeled side information—textual descriptions, ontology memberships, database annotations—that is readily available even when supervised triples are scarce. The dominant approach to KG prediction is embedding-based: learn low-dimensional entity and relation vectors so that a translational, bilinear, or rotational scoring function ranks observed triples above negatives [Bordes et al., 2013; Yang et al., 2014; Trouillon et al., 2016; Sun et al., 2019]. A substantial empirical literature further augments these representations with textual descriptions, pretrained language models, or other entity attributes [Xie et al., 2016; Yao et al., 2019; Wang et al., 1arXiv:2607.26346v1 [math.ST] 28 Jul 2026 2021b, 2022], demonstrating that side information is practically valuable, especially when labeled triples are scarce. However, these methods are typically tailored to specific applications and rely on domain-specific inductive biases, and theoretical guarantees remain largely absent. Recently, Liu et al. [2024] established nonasymptotic risk bounds for neural KG learning with fixed and trainable entity representations, and Ge et al. [2024] showed that unsupervised pretraining reduces labeled-sample complexity in generic latent-variable models. Our theory builds on these developments and establishes a unified statistical framework connecting unsupervised pretraining to supervised KG prediction. A fundamental challenge in KG learning is the tension between data scarcity and model ca-pacity: labeled triples are typically limited, yet flexible representation-based models require many parameters. How to systematically exploit diverse unlabeled datasets containing heterogeneous side information, and what provable benefits such exploitation confers, are therefore critical open questions. We address these questions with a theoretically grounded two-stage framework, which we call the Pretrained Neural Knowledge Graph (PNKG) framework. In the first stage, entity-level side information from multiple views is mapped through view-specific positive-semidefinite kernels. The leading eigenvectors of a weighted aggregation of their Gram matrices then yield low-dimensional entity coordinates via kernel principal component analysis (KPCA). The kernel formulation also provides a natural interface to pretrained language encoders. Each frozen en-coder induces a positive-semidefinite kernel on entity descriptions through the inner product of its feature map. This feature-map interpretation is consistent with the kernel perspective on deep architectures developed by Cho and Saul [2009]. The PNKG aggregates these encoder-induced Gram matrices, allowing views with different architectures and output dimensions to be combined on their common entity index set. In the second stage, these embeddings serve as inputs to ReLU networks trained on labeled triples. The weighted direct-sum RKHS provides a unified representa-tion space for the heterogeneous side information—such as text descriptions and metadata—found across diverse datasets, while the ReLU networks enable flexible modeling of the scoring function without requiring predefined domain-specific priors. We establish two main theoretical results for this framework. Theorem 1 gives a nonasymptotic perturbation bound for the KPCA pretraining stage. It shows that the learned entity subspace is accurate when the multi-view kernel residuals are small relative to the effective signal separation of the weighted population geometry. The result covers both inner-product and Gaussian distance kernels under admissible information-plus-noise regimes, and it separates finite-sample kernel error from possible population bias induced by misspecified kernel–noise geometry. It also motivates a signal-adjusted inverse-variance view-weighting principle: views with strong effective signal, small deterministic bias, and low fluctuation variance should receive larger weights, while noisy or sys-tematically biased views should be downweighted. This representation-recovery result provides the pretraining component of our end-to-end statistical theory and may be of independent inter-est. Our main result, Theorem 2, gives an end-to-end risk bound that additively decomposes the downstream KG prediction error into neural approximation error, supervised estimation error, op-timization error, and pretraining error, making explicit which term is the bottleneck as unlabeled and labeled sample sizes and model capacity vary. This decomposition cleanly separates errors arising in different stages of the pipeline and due to different modeling and algorithmic choices. The theoretical findings are further supported by simulation studies on synthetically generated data. We additionally demonstrate the effectiveness of the framework on real-world KGs including WordNet [Miller, 1995] and PrimeKG [Chandak et al., 2023], where multi-view pretrained neural knowledge graph models consistently outperform graph-only baselines and improve over their single-2view counterparts. 1 These empirical results not only corroborate the theory but also demonstrate the practical utility of the framework. In summary, our contributions are threefold. (i) We propose a generic two-stage framework combining multi-view KPCA for unsupervised pretraining with ReLU networks for supervised KG learning. (ii) We prove an end-to-end transfer theorem connecting pretraining error to supervised KG prediction risk with nonasymptotic bounds. (iii) We validate the theory through controlled simulations that isolate each theoretical error component and through real-world experiments on benchmark KGs. 
+
+# 2 Related Work 
+
+Knowledge graph embeddings. Knowledge graph completion has been approached primarily by learning low-dimensional entity and relation embeddings paired with a relation-specific scoring function. Translational models such as TransE interpret a relation as a vector translation from the head embedding to the tail embedding [Bordes et al., 2013]. Bilinear and tensor-factorization models, including DistMult and ComplEx, use multiplicative interactions to capture symmetric or asymmetric relational patterns [Yang et al., 2014; Trouillon et al., 2016], while RotatE represents relations as rotations in complex space [Sun et al., 2019]. These methods, along with many variants surveyed in [Nickel et al., 2015; Ji et al., 2021], form the standard graph-only baselines for link prediction. Because they learn exclusively from observed triples, they struggle in sparse, noisy, or semi-inductive settings where entities carry rich side information but few labeled triples are available for the target relation. 
+
+Text- and side-information-enhanced KG completion. A substantial empirical literature augments KG learning with textual descriptions, pretrained language models, or other entity at-tributes. DKRL incorporates entity descriptions into KG embeddings while preserving a TransE-style relational objective [Xie et al., 2016]. KG-BERT recasts triples as textual sequences and scores them with a pretrained BERT encoder [Yao et al., 2019]. KEPLER jointly optimizes a knowledge-embedding objective and a masked language-modeling objective so that textual descriptions enrich the entity representations [Wang et al., 2021b]. More recent inductive and contrastive approaches push this further: BLP studies BERT-based inductive entity representations [Daza et al., 2021], StAR combines textual encoders with structure-aware scoring [Wang et al., 2021a], and SimKGC shows that contrastive learning with in-batch, pre-batch, and self-negatives can make PLM-based KGC competitive with embedding-based methods [Wang et al., 2022]. These works demonstrate that side information is practically valuable, especially for inductive entities. Unlike this algorith-mic line, our goal is not to propose a new scoring model but to provide an end-to-end statistical account of how unlabeled multi-view pretraining error propagates into downstream KG risk. 
+
+Statistical theory for KG and network learning. There is a long statistical literature on latent-space network models, starting with latent position models for social networks [Hoff et al., 2002] and extending to multilayer and multiplex network models with shared latent structure [MacDonald et al., 2022]. These works provide important identifiability, estimation, and inference guarantees, but typically assume a specified link function or a relatively structured observation pattern—assumptions that can be restrictive for large KGs with heterogeneous relation types, sparse observed triples, and unknown scoring functions. Closest to the supervised component of our framework is Liu et al. [2024], which treats neural KG learning as nonparametric regression  
+
+> 1Code is available at https://github.com/jifanzhang999/KGpretraining .
+
+3over triples and proves nonasymptotic in-sample and out-of-sample MSE bounds. Our work is complementary: we analyze how entity coordinates are recovered from unlabeled multi-view side information and how the resulting representation error propagates into the downstream KG risk bound. 
+
+Theory of unsupervised pretraining. Our work is related to theoretical studies of unsuper-vised pretraining. Contrastive-learning theory has shown that representations learned from posi-tive and negative pairs can support downstream classification under latent-class or augmentation-graph assumptions [Saunshi et al., 2019; HaoChen et al., 2021]. Reconstruction- and prediction-based analyses show that solving certain pretext tasks reduces labeled sample complexity under conditional-independence or related structural assumptions [Lee et al., 2021]. Most relevant to our setting, Ge et al. [2024] develop a generic framework showing that, under an informative representa-tion condition, unsupervised pretraining reduces labeled-sample complexity, yielding an excess-risk bound that separates unlabeled and labeled sample terms. We instead focus on KG-specific ques-tions including multi-relational triples and heterogeneous entity views. Our Theorem 2 supplies a more detailed decomposition tailored to the KG setting and achieves sharper sample-complexity rates. 
+
+Deep feature kernels and spectral aggregation. Our use of pretrained encoders in the real-data experiments admits a natural kernel interpretation. Each frozen language encoder supplies a feature map ϕs : Xs → H s and therefore induces the kernel ks(u, u ′) = ⟨ϕs(u), ϕ s(u′)⟩Hs . The observed language-model embeddings are explicit finite-dimensional coordinates of ϕs, and their dot products evaluate this encoder-induced kernel. This interpretation is related to the kernel perspective on deep architectures developed by Cho and Saul [2009] and summarized by Wilson et al. [2016]. Our aggregation algorithm is also related in spirit to the distributed PCA method of Fan et al. [2019], which combines local spectral summaries to recover a common leading eigenspace. The two algorithms differ: distributed PCA aggregates local eigenspace projectors, whereas PNKG aggre-gates view-specific entity-kernel matrices before extracting their leading eigenspace. Nevertheless, both frameworks exploit heterogeneous summaries that share a common latent spectral structure. 
+
+# 3 The PNKG Framework 
+
+We formalize the two-stage PNKG framework. The first stage uses unlabeled entity-level side information from multiple sources to construct low-dimensional coordinate embeddings for the entities. The second stage leverages these embeddings and learns relation-specific ReLU networks from labeled triples. 
+
+3.1 Unsupervised pretraining through weighted KPCA 
+
+Let [ N ] := {1, . . . , N } denote the common entity set. We consider data collected from different sources called views and let [ S] := {1, . . . , S } index the side-information views. For each view 
+
+s ∈ [S], the view-specific side information is organized into a matrix 
+
+Es =
+
+
+
+u⊤
+
+> s, 1
+
+...
+
+u⊤
+
+> s,N
+
+ ∈ RN ×ms ,
+
+4where ms is the entity dimension in view s and us,j ∈ Rms is the data vector of entity j in view s.For example, each s can represent a hospital with ms patients; j indexes the diagnoses. Therefore, 
+
+us,j encodes information about all patients associated with disease j in hospital s’s medical dataset. We now introduce the information-plus-noise structure that motivates the theoretical analysis of the PNKG framework. For each view s, we model the observed entity vector as 
+
+us,j = vs,j + σs,j 
+
+εs,j 
+
+√ms
+
+, j = 1 , . . . , N, (3.1) where vs,j ∈ Rms is the latent signal vector of entity j, εs,j ∈ Rms is high-dimensional noise, and 
+
+σs,j is a view-specific noise scale. The normalization m−1/2 
+
+> s
+
+keeps the noise energy controlled as the entity dimension grows. 
+
+A linear kernel example. We start by specializing (3.1) to the simplest linear-isotropic setting. Assume that the noise scale is constant within each view, σs,j = σs, and that 
+
+εs,j ∼ N (0 , I ms ), j = 1 , . . . , N. 
+
+We can write 
+
+Es = Vs + σs
+
+√ms
+
+ξs, ξs(j, ·) iid 
+
+∼ N (0 , I ms ),
+
+where the jth row of Vs is v⊤ 
+
+> s,j
+
+, the corresponding linear entity-similarity matrix is 
+
+Klin  
+
+> s
+
+= 1
+
+N EsE⊤ 
+
+> s
+
+∈ RN ×N . (3.2) For multiple views, we aggregate the entity-level similarity matrices by 
+
+Klin (w) = 
+
+> S
+
+X
+
+> s=1
+
+wsKlin  
+
+> s
+
+, ws ≥ 0,
+
+> S
+
+X
+
+> s=1
+
+ws = 1 .
+
+The leading eigenvectors of Klin (w) provide low-dimensional entity coordinates for the common entity set. 
+
+General kernels. The linear construction extends to positive-semidefinite kernels. For each view 
+
+s ∈ [S], let 
+
+ks : Rms × Rms → R
+
+be a positive-semidefinite kernel. There then exist a Hilbert space Hs and a feature map 
+
+ϕs : Rms → H s
+
+such that 
+
+ks(u, u ′) = ϕs(u), ϕ s(u′) Hs .
+
+We define the view-specific entity-kernel matrix by 
+
+Kobs  
+
+> s
+
+(j, j ′) := 1
+
+N ks(us,j , u s,j ′ ) = 1
+
+N ϕs(us,j ), ϕ s(us,j ′ ) Hs , j, j ′ ∈ [N ].
+
+Thus Kobs  
+
+> s
+
+records a (possibly nonlinear) geometry induced by view s on the common entity set. Examples include inner-product kernels of the form ks(u, u ′) = fs(u⊤u′) and distance kernels of 5the form ks(u, u ′) = fs(∥u − u′∥22). The linear construction above is the special case ks(u, u ′) = 
+
+u⊤u′, ϕ s(u) = u.For weights w = ( w1, . . . , w S ), define the weighted multi-view entity-kernel matrix 
+
+Kobs (w) := 
+
+> S
+
+X
+
+> s=1
+
+wsKobs  
+
+> s
+
+, ws ≥ 0,
+
+> S
+
+X
+
+> s=1
+
+ws = 1 . (3.3) The aggregation is performed on the common entity index set and is therefore well defined even when the view-specific input spaces and feature dimensions differ. To interpret this aggregation as a new single kernel, write uj := ( u1,j , . . . , u S,j ) for the collection of side-information observations associated with entity j. Define the weighted direct-sum feature map Φw(uj ) :=  √w1ϕ1(u1,j ), . . . , √wS ϕS (uS,j ) ∈
+
+> S
+
+M
+
+> s=1
+
+Hs.
+
+Here LSs=1 Hs is the Hilbert direct sum of the view-specific feature spaces. Since S is finite, it consists of tuples ( h1, . . . , h S ), h s ∈ H s, with inner product 
+
+(h1, . . . , h S ), (h′
+
+> 1
+
+, . . . , h ′ 
+
+> S
+
+) ⊕sHs := 
+
+> S
+
+X
+
+> s=1
+
+⟨hs, h ′
+
+> s
+
+⟩Hs .
+
+The weighted views therefore induce the aggregated kernel 
+
+kw(u, u′) := Φw(u), Φw(u′) ⊕sHs =
+
+> S
+
+X
+
+> s=1
+
+wsks(us, u ′
+
+> s
+
+).
+
+Because ws ≥ 0, kw is positive semidefinite. Moreover, Kobs (w) is precisely its normalized Gram matrix on the entity set: 
+
+Kobs (w)( j, j ′) = 1
+
+N kw(uj , uj′ )= 1
+
+N Φw(uj ), Φw(uj′ ) ⊕sHs
+
+=
+
+> S
+
+X
+
+> s=1
+
+wsKobs  
+
+> s
+
+(j, j ′).
+
+Remark 1 (Pretrained encoder-induced kernels) . The general kernel formulation naturally accom-modates pretrained language encoders. In the language-model application, us,j ∈ Rms denotes a vectorized representation of the textual description of entity j and ϕs : Xs → Rps is the feature map supplied by the frozen encoder in view s. The encoder therefore induces the positive-semidefinite kernel ks(u, u ′) = ⟨ϕs(u), ϕ s(u′)⟩Rps . The dot product between language-model embeddings is thus the canonical Hilbert-space inner product realizing the kernel induced by the encoder. The pro-cedure operates on the kernel matrices and permits different encoders to have different feature dimensions ps.The general framework applies to arbitrary (encoder-induced) positive-semidefinite kernels, while the theory derives explicit rates for tractable finite-dimensional kernel–noise regimes. 6Spectral entity coordinates. The pretrained entity coordinates are obtained from the leading eigenspace of Kobs (w). For a symmetric matrix A, let TopEig d(A) denote any N × d matrix whose columns form an orthonormal basis of the eigenspace associated with the d largest eigenvalues of 
+
+A. Let bZ := TopEig d
+
+
+
+Kobs (w)
+
+
+
+∈ RN ×d, bZ⊤ bZ = Id.
+
+The matrix bZ is used as the frozen entity-coordinate matrix in the supervised stage, with its jth row representing the pretrained coordinate of entity j.
+
+Remark 2 (Choice of d). The dimension d is the embedding dimension selected by the pretraining procedure. The pretrained coordinates are not identifiable as a particular basis: any orthogonal change of basis gives an equivalent representation for the same signal space. Thus, what matters is the linear subspace spanned by the selected eigenvectors. In practice, d is treated as a tuning parameter; choosing it too small may remove useful signal directions, while choosing it too large increases unnecessary model complexity. 
+
+Shared signal eigenspace. We define the pure signal kernel matrix of view s by 
+
+Ksig  
+
+> s
+
+(j, j ′) := 1
+
+N ks(vs,j , v s,j ′ ), j, j ′ ∈ [N ],
+
+where vs,j is the latent signal vector in the information-plus-noise model (3.1). The central struc-tural condition behind the PNKG framework is that the pure-signal kernels share a common rank-d
+
+entity eigenspace, while allowing view-specific variation outside that subspace: 
+
+Ksig  
+
+> s
+
+= Zsig ΛsZ⊤ 
+
+> sig
+
++ Rsig  
+
+> s
+
+, Z⊤
+
+> sig
+
+Zsig = Id, Λs ∈ Rd×d ⪰ 0. (3.4) Here Zsig ∈ RN ×d is the shared population entity eigenspace, Λ s captures the strength of view s
+
+along this shared subspace and Rsig  
+
+> s
+
+is a symmetric view-specific residual matrix supported on the orthogonal complement of Zsig :(Rsig  
+
+> s
+
+)⊤ = Rsig  
+
+> s
+
+, Rsig  
+
+> s
+
+Zsig = 0 .
+
+Then, Ksig (w) is the weighted population signal kernel matrix given a weight vector w ∈ ∆S :
+
+Ksig (w) := 
+
+> S
+
+X
+
+> s=1
+
+wsKsig  
+
+> s
+
+= Zsig 
+
+> S
+
+X
+
+> s=1
+
+wsΛs
+
+!
+
+Z⊤ 
+
+> sig
+
++
+
+> S
+
+X
+
+> s=1
+
+wsRsig  
+
+> s
+
+. (3.5) The views are not required to be equally informative; they only need to agree on the leading entity-level signal eigenspace, while the observed kernels computed from us,j are noisy finite-sample versions of these signal matrices. The overall multi-view kernel pretraining procedure is summarized in Algorithm 1. 
+
+3.2 Supervised neural knowledge graph learning 
+
+The supervised stage uses labeled (head, relation, tail) triples, abbreviated as ( h, r, t ) where h and 
+
+t are entities and r is the relation between them. Let [ K] = {1, . . . , K } be the relation set and 
+
+X = [ N ] × [K] × [N ] be the space of all possible triples. We observe the labeled samples 
+
+Dsup = {(Xi, Y i)}ni=1 ,
+
+7Algorithm 1 Multi-view kernel pretraining 
+
+Require: Entity-feature observations {us,j ∈ Rms , j ∈ [N ]}Ss=1 , kernels {ks}Ss=1 , rank d, and weights w ∈ ∆S .
+
+Ensure: Frozen entity coordinates bZ ∈ RN ×d. 
+
+> 1:
+
+for s = 1 , . . . , S do  
+
+> 2:
+
+Kobs  
+
+> s
+
+(j, k ) ← 1 
+
+> N
+
+ks(us,j , u s,k ) for all j, k ∈ [N ].  
+
+> 3:
+
+end for  
+
+> 4:
+
+Kobs (w) ← PSs=1 wsKobs  
+
+> s
+
+. 
+
+> 5:
+
+bZ ← TopEig d
+
+ Kobs (w). 
+
+> 6:
+
+return bZ.where 
+
+Xi = ( hi, r i, t i) ∈ X and Yi = γ(Xi) + εi. (3.6) We assume that E[εi | Xi] = 0. In a biomedical KG, for instance, an entity may correspond to a disease, drug, gene, phenotype, or biological process. A labeled triple ( h, r, t ) can encode a proposition such as whether drug h treats disease t or gene h is associated with disease t, with r
+
+specifying the relation type. The label Yi may be binary, indicating whether the triple is observed to be true, or real-valued, representing a confidence score or strength of association. The true target function γ : X → R is the KG scoring function. For binary link prediction, γ(Xi) can be interpreted as the conditional probability that triple Xi is true. Given the pretrained embeddings bZ = ( bz1, . . . , bzN )⊤, we learn one bounded ReLU network for each relation. Let Π B : R → [−B, B ] be the clipping map. For relation r, let Fr : R2d → R be a ReLU network with depth at most Dnet and at most W trainable parameters, and define 
+
+fr(a, b ) := Π B {Fr([ a⊤, b ⊤]⊤)}. (3.7) Thus, fr is a bounded ReLU network. The neural knowledge graph model is 
+
+f ( bZ; h, r, t ) = fr(bzh, bzt). (3.8) Let F bZ (Dnet , W, B ) denote the neural knowledge graph function class given bZ. We work with a predictor bf ( bZ; ·) ∈ F bZ (Dnet , W, B ) whose empirical risk is within δopt of the best empirical risk over the class 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+{Yi − bf ( bZ; Xi)}2 ≤ inf    
+
+> f∈F bZ(Dnet ,W,B )
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+{Yi − f ( bZ; Xi)}2 + δopt . (3.9) This estimator can be obtained by using standard optimization algorithms such as stochastic gra-dient descent (SGD). 
+
+# 4 Theoretical Results 
+
+We present our two main theoretical results in turn: a subspace-recovery guarantee for the weighted KPCA pretraining stage, followed by an end-to-end oracle inequality for the full pretrained neural KG pipeline that builds on it; proof ideas are summarized at the end of the section, with complete proofs given in Appendix A. 84.1 Subspace recovery 
+
+For subspace recovery in the pretraining stage, we introduce the following assumption. 
+
+Assumption 1 (Entity-level information-plus-noise model) . For each view s ∈ [S], the observed entity vector satisfies 
+
+us,j = vs,j + σs,j 
+
+εs,j 
+
+√ms
+
+, j = 1 , . . . , N, 
+
+where vs,j ∈ Rms is the latent signal vector of entity j, εs,j ∈ Rms is high-dimensional noise, and 
+
+σs,j is a view-specific noise scale. The normalization m−1/2 
+
+> s
+
+keeps the noise energy controlled as the entity dimension grows. We next require the noise distribution to satisfy the corresponding information-plus-noise con-ditions for the kernel class under consideration. 
+
+Assumption 2 (Admissible noise regimes) . For each view s ∈ [S], the noise variables {εs,j }Nj=1 
+
+are independent of the signal vectors {vs,j }Nj=1 . We assume that one of the following two regimes holds. 1. Inner-product kernel regime. The noise εs,j is i.i.d. with E[εs,j ] = 0 and satisfies a concentration inequality: for every 1-Lipschitz function F : Rms → R,
+
+P{| F (εs,j ) − EF (εs,j )| > r } ≤ Cs exp( −csrqs ), (4.1) where Cs, c s, q s > 0 do not depend on N or ms. Define 
+
+νs := E∥εs,j ∥22
+
+ms
+
+,
+
+and assume νs = O(1). The noise scales are uniformly bounded: |σs,j | ≤ σs, ∞. The signal inner products are controlled: there exists a deterministic sequence Bs,N such that max   
+
+> j,k ∈[N]
+
+|v⊤ 
+
+> s,j
+
+vs,k | ≤ Bs,N .
+
+2. Gaussian distance-kernel regime. The noise is Gaussian within each view: 
+
+εs,j iid 
+
+∼ N (0 , Ψs,m s ), σs,j = σs,
+
+where Ψ s,m s ⪰ 0 does not depend on j and is normalized so that tr(Ψ s,m s )
+
+ms
+
+= 1 .
+
+The signal energy is controlled: there exists a deterministic center as ∈ Rms and a determin-istic sequence Bs,N such that, for q = 1 , 2, 3, 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+∥vs,j − as∥2q 
+
+> 2
+
+≤ Bqs,N .
+
+Assumption 3 (Shared effective signal eigenspace) . The pure signal kernel matrices share a com-mon rank-d entity eigenspace. Specifically, there exists Zsig ∈ RN ×d with Z⊤
+
+> sig
+
+Zsig = Id, PSD matrices Λ s ∈ Rd×d, and symmetric residual matrices Rsig  
+
+> s
+
+such that 
+
+Ksig  
+
+> s
+
+= Zsig ΛsZ⊤ 
+
+> sig
+
++ Rsig  
+
+> s
+
+, Z⊤
+
+> sig
+
+Rsig  
+
+> s
+
+= 0 , Rsig  
+
+> s
+
+Zsig = 0 .
+
+9Assumption 4 (Effective signal separation) . Assume that every view has a positive separation margin: 
+
+γs := λmin (Λ s) − ∥ Rsig  
+
+> s
+
+∥op > 0, s ∈ [S].
+
+Define γ0 := min s∈[S] γs, assume γ0 > 0. 
+
+Assumption 5 (Sample independence) . The entity matrices {Es : s ∈ [S]} used for pretraining are independent across views s. When a supervised sample is also considered, it is independent of the pretraining matrices: Dsup = {(Xi, Y i)}ni=1 .Assumptions 1–5 together guarantee that the weighted population kernel PSs=1 wsKsig  
+
+> s
+
+admits a well-separated rank-d eigenspace and that each observed kernel Kobs  
+
+> s
+
+is a controlled, information-plus-noise perturbation of its population counterpart, under any mixture of linear, Gaussian dis-tance, and nonlinear inner-product kernels across views. The following theorem converts this struc-tural information into a nonasymptotic Davis–Kahan-type bound on the principal-angle distance between the aggregated empirical eigenspace bZ and the true signal subspace Zsig , expressed through view-specific deterministic bias scales bs,N,m s , diagonal-correction scales ds,N,m s , and fluctuation scales vs,N,m s that we calibrate separately for each kernel regime. Although we invoke this bound below to control the pretraining error of the PNKG pipeline, the statement itself makes no reference to the downstream supervised task: it is a general finite-sample subspace-recovery guarantee for weighted multi-view (equivalently, multi-kernel) PCA under heterogeneous information-plus-noise models, and so may be of independent interest beyond the knowledge-graph setting we study here. 
+
+Theorem 1 (Subspace recovery for weighted entity-kernel PCA) . Suppose Assumptions 1, 3, 4, and 5 hold. Let w = ( w1, . . . , w S ) ∈ ∆S be deterministic, where 
+
+∆S := 
+
+(
+
+w ∈ [0 , 1] S :
+
+> S
+
+X
+
+> s=1
+
+ws = 1 
+
+)
+
+,
+
+and define 
+
+Kobs (w) := 
+
+> S
+
+X
+
+> s=1
+
+wsKobs  
+
+> s
+
+, bZ := TopEig d
+
+
+
+Kobs (w)
+
+
+
+.
+
+For each view s ∈ [S], define the signal-rescaling factor αs, the deterministic Taylor-bias scale 
+
+bs,N,m s , the nonconstant diagonal-correction scale ds,N,m s , and the centered fluctuation scale vs,N,m s
+
+according to the following regimes. 1. Linear kernel regime. Suppose s ∈ S lin , with 
+
+ks(u, u ′) = u⊤u′,
+
+and suppose that the noise satisfies Assumption 2(1), with homogeneous noise scale 
+
+σs,j ≡ σs, j ∈ [N ].
+
+Set 
+
+αs := 1 , blin  
+
+> s,N,m s
+
+:= 0 , dlin  
+
+> s,N,m s
+
+:= 0 ,
+
+and 
+
+vlin 
+
+> s,N,m s
+
+2
+
+:= Cs,v 
+
+ σ2 
+
+> s
+
+Bs,N 
+
+ms
+
++ σ4 
+
+> s
+
+(1 + νs)
+
+ms
+
+
+
+.
+
+10 2. Gaussian distance-kernel regime. Suppose s ∈ S gauss , with 
+
+ks(u, u ′) = exp {− τs∥u − u′∥22}, τs > 0,
+
+and suppose that the noise satisfies Assumption 2(2). Define 
+
+αs := exp( −2τsσ2 
+
+> s
+
+), η2 
+
+> s
+
+:= σ4 
+
+> s
+
+tr(Ψ 2 
+
+> s,m s
+
+)
+
+m2
+
+> s
+
++ σ2 
+
+> s
+
+∥Ψs,m s ∥op Bs,N 
+
+ms
+
+.
+
+Set 
+
+bgauss  
+
+> s,N,m s
+
+:= Cs,b 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 3 
+
+> s
+
+η3
+
+> s
+
+ , dgauss  
+
+> s,N,m s
+
+:= 0 ,
+
+and 
+
+vgauss 
+
+> s,N,m s
+
+2
+
+:= Cs,v 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 4 
+
+> s
+
+η4 
+
+> s
+
++ τ 6 
+
+> s
+
+η6
+
+> s
+
+ .
+
+3. Nonlinear inner-product kernel regime. Suppose s ∈ S ip , where Sip contains the non-linear inner-product kernel views and is disjoint from Slin .
+
+ks(u, u ′) = fs(u⊤u′),
+
+where fs ∈ C3(R) satisfies Ls,r := sup t∈R |f (r) 
+
+> s
+
+(t)| < ∞, r = 1 , 2, 3.Suppose that the noise satisfies Assumption 2(1). Set 
+
+αs := 1 , ηs := σs, ∞
+
+ Bs,N 
+
+ms
+
+1/2
+
++ σ2
+
+> s, ∞
+
+r 1 + νs
+
+ms
+
+.
+
+The Taylor-bias scale is 
+
+bip  
+
+> s,N,m s
+
+:= Cs,b 
+
+ Ls, 2η2 
+
+> s
+
++ Ls, 3η3
+
+> s
+
+ ,
+
+and the deterministic diagonal-correction scale is 
+
+dip  
+
+> s,N,m s
+
+:= Cs,b Ls, 1νsσ2
+
+> s, ∞
+
+√N .
+
+Finally, define 
+
+vip 
+
+> s,N,m s
+
+2
+
+:= Cs,v 
+
+ L2
+
+> s, 1
+
+η2 
+
+> s
+
++ L2
+
+> s, 2
+
+η4 
+
+> s
+
++ L2
+
+> s, 3
+
+η6
+
+> s
+
+ .
+
+For each s ∈ [S], let 
+
+(bs,N,m s , d s,N,m s , v s,N,m s ) := 
+
+
+
+blin  
+
+> s,N,m s
+
+, d lin  
+
+> s,N,m s
+
+, v lin 
+
+> s,N,m s
+
+
+
+, s ∈ S lin ,
+
+
+
+bgauss  
+
+> s,N,m s
+
+, d gauss  
+
+> s,N,m s
+
+, v gauss 
+
+> s,N,m s
+
+
+
+, s ∈ S gauss ,
+
+
+
+bip  
+
+> s,N,m s
+
+, d ip  
+
+> s,N,m s
+
+, v ip 
+
+> s,N,m s
+
+
+
+, s ∈ S ip .
+
+Define 
+
+γ(w) := λmin 
+
+> S
+
+X
+
+> s=1
+
+wsαsΛs
+
+!
+
+−
+
+> S
+
+X
+
+> s=1
+
+wsαsRsig 
+
+> s
+> op
+
+.
+
+11 Then, for every δ ∈ (0 , 1) , with probability at least 1 − δ,
+
+∥ sin Θ( bZ, Z sig )∥2 
+
+> F
+
+≤ Cγ(w)2
+
+" 
+
+> S
+
+X
+
+> s=1
+
+wsbs,N,m s + X
+
+> s∈S ip
+
+wsds,N,m s
+
+
+
+> 2
+
++ 1
+
+δ
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+v2
+
+> s,N,m s
+
+#
+
+.
+
+(4.2) 
+
+Here C > 0 is a universal constant, while Cs,b and Cs,v may depend on the fixed view-level constants in the corresponding noise assumptions, but not on N , ms, w, or δ.
+
+Rates and view weighting. Let M := PSs=1 ms. We first set aside the diagonal-correction term ds,N,m s arising from nonlinear inner-product kernels. Under bounded view-level parameters and Bs,N = O(1), the scales in Theorem 1 satisfy v2 
+
+> s
+
+= O
+
+ cs
+
+> ms
+
+
+
+, bs = O(m−1 
+
+> s
+
+), where cs is a view-dependent constant. Thus the squared bias is of lower order than the variance term. A natural sample-size weighting rule is wsize  
+
+> s
+
+:= ms 
+
+> M
+
+. Under this choice, 
+
+> S
+
+X
+
+> s=1
+
+(wsize  
+
+> s
+
+)2v2 
+
+> s
+
+= O(M −1),
+
+> S
+
+X
+
+> s=1
+
+wsize  
+
+> s
+
+bs
+
+!2
+
+= O(M −2).
+
+Hence the variance term dominates and, at a fixed confidence level, ∥ sin Θ( bZ, Z sig )∥2 
+
+> F
+
+= O(M −1). A more refined rule accounts for both the noise level and the effective signal strength of each view. Let 
+
+gs := αsγs, γs := λmin (Λ s) − ∥ Rsig  
+
+> s
+
+∥op .
+
+For a Gaussian distance-kernel view, gs = e−2τsσ2 
+
+> s
+
+γs, while v2 
+
+> s
+
+contains terms proportional to τ 2 
+
+> s
+
+,
+
+τ 4 
+
+> s
+
+, and τ 6 
+
+> s
+
+. Thus an overly sharp Gaussian kernel can simultaneously attenuate the effective signal and increase the stochastic error. Ignoring the lower-order bias term leads to the variance-only surrogate   
+
+> PSs=1 w2
+> sv2
+> s
+
+(PSs=1 wsgs)2 . Its min-imizer is the signal-adjusted inverse-variance weighting wIV  
+
+> s
+
+:= gs/v 2 
+
+> sPSt=1 gt/v 2
+> t
+
+. The resulting squared-error rate is 
+
+∥ sin Θ( bZ, Z sig )∥2 
+
+> F
+
+≲ 1
+
+δ
+
+> S
+
+X
+
+> s=1
+
+g2
+
+> s
+
+v2
+
+> s
+
+!−1
+
+.
+
+Hence the quantity PSs=1 
+
+> g2
+> s
+> v2
+> s
+
+acts as the aggregate effective information across views. If gs and 
+
+cs are comparable across views, then wIV  
+
+> s
+
+≍ ms/M . Both weighting rules therefore achieve the 
+
+O(M −1) rate, while the signal-adjusted inverse-variance rule has a better leading constant. For a nonlinear inner-product kernel, there is an additional deterministic diagonal correc-tion whose contribution to the squared subspace error is O(N −1). The overall rate is therefore 
+
+O M −1 + N −1. This term is absent in the homogeneous linear-kernel regime because the diago-nal correction is a scalar identity shift and can be absorbed into the target without changing its eigenspace. Diagonal-imputation methods developed for heteroskedastic PCA [Yan et al., 2024] suggest a possible route for estimating and removing the nonconstant diagonal correction. We particularly highlight the linear-kernel regime because it provides a natural leading-order approximation to high-dimensional random kernel matrices. El Karoui [2010] shows that the lead-ing spectral behavior of many commonly used kernel matrices in high dimensions is governed by covariance-type linear matrices. 12 4.2 End-to-end risk bound 
+
+We now turn to the end-to-end bound connecting pretraining to the downstream KG predictor from Section 3.2, with the following assumptions. These conditions control supervised generalization, coordinate transfer, neural approximation, and identifiability, respectively. 
+
+Assumption 6 (Supervised sampling) . Conditionally on X1, . . . , X n, the noises εi in (3.6) are independent and sub-Gaussian with variance proxy σ2
+
+> m
+
+. The target is bounded: sup x∈X |γ(x)| ≤ B.For out-of-sample bounds, X1, . . . , X n are i.i.d. from P .
+
+Assumption 7 (Smooth latent KG model) . There exist Z⋆ = ( z⋆ 
+
+> 1
+
+, . . . , z ⋆N )⊤ ∈ RN ×d, a radius R⋆,a smoothness level β ≥ 1, and functions g⋆r : D⋆ → [−B, B ], where 
+
+D⋆ := [ −R⋆, R ⋆]d × [−R⋆, R ⋆]d,
+
+such that 
+
+γ(h, r, t ) = g⋆r (z⋆h, z ⋆t ), ∥g⋆r ∥W β, ∞ ≤ Sβ .
+
+Here W β, ∞(D⋆) denotes the Sobolev space of functions on D⋆ whose weak derivatives up to order 
+
+β are essentially bounded, with norm 
+
+∥g∥W β, ∞(D⋆) := max  
+
+> |α|≤ β
+
+∥Dαg∥L∞(D⋆).
+
+We take R⋆ large enough so that the true latent coordinates and the linearly transformed KPCA coordinates considered in the proof lie in [ −R⋆, R ⋆]d. Equivalently, by a Sobolev extension argument, all bounds may be stated on a fixed enlarged cube with constants changed only by problem parameters. 
+
+Assumption 8 (KPCA alignment with the true latent span) . Let Zsig be the shared pure-signal population entity eigenspace. There exists A⋆ with ∥A⋆∥op ≤ κA and ∥A−1 
+
+> ⋆
+
+∥op ≤ κA such that 
+
+Zsig = Z⋆A⋆.
+
+We remark that this informative-transfer condition is very broad and allows for different fea-ture mappings between datasets. It also only requires subspace-level compatibility between the population pretraining geometry and the downstream KG geometry, not an exact semantic match between views and relations or a correctly specified parametric KG scoring function. The matrix 
+
+A⋆ accounts for the usual change-of-basis non-identifiability of spectral representations; the first affine layer of a ReLU network can absorb this transformation. For any predictor q : X → R, define the sample mean squared error (MSE) and its expectation: 
+
+∥q − γ∥2 
+
+> n
+
+= 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+{q(Xi) − γ(Xi)}2 and ∥q − γ∥2 
+
+> P
+
+= EX∼P {q(X) − γ(X)}2, (4.3) where P is the target distribution over triples. We characterize the complexity of the neural KG model class by its pseudo-dimension 
+
+p := Pdim {x 7 → fθ(Z; x) : θ ∈ Θ},
+
+where Pdim denotes pseudo-dimension, the real-valued analogue of VC dimension, and the class is defined for fixed Z ∈ RN ×d over the K relation-wise ReLU networks. 13 Theorem 2 (End-to-end oracle inequality for pretrained neural KG learning) . Suppose Assump-tions 1–8 hold, p ≤ n, and Dnet ≳ log W . With probability at least 1 − 10( p/en )p − δ over both the unlabeled pretraining sample and the labeled sample, 
+
+∥ bf ( bZ; ·) − γ∥2 
+
+> P
+
+≤ C1
+
+ W
+
+log W
+
+−β/d 
+
+| {z }
+
+> neural approximation error
+
++ C2
+
+ σ2 
+
+> m
+
++ B2 KD net W log Wn log en KD net W log W
+
+| {z }
+
+> supervised estimation error
+
++ C3L2
+
+> ⋆
+
+κ2
+
+> A
+
+γ(w)2
+
+
+
+> S
+
+X
+
+> s=1
+
+wsbs,N,m s + X
+
+> s∈S ip
+
+wsds,N,m s
+
+
+
+> 2
+
++ 1
+
+δ
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+v2
+
+> s,N,m s
+
+| {z }
+
+> pretraining error
+
++ C4δopt 
+
+| {z } 
+
+> optimization error
+
+. (4.4) 
+
+Here L⋆ is a Lipschitz constant for the smooth oracle surfaces; by Assumption 7 it can be chosen so that L⋆ ≤ C(d)Sβ . Also, C1, . . . , C 4 are constants specified in Appendix A.2. 
+
+Taking Dnet ≍ log W gives the neural approximation error rate ( W/ log W )−β/d , while the supervised estimation term scales as KW/n up to logarithmic factors. The optimal model size is W ≍ (n/K )d/ (β+d) up to logarithmic factors, and pretraining is not the bottleneck when its variance and bias terms are smaller than the resulting supervised rate. Complete proofs of both theorems are deferred to Appendix A: the proof of Theorem 1 estab-lishes the view-level kernel approximation bounds for each admissible regime and combines them with the Davis–Kahan sin-theta theorem, while the proof of Theorem 2, given in Appendix A.2, builds on Theorem 1 to assemble the four-term oracle inequality via a bias-variance decomposition of the end-to-end prediction risk. 
+
+# 5 Experiments 
+
+Our empirical evaluation has two parts. Section 5.1 uses controlled simulations with known ground truth to directly check the rates and qualitative predictions of Theorems 1 and 2: subspace recovery, view weighting, and the end-to-end risk decomposition. Section 5.2 then turns to two real knowledge graphs, WordNet and PrimeKG, to test whether the same pretraining and weighting mechanisms translate into link-prediction gains under realistic side information, relation heterogeneity, and label scarcity. 
+
+5.1 Simulation study 
+
+We use three controlled simulations to check these predictions in turn. Experiments 1 and 2 test the pretraining component of the theory: Experiment 1 verifies the predicted m−1/2 subspace recovery rate, while Experiment 2 evaluates residual-gap view weighting under heterogeneous view quality. Experiment 3 tests the end-to-end risk decomposition by varying the labeled sample size n, the pretraining dimension m, and the ReLU width W , thereby isolating the supervised estimation, pretraining, and approximation components of the bound. Together, these experiments verify two main empirical implications of the theory: multi-view KPCA recovers the shared signal subspace at the predicted rate, and downstream test MSE changes according to the approximation, estimation, and pretraining terms in the risk decomposition. We 14 report the complete data-generating choices and auxiliary diagnostics below. The known ground truth allows us to evaluate the population subspace, weighting proxies, and population supervised risk directly. The simulations are intended to test rates, qualitative regimes, and ranking behavior, not exact finite-sample constants. 
+
+Pretraining recovery and view weighting. For pretraining, we use the linear kernel model: 
+
+us,j = vs,j + 1
+
+√ms
+
+εs,j , j = 1 , . . . , N, 
+
+where us,j ∈ Rms is the observed entity vector for entity j in view s, vs,j is the corresponding noiseless vector, and εs,j is Gaussian noise across entities. We use 
+
+N = 60 , d = 4 , S = 4 ,
+
+and a shared latent subspace Z⋆ ∈ RN ×d satisfying Z⊤ 
+
+> ⋆
+
+Z⋆ = Id (playing the role of Zsig from the theory). For each view, 
+
+Vs = Z⋆B⊤ 
+
+> s
+
+, B⊤ 
+
+> s
+
+Bs = N Λs,
+
+so that the noiseless linear kernel satisfies 1 
+
+> N
+
+VsV ⊤ 
+
+> s
+
+= Z⋆ΛsZ⊤ 
+
+> ⋆
+
+. The view-specific signal spectra are diag(Λ s) ∈ { (10 , 7, 4.5, 2) , (7 , 5, 3, 1.5) , (4 .8, 3.5, 2, 1) , (8 .5, 6, 3.5, 1.8) }.
+
+Each 4-tuple gives the d = 4 nonzero signal eigenvalues for one view; there are four tuples be-cause S = 4. We compare two noise regimes. (i) In the isotropic regime, 
+
+εs,j ∼ N (0 , σ 2I), σ = 0 .25 .
+
+(ii) In the anisotropic regime, 
+
+εs,j ∼ N (0 , Σs), Σs = σ2 
+
+> s
+
+I + QsDsQ⊤ 
+
+> s
+
+,
+
+where the anisotropic low-rank component is fixed for each view and is independent of Z⋆. The view-specific base noise levels are (σs) = (0 .15 , 0.20 , 0.25 , 0.30) ,
+
+with low-rank scales (0 .8, 1.2, 2.0, 2.8) and ranks 6 , 6, 8, 8, respectively. For a given weight vector w, we form the aggregated empirical linear kernel 
+
+bK(w) = 
+
+> S
+
+X
+
+> s=1
+
+ws
+
+1
+
+N UsU ⊤ 
+
+> s
+
+.
+
+The reported subspace recovery error is the operator-norm principal-angle error 
+
+∥ sin Θ( bZ, Z ⋆)∥op ,
+
+where bZ denotes the leading d-dimensional eigenspace of the aggregated empirical kernel bK(w). All reported means and standard deviations are computed over independent noise realizations, with Z⋆,the noiseless view matrices Vs, and the noise covariance matrices fixed throughout each experiment. 15 Experiment 1 varies the common entity dimension 
+
+ms = m ∈ { 50 , 100 , 200 , 400 , 800 }
+
+under uniform view weights. For each value of m and each noise regime, we compute the resulting subspace error over 20 runs. Figure 1(a) visualizes the result. The isotropic-noise curve follows the predicted m−1/2 rate almost exactly: the mean subspace error decreases from 0 .0141 at m = 50 to 0.0034 at m = 800, with log–log slope −0.506 and R2 = 0 .999. The anisotropic-noise curve is higher for small and moderate m; thus, in the linear-kernel setting, anisotropy increases the finite-sample fluctuation constant instead of creating a persistent population eigenspace bias. In the long run, the decay of the rate remains of order m−1/2, with constants depending on the spectral size and effective rank of the noise covariance (Theorem 1(1)). Consistently, the mean error decreases from 0.0318 to 0 .0037 and the anisotropic curve approaches the isotropic curve as m grows. Experiment 2 fixes heterogeneous entity dimensions ( m1, m 2, m 3, m 4) = (800 , 400 , 200 , 100) un-der the anisotropic noise setting and compares uniform weights, inverse-variance weights, and a simulation oracle. The inverse-variance weighting rule is a simulation-level implementation of the theory-guided inverse-variance weighting wIV . It assigns 
+
+ws ∝ bγs
+
+bv2 
+
+> s
+
++ 10 −9 .
+
+We use the variance proxy 
+
+bv2 
+
+> s
+
+= CsLs
+
+"bσ∞,s 
+
+Bs
+
+ms
+
++ bσ2
+
+> ∞,s
+
+ms
+
+#
+
+,
+
+where 
+
+Bs = max  
+
+> j,k
+
+|v⊤ 
+
+> s,j
+
+vs,k |, bσ∞,s = ∥Σs∥1/2op .
+
+The eigengap proxy bγs is computed from the eigengap of the signal kernel 1 
+
+> N
+
+VsV ⊤ 
+
+> s
+
+. For reference, we also report a simulation oracle, a grid-search diagnostic over a finite candidate set of simplex weights (this is not guaranteed to be the exact optimizer over the continuous simplex). We use a dense candidate grid only to provide a near-oracle benchmark for comparing weighting rules; it is not a feasible procedure in real data because it uses the known Z⋆.Figure 1(b)–(c) shows that the theory-guided rule approaches the oracle performance and, in particular, that the inverse-variance rule downweights the noisiest view. 
+
+End-to-end supervised risk. Experiment 3 uses pretrained embeddings and learns bounded relation-wise ReLU networks on a nonlinear triple-score teacher with relation-specific bilinear inter-actions and Gaussian label noise N (0 , 0.12). We vary the labeled sample size n, pretraining sample size m, and ReLU width W ; the results are shown in Figure 2. The oracle baseline uses the true latent entity coordinates from the simulator while keeping the same supervised training procedure. The pretraining model in Experiment 3 uses the same linear-kernel multi-view factor construc-tion as in Experiments 1–2, with N = 60 entities, latent rank d = 4, and S = 4 views. The view-specific spectra Λ s are the same as above. In the reported simulations, the pretraining samples are generated under the isotropic-noise regime, using uniform view weights. For each pretraining run, the embedding is obtained by forming the aggregated linear kernel from the noisy entity matrices and taking its leading d-dimensional eigenspace; the first Nent = 30 rows are then used as frozen entity representations for the downstream triple-score task. 16 (a) Subspace error vs. m (Exp. 1). (b) Error by weighting rule (Exp. 2). 
+
+> (c) View weights by rule (Exp. 2).
+
+Figure 1: Pretraining simulations (Experiments 1–2). Left : subspace error decays at m−1/2.
+
+Center : the inverse-variance weighting rule tracks the calibration oracle. Right : inverse-variance weighting downweights the noisiest view. We use Krel = 3 relation types. The true triple score is generated by a smooth one-hidden-layer tanh teacher with relation-specific bilinear terms: 
+
+γ(h, r, t ) = u⊤ tanh 
+
+Ateach 
+
+
+
+zh
+
+zt
+
+er
+
+ + b
+
+ + ⟨βr, z h ⊙ zt⟩ + cr,
+
+where er is the one-hot encoding of relation r, and βr ∈ Rd and cr ∈ R are relation-specific parameters. Training labels are noisy observations, 
+
+Yi = γ(hi, r i, t i) + εi, εi ∼ N (0 , 0.12).
+
+Test MSE is evaluated against the noiseless teacher score γ(h, r, t ) on uniformly sampled held-out triples. Thus the reported risk measures estimation, approximation, and representation errors relative to the underlying true score function. We compare two representations. The oracle representation uses the true latent entity coordi-nates Zoracle = Zent and trains the same relation-wise ReLU heads as all other methods, thereby removing pretraining error and isolating the supervised approximation and estimation components. The multi-view PCA representation uses frozen coordinates estimated from the multi-view pretrain-ing samples. The gap between multi-view PCA and the oracle measures the downstream cost of imperfect representation recovery. The labeled-sample sweep fixes m = 400 and W = 32 and varies 
+
+n ∈ { 100 , 300 , 500 , 700 , 900 , 1100 }.
+
+The pretraining-dimension sweep fixes n = 1100 and W = 32 and varies 
+
+m ∈ { 40 , 80 , 100 , 120 , 150 , 400 }.
+
+The width sweep fixes n = 1000 and m = 400 and varies 
+
+W ∈ { 4, 8, 16 , 32 , 64 }.
+
+For each configuration we average over 10 random supervised-training seeds; each run uses 500 uniformly sampled held-out triples for test MSE. 17 As the number of labeled triples increases, test MSE decreases consistently with the supervised-estimation term (Figure 2a). Multi-view KPCA remains above the oracle throughout, with the gap representing the downstream cost of imperfect coordinate recovery; this gap shrinks as the pretraining sample grows (Figure 2b). The width sweep reveals a bias–variance trade-off in the relation heads: wider networks improve expressiveness but raise estimation variance when labeled data are limited (Figure 2c). All three trends match the risk decomposition in Theorem 2, where supervised sample complexity, approximation capacity, and pretraining error jointly determine the final risk.       
+
+> (a) MSE vs. n.(b) MSE vs. m.(c) MSE vs. W.
+
+Figure 2: End-to-end risk decomposition (Experiment 3). The n-, m-, and W -sweeps probe the supervised estimation, pretraining, and approximation terms of Theorem 2; the oracle uses the true 
+
+Zoracle in place of bZ.
+
+5.2 Real-data evaluation 
+
+We now check whether these mechanisms carry over to real knowledge graphs. WordNet is a lexical-semantic graph whose synset definitions provide clean textual side information, while PrimeKG is a large biomedical graph with heterogeneous entity and relation types. These two datasets stress different aspects of the theory: WordNet tests whether pretrained semantic coordinates are useful when labeled triples are relatively sparse compared with the number of entities, and PrimeKG tests whether multi-view pretraining remains helpful in a large-data biomedical setting with skewed relation frequencies and harder relation types. Appendix B retains the full dataset-description tables and implementation/setup details for reproducibility. 
+
+5.2.1 Setup Datasets. WordNet is evaluated as a synset-level KG. Each entity is a WordNet synset and each edge is a semantic or lexical relation derived from WordNet pointer relations. The text associated with an entity is constructed from the synset type, representative lemma information, and the gloss/definition. After preprocessing, WordNet contains 116 ,566 entities, 33 base relations, and 373 ,330 observed positive triples. We use a relation-balanced edge split with 60% /20% /20% train/validation/test ratios. PrimeKG is evaluated as a biomedical KG with entities such as drugs, diseases, phenotypes, proteins, exposures, molecular functions, cellular components, biological processes, and anatomical terms. For each entity, we construct a textual description from its name, entity type, and available source metadata. After preprocessing, PrimeKG contains 90 ,067 entities, 30 base relations, and 8,100 ,498 observed positive triples. PrimeKG uses the same validation ratio as WordNet but 18 Table 1: Real-data statistics after preprocessing and splitting. PrimeKG uses a hard-enriched test split; hard relations are selected by an initial fixed-embedding model’s per-relation MSE–variance difficulty criterion.                               
+
+> Quantity WordNet PrimeKG
+> Entities 116 ,566 synsets 90 ,067 biomedical entities Relation types 33 30 Observed positive triples 373 ,330 8,100 ,498 Train positive triples 223 ,998 4,758 ,721 Validation positive triples 74 ,666 1,620 ,090 Test positive triples 74 ,666 1,721 ,687 Hard-test positive triples –169 ,288 Easy-test positive triples –1,552 ,399 Node text Synset type, representative lemma(s), and gloss/definition Entity name, entity type, and available source metadata Side-information views all-mpnet, MiniLM, BGE, E5 PubMedBERT, BioBERT, SciBERT Hard relations –disease phenotype negative ,
+> anatomy anatomy ,disease disease ,
+> exposure protein ,molfunc molfunc ,
+> cellcomp cellcomp ,phenotype phenotype ,
+> phenotype protein ,exposure bioprocess ,
+> bioprocess bioprocess ,drug protein
+
+includes a hard-enriched test set. We first train an initial fixed-embedding model and compute a relation-level difficulty score from its per-relation training loss using an MSE–variance criterion. Relations with the largest difficulty scores are assigned to the hard group. Easy relations follow a 60% /20% /20% edge split, while hard relations use the same validation ratio but an enlarged test ratio. This produces 169 ,288 hard-test positive triples and 1 ,552 ,399 easy-test positive triples. The hard-relation subset is the primary PrimeKG stress test because it reduces the dominance of frequent or easier biomedical relations. The compact main-text statistics are summarized in Table 1; the appendix keeps the more detailed per-dataset descriptions and setup table. 
+
+Negative sampling and relation-balanced objective. Both datasets contain observed pos-itive triples only. We construct a balanced binary link-prediction task by pairing each positive triple with a corrupted negative triple. For a positive triple ( h, r, t ), the negative triple is generated by replacing either the head or the tail while keeping the relation fixed. Whenever entity types are available, the replacement entity is sampled from the same type as the corrupted endpoint. Type-matched corruption prevents the task from being solved through trivial type mismatch; this is particularly important for PrimeKG because many biomedical relations connect specific entity categories. The relation frequencies in both graphs are highly skewed, so a uniformly averaged loss can be dominated by frequent relation types. Let Dr denote the examples with relation r in the relevant split, and let nr = |D r|. We assign relation-balanced weights 
+
+ωr = n−1
+
+> r
+
+P 
+
+> r′
+
+n−1
+
+> r′
+
+, (5.1) 19 and optimize the weighted empirical objective 
+
+bL(θ) = X
+
+> (xi,y i)∈D train
+
+ωri ℓ{fθ(xi), y i}, (5.2) where xi = ( hi, r i, t i) and ℓ is the mean squared error used by the corresponding downstream model. We use the validation split only for checkpoint selection and view-weight selection, and it is never included in training or final test evaluation. 
+
+5.2.2 Models and metrics 
+
+We compare against TransE [Bordes et al., 2013], DistMult [Yang et al., 2014], ComplEx [Trouillon et al., 2016], and RotatE [Sun et al., 2019]. These graph-only baselines learn entity and relation embeddings directly from the supervised training triples and do not use entity text or other side-information views. They are evaluated with the same splits, negative-sampling protocol, relation-balanced weighting, and metrics as our neural KG models. Our PNKG architecture is held fixed while varying only the entity representation: random fixed coordinates, embeddings from a single language-model view, or multi-view kernel aggregation. In the main setting, the pretrained entity coordinates are frozen during supervised training, and only the relation-specific prediction heads are optimized, in accordance with the two-stage learning setting in our theory. Each language model is regarded as a kernel and introduces a view-specific feature map, denoted as Φs : Us → Rps .
+
+Let us,j ∈ U s be the textual description of entity j. The encoder induces the entity kernel 
+
+ks(us,j , u s,k ) := ⟨Φs(us,j ), Φs(us,k )⟩Rps .
+
+Writing es,j := Φ s(us,j ), the corresponding kernel matrix is the Gram matrix of the explicit encoder features: 
+
+bKs(j, k ) = 1
+
+N ⟨es,j − ¯es, e s,k − ¯es⟩.
+
+Accordingly, the encoder output is first interpreted as a feature map, and the kernel matrix is reconstructed from pairwise similarities between the mapped entity features. This places the language-model views directly within the multi-view entity-kernel framework developed above. We aggregate the induced kernels as 
+
+bKmv (w) := 
+
+> S
+
+X
+
+> s=1
+
+ws bKs, ws ≥ 0,
+
+> S
+
+X
+
+> s=1
+
+ws = 1 . (5.3) We use the leading d = 128 eigenvectors of the aggregated entity-kernel matrix as the pretrained entity coordinates: 
+
+bKmv (w)uℓ = bλℓuℓ, bλ1 ≥ bλ2 ≥ · · · , bZ = [ u1, . . . , u 128 ] ∈ RN ×128 . (5.4) For WordNet, validation selects the uniform weight over the four general-purpose English views, (1 : 1 : 1 : 1). For PrimeKG, validation selects (8 : 1 : 1) over PubMedBERT, BioBERT, and SciB-ERT, respectively, reflecting stronger validation performance of PubMedBERT on the biomedical hard-relation protocol. Unless otherwise stated, all results are averaged over 10 random seeds and reported as mean ± standard deviation. WordNet models are trained for 50 epochs; PrimeKG models are trained for 40 epochs. 20 Figure 3: Random edge-split results on WordNet with relation-balanced training/evaluation and fixed entity embeddings. Results are averaged over 10 seeds and shown as mean ± standard deviation. 
+
+Figure 4: Hard-relation-focused results on PrimeKG with relation-balanced training/evaluation and fixed entity embeddings. Results are averaged over 10 seeds and shown as mean ± standard deviation. 
+
+5.2.3 Fixed-embedding results WordNet. Figure 3 summarizes the WordNet fixed-embedding experiment. Random fixed em-beddings perform poorly, especially on F1, showing that the relation-wise neural heads alone are not sufficient when the frozen coordinates contain little semantic information. In contrast, all four pretrained textual views substantially improve over random fixed embeddings and over graph-only baselines. The uniform multi-view representation is best on all three metrics, reaching 0 .9508 AU-ROC, 0 .8618 accuracy, and 0 .8500 F1. Relative to the strongest single view, BGE, the multi-view representation improves by 0 .0028 AUROC, 0 .0029 accuracy, and 0 .0035 F1. Relative to the best graph-only baseline in each metric, it improves by 0 .1341 AUROC, 0 .1003 accuracy, and 0 .1622 F1. The gains over single views are numerically modest but consistent, suggesting that the different semantic encoders provide complementary lexical-semantic information. 
+
+PrimeKG hard-relation subset. Figure 4 reports fixed-embedding results on the PrimeKG hard-relation subset. This subset is more heterogeneous than WordNet and is designed to reduce 21 the influence of easy high-frequency biomedical relations. The selected-weight multi-view repre-sentation, with weights 8 : 1 : 1, is the strongest method across all three metrics, reaching 0 .8223 AUROC, 0 .7368 accuracy, and 0 .7340 F1. Compared with PubMedBERT, the best single biomedi-cal view, it improves by 0 .0086 AUROC, 0 .0069 accuracy, and 0 .0080 F1. Compared with the best graph-only baseline in each metric, it improves by 0 .0170 AUROC, 0 .0140 accuracy, and 0 .0037 F1. The selected-weight model also improves over uniform multi-view aggregation, suggesting that the biomedical views are not equally transferable on difficult PrimeKG relations. This complements the WordNet result: uniform aggregation is sufficient when the views are similarly calibrated, whereas validation-selected weighting becomes more useful when view quality is heterogeneous. 0.0 
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Score
+> *
+> AUROC
+> TransE
+> DistMult
+> ComplEx
+> RotatE
+> PNKG: rand
+> PNKG: PubMedBERT
+> PNKG: multiview
+> *
+> Accuracy
+> *
+> F1
+
+Figure 5: Overall results on PrimeKG with relation-balanced training/evaluation and fixed entity embeddings. Results are averaged over 10 seeds and shown as mean ± standard deviation. 
+
+PrimeKG overall test set. Figure 5 evaluates the fixed-embedding setting on all PrimeKG test relations. In this broader test set, RotatE is the strongest overall method, indicating that graph-only structure is highly informative for many frequent or easier PrimeKG relations. Among the fixed PNKG variants, selected-weight multi-view aggregation is the strongest representation-based method. It improves over the best single biomedical view, PubMedBERT, by 0 .0043 AUROC, 0.0056 accuracy, and 0 .0060 F1. The contrast between the hard-relation results and the overall results explains why the hard-relation protocol is useful: overall metrics can be dominated by easier high-frequency biomedical relations, while the hard subset better isolates the transfer regime targeted by side-information pretraining. The overall PrimeKG result also highlights a limitation of the fixed-embedding protocol. Be-cause PrimeKG contains many supervised triples, graph-only models can exploit dense relation-specific structure, whereas fixed-coordinate PNKG variants cannot adapt their entity coordinates during supervised training. This can leave residual representation bias on relations whose predic-tive signal is not fully captured by text-derived side information. The trainable embedding ablations in Appendix B.4 support this interpretation: in the large-data PrimeKG regime, allowing entity embeddings to be trainable consistently improves the neural KG models, while the fixed-embedding results remain the cleanest test of representation quality under the theory. 22 6 Discussion 
+
+What the decomposition reveals. The four-term bound (4.4) makes explicit which design choice is the bottleneck at any given combination of n, m, W , and K. Pretraining is not the bottleneck whenever the unlabeled sample is large enough that the pretraining error in (4.4) falls below the balanced approximation–estimation rate, which is the regime of sparse labeled but abun-dant unlabeled data that motivates the framework. The linear dependence on K reflects that each relation head must be estimated separately, quantifying a basic tension in large KGs with many heterogeneous relations and motivating parameter-sharing architectures. Experiment 3 supports the decomposition empirically: the n-, m-, and W -sweeps probe different components of the bound, and the observed trends are consistent with the predicted decomposition. 
+
+View weighting in theory and practice. The weighting discussion operationalizes an inverse-variance weighting principle: views should receive larger weight when their variance term vs,N,m s is small and their effective signal strength αsγs is large. On WordNet, uniform aggregation performs best among the evaluated weight choices. On PrimeKG’s hard-relation subset, validation-selected weighting improves over uniform aggregation on all metrics, consistent with the theory’s qualitative motivation for nonuniform weighting when view quality is heterogeneous. 
+
+Limitations and future directions. Several aspects invite further development. The frozen-coordinate assumption simplifies the supervised analysis but leaves the end-to-end bound for fine-tuned embeddings open. The shared-subspace condition (3.4) may hold only approximately when views encode complementary rather than redundant signals, and extending the theory to this mis-specified regime is a natural next step. The i.i.d. triple sampling assumption also excludes entity-inductive settings where test entities are unseen at pretraining time. On the practical side, the view-weighting rules depend on unknown kernel parameters vs,N,m s and effective eigengap contri-butions αsγs; developing cross-validation schemes with theoretical guarantees would make the ag-gregation rule fully self-contained. Finally, incorporating the KG’s graph structure as an additional pretraining view would bridge our multi-view KPCA framework with graph neural network pre-training, and analogous end-to-end bounds could be derived for other relational tasks—drug-target interaction, cross-lingual entity alignment—wherever heterogeneous unlabeled side information is available and labeled annotations are scarce. 
+
+# References 
+
+Stephen Bonner, Ian P Barrett, Cheng Ye, Rowan Swiers, Ola Engkvist, Andreas Bender, Charles Tapley Hoyt, and William L Hamilton. A review of biomedical datasets relating to drug discovery: a knowledge graph perspective. Briefings in Bioinformatics , 23(6):bbac404, 2022. Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, and Oksana Yakhnenko. Translating embeddings for modeling multi-relational data. Advances in Neural Information Processing Systems , 26, 2013. Payal Chandak, Kexin Huang, and Marinka Zitnik. Building a knowledge graph to enable precision medicine. Scientific Data , 10(1):67, 2023. Youngmin Cho and Lawrence Saul. Kernel methods for deep learning. Advances in neural infor-mation processing systems , 22, 2009. 23 Daniel Daza, Michael Cochez, and Paul Groth. Inductive entity representations from text via link prediction. In Proceedings of The Web Conference , pages 798–808, 2021. Noureddine El Karoui. The spectrum of kernel random matrices. The Annals of Statistics , 38(1): 1–50, 2010. Jianqing Fan, Dong Wang, Kaizheng Wang, and Ziwei Zhu. Distributed estimation of principal eigenspaces. Annals of statistics , 47(6):3009, 2019. William J Firey. Remainder formulae in taylor’s theorem. The American Mathematical Monthly ,67(9):903–905, 1960. Jiawei Ge, Shange Tang, Jianqing Fan, and Chi Jin. On the provable advantage of unsupervised pretraining. In The Twelfth International Conference on Learning Representations , 2024. Jeff Z. HaoChen, Colin Wei, Adrien Gaidon, and Tengyu Ma. Provable guarantees for self-supervised deep learning with spectral contrastive loss. In Advances in Neural Information Processing Systems , volume 34, pages 5000–5011, 2021. Peter D. Hoff, Adrian E. Raftery, and Mark S. Handcock. Latent space approaches to social network analysis. Journal of the American Statistical Association , 97(460):1090–1098, 2002. Xiao Huang, Jingyuan Zhang, Dingcheng Li, and Ping Li. Knowledge graph embedding based question answering. In Proceedings of the Twelfth ACM International Conference on Web Search and Data Mining , pages 105–113, 2019. Shaoxiong Ji, Shirui Pan, Erik Cambria, Pekka Marttinen, and Philip S Yu. A survey on knowledge graphs: Representation, acquisition, and applications. IEEE Transactions on Neural Networks and Learning Systems , 33(2):494–514, 2021. Jason D. Lee, Qi Lei, Nikunj Saunshi, and Jiacheng Zhuo. Predicting what you already know helps: Provable self-supervised learning. In Advances in Neural Information Processing Systems ,volume 34, pages 309–323, 2021. Suqi Liu, Tianxi Cai, and Xiaoou Li. Representation-enhanced neural knowledge integration with application to large-scale medical ontology learning. arXiv preprint arXiv:2410.07454 , 2024. Peter W. MacDonald, Elizaveta Levina, and Ji Zhu. Latent space models for multiplex networks with shared structure. Biometrika , 109(3):683–706, 2022. George A Miller. WordNet: a lexical database for english. Communications of the ACM , 38(11): 39–41, 1995. Maximilian Nickel, Kevin Murphy, Volker Tresp, and Evgeniy Gabrilovich. A review of relational machine learning for knowledge graphs. Proceedings of the IEEE , 104(1):11–33, 2015. Ivan Nourdin, Giovanni Peccati, and Gesine Reinert. Invariance principles for homogeneous sums: universality of gaussian wiener chaos. The Annals of Probability , 38(5):1947–1985, 2010. doi: 10.1214/10-AOP531. Nikunj Saunshi, Orestis Plevrakis, Sanjeev Arora, Mikhail Khodak, and Hrishikesh Khandeparkar. A theoretical analysis of contrastive unsupervised representation learning. In International Con-ference on Machine Learning , pages 5628–5637. PMLR, 2019. 24 Zhiqing Sun, Zhi-Hong Deng, Jian-Yun Nie, and Jian Tang. RotatE: Knowledge graph embedding by relational rotation in complex space. arXiv preprint arXiv:1902.10197 , 2019. Th´ eo Trouillon, Johannes Welbl, Sebastian Riedel, ´Eric Gaussier, and Guillaume Bouchard. Com-plex embeddings for simple link prediction. In International Conference on Machine Learning ,pages 2071–2080. PMLR, 2016. Bo Wang, Tao Shen, Guodong Long, Tianyi Zhou, Ying Wang, and Yi Chang. Structure-augmented text representation learning for efficient knowledge graph completion. In Proceedings of The Web Conference , pages 1737–1748, 2021a. Liang Wang, Wei Zhao, Zhuoyu Wei, and Jingming Liu. SimKGC: Simple contrastive knowledge graph completion with pre-trained language models. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 4281–4294, 2022. Xiaozhi Wang, Tianyu Gao, Zhaocheng Zhu, Zhengyan Zhang, Zhiyuan Liu, Juanzi Li, and Jian Tang. KEPLER: A unified model for knowledge embedding and pre-trained language represen-tation. Transactions of the Association for Computational Linguistics , 9:176–194, 2021b. Andrew Gordon Wilson, Zhiting Hu, Ruslan Salakhutdinov, and Eric P Xing. Deep kernel learning. In Artificial intelligence and statistics , pages 370–378. PMLR, 2016. Ruobing Xie, Zhiyuan Liu, Jia Jia, Huanbo Luan, and Maosong Sun. Representation learning of knowledge graphs with entity descriptions. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 30, 2016. Yuling Yan, Yuxin Chen, and Jianqing Fan. Inference for heteroskedastic pca with missing data. 
+
+The Annals of Statistics , 52(2):729–756, 2024. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng. Embedding entities and relations for learning and inference in knowledge bases. arXiv preprint arXiv:1412.6575 , 2014. Yang Yang, Zhilei Wu, Yuexiang Yang, Shuangshuang Lian, Fengjie Guo, and Zhiwei Wang. Asurvey of information extraction based on deep learning. Applied Sciences , 12(19):9691, 2022. Liang Yao, Chengsheng Mao, and Yuan Luo. KG-BERT: BERT for knowledge graph completion. 
+
+arXiv preprint arXiv:1909.03193 , 2019. Dmitry Yarotsky. Error bounds for approximations with deep ReLU networks. Neural Networks ,94:103–114, 2017. Yi Yu, Tengyao Wang, and Richard J Samworth. A useful variant of the Davis–Kahan theorem for statisticians. Biometrika , 102(2):315–323, 2015. Fuzheng Zhang, Nicholas Jing Yuan, Defu Lian, Xing Xie, and Wei-Ying Ma. Collaborative knowl-edge base embedding for recommender systems. In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , pages 353–362, 2016. 25 A Proofs 
+
+A.1 Proof of Theorem 1 
+
+We first prove the view-level kernel approximation bounds for the two general admissible regimes: inner-product kernels and Gaussian distance kernels. The linear kernel is then obtained as a special case of the inner-product regime with fs(t) = t. Throughout the proof, the kernel matrices are normalized by 1 /N , as in the main text. For each view s, recall that 
+
+αs := 
+
+(
+
+1, s ∈ S ip or Slin ,
+
+exp( −2τsσ2 
+
+> s
+
+), s ∈ S gauss ,
+
+where Sip denotes the set of nonlinear inner-product kernel views, Slin denotes the set of linear kernel views, a special case of general inner-product views, and Sgauss denotes the set of Gaussian distance-kernel views. Define the “harmless identity-shift” coefficient 
+
+χs := 
+
+
+
+νsσ2 
+
+> s
+
+/N, s ∈ S lin ,
+
+0, s ∈ S ip , 
+
+> 1−αs
+> N
+
+, s ∈ S gauss .
+
+Lemma 3 (Inner-product kernel decomposition) . Suppose view s ∈ S ip , with ks(u, u ′) = fs(u⊤u′),under the inner-product kernel and noise conditions in Theorem 1(3). Let 
+
+ηs := σs, ∞
+
+ Bs,N 
+
+ms
+
+1/2
+
++ σ2
+
+> s, ∞
+
+r 1 + νs
+
+ms
+
+.
+
+We have the following decomposition 
+
+Kobs  
+
+> s
+
+− Ksig  
+
+> s
+
+= Bs + Ξ s, EΞs = 0 ,
+
+such that 
+
+∥B s∥F ≤ bs + ds, E∥Ξs∥2 
+
+> F
+
+≤ v2 
+
+> s
+
+,
+
+where 
+
+bs := Cs,b 
+
+ Ls, 2η2 
+
+> s
+
++ Ls, 3η3
+
+> s
+
+ , ds := Cs,b 
+
+Ls, 1νsσ2
+
+> s, ∞
+
+√N ,
+
+and 
+
+v2 
+
+> s
+
+:= Cs,v 
+
+ L2
+
+> s, 1
+
+η2 
+
+> s
+
++ L2
+
+> s, 2
+
+η4 
+
+> s
+
++ L2
+
+> s, 3
+
+η6
+
+> s
+
+ .
+
+Here Cs,b and Cs,v depend only on (Cs, c s, q s) and a uniform upper bound on νs, but not on N or 
+
+ms.Proof. Suppress the view index s, and write 
+
+m = ms, ν = νs, σj = σs,j , σ∞ = σs, ∞,BN = Bs,N , f = fs, Lr = Ls,r .
+
+The signal vectors are fixed throughout the proof, and all expectations and probabilities are taken only over the noise. For j, k ∈ [N ], define 
+
+xjk := v⊤ 
+
+> j
+
+vk + 1{j=k}νσ 2
+
+> j
+
+26 and ∆jk := u⊤ 
+
+> j
+
+uk − xjk .
+
+We have 
+
+uj = vj + σj
+
+εj
+
+√m .
+
+Expanding the scalar product gives ∆jk = σj
+
+√m ε⊤ 
+
+> j
+
+vk + σk
+
+√m ε⊤ 
+
+> k
+
+vj + σj σk
+
+m ε⊤ 
+
+> j
+
+εk − 1{j=k}νσ 2 
+
+> j
+
+.
+
+Since the noise vectors are centered and independent across entities, E∆jk = 0. We first establish moment bounds for ∆ jk . The noise assumption implies the following standard fact: if G is L-Lipschitz, then for every fixed p ≥ 1, 
+
+∥G(εj ) − EG(εj )∥Lp ≤ Cs,p L. 
+
+To see this, if G : Rms → R is L-Lipschitz and Z := G(εs,j ) − EG(εs,j ), then 
+
+P(|Z| > t ) ≤ Cs exp 
+
+
+
+−cs
+
+ tL
+
+qs 
+
+.
+
+Using the tail-integral identity, 
+
+E|Z|p = p
+
+Z ∞
+
+> 0
+
+tp−1P(|Z| > t ) dt 
+
+≤ pC s
+
+Z ∞
+
+> 0
+
+tp−1 exp 
+
+
+
+−cs
+
+ tL
+
+qs 
+
+dt 
+
+= pC s
+
+qs
+
+c−p/q s 
+
+> s
+
+Γ
+
+ pqs
+
+
+
+Lp.
+
+Consequently, 
+
+∥G(εs,j ) − EG(εs,j )∥Lp ≤ Cs,p L, 
+
+where Cs,p depends only on ( p, C s, c s, q s), and not on N or ms.The same concentration property tensorizes to an independent pair ( εj , ε k), up to constants. To see this, let G : Rm × Rm → R be 1-Lipschitz under the Euclidean product metric, and define 
+
+g(x) := Eεk G(x, ε k).
+
+Then g is 1-Lipschitz, and conditioning on εj gives 
+
+P{| G − EG| > r } ≤ P{| G − g(εj )| > r/ 2}
+
++ P{| g(εj ) − Eg(εj )| > r/ 2}≤ 2Cs exp( −cs2−qs rqs ).
+
+Now, consider first the signal–noise term σj 
+
+> √m
+
+ε⊤ 
+
+> j
+
+vk. The map εj 7 −→ σj 
+
+> √m
+
+ε⊤ 
+
+> j
+
+vk is Lipschitz with constant |σj |∥ vk ∥2 
+
+> √m
+
+≤ σ∞
+
+ BN
+
+> m
+
+1/2
+
+. It is centered, so for every fixed p ≥ 1, 
+
+σj
+
+√m ε⊤ 
+
+> j
+
+vk
+
+> Lp
+
+≤ Cs,p σ∞
+
+ BN
+
+m
+
+1/2
+
+.
+
+27 The same bound holds for the other signal–noise term. We next control the noise–noise term. For j = k, let 
+
+Rj := |σj |∥ εj ∥2.
+
+The variable Rj is |σj |-Lipschitz, and therefore 
+
+∥Rj − ERj ∥Lp ≤ Cs,p |σj |.
+
+Moreover, 
+
+ER2 
+
+> j
+
+= mνσ 2 
+
+> j
+
+, ERj ≤ | σj |√mν. 
+
+Using 
+
+R2 
+
+> j
+
+− ER2 
+
+> j
+
+= ( Rj − ERj )( Rj + ERj ) − Var( Rj ),
+
+H¨ older’s inequality yields, for every fixed p ≥ 1, 
+
+∥R2 
+
+> j
+
+− ER2 
+
+> j
+
+∥Lp
+
+≤ ∥ (Rj − ERj )( Rj + ERj )∥Lp + Var( Rj )
+
+≤ ∥ (Rj − ERj )∥L2p ∥(Rj + ERj )∥L2p + Var( Rj )
+
+≤ Cs,p |σj |(Cs,p |σj | + 2 |σj |√mν )
+
+≤ Cs,p σ2
+
+> ∞
+
+(1 + √mν ).
+
+Consequently, 
+
+σ2
+
+> j
+
+ ∥εj ∥22
+
+m − ν
+
+
+
+> Lp
+
+≤ Cs,p σ2
+
+> ∞
+
+ 1
+
+m +
+
+r νm
+
+
+
+.
+
+For j̸ = k, define 
+
+R± 
+
+> jk
+
+:= ∥σj εj ± σkεk∥2.
+
+As functions of the independent pair ( εj , ε k), these are Lipschitz with constants at most (σ2 
+
+> j
+
++ σ2
+
+> k
+
+)1/2 ≤ √2 σ∞.
+
+Furthermore, 
+
+E(R+
+
+> jk
+
+)2 = E(R−
+
+> jk
+
+)2 = mν (σ2 
+
+> j
+
++ σ2
+
+> k
+
+).
+
+The preceding squared-norm argument therefore gives 
+
+(R±
+
+> jk
+
+)2 − E(R±
+
+> jk
+
+)2 
+
+> Lp
+
+≤ Cs,p σ2
+
+> ∞
+
+(1 + √mν ).
+
+Using the polarization identity 4σj σkε⊤ 
+
+> j
+
+εk = ( R+
+
+> jk
+
+)2 − (R−
+
+> jk
+
+)2
+
+and the equality of the two expectations, we obtain 
+
+σj σk
+
+m ε⊤ 
+
+> j
+
+εk Lp ≤ Cs,p σ2
+
+> ∞
+
+( 1
+
+m +
+
+r νm ) ≤ Cs,p σ2
+
+> ∞
+
+r ν + 1 
+
+m .
+
+Combining the two signal–noise terms and the noise–noise term gives, for p = 2 , 4, 6, 
+
+∥∆jk ∥Lp ≤ Cs,p ω, 
+
+28 uniformly over j, k , where 
+
+ω := σ∞
+
+ BN
+
+m
+
+1/2
+
++ σ2
+
+> ∞
+
+r ν + 1 
+
+m .
+
+Equivalently, 
+
+E|∆jk |p ≤ Cs,p ωp, p = 2 , 4, 6.
+
+Taylor’s theorem with integral remainder Firey [1960] gives 
+
+f (xjk + ∆ jk ) − f (xjk ) = f ′(xjk )∆ jk + 12 f ′′ (xjk )∆ 2 
+
+> jk
+
++ Rjk ,
+
+where 
+
+Rjk = ∆3
+
+> jk
+
+2
+
+Z 10
+
+(1 − r)2f (3) (xjk + r∆jk ) dr. 
+
+Since f (3) is globally bounded, 
+
+|R jk | ≤ L3
+
+6 |∆jk |3,
+
+and hence 
+
+E|R jk |2 ≤ CsL23ω6.
+
+Define 
+
+A(1) (j, k ) := 1
+
+N f ′(xjk )∆ jk , A(2) (j, k ) := 12N f ′′ (xjk )∆ 2
+
+> jk
+
+,A(R)(j, k ) := 1
+
+N Rjk .
+
+Define the effective inner-product kernel matrix 
+
+K♯s(j, k ) := 1
+
+N fs
+
+
+
+v⊤ 
+
+> s,j
+
+vs,k + 1{j=k}νsσ2
+
+> s,j
+
+
+
+.
+
+Then 
+
+Kobs − K♯ = A(1) + A(2) + A(R).
+
+Define 
+
+B′ := E[Kobs − K♯], Ξ := Kobs − K♯ − B ′.
+
+By construction, EΞ = 0. Since E∆jk = 0, 
+
+EA(1) = 0 ,
+
+and hence 
+
+B′ = EA(2) + EA(R).
+
+For the second-order bias, 
+
+∥EA(2) ∥2 
+
+> F
+
+= X
+
+> j,k
+
+f ′′ (xjk )2N E∆2
+
+> jk
+> 2
+
+≤ L22
+
+4N 2
+
+X
+
+> j,k
+
+ E∆2
+
+> jk
+
+2
+
+≤ CsL22ω4.
+
+29 Thus 
+
+∥EA(2) ∥F ≤ CsL2ω2.
+
+For the Taylor-remainder bias, 
+
+∥EA(R)∥2 
+
+> F
+
+≤ 1
+
+N 2
+
+X
+
+> j,k
+
+E|R jk |2 ≤ CsL23ω6.
+
+Combining the estimates gives 
+
+∥B ′∥F ≤ Cs,b 
+
+ L2ω2 + L3ω3 .
+
+For the centered fluctuation, Ξ = A(1) +
+
+
+
+A(2) − EA(2) 
+
++
+
+
+
+A(R) − EA(R)
+
+.
+
+The first-order term satisfies 
+
+E∥A(1) ∥2 
+
+> F
+
+= 1
+
+N 2
+
+X
+
+> j,k
+
+f ′(xjk )2E∆2 
+
+> jk
+
+≤ CsL21ω2.
+
+For the centered second-order term, 
+
+E A(2) − EA(2) 2 
+
+> F
+
+≤ E∥A(2) ∥2
+
+> F
+
+≤ L22
+
+4N 2
+
+X
+
+> j,k
+
+E|∆jk |4
+
+≤ CsL22ω4.
+
+Likewise, 
+
+E A(R) − EA(R) 2 
+
+> F
+
+≤ E∥A(R)∥2 
+
+> F
+
+≤ CsL23ω6.
+
+Using 
+
+∥A + B + C∥2 
+
+> F
+
+≤ 3  ∥A∥2 
+
+> F
+
++ ∥B∥2 
+
+> F
+
++ ∥C∥2
+
+> F
+
+ ,
+
+we conclude that 
+
+E∥Ξ∥2 
+
+> F
+
+≤ Cs,v 
+
+ L21ω2 + L22ω4 + L23ω6 .
+
+It remains to compare K♯ and Ksig . These matrices agree off the diagonal. Define Ddiag  
+
+> s
+
+as the deterministic diagonal matrix 
+
+Ddiag  
+
+> s
+
+(j, k ) := 1{j=k}
+
+1
+
+N
+
+fs
+
+ ∥vs,j ∥22 + νsσ2
+
+> s,j
+
+ − fs(∥vs,j ∥22) .
+
+By the mean-value theorem, 
+
+|Ddiag (j, j )| = 1
+
+N
+
+ f (∥vj ∥22 + νσ 2 
+
+> j
+
+) − f (∥vj ∥22) ≤ L1νσ 2
+
+> j
+
+N .
+
+Therefore 
+
+∥Ddiag ∥F ≤
+
+L1ν
+
+PNj=1 σ4
+
+> j
+
+1/2
+
+N
+
+≤ L1νσ 2
+
+> ∞
+
+√N .
+
+30 Set 
+
+Bs := B′ + Ddiag  
+
+> s
+
+, Ξs := Ξ .
+
+Then 
+
+Kobs  
+
+> s
+
+− Ksig  
+
+> s
+
+= Bs + Ξ s, EΞs = 0 ,
+
+and ∥B s∥F ≤ bs + ds.Restoring the view index proves the stated bounds for bs, d s, and v2 
+
+> s
+
+.For the single-view probability bound, 
+
+∥Kobs  
+
+> s
+
+− Ksig  
+
+> s
+
+∥F ≤ bs + ds + ∥Ξs∥F .
+
+This proves the lemma. 
+
+Lemma 4 (Linear-kernel specialization) . Suppose view s ∈ S lin , with 
+
+ks(u, u ′) = u⊤u′,
+
+and suppose that the inner-product noise conditions in Theorem 1 hold. In addition, assume that the noise scale is homogeneous within the view: 
+
+σs,j ≡ σs, j ∈ [N ].
+
+Define 
+
+χlin  
+
+> s
+
+:= νsσ2
+
+> s
+
+N ,
+
+and let 
+
+Elin  
+
+> s
+
+:= Kobs  
+
+> s
+
+−
+
+
+
+Ksig  
+
+> s
+
++ χlin  
+
+> s
+
+IN
+
+
+
+.
+
+Then 
+
+Elin  
+
+> s
+
+= Ξ s, EΞs = 0 .
+
+In particular, the deterministic finite-ms bias vanishes: 
+
+Bs = 0 , bs = 0 .
+
+Moreover, 
+
+E ∥Ξs∥2 
+
+> F
+
+≤ (vs)2 ,
+
+where 
+
+v2 
+
+> s
+
+:= Cs,v 
+
+ σ2 
+
+> s
+
+Bs,N 
+
+ms
+
++ σ4 
+
+> s
+
+(1 + νs)
+
+ms
+
+
+
+.
+
+Here Cs,v depends only on the constants in the noise-concentration assumption but not on N or 
+
+ms.Proof. Suppress the view index s, and write 
+
+m = ms, σ = σs, ν = νs, BN = Bs,N .
+
+The observed entity vector is 
+
+uj = vj + σε j
+
+√m .
+
+31 For the linear kernel, 
+
+Kobs (j, k ) = 1
+
+N u⊤ 
+
+> j
+
+uk, Ksig (j, k ) = 1
+
+N v⊤ 
+
+> j
+
+vk.
+
+Expanding the scalar product gives 
+
+u⊤ 
+
+> j
+
+uk = v⊤ 
+
+> j
+
+vk + σ
+
+√m ε⊤ 
+
+> j
+
+vk + σ
+
+√m ε⊤ 
+
+> k
+
+vj + σ2
+
+m ε⊤ 
+
+> j
+
+εk.
+
+Define ∆jk := u⊤ 
+
+> j
+
+uk − v⊤ 
+
+> j
+
+vk − 1{j=k}νσ 2
+
+= σ
+
+√m ε⊤ 
+
+> j
+
+vk + σ
+
+√m ε⊤ 
+
+> k
+
+vj
+
++ σ2
+
+m
+
+
+
+ε⊤ 
+
+> j
+
+εk − 1{j=k}mν 
+
+
+
+.
+
+Since the noise vectors are centered and independent across entities, 
+
+E∆jk = 0 .
+
+Indeed, the two signal–noise terms have zero expectation. If j̸ = k, then independence and centering imply 
+
+E(ε⊤ 
+
+> j
+
+εk) = 0 ,
+
+whereas if j = k, the definition 
+
+ν = E∥εj ∥22
+
+m
+
+gives 
+
+E
+
+ ∥εj ∥22
+
+m − ν
+
+
+
+= 0 .
+
+The moment bounds established in the proof of Lemma 3 give 
+
+∥∆jk ∥L2 ≤ Cs
+
+"
+
+σ
+
+ BN
+
+m
+
+1/2
+
++ σ2
+
+r 1 + νm
+
+#
+
+uniformly over j, k ∈ [N ]. Therefore, 
+
+E |∆jk |2 ≤ Cs
+
+ σ2BN
+
+m + σ4(1 + ν)
+
+m
+
+
+
+.
+
+Now observe that 
+
+E(j, k ) = Kobs (j, k ) − Ksig (j, k ) − νσ 2
+
+N 1{j=k}
+
+= 1
+
+N ∆jk .
+
+Thus 
+
+EE = 0 ,
+
+so we may set Ξ := E, B := 0 .
+
+This proves 
+
+bs = 0 .
+
+32 Furthermore, 
+
+E ∥Ξ∥2 
+
+> F
+
+= 1
+
+N 2
+
+> N
+
+X
+
+> j,k =1
+
+E |∆jk |2
+
+≤ Cs
+
+ σ2BN
+
+m + σ4(1 + ν)
+
+m
+
+
+
+.
+
+Restoring the view index gives 
+
+E ∥Ξs∥2 
+
+> F
+
+≤ (vs)2 .
+
+Lemma 5 (Gaussian distance-kernel bias–variance decomposition) . Suppose view s ∈ S gauss . Under the Gaussian distance-kernel and Gaussian noise conditions in Theorem 1, define 
+
+Egauss  
+
+> s
+
+:= Kobs  
+
+> s
+
+−  αsKsig  
+
+> s
+
++ χsIN
+
+ , αs := exp( −2τsσ2 
+
+> s
+
+), χs := 1 − αs
+
+N .
+
+Let 
+
+η2 
+
+> s
+
+:= σ4 
+
+> s
+
+tr(Ψ 2 
+
+> s,m s
+
+)
+
+m2
+
+> s
+
++ σ2 
+
+> s
+
+∥Ψs,m s ∥op Bs,N 
+
+ms
+
+.
+
+There is a decomposition 
+
+Egauss  
+
+> s
+
+= Bs + Ξ s, E[Ξ s] = 0 ,
+
+such that 
+
+∥B s∥F ≤ bs, E∥Ξs∥2 
+
+> F
+
+≤ v2 
+
+> s
+
+,
+
+where 
+
+bs := Cs,b 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 3 
+
+> s
+
+η3
+
+> s
+
+ ,
+
+and 
+
+v2 
+
+> s
+
+:= Cs,v 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 4 
+
+> s
+
+η4 
+
+> s
+
++ τ 6 
+
+> s
+
+η6
+
+> s
+
+ .
+
+Here Cs,b and Cs,v are constants independent of N and ms.Proof. Suppress the view index s, and write 
+
+m = ms, σ = σs, τ = τs, Ψ = Ψ s,m s , α = e−2τ σ 2
+
+, χ = 1 − αN .
+
+The signal vectors {vj }Nj=1 are treated as fixed, and all expectations and probabilities below are taken only with respect to the Gaussian noise. Set 
+
+ζj := σε j
+
+√m , uj = vj + ζj , εj iid 
+
+∼ N (0 , Ψ) .
+
+For j̸ = k, define 
+
+hjk := vj − vk, djk := ∥hjk ∥22, ajk := ζj − ζk.
+
+Then 
+
+ajk ∼ N (0 , Γ) , Γ := 2σ2
+
+m Ψ.
+
+Since tr(Ψ) /m = 1, tr(Γ) = 2σ2
+
+m tr(Ψ) = 2 σ2.
+
+33 Consequently, 
+
+∥uj − uk∥22 = ∥hjk + ajk ∥22
+
+= djk + 2 σ2 + ejk ,
+
+where 
+
+ejk := 2 h⊤
+
+> jk
+
+ajk +  ∥ajk ∥22 − tr(Γ)  .
+
+Because ajk is centered Gaussian, 
+
+E[ejk ] = 0 .
+
+Write 
+
+ejk = Ljk + Qjk ,
+
+where 
+
+Ljk := 2 h⊤
+
+> jk
+
+ajk , Qjk := ∥ajk ∥22 − tr(Γ) .
+
+The cross term between Ljk and Qjk has expectation zero: the first factor is odd in ajk , while the second is even. Therefore 
+
+E[e2
+
+> jk
+
+] = 4 h⊤
+
+> jk
+
+Γhjk + 2 tr(Γ 2)= 8σ2
+
+m h⊤
+
+> jk
+
+Ψhjk + 8σ4
+
+m2 tr(Ψ 2).
+
+We next control the higher moments of ejk . For q = 1 , 2, 3, the elementary inequality 
+
+|a + b|2q ≤ 22q−1  |a|2q + |b|2q
+
+gives 
+
+E|ejk |2q ≤ Cq
+
+ E|Ljk |2q + E|Qjk |2q .
+
+Since Ljk is centered Gaussian with variance Var( Ljk ) = 4 h⊤
+
+> jk
+
+Γhjk ,
+
+its Gaussian moments satisfy 
+
+E|Ljk |2q = E|Z|2q 
+
+4h⊤
+
+> jk
+
+Γhjk 
+
+q
+
+≤ Cq
+
+
+
+h⊤
+
+> jk
+
+Γhjk 
+
+q
+
+,
+
+where Z ∼ N (0 , 1). For the quadratic term, diagonalize Γ = U diag( λ1, . . . , λ m)U ⊤.
+
+If g ∼ N (0 , I m), then 
+
+ajk d
+
+= Γ 1/2g, 
+
+and hence 
+
+Qjk d
+
+=
+
+> m
+
+X
+
+> ℓ=1
+
+λℓ(g2 
+
+> ℓ
+
+− 1) .
+
+Thus Qjk belongs to the second-order homogeneous Gaussian chaos. Gaussian hypercontractivity (Proposition 2.6, Nourdin et al. [2010]) implies that, for every p ≥ 2, 
+
+∥Qjk ∥Lp ≤ (p − 1) ∥Qjk ∥L2 .
+
+34 Taking p = 2 q gives 
+
+E|Qjk |2q = ∥Qjk ∥2qL2q
+
+≤ (2 q − 1) 2q∥Qjk ∥2qL2 .
+
+Since 
+
+EQ2 
+
+> jk
+
+= 2 tr(Γ 2),
+
+we obtain 
+
+E|Qjk |2q ≤ Cq
+
+ tr(Γ 2)q .
+
+Combining the linear and quadratic bounds yields 
+
+E|ejk |2q ≤ Cq
+
+h 
+
+h⊤
+
+> jk
+
+Γhjk 
+
+q
+
++  tr(Γ 2)qi
+
+≤ Cq
+
+h
+
+h⊤
+
+> jk
+
+Γhjk + tr(Γ 2)
+
+iq
+
+, q = 1 , 2, 3.
+
+Using 
+
+h⊤
+
+> jk
+
+Γhjk ≤ 2σ2∥Ψ∥op 
+
+m ∥hjk ∥22
+
+and tr(Γ 2) = 4σ4
+
+m2 tr(Ψ 2),
+
+together with the signal-moment assumption, 1
+
+N 2
+
+> N
+
+X
+
+> j,k =1
+
+∥hjk ∥2q 
+
+> 2
+
+≤ CqBqN , q = 1 , 2, 3,
+
+we obtain 1
+
+N 2
+
+> N
+
+X
+
+> j,k =1
+
+E|ejk |2q ≤ Cqω2q, q = 1 , 2, 3,
+
+where 
+
+ω2 := σ2∥Ψ∥op BN
+
+m + σ4 tr(Ψ 2)
+
+m2 .
+
+For j̸ = k, define 
+
+xjk := djk + 2 σ2, yjk := ∥uj − uk∥22 = xjk + ejk .
+
+Both xjk and yjk belong to [0 , ∞). Let 
+
+f (t) := e−τ t , t ≥ 0.
+
+Since 
+
+αK sig (j, k ) = 1
+
+N f (xjk ),
+
+the off-diagonal residual is 
+
+Egauss (j, k ) = 1
+
+N [f (yjk ) − f (xjk )] .
+
+On the diagonal, the observed and target kernels agree exactly: 
+
+Kobs (j, j ) = 1
+
+N ,
+
+35 and 
+
+αK sig (j, j ) + χ = αN + 1 − αN = 1
+
+N .
+
+Hence 
+
+Egauss (j, j ) = 0 .
+
+For j̸ = k, Taylor’s theorem with integral remainder Firey [1960] gives 
+
+f (yjk ) − f (xjk ) = f ′(xjk )ejk + 12 f ′′ (xjk )e2 
+
+> jk
+
++ Rjk ,
+
+where 
+
+Rjk = e3
+
+> jk
+
+2
+
+Z 10
+
+(1 − r)2f (3) (xjk + re jk ) dr. 
+
+The line segment between xjk and yjk is contained in [0 , ∞), and therefore 
+
+|f (3) (t)| = τ 3e−τ t ≤ τ 3, t ≥ 0.
+
+It follows that 
+
+|R jk | ≤ τ 3
+
+6 |ejk |3, |R jk |2 ≤ τ 6
+
+36 |ejk |6.
+
+Consequently, 1
+
+N 2
+
+X
+
+> j,k
+
+E|R jk |2 ≤ Cτ 6ω6.
+
+Define the three random matrices 
+
+A(1) (j, k ) := 1{j̸ =k}
+
+f ′(xjk )
+
+N ejk ,A(2) (j, k ) := 1{j̸ =k}
+
+f ′′ (xjk )2N e2
+
+> jk
+
+,
+
+and 
+
+A(R)(j, k ) := 1{j̸ =k}
+
+Rjk 
+
+N .
+
+Then 
+
+Egauss = A(1) + A(2) + A(R).
+
+Define the bias and centered fluctuation by 
+
+B := E[Egauss ], Ξ := Egauss − B .
+
+Since E[ejk ] = 0, 
+
+E[A(1) ] = 0 ,
+
+and hence 
+
+B = E[A(2) ] + E[A(R)].
+
+Because 
+
+|f ′′ (x)| ≤ τ 2, x ≥ 0,
+
+36 Jensen’s inequality gives 
+
+∥EA(2) ∥2 
+
+> F
+
+= X 
+
+> j̸=k
+
+f ′′ (xjk )2N E[e2
+
+> jk
+
+]
+
+> 2
+
+≤ τ 4
+
+4N 2
+
+X 
+
+> j̸=k
+
+E[e4
+
+> jk
+
+]
+
+≤ Cτ 4ω4.
+
+Therefore 
+
+∥EA(2) ∥F ≤ Cτ 2ω2.
+
+Similarly, 
+
+∥EA(R)∥2 
+
+> F
+
+≤ 1
+
+N 2
+
+X 
+
+> j̸=k
+
+E|R jk |2
+
+≤ Cτ 6ω6,
+
+so 
+
+∥EA(R)∥F ≤ Cτ 3ω3.
+
+Hence 
+
+∥B∥ F ≤ C  τ 2ω2 + τ 3ω3 .
+
+We next bound the centered fluctuation. Write Ξ = A(1) +
+
+
+
+A(2) − EA(2) 
+
++
+
+
+
+A(R) − EA(R)
+
+.
+
+For the first-order term, 
+
+E∥A(1) ∥2 
+
+> F
+
+= 1
+
+N 2
+
+X 
+
+> j̸=k
+
+f ′(xjk )2E[e2
+
+> jk
+
+]
+
+≤ Cτ 2ω2.
+
+For the centered second-order term and higher-order term, 
+
+E A(2) − EA(2) 2 
+
+> F
+
+≤ E∥A(2) ∥2 
+
+> F
+
+≤ Cτ 4ω4.
+
+E A(R) − EA(R) 2 
+
+> F
+
+≤ E∥A(R)∥2 
+
+> F
+
+≤ Cτ 6ω6.
+
+Using 
+
+∥A + B + C∥2 
+
+> F
+
+≤ 3  ∥A∥2 
+
+> F
+
++ ∥B∥2 
+
+> F
+
++ ∥C∥2
+
+> F
+
+ ,
+
+we conclude that 
+
+E∥Ξ∥2 
+
+> F
+
+≤ C  τ 2ω2 + τ 4ω4 + τ 6ω6 .
+
+Restoring the view index s, we may therefore take 
+
+bs := Cs,b 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 3 
+
+> s
+
+η3
+
+> s
+
+ ,
+
+and 
+
+v2 
+
+> s
+
+:= Cs,v 
+
+ τ 2 
+
+> s
+
+η2 
+
+> s
+
++ τ 4 
+
+> s
+
+η4 
+
+> s
+
++ τ 6 
+
+> s
+
+η6
+
+> s
+
+ .
+
+37 This proves 
+
+∥B s∥F ≤ bs, E∥Ξs∥2 
+
+> F
+
+≤ v2 
+
+> s
+
+.
+
+For the single-view high-probability bound, 
+
+∥Egauss  
+
+> s
+
+∥F ≤ ∥B s∥F + ∥Ξs∥F .
+
+Lemma 6 (Mixed target eigengap) . Define 
+
+Ktar (w) := 
+
+> S
+
+X
+
+> s=1
+
+wsαsKsig  
+
+> s
+
++
+
+> S
+
+X
+
+> s=1
+
+wsχs
+
+!
+
+IN .
+
+Under Assumptions 3 and 4, the top-d eigenspace of Ktar (w) is span( Zsig ). Moreover, its eigengap is at least 
+
+γ(w) := λmin 
+
+> S
+
+X
+
+> s=1
+
+wsαsΛs
+
+!
+
+−
+
+> S
+
+X
+
+> s=1
+
+wsαsRsig 
+
+> s
+> op
+
+.
+
+Recall 
+
+γs := λmin (Λ s) − ∥ Rsig  
+
+> s
+
+∥op ,
+
+then 
+
+γ(w) ≥
+
+> S
+
+X
+
+> s=1
+
+wsαsγs.
+
+Proof. By the shared-subspace decomposition in Assumption 3, 
+
+Ksig  
+
+> s
+
+= Zsig ΛsZ⊤ 
+
+> sig
+
++ Rsig  
+
+> s
+
+, Rsig  
+
+> s
+
+Zsig = 0 , Z⊤
+
+> sig
+
+Rsig  
+
+> s
+
+= 0 .
+
+Therefore 
+
+Ktar (w) = Zsig 
+
+> S
+
+X
+
+> s=1
+
+wsαsΛs
+
+!
+
+Z⊤ 
+
+> sig
+
++
+
+> S
+
+X
+
+> s=1
+
+wsαsRsig  
+
+> s
+
++
+
+> S
+
+X
+
+> s=1
+
+wsχs
+
+!
+
+IN .
+
+The final term is a scalar multiple of IN , so it shifts all eigenvalues equally and changes neither eigenspaces nor eigengaps. The remaining matrix is block diagonal with respect to 
+
+RN = span( Zsig ) ⊕ span( Zsig )⊥.
+
+The claimed eigengap bound follows exactly as before. Finally, 
+
+γ(w) ≥
+
+> S
+
+X
+
+> s=1
+
+wsαsλmin (Λ s) −
+
+> S
+
+X
+
+> s=1
+
+wsαs∥Rsig  
+
+> s
+
+∥op 
+
+=
+
+> S
+
+X
+
+> s=1
+
+wsαsγs.
+
+38 Proof of Theorem 1. Consider 
+
+Ktar (w) := 
+
+> S
+
+X
+
+> s=1
+
+wsαsKsig  
+
+> s
+
++
+
+> S
+
+X
+
+> s=1
+
+wsχs
+
+!
+
+IN .
+
+By Lemma 6, the top-d eigenspace of Ktar (w) is Zsig , with eigengap at least γ(w). For each view, let Bs, Ξ s, bs, ds, and vs denote the corresponding quantities from Theorem 1 and Lemmas 3, 4, and 5, depending on the kernel type. We have 
+
+Kobs  
+
+> s
+
+− αsKsig  
+
+> s
+
+− χsIN = Bs + Ξ s, EΞs = 0 ,
+
+and 
+
+∥B s∥F ≤ bs + 1{s∈S ip }ds, E∥Ξs∥2 
+
+> F
+
+≤ v2 
+
+> s
+
+.
+
+Since the centered matrices are independent across views, EΞs = 0 and for s̸ = t, E⟨Ξs, Ξt⟩F =
+
+⟨EΞs, EΞt⟩F = 0. Consequently, 
+
+E
+
+> S
+
+X
+
+> s=1
+
+wsΞs
+
+> 2
+> F
+
+=
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+E∥Ξs∥2
+
+> F
+
+≤
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+v2
+
+> s
+
+By Markov’s inequality applied to the squared Frobenius norm, 
+
+P
+
+
+
+> S
+
+X
+
+> s=1
+
+wsΞs
+
+> F
+
+>
+
+s PSs=1 w2 
+
+> s
+
+v2
+
+> s
+
+δ
+
+ ≤ δ. 
+
+Then, with probability at least 1 − δ and by triangle inequality, 
+
+∥Kobs (w) − Ktar (w)∥F ≤
+
+> S
+
+X
+
+> s=1
+
+wsbs + X
+
+> s∈S ip
+
+wsds +
+
+s PSs=1 w2 
+
+> s
+
+v2
+
+> s
+
+δ .
+
+Applying the Frobenius-norm form of the Davis–Kahan sin-theta theorem [Yu et al., 2015] gives 
+
+∥ sin Θ( bZ, Z sig )∥F ≤ Cγ(w) ∥Kobs (w) − Ktar (w)∥F .
+
+Therefore, with probability at least 1 − δ,
+
+∥ sin Θ( bZ, Z sig )∥F ≤ Cγ(w)
+
+
+
+> S
+
+X
+
+> s=1
+
+wsbs + X
+
+> s∈S ip
+
+wsds + 1
+
+δ
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+v2
+
+> s
+
+!1/2 .
+
+Using ( a + b)2 ≤ 2( a2 + b2), we obtain 
+
+∥ sin Θ( bZ, Z sig )∥2 
+
+> F
+
+≤ Cγ(w)2
+
+
+
+> S
+
+X
+
+> s=1
+
+wsbs + X
+
+> s∈S ip
+
+wsds
+
+
+
+> 2
+
++ 1
+
+δ
+
+> S
+
+X
+
+> s=1
+
+w2 
+
+> s
+
+v2
+
+> s
+
+ .
+
+39 A.2 Proof of Theorem 2 
+
+We next prove the supervised end-to-end statement. The argument is conditional on the unlabeled pretraining sample, so that the empirical KPCA coordinate matrix bZ is fixed throughout the su-pervised analysis. The proof has three components: a fixed-embedding oracle inequality, a transfer bound from empirical KPCA coordinates to the true latent coordinates, and a ReLU approximation bound for the smooth relation surfaces. Write 
+
+D⋆ := [ −R⋆, R ⋆]d × [−R⋆, R ⋆]d.
+
+We take R⋆ large enough to contain the true latent coordinates and the transformed KPCA co-ordinates used below; equivalently, one may first apply a standard Sobolev extension to a fixed enlarged cube. This only changes constants depending on ( d, β, R ⋆, S β , B, κ A). Throughout this appendix, F abbreviates F bZ (Dnet , W, B ) after conditioning on the pretraining sample. 
+
+Lemma 7 (Fixed-embedding oracle inequality) . Condition on the pretraining sample and define the frozen class 
+
+F bZ := {x 7 → f ( bZ; x) : f ∈ F} , p := Pdim( F bZ ).
+
+Assume p ≤ n. Under Assumption 6, with conditional probability at least 1 − 10( p/en )p,
+
+∥ bf ( bZ; ·) − γ∥2 
+
+> P
+
+≤ 27 inf   
+
+> f∈F
+
+∥f ( bZ; ·) − γ∥2 
+
+> P
+
++ C(σ2 
+
+> m
+
++ B2) pn log en p + 6 δopt . (A.1) 
+
+Furthermore, for relation-wise ReLU heads with common depth Dnet and parameter budget W ,
+
+p ≲ KD net W log W. 
+
+Proof. After conditioning on the pretraining sample, bZ is deterministic and the only randomness in the supervised stage is the labeled sample. Therefore the usual bounded least-squares oracle inequality for a fixed function class applies to F bZ . In the notation used here, Theorem 1 of [Liu et al., 2024] gives (A.1) for a δopt -approximate ERM. The pseudo-dimension bound follows from the standard pseudo-dimension estimate for relation-wise ReLU networks, as in Lemma 3 of [Liu et al., 2024]; with K heads sharing architecture ( Dnet , W ), the contributions add over relations and give p ≲ KD net W log W .
+
+Lemma 8 (Lipschitz property of the smooth oracle surfaces) . Under Assumption 7, since β ≥ 1,each relation surface g⋆r is Lipschitz on its domain. More precisely, there exists L⋆ ≤ C(d)Sβ such that, for all (a, b ), (a′, b ′) in the latent domain, 
+
+|g⋆r (a, b ) − g⋆r (a′, b ′)| ≤ L⋆
+
+ ∥a − a′∥2 + ∥b − b′∥2
+
+.
+
+Proof. The Sobolev bound ∥g⋆r ∥W β, ∞ ≤ Sβ with β ≥ 1 implies that all first-order weak derivatives are essentially bounded by a constant depending only on d times Sβ . Since the latent domain is convex, the mean-value inequality gives 
+
+|g⋆r (u) − g⋆r (v)| ≤ sup 
+
+> z
+
+∥∇ g⋆r (z)∥2 ∥u − v∥2 ≤ C(d)Sβ ∥u − v∥2.
+
+Writing u = ( a, b ) and v = ( a′, b ′), and using ∥(a − a′, b − b′)∥2 ≤ ∥ a − a′∥2 + ∥b − b′∥2, gives the claimed bound. 40 Lemma 9 (KPCA coordinate alignment) . Let 
+
+Q ∈ arg min  
+
+> R∈O(d)
+
+∥ bZR − Zsig ∥F .
+
+Define the transformed empirical coordinates 
+
+eZ := bZQA −1 
+
+> ⋆
+
+.
+
+Then, under Assumption 8, 
+
+∆true := max   
+
+> j∈[N]
+
+∥ezj − z⋆j ∥2 ≤ Cκ A∥ sin Θ( bZ, Z sig )∥F .
+
+Proof. By the Procrustes/principal-angle inequality, min  
+
+> R∈O(d)
+
+∥ bZR − Zsig ∥F ≤ C∥ sin Θ( bZ, Z sig )∥F .
+
+Since Zsig = Z⋆A⋆, we have 
+
+eZ − Z⋆ = bZQA −1 
+
+> ⋆
+
+− Z⋆ = ( bZQ − Zsig )A−1 
+
+> ⋆
+
+.
+
+Therefore ∆true ≤ ∥ eZ − Z⋆∥F
+
+≤ ∥ bZQ − Zsig ∥F ∥A−1 
+
+> ⋆
+
+∥op 
+
+≤ Cκ A∥ sin Θ( bZ, Z sig )∥F .
+
+Lemma 10 (Transfer of the oracle bias to empirical KPCA coordinates) . Suppose there exists a relation-wise head collection f app ∈ F such that 
+
+sup 
+
+> r∈[K]
+
+sup 
+
+> (a,b )∈D ⋆
+
+|f app  
+
+> r
+
+(a, b ) − g⋆r (a, b )| ≤ a
+
+on D⋆. Then 
+
+inf   
+
+> f∈F
+
+∥f ( bZ; ·) − γ∥2 
+
+> P
+
+≤ 2a2 + 8 L2
+
+> ⋆
+
+∆2true . (A.2) 
+
+Consequently, 
+
+inf   
+
+> f∈F
+
+∥f ( bZ; ·) − γ∥2 
+
+> P
+
+≤ 2a2 + 16 L2
+
+> ⋆
+
+κ2
+
+> A
+
+∥ sin Θ( bZ, Z sig )∥2F. (A.3) 
+
+Proof. Let 
+
+A := QA −1 
+
+> ⋆
+
+, A⊤ = A−⊤  
+
+> ⋆
+
+Q⊤.
+
+For a relation-wise head f , define the linear reparameterization 
+
+f [A] 
+
+> r
+
+(a, b ) := fr(A⊤a, A ⊤b).
+
+For ReLU networks, precomposition with a fixed invertible linear map is absorbed into the first affine layer, so membership in the same head class is preserved up to the fixed architecture convention. Therefore ef app := ( f app )[QA −1  
+
+> ⋆]
+
+∈ F .
+
+41 By the convention on R⋆ stated at the beginning of the proof, the transformed points lie in the domain where the approximation and Lipschitz bounds are applied. In the finite entity-kernel setting, bZ ∈ RN ×d itself is the empirical entity-coordinate matrix. Let 
+
+eZ := bZQA −1 
+
+> ⋆
+
+,
+
+and let ezj denote the jth row of eZ. Since bZ⊤ bZ = Id, every row of bZ satisfies 
+
+∥bzj ∥2 = ∥e⊤ 
+
+> j
+
+bZ∥2 ≤ ∥ bZ∥op = 1 .
+
+Therefore, 
+
+∥ezj ∥2 = ∥e⊤ 
+
+> j
+
+bZQA −1 
+
+> ⋆
+
+∥2 ≤ ∥ e⊤ 
+
+> j
+
+bZ∥2∥Q∥op ∥A−1 
+
+> ⋆
+
+∥op ≤ κA.
+
+Thus it suffices to choose R⋆ large enough to contain both the true latent coordinates {z⋆j }Nj=1 and the transformed pretrained coordinates {ezj }Nj=1 .Fix a triple x = ( h, r, t ). By construction, 
+
+ef app ( bZ; x) = ef app  
+
+> r
+
+(bzh, bzt) = f app  
+
+> r
+
+(ezh, ezt),
+
+whereas 
+
+γ(h, r, t ) = g⋆r (z⋆h, z ⋆t ).
+
+Hence 
+
+| ef app ( bZ; x) − γ(x)| ≤ | f app  
+
+> r
+
+(ezh, ezt) − g⋆r (ezh, ezt)|
+
++ |g⋆r (ezh, ezt) − g⋆r (z⋆h, z ⋆t )|≤ a + L⋆
+
+ ∥ezh − z⋆h∥2 + ∥ezt − z⋆t ∥2
+
+
+
+≤ a + 2 L⋆∆true .
+
+Using ( a + b)2 ≤ 2a2 + 2 b2 and taking expectation over X ∼ P gives 
+
+∥ ef app ( bZ; ·) − γ∥2 
+
+> P
+
+≤ 2a2 + 8 L2
+
+> ⋆
+
+∆2true .
+
+Taking the infimum over f ∈ F proves (A.2). Substituting Lemma 9 proves (A.3). 
+
+Lemma 11 (Yarotsky approximation on the relation surfaces) . There is a constant Capp depending only on (d, β, R ⋆, S β , B ) such that, for all sufficiently large W with Dnet ≳ log W , there exists 
+
+f app ∈ F satisfying 
+
+sup 
+
+> r∈[K]
+
+sup 
+
+> (a,b )∈D ⋆
+
+|f app  
+
+> r
+
+(a, b ) − g⋆r (a, b )| ≤ Capp 
+
+ W
+
+log W
+
+−β/ (2 d)
+
+. (A.4) 
+
+Proof. Each g⋆r is defined on a 2 d-dimensional cube and satisfies a uniform W β, ∞ bound. After an affine rescaling of the input cube to [0 , 1] 2d and a harmless output normalization, Yarotsky’s ReLU approximation theorem [Yarotsky, 2017] gives, for every ε ∈ (0 , 1), a ReLU network with depth 
+
+O(log(1 /ε )) and number of weights O(ε−2d/β log(1 /ε )) whose uniform error is at most Cε . Applying this construction separately to the K relation surfaces and using the common architecture budget gives a relation-wise collection in F. If the class is defined with bounded outputs, the clipping map 
+
+u 7 → − B + σ(u + B) − σ(u − B) can be appended at constant cost. Choosing 
+
+εW ≍
+
+ W
+
+log W
+
+−β/ (2 d)
+
+ensures that the parameter budget is at most W and the required depth is O(log W ). This proves (A.4). 42 Completion of the end-to-end risk proof. Condition on the pretraining sample. By Lemma 7, with conditional probability at least 1 − 10( p/en )p,
+
+∥ bf ( bZ; ·) − γ∥2 
+
+> P
+
+≤ 27 inf   
+
+> f∈F
+
+∥f ( bZ; ·) − γ∥2 
+
+> P
+
++ C(σ2 
+
+> m
+
++ B2) pn log en p + 6 δopt .
+
+Apply Lemma 11 with 
+
+a = Capp 
+
+ W
+
+log W
+
+−β/ (2 d)
+
+.
+
+Then Lemma 10 gives inf   
+
+> f∈F
+
+∥f ( bZ; ·) − γ∥2 
+
+> P
+
+≤ C
+
+ W
+
+log W
+
+−β/d 
+
++ CL 2
+
+> ⋆
+
+κ2
+
+> A
+
+∥ sin Θ( bZ, Z sig )∥2F.
+
+Substituting this oracle-bias bound into the fixed-embedding oracle inequality yields 
+
+∥ bf ( bZ; ·) − γ∥2 
+
+> P
+
+≤ C
+
+" W
+
+log W
+
+−β/d 
+
++ L2
+
+> ⋆
+
+κ2
+
+> A
+
+∥ sin Θ( bZ, Z sig )∥2F
+
++ ( σ2 
+
+> m
+
++ B2) pn log en p + δopt 
+
+#
+
+.
+
+This is the conditional bound. For the relation-wise-head architecture, 
+
+p ≲ KD net W log W. 
+
+Combining this bound with Theorem 1 identifies the subspace-recovery contribution from the KPCA stage. The conditional supervised probability can then be combined with the pretraining event by the usual conditioning argument. Let 
+
+Dpt := {Es : s ∈ [S]}
+
+denote the unlabeled pretraining data, equivalently the collection {us,j : s ∈ [S], j ∈ [N ]}. Define the pretraining event 
+
+Ept := 
+
+n
+
+∥ sin Θ( bZ, Z sig )∥F ≤ apt 
+
+o
+
+,
+
+and let Esup ( bZ) denote the supervised event obtained from the fixed-representation theorem after conditioning on Dpt . Assume Pr( Ept ) ≥ 1 − δpt 
+
+and, for every realization of Dpt ,Pr 
+
+
+
+Esup ( bZ) | D pt 
+
+
+
+≥ 1 − δsup .
+
+Then Pr 
+
+
+
+Ept ∩ E sup ( bZ)
+
+
+
+= E
+
+h
+
+1Ept Pr 
+
+
+
+Esup ( bZ) | D pt 
+
+i 
+
+≥ (1 − δsup ) Pr( Ept )
+
+≥ (1 − δsup )(1 − δpt )
+
+≥ 1 − δsup − δpt .
+
+Thus the supervised fixed-representation event and the pretraining event hold simultaneously with probability at least 1 − δsup − δpt .
+
+43 B Additional Real-Data Experiments 
+
+This section gives the full real-data protocol and the complete result tables for WordNet and PrimeKG. The main text reports a compressed subset of these results, while the appendix records the dataset construction, split rules, negative sampling, relation-balanced objective, multi-view initialization, fixed-embedding results, trainable-embedding ablations, and the PrimeKG entity-wise diagnostic. 
+
+B.1 Real-data evaluation goals 
+
+The real-data experiments test the empirical implications of the two-stage framework. First, if entity-side information is aligned with the latent KG geometry, then pretrained entity coordinates should be much stronger than randomly initialized fixed coordinates for downstream relation-wise prediction. Second, when multiple side-information views have heterogeneous quality, multi-view aggregation can improve over a single view, and validation-selected weights can outperform uni-form weighting. WordNet and PrimeKG stress complementary regimes: WordNet is a lexical-semantic graph whose synset definitions provide clean textual side information, whereas PrimeKG is a biomedical graph with heterogeneous entity and relation types. 
+
+B.2 Datasets and preprocessing 
+
+WordNet. We preprocess WordNet and evaluate it as a synset-level knowledge graph. Start-ing from the WordNet pointer-relation data, we treat each retained synset as an entity and each observed pointer relation between synsets as a positive KG triple. The preprocessing consists of: (i) canonicalizing synset identifiers so that all triples refer to synset-level nodes; (ii) retain-ing semantic and lexical pointer relations as relation types; (iii) removing triples whose head or tail synset lacks the textual information needed for side-information encoding; (iv) constructing a text description for each retained synset from its synset type, representative lemma information, and gloss/definition; and (v) applying the relation-balanced train/validation/test split used in our experiments. These node descriptions are then encoded by general-purpose sentence encoders to produce the side-information views used by our representation methods. After preprocessing, the graph contains 116 ,566 entities, 33 relation types, and 373 ,330 observed positive triples. Table 2 gives the full split statistics and relation-family summary. 
+
+PrimeKG. PrimeKG is used as a large biomedical KG with entities such as drugs, diseases, phenotypes, proteins, exposures, molecular functions, cellular components, biological processes, and anatomical terms. Compared with WordNet, PrimeKG has more heterogeneous entity categories and substantially more observed triples. For each entity, we construct a textual description from its name, entity type, and available source metadata, and then encode this description using biomedical pretrained language models. After preprocessing, PrimeKG contains 90 ,067 entities, 30 relation types, and 8 ,100 ,498 observed positive triples. Table 3 reports the full split statistics and the hard-relation set used for the hard-enriched evaluation. PrimeKG uses the 60%/20%/20% protocol together with a hard-relation test subset selected by the initial fixed-embedding model’s per-relation MSE–variance loss criterion. 
+
+B.3 Evaluation protocol 
+
+WordNet edge split. For WordNet, observed positive triples are split into train, validation, and test subsets using a 60% /20% /20% edge-level split. All WordNet tables report overall test 44 Table 2: WordNet statistics after preprocessing and edge splitting with a 60% /20% /20% train/validation/test ratio. The dataset is constructed at the synset level, where nodes correspond to WordNet synsets and edges correspond to semantic or lexical relations derived from WordNet pointers. Quantity Count Description Entities 116 ,566 Total number of retained synset nodes Relation types 33 Number of retained base relation types Observed positive triples 373 ,330 Total number of synset-level positive triples be-fore splitting Train positive triples 223 ,998 Positive triples assigned to training Validation positive triples 74 ,666 Positive triples assigned to validation Test positive triples 74 ,666 Positive triples assigned to testing Node granularity – WordNet synsets used as graph entities Node text – Each node text is formed from synset type, rep-resentative lemma(s), and gloss/definition Major relation families – Hypernymy/hyponymy, meronymy/holonymy, antonymy, derivational relations, domain rela-tions, and other semantic or lexical WordNet pointer types Most frequent relations – hypernym , hyponym ,
+
+lexical derivationally related form ,
+
+similar to , member holonym ,
+
+member meronym , part holonym ,
+
+part meronym , instance hypernym ,
+
+instance hyponym 
+
+performance under this split. We do not define a WordNet hard-relation subset, because the hard-relation protocol is designed to stress biomedical heterogeneity in PrimeKG. 
+
+PrimeKG hard-enriched split. For PrimeKG, we use an edge-level split together with a hard-enriched test set. We first train an initial fixed-embedding model and compute a relation-level difficulty score from its per-relation training loss using the MSE–variance criterion. Relations with the largest difficulty scores are assigned to the hard group, and the remaining relations are assigned to the easy group. Easy relations follow the standard 60% /20% /20% train/validation/test split. Hard relations use the same validation ratio but an enlarged test ratio, producing 169 ,288 hard-test positive triples and 1 ,552 ,399 easy-test positive triples. The hard-relation test set is the primary PrimeKG stress test because it reduces the dominance of frequent or easier biomedical relations. 
+
+Negative sampling. Both datasets contain observed positive triples only. We construct a bal-anced binary link-prediction task by pairing each positive triple with one corrupted negative triple. For a positive triple ( h, r, t ), the negative triple is generated by replacing either the head or the tail while keeping the relation fixed. Whenever entity type information is available, the replace-ment entity is sampled from the same type as the corrupted endpoint. Type-matched corruption prevents the task from being solved through trivial type mismatch; this is particularly important for PrimeKG because many biomedical relations connect specific entity categories. 45 Table 3: PrimeKG statistics after preprocessing and hard-enriched splitting. Easy relations use a 60% /20% /20% train/validation/test split, while hard relations use the same validation ratio but an enlarged test ratio, yielding a test set enriched with difficult relation types.                          
+
+> Quantity Count Description Entities 90 ,067 Total number of retained entities Relation types 30 Number of retained base relations Observed positive triples 8,100 ,498 Total number of positive triples before splitting Train positive triples 4,758 ,721 Positive triples assigned to training Validation positive triples 1,620 ,090 Positive triples assigned to validation Test positive triples 1,721 ,687 Positive triples assigned to testing Hard-test positive triples 169 ,288 Test triples belonging to the hard-relation subset Easy-test positive triples 1,552 ,399 Test triples belonging to the easy-relation subset Hard relations 11 disease phenotype negative ,anatomy anatomy ,
+> disease disease ,exposure protein ,
+> molfunc molfunc ,cellcomp cellcomp ,
+> phenotype phenotype ,phenotype protein ,
+> exposure bioprocess ,bioprocess bioprocess ,
+> drug protein
+
+Validation usage. The validation split is used only for model selection and is never included in training or final test evaluation. For each downstream model, we select the reported checkpoint using relation-balanced AUC performance. For multi-view initialization, the validation set is also used to choose the aggregation weights among a fixed candidate set. Once the checkpoint and view weights are selected, all reported results are evaluated on the held-out test split. 
+
+Relation-balanced objective and metrics. Both graphs have skewed relation frequencies, so a uniformly averaged loss can be dominated by frequent relation types. We therefore use relation-balanced weighting during training and evaluation. Let Dr denote the examples with relation r in the relevant split, and let nr = |D r|. We assign relation weights 
+
+ωr = n−1
+
+> r
+
+P 
+
+> r′
+
+n−1
+
+> r′
+
+, (B.1) and optimize the weighted empirical objective 
+
+bL(θ) = X
+
+> (xi,y i)∈D train
+
+ωri ℓ{fθ(xi), y i}, (B.2) where xi = ( hi, r i, t i) and ℓ is the mean squared error used by the corresponding model. The same relation weights are used when aggregating validation and test metrics. We report AUROC, accuracy, and F1. Unless otherwise stated, results are averaged over 10 random seeds and shown as mean ± standard deviation. Detailed optimization and training details are provided in Table 4. 
+
+B.4 Ablation studies 
+
+Fixed versus trainable entity embeddings. Table 5 reports the WordNet ablation in which entity embeddings are allowed to update during supervised training. Making embeddings train-able substantially improves the random-initialization variant, from 0 .6052 to 0 .8260 AUROC, from 0.5398 to 0 .7350 accuracy, and from 0 .2791 to 0 .6559 F1. However, all trainable pretrained variants 46 Detail PrimeKG WordNet 
+
+Optimizer AdamW AdamW Learning rate 2 × 10 −3 2 × 10 −3
+
+Downstream KG batch size 1024 1024 LLM embedding batch size 32 32 Number of workers 8 8Epochs 40 50 Number of random seeds 10 10 Train/validation/test split Hard-enriched split Random edge split GPU workers/resources NVIDIA GeForce RTX 5080, 16,303 MiB memory NVIDIA GeForce RTX 5070, 12,227 MiB memory Driver/CUDA versions NVIDIA driver 595.58.03; CUDA 13.2 NVIDIA driver 595.58.03; CUDA 13.2 Approximate execution time About 15 minutes per seed About 5 minutes per seed Table 4: Experimental details. Table 5: WordNet trainable-embedding ablation under the edge split with relation-balanced train-ing and evaluation.                                                          
+
+> Method AUROC Accuracy F1
+> PNKG : random initialization 0.8260 ±0.0080 0.7350 ±0.0120 0.6559 ±0.0189
+> PNKG : single-view all-mpnet 0.8756 ±0.0063 0.7830 ±0.0092 0.7803 ±0.0141
+> PNKG : single-view MiniLM 0.8665 ±0.0061 0.7763 ±0.0081 0.7751 ±0.0087
+> PNKG : single-view BGE 0.8793 ±0.0067 0.7864 ±0.0081 0.7837 ±0.0111
+> PNKG : single-view E5 0.8747 ±0.0046 0.7832 ±0.0069 0.7832 ±0.0089
+> PNKG : multi-view weighted (uniform) 0.8831 ±0.0052 0.7894 ±0.0068 0.7892 ±0.0110
+
+are weaker than their fixed-embedding counterparts. For example, the multi-view model decreases from 0 .9508 to 0 .8831 AUROC, from 0 .8618 to 0 .7894 accuracy, and from 0 .8500 to 0 .7892 F1 when entity embeddings are made trainable. This suggests that on WordNet, the pretrained se-mantic coordinates are already well aligned with the target relations, and updating a large number of entity parameters can increase variance or cause representation drift away from a high-quality initialization. Table 6 reports the corresponding PrimeKG trainable-embedding ablation for the PNKG vari-ants. In contrast to WordNet, supervised refinement consistently improves the neural KG models on PrimeKG. On the overall PrimeKG test set, the selected-weight multi-view model improves from 0 .8574 to 0 .9007 AUROC, from 0 .7761 to 0 .8175 accuracy, and from 0 .7799 to 0 .8023 F1 when entity embeddings are made trainable. The random-initialization variant improves even more substantially, from 0 .6906 /0.6336 /0.5986 to 0 .8956 /0.8106 /0.7895 in AUROC/accuracy/F1. This indicates that PrimeKG is a large-data regime in which abundant supervised triples reduce the overfitting risk from the additional O(N d ) entity parameters and provide enough signal to adapt entity coordinates to KG-specific relational structure. On the hard-relation subset, selected-weight multi-view initialization remains the strongest neural initialization across all three metrics, reaching 0.8281 AUROC, 0 .7065 accuracy, and 0 .6215 F1. Overall, the trainable-embedding ablations reveal a data-dependent bias–variance tradeoff. When labeled triples are limited relative to the number of entities and relations, fixing pre-47 Table 6: PrimeKG trainable-embedding ablation for PNKG variants. The “Test set” column indicates whether metrics are computed on all test relations or only on the hard-relation subset.                                                                                                    
+
+> Method Test set AUROC Accuracy F1
+> PNKG : random initialization Overall 0.8956 ±0.0035 0.8106 ±0.0067 0.7895 ±0.0098 Hard 0.8247 ±0.0026 0.6994 ±0.0034 0.6050 ±0.0091
+> PNKG : single-view BioBERT Overall 0.8995 ±0.0040 0.8177 ±0.0068 0.8022 ±0.0133 Hard 0.8266 ±0.0041 0.7062 ±0.0204 0.6196 ±0.0521
+> PNKG : single-view PubMedBERT Overall 0.9002 ±0.0036 0.8167 ±0.0078 0.8006 ±0.0152 Hard 0.8255 ±0.0041 0.7046 ±0.0203 0.6168 ±0.0527
+> PNKG : single-view SciBERT Overall 0.8992 ±0.0047 0.8161 ±0.0078 0.7993 ±0.0147 Hard 0.8276 ±0.0044 0.7016 ±0.0224 0.6087 ±0.0586
+> PNKG : multi-view selected-weight Overall 0.9007 ±0.0027 0.8175 ±0.0061 0.8023 ±0.0133 Hard 0.8281 ±0.0034 0.7065 ±0.0220 0.6215 ±0.0562
+
+trained coordinates can preserve a strong semantic representation while avoiding the variance and representation-drift risk of estimating many entity-specific parameters. This explains the WordNet pattern. In contrast, PrimeKG has many more supervised triples, so trainable embeddings reduce relation-specific bias and improve the neural KG variants. Pretraining still helps in this regime, but its marginal benefit is smaller because even randomly initialized trainable embeddings can be substantially refined by supervised learning. 
+
+Semi-inductive entity-wise split. Table 7 reports an additional entity-wise split diagnostic. We use the same 60% /20% /20% proportions as in the random edge-split experiments, but apply the split at the entity level rather than the edge level. This setting is closer to a semi-inductive or cold-start regime because test triples involve held-out or weakly observed entities. Side-information pretraining becomes especially important in this setting because graph-only baselines have limited supervised edge evidence for such entities. On WordNet, the uniform multi-view initialization achieves 0 .8958 AUROC, 0 .7883 accuracy, and 0 .7500 F1. Compared with the best graph-only baseline in each metric, this improves AUROC by 0 .2826, accuracy by 0 .2722, and F1 by 0 .0761. On PrimeKG, the selected multi-view improves AUROC over the best graph-only baseline (0 .7450 vs. 0 .7083 for TransE), while the accuracy gain is modest and within the baseline’s variability (0 .6626 vs. 0 .6553 ± 0.0104 for DistMult); DistMult retains a clearly higher F1 (0 .7413 vs. 0 .6265). These results support the role of side information in semi-inductive generalization, though on PrimeKG the benefit is metric-dependent. 
+
+Takeaway. Across the real-data experiments, fixed pretrained coordinates are much stronger than random fixed coordinates, especially in the semi-inductive entity-wise diagnostics. Multi-view ag-gregation is useful but dataset-dependent: uniform weights suffice on WordNet, whereas PrimeKG benefits from validation-selected weights that emphasize PubMedBERT. Finally, trainability re-flects a bias–variance tradeoff. Frozen pretrained coordinates are preferable when semantic side information is already well aligned and labeled triples are relatively sparse, while PrimeKG’s larger supervised graph benefits from trainable adaptation, especially on the overall test set. 48 Table 7: Entity-wise split diagnostic. WordNet values are averaged over 10 seeds; the PrimeKG rows report the entity-split diagnostic values from the same protocol. 
+
+Dataset Method AUROC Accuracy F1 WordNet TransE 0.5123 ± 0.0053 0.5000 ± 0.0001 0.0001 ± 0.0000 WordNet DistMult 0.5090 ± 0.0253 0.5097 ± 0.0209 0.5444 ± 0.0448 WordNet ComplEx 0.5008 ± 0.0263 0.5084 ± 0.0212 0.5862 ± 0.0406 WordNet RotatE 0.6132 ± 0.0248 0.5161 ± 0.0085 0.6739 ± 0.0039 WordNet PNKG : random initialization 0.4923 ± 0.0132 0.4991 ± 0.0060 0.1581 ± 0.1151 WordNet PNKG : single-view all-mpnet 0.8839 ± 0.0206 0.7804 ± 0.0136 0.7404 ± 0.0229 WordNet PNKG : single-view MiniLM 0.8761 ± 0.0255 0.7698 ± 0.0261 0.7223 ± 0.0380 WordNet PNKG : single-view BGE 0.8931 ± 0.0189 0.7844 ± 0.0178 0.7464 ± 0.0265 WordNet PNKG : single-view E5 0.8818 ± 0.0197 0.7749 ± 0.0159 0.7285 ± 0.0231 WordNet PNKG : multi-view weighted (uniform) 0.8958 ± 0.0242 0.7883 ± 0.0167 0.7500 ± 0.0258 PrimeKG TransE 0.7083 ± 0.0185 0.5006 ± 0.0007 0.0053 ± 0.0048 PrimeKG DistMult 0.6921 ± 0.0079 0.6553 ± 0.0104 0.7413 ± 0.0091 PrimeKG ComplEx 0.6364 ± 0.0068 0.6105 ± 0.0052 0.7175 ± 0.0036 PrimeKG RotatE 0.5663 ± 0.0106 0.5037 ± 0.0051 0.6672 ± 0.0017 PrimeKG PNKG : random initialization 0.4984 ± 0.0079 0.4976 ± 0.0057 0.3042 ± 0.0579 PrimeKG PNKG : single-view PubMedBERT 0.7398 ± 0.0077 0.6575 ± 0.0071 0.6122 ± 0.0128 PrimeKG PNKG : single-view BioBERT 0.7050 ± 0.0114 0.6329 ± 0.0086 0.5931 ± 0.0141 PrimeKG PNKG : single-view SciBERT 0.7263 ± 0.0111 0.6491 ± 0.0082 0.6017 ± 0.0162 PrimeKG PNKG : multi-view weighted (uniform) 0.7389 ± 0.0063 0.6577 ± 0.0070 0.6137 ± 0.0175 PrimeKG PNKG : multi-view weighted (selected) 0.7450 ± 0.0079 0.6626 ± 0.0032 0.6265 ± 0.0151 
+
+49

@@ -1,0 +1,611 @@
+Title: What Can Latent World Models Know? Physical Parameter Identifiability in Multimodal Predictive Representations
+
+URL Source: https://arxiv.org/pdf/2607.27017v1
+
+Published Time: Thu, 30 Jul 2026 01:04:11 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+Preprint 
+
+# WHAT CAN LATENT WORLD MODELS KNOW ?PHYSICAL PARAMETER IDENTIFIABILITY IN MULTIMODAL PREDICTIVE REPRESENTATIONS 
+
+Kaizhen Tan 1,2, Xin Xu 2, Siru Tao 2, Hanzhe Hong 2, Yang Feng 3, Heqing Du 31New York University, New York, NY, USA 
+
+> 2
+
+Carnegie Mellon University, Pittsburgh, PA, USA 
+
+> 3
+
+Columbia University, New York, NY, USA 
+
+# ABSTRACT 
+
+A central premise of latent world models is that predicting the future forces a representation to internalize the physics of its environment. Which physical quan-tities does a trained latent actually contain, and what decides this? We answer with controlled interventions in P OKE WORLD , an interactive environment whose visu-ally identical objects hide mass, drag, and contact stiffness. A certificate-gated protocol first certifies each parameter as recoverable from raw observations, then measures whether it enters the latent, so a null result can be attributed to the ob-jective rather than to the environment. The resulting identifiability map has two organizing mechanisms and one frontier. Inputs limit what can be known, while prediction targets decide what is retained. Stiffness enters the latent only when touch is forecast (R 2 0.50 , against −0.02 when the same signal is merely fused into the input), and under single-step prediction a vision-only latent discards even perfectly visible object state. Drag marks the frontier. It carries a recoverabil-ity certificate of 0.89 yet plateaus near 0.13 under every deterministic prediction objective we test, while a supervised head on the same trunk reaches 0.45 . Pa-rameters whose readout is slow and ratio-type under the sensed coordinates fall outside what these objectives acquire. On RH20T, an input ×target factorial over scaling curves reproduces both mechanisms across two robots and 4,258 episodes. Every arm missing information or prediction pressure stays flat over a 5× data range, and only the full multimodal objective forecasts force beyond a persistence baseline, with held-out gains that grow with scale. Objective structure determines which physical parameters a latent acquires, and additional data improves only the parameters it already acquires. 
+
+# 1 INTRODUCTION 
+
+A central promise of world models is that predicting the future forces a representation to internalize the physics of the environment (LeCun, 2022; Hafner et al., 2023; Assran et al., 2025). Joint-Embedding Predictive Architectures (JEPAs) make this promise concrete: an encoder maps obser-vations to a latent state, a predictor rolls that state forward under actions, and both are trained by predicting future embeddings rather than pixels (Assran et al., 2023; Balestriero & LeCun, 2025; Maes et al., 2026). Such models now support visual understanding, prediction, and planning at scale (Assran et al., 2025; Zhou et al., 2024). Yet the field cannot currently answer a basic scientific question: which physical quantities does the latent state of such a model contain, and what determines whether a given quantity is acquired? The answer matters practically—a manipulation policy that cannot estimate contact stiffness will fail ex-actly where contact-rich robotics is hardest—and theoretically, because prediction objectives acquire only what their targets require of them (Cui et al., 2026). Existing evaluations probe trained models post hoc (Garrido et al., 2025; Motamed et al., 2025) or establish that touch carries otherwise-missing evidence (Ye et al., 2026; Singh et al., 2026), but no prior work connects sensor streams, objective structure, and data distribution to the identifiability of individual physical parameters under controlled interventions. 1arXiv:2607.27017v1 [cs.LG] 29 Jul 2026 Preprint prediction                      
+
+> only
+> + multi-
+> horizon
+> + cross-modal
+> targets
+> + fusion recoverability
+> certificate
+> object position
+> mass log m
+> stiffness log k
+> drag γ
+> 0.04 0.89 0.97 0.98 1.00
+> 0.04 0.15 0.26 0.29 0.86
+> -0.02 -0.01 0.46 0.50 0.87
+> 0.00 0.00 0.13 0.12 0.89 blind region
+
+Figure 1: The identifiability map. Linear-probe R 2 per physical quantity as the objective is cu-mulatively enriched (columns; P OKE WORLD , contact windows), against recoverability certificates (lower bounds from raw observations; nonlinear probes agree, App. C). Multi-horizon pressure re-covers visible state, cross-modal targets recover contact physics, and one certified-recoverable pa-rameter (boxed) is acquired by none—the frontier these objectives leave open. This paper charts that map. We build P OKE WORLD , a minimal interactive environment in which a force-controlled agent pokes objects whose hidden parameters—mass m, drag γ, contact stiffness 
+
+k—are resampled every episode and rendered identically : nothing about appearance reveals them. The three parameters deliberately span an observability spectrum ( γ chiefly visual, m cross-modal, k
+
+almost purely tactile), so which representation acquires which parameter is diagnostic of the learning dynamics. Every claim passes the certificate gate : a recurrent probe on raw observations must certify a parameter as recoverable before any statement about a model is made. The gate separates environment defects from representation defects—and instrument defects from both—licensing the causal language used throughout. On this substrate we train X-JEPA, a family of action-conditioned latent world models built on the heuristic-free LeJEPA/LeWM recipe (Balestriero & LeCun, 2025; Maes et al., 2026), factorially varying which modalities enter the input , which are prediction targets , and the horizon spectrum of prediction heads. Linear probes on the frozen predictor state, read against the recoverability certificates, measure what was learned. Four findings define the map, answering in turn what is recoverable, what the objective retains, and what stays systematically absent: 
+
+1. Target pressure is causal and modality-specific (§4.1). Contact stiffness enters the latent only when touch is a prediction target (R 2 0.40 –0.57 across seeds, regularization strengths, two architectures, and probe families)—not when touch is merely fused into the input ( −0.02 ), nor when an equally sized proprioception target substitutes for it ( −0.01 ). Mass rises monotonically with cross-modal pressure, and targets compose for object localization ( 0.58 vs. 0.17 /0.09 alone). 
+
+2. Vision-only latent world models sit in a lazy equilibrium (§4.2). With single-step predic-tion they discard even directly visible, perfectly predictable object state (position R 2 0.04 )— visible, predictable, ignorable . Two independent mechanisms break the degeneracy—cross-modal targets (→ 0.58 ) and multi-horizon action-conditioned heads ( → 0.89 )—and they compose ( 0.98 ); direct long-horizon heads also outpredict autoregressive composition at matched horizons ( 0.10 vs. 0.19 
+
+arena units; static 0.21 ). 
+
+3. The anti-collapse regularizer sets metric precision (§4.3). Sweeping the weight of SIGReg (the recipe’s sliced isotropic-Gaussian anti-collapse regularizer) over 60 × traces a monotone dose– response on every physical readout (stiffness 0.12 → 0.57 ; prediction error halves): distributional regularity trades against the latent’s metric precision, and low-intrinsic-dimension data wants an order-of-magnitude lighter regularization than image-scale defaults. 
+
+4. The map has a frontier (§4.5). Drag γ carries a recoverability certificate of R 2 0.89 yet resists every prediction-side mechanism we deploy—across linear probes, nonlinear probes, and a func-tional test of the model’s own glide predictions—plateauing near 0.13 . A supervised head on the same trunk reaches 0.45 with prediction quality unchanged, and a pixel-reconstruction variant is at least as blind: the failure sits with the deterministic prediction objectives we test, not with the environment or the probes. An attribute matrix with dose–response interventions then yields a two-regime picture: fast parameters are acquired through whatever computation their readout requires; 2Preprint slow parameters only up to their linear observational trace (a bias family swept over three signal levels tracks its linear certificate while its recurrent certificate stays near 0.95 ); and slow, ratio-type parameters, having no linear trace, are blind—immune even to a 30 × loss reweighting. Real-world parameters with this signature—viscosity, friction—are what contact-rich robotics needs; the fron-tier is a concrete target for the next generation of objectives. 
+
+Real-robot validation at scale (§5). On RH20T (Fang et al., 2023) across two embodiments ( 896 
+
+and 4,258 episodes), the map’s mechanisms transfer, evaluated on observables with held-out tasks throughout: the lazy equilibrium replicates verbatim; cross-modal targets improve dynamics pre-diction ( −29% rollout error) and contact anticipation (AUC 0.70 → 0.80 ); force is retained, and forecast beyond a persistence baseline, only when touch is both fused and forecast. Camera view-point acts as an observable selector , a two-view model taking the union. Most consequentially, a four-arm factorial (inputs × targets) run across within-embodiment scaling ( 800 –4,258 episodes, fixed compute, +50% -compute control) separates sensor observability, input fusion, and prediction pressure: every arm missing a factor is flat in scale —the camera-only arms never gain force infor-mation no view carries, and the fused-input arm without cross-modal targets discards the force it is given—while the full objective is near-ceiling from 800 episodes and converts additional scale into held-out-task gains. Scale cannot substitute for objective structure : multi-sensory pressure decides what can be learned, and only then does data decide how well. 
+
+Contributions. (1) P OKE WORLD and the certificate-gated identifiability protocol: a reusable methodology turning “what did the model learn?” into a controlled measurement. (2) The four-factor identifiability map—target causality, the lazy equilibrium and its escapes, the λ dose– response. (3) The frontier: a certificate-gated attribute-matrix characterization of what these objec-tives do not acquire, with objective-attribution controls. (4) Real-robot validation across two embod-iments, culminating in a four-arm factorial over scaling curves showing that objective structure—not data volume—decides what is learned, with distilled design rules. 
+
+# 2 RELATED WORK 
+
+Latent world models and JEPAs. Predicting future latent embeddings rather than observations un-derlies I-JEPA and V-JEPA (Assran et al., 2023; 2025), with action-conditioned variants supporting zero-shot planning (Assran et al., 2025; Zhou et al., 2024). LeJEPA replaces the stability heuristics of this line (EMA teachers, stop-gradients) with a single principled regularizer, SIGReg (Balestriero & LeCun, 2025), which LeWorldModel instantiates as a stable end-to-end pixel world model (Maes et al., 2026). We adopt this recipe as our substrate and contribute a systematic account of what its representations acquire—including a dose–response analysis that turns LeWM’s observation that SIGReg can struggle on low-complexity environments into an actionable tuning rule. Generative world models (Hafner et al., 2023) optimize reconstruction; we study the latent-predictive family and include a reconstruction-objective control on the same trunk (§4.5), which reproduces the blind region. 
+
+Touch and multimodal representation. Touch supplies physical evidence vision lacks: Sparsh learns self-supervised tactile representations (Higuera et al., 2024), TacGen shows contact-dependent properties become decodable only with a tactile channel (Ye et al., 2026), Touch-World builds a generative visuo-tactile policy stack (Zhou et al., 2026), Kepler-Encoder fuses vi-sion, proprioception, and force into a static multimodal embedding (Singh et al., 2026), and HPT scales proprioceptive–visual pretraining across embodiments (Wang et al., 2024). We study action-conditioned dynamics models and dissect the causal roles of inputs versus prediction targets—a distinction invisible to static-encoder studies, and one that reshapes how multimodal world mod-els should be trained. Auxiliary prediction objectives shaping representations have RL antecedents (Jaderberg et al., 2017; Gelada et al., 2019; Guo et al., 2020); our contribution is the input-versus-target dissection under recoverability certificates, not target-driven content per se. Estimating phys-ical parameters from video and interaction is likewise established (Wu et al., 2015; 2016; Xu et al., 2019): that line supplies the recoverability side, where we measure what prediction-trained latents acquire relative to it. 
+
+Physical understanding, probing, and identifiability. Benchmarks probe pretrained video mod-els for intuitive physics (Garrido et al., 2025) and physical principles (Motamed et al., 2025); we complement post-hoc evaluation with a controlled methodology whose roots are classical: param-3Preprint finger    
+
+> object: hidden m,γ,k
+> resampled per episode
+> 64×64 obs.
+
+PokeWorld  
+
+> touch  sub-step peak → k
+
+sensor streams                          
+
+> |v| glide decay → γ
+> 10 20 30
+> time step
+> proprio  impulse vs. Δ v→m
+> encoder
+> (V [+P,T])
+> predictor
+> (actions) ̂
+> zt+ Δ
+> touch, prop t+ Δ
+> Δ ∈ {1, 4, 16}
+> variant
+> P,T
+> inputs
+> touch
+> target
+> prop
+> target
+> V------
+> VF ✓----
+> VX p----✓
+> VX t--✓--
+> VX --✓✓
+> VFX ✓✓✓
+
+X-JEPA variants 
+
+Figure 2: POKE WORLD and the X-JEPA factorial. Left: a force-controlled finger interacts with an object whose mass, drag, and stiffness are resampled every episode and never visible (inset: the actual 64 ×64 observation). Middle: each sensor stream carries different physics—sub-step tactile peaks carry stiffness, glide decay carries drag, impulse–velocity coupling carries mass. Right: the variant family factorially varies which modalities enter the encoder and which are forecast; all variants share the trunk and the ∆ ∈ { 1, 4, 16 } heads. eter identifiability and the role of input excitation are foundational in system identification (Ljung, 1999), and our certificates and behavior-policy design transpose them to learned latents. From the probing literature we import its central caution—probe results reflect probe capacity as much as representation content (Hewitt & Liang, 2019; Belinkov, 2022)—which is why every claim here is triangulated across linear probes, nonlinear probes, recoverability certificates, and functional pre-diction tests. The lazy equilibrium is a world-model instance of shortcut learning (Geirhos et al., 2020): the objective is satisfiable while ignoring task-relevant structure. On the theory side, JEPA objectives have been characterized as low-rank factorization of action-conditioned co-occurrences (Cui et al., 2026), SIGReg as an active-inference free energy (Arnez & Gomez-Villa, 2026), and data-averaged prediction error as insufficient to bound planner suboptimality (You et al., 2026); the lazy equilibrium, the blind region, and the scale-flat degeneracy supply concrete phenomena for such theories to explain. 
+
+# 3 POKE WORLD AND THE CERTIFICATE -G ATED PROTOCOL 
+
+Environment. POKE WORLD (Fig. 2) is a 2D arena in which a force-controlled circular finger inter-acts with an object under semi-implicit Euler dynamics with Hertzian-style penalty contacts (under-damped, ζ=0 .25 , so that impact transients survive). Each episode resamples hidden parameters— mass m ∈ [0 .5, 3.0] , drag γ ∈ [0 .5, 4.0] (velocity decay rate, mass-independent by construction), contact stiffness k ∈ [500 , 6000] —while rendering is identical across episodes: nothing visual re-veals any parameter (Fig. 7). Observations comprise vision, proprioception, and 7-d touch with 
+
+sub-step statistics (mean, peak , and end-of-step force; contact duration): quasi-static push force is 
+
+k-independent, so stiffness lives only in impact transients—the band kHz force–torque sensors oc-cupy and frame-averaging destroys. Behavior policies mix pursuit, strike–retreat, and free launches so contacts, impacts, and glides all occur. Which representation acquires which parameter therefore reads out the learning dynamics, not the environment (Fig. 2, middle). 
+
+Recoverability certificates. Before any model is evaluated, each parameter must be certified re-coverable from raw observations (the full protocol is diagrammed in Fig. 6, appendix). A cer-tificate is a lower bound: the best R 2 achieved by any estimator we construct on raw observation windows—a supervised recurrent probe for all parameters ( 0.86 for log m, 0.87 for log k on con-tact windows) and, for drag, a physics-informed estimator reaching 0.89 where the recurrent probe reaches 0.70 . Certificates let a null model result be attributed to the objective rather than the envi-ronment or the instrument; the estimator hierarchy is itself informative (linear probes cannot express 4Preprint V VF VX p VX t VX VFX              
+
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> probe  R 2
+> certificate
+> touch as
+> target
+> stiffness log k
+> VVF VX pVX tVX VFX
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> certificate
+> mass log m
+> VVF VX pVX tVX VFX
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00 certificate
+> n/a
+> targets
+> compose
+> object position
+
+Figure 3: Targets, not inputs, decide hidden-parameter content. Probe R 2 by variant (gray: no touch target; orange: touch target, vision-only input; blue: full). Stiffness appears only under touch-as-target; position emerges from target composition . Dotted: certificates. the ratio m = F/a ; windowed MLPs cannot express temporally gated programs; the recurrent probe expresses both, App. A). On the model side we report linear (ridge) and nonlinear (early-stopped MLP) probes on the frozen predictor state, plus functional tests of the model’s own predictions (§4.5). Throughout, we separate recoverable from observations (certificates), decodable from the latent (probes), and functionally used by predictions (glide tests)—never classical structural identifi-ability (Ljung, 1999): every statement is operational, under the tested models, coordinates, horizons, and objectives. 
+
+X-JEPA family. All models share the stable LeJEPA/LeWM substrate: per-frame encoders, a causal transformer predictor conditioned on actions, prediction heads at horizons ∆ ∈ { 1, 4, 16 }, and the SIGReg anti-collapse objective (weight λ; architecture in App. B). Variants factorially vary 
+
+inputs (vision-only vs. all modalities) and targets (latent embeddings only; adding touch and/or proprioception forecasting), as tabulated in Fig. 2 (right). Models are ∼5M parameters and train in under an hour on a single laptop GPU—the entire study, including all real-robot experiments, was conducted on one RTX 4060. 
+
+Measurement. We probe the frozen predictor state with ridge regression for hidden parameters (on contact windows, where the certificates are established), object position and velocity, open-loop rollout and direct-∆ prediction against a static baseline, and, on real data, force readout, contact-onset anticipation (AUC), and held-out-task splits. All probe evaluations are episode-split: probe-fit and probe-test windows come from disjoint episode sets, and hidden parameters are resampled per episode. 
+
+# 4 THE IDENTIFIABILITY MAP 
+
+4.1 TARGETS , NOT INPUTS , DECIDE CONTENT 
+
+Figure 3 shows the central factorial at λ=0 .02 (two seeds; full table in Table 2, appendix). Three comparisons carry the causal weight: 
+
+(i) Touch as input does nothing for stiffness; touch as target does everything. VF fuses the full tactile stream into the encoder yet leaves k at chance; VX t sees no touch at input yet reaches 0.40 –0.43 by being asked to forecast touch: forecasting contact force under known actions requires the latent to carry stiffness—so it does. 
+
+(ii) The effect is modality-specific, not generic auxiliary pressure. VX p adds an equally sized proprioception-forecasting target and moves k not at all ( −0.01 ): what matters is not extra work, but that the extra work’s answer depends on the parameter. Early-stopped MLP probes reproduce every cell ( 0.40 /0.44 /0.51 for VX t/VX/VFX vs. ≤ 0.00 for V/VX p; App. C): the ordering is invariant to probe capacity. 
+
+(iii) Targets compose. Neither single target localizes the object (position 0.17 and 0.09 ), but together they reach 0.58 : the proprioception target pins the finger, the touch target pins the object relative to 
+
+the finger, and the composition pins the object. Adding fusion (VFX) completes the picture ( 0.98 
+
+5Preprint position, best m, k). The ordering reappears on real data (§5) and under a token-based encoder (dense aligned prediction lifts stiffness to 0.62 ): a property of the objective, not of one architecture. In precise form: inputs bound what can be known; prediction targets decide what is retained—for hidden parameters, fusion without forecasting contributes nothing. 4.2 THE LAZY EQUILIBRIUM AND ITS TWO ESCAPES 
+
+Under single-step prediction, the vision-only latent barely contains the object: position R 2 0.04 ,despite the object being large, visible, and trivially predictable. The equilibrium is self-consistent (a static object contributes almost no prediction loss, so the encoder drops it, so the jointly learned targets never demand it), and the anti-collapse regularizer cannot prevent it: it constrains the dis-tribution of embeddings, not their content . Two independent interventions break it: cross-modal targets restore position to 0.58 (Table 2); multi-horizon action-conditioned heads ( ∆ ∈ { 1, 4, 16 })restore it to 0.89 with no additional modality—over 16 steps the object’s future position is a large, action-dependent effect the objective can no longer ignore—and the two compose to 0.98 . The heads bring a second benefit: at matched horizon, the direct ∆=16 head decodes to 0.10 arena-unit error where autoregressive composition reaches 0.19 (static 0.21 )—long-horizon prediction is best asked for directly, not assembled from rolled short steps. The equilibrium is a property of the tested class—single-step global-embedding prediction with jointly learned targets: dense token prediction restores position by construction (our token variant: 0.98 ), and masked architectures with frozen targets report positional competence (Garrido et al., 2025)—the degeneracy names the failure mode those designs avoid. 4.3 THE REGULARIZER SETS METRIC PRECISION 
+
+Figure 8 (appendix) sweeps λ over 60 × (full table in App. C). All probes trace the same monotone curve: the isotropic-Gaussian pressure that guarantees non-collapse also spreads a low-dimensional physical manifold across the full latent, and the spreading acts as metric noise on fine-grained read-outs. Training remains stable across the entire range—the practical failure mode on low-intrinsic-dimension data is over-regularization, not collapse, and the fix is a one-knob adjustment. This turns a known qualitative concern (Maes et al., 2026) into a quantitative tuning rule, and doubles open-loop prediction quality for free. 4.4 INFORMATION , COMPUTATION , AND DATA COVERAGE 
+
+Information bandwidth is set at the sensor: with frame-averaged touch, stiffness is unrecoverable even from raw observations—averaging destroys the impact transients—while sub-step tactile statis-tics restore the certificate to 0.87 . Computation converts derivatives into measurements: a frozen self-supervised flow estimator as an input channel raises velocity readout from 0.79 to 0.88 on the same data and objective. Data coverage allocates the gradient mass acquisition runs on: the iden-tical VFX objective trained on contact-poor data collapses stiffness from 0.50 to 0.05 and mass to 
+
+0.11 —the objective can only identify parameters in regimes the data visits. With target pressure (§4.1), these complete the map’s four levers, each isolated by its own intervention. 4.5 THE FRONTIER : A CERTIFICATE -GATED BLIND REGION 
+
+Drag γ is where the map ends—and the certificate makes the ending informative: a physics-informed estimator certifies γ recoverable at 0.89 from state trajectories ( 0.43 from pixel-derived observables, App. C), a self-supervised flow sensor certifies the derivative information reaches the input, and multi-horizon heads certify long-horizon pressure. Yet across six families of prediction-side mech-anisms (App. C), γ plateaus near 0.13 under both probe families, and a functional test shows the model’s own glide predictions are beaten by an estimator that simply assumes the population-median 
+
+γ.
+
+The failure is the objective’s—and not one objective’s. A supervised system-identification head (same trunk, data, optimizer) lifts γ from 0.12 to 0.45 (mass and stiffness likewise, Table 1) with 16-step prediction unchanged: the substrate carries the parameter the moment the objective asks. And swapping latent targets for pixel-reconstruction targets (a deconv decoder on the same trunk—the 6Preprint Table 1: The attribute matrix: slow parameters are acquired only through their linear trace. 
+
+Linear and recurrent recoverability certificates (both empirical lower bounds) against the trained model’s readout; the bias family sweeps signal level at fixed additive structure. Controls on the same trunk: a supervised head reaches m/γ/k = 0 .72 /0.45 /0.91 ; a pixel-reconstruction objective is at least as blind on γ (≤ 0.08 ). Full version with nonlinear probes in App. C.                                    
+
+> Cell Parameter Linear cert. Recurrent cert. Model fast ×ratio stiffness k≈00.87 0.50 –0.62
+> slow ×linear bias b∈ ± 0.50.13 0.92 0.13
+> bias b∈ ± 1.50.51 0.96 0.39
+> bias b∈ ± 2.50.65 0.96 0.65
+> slow ×ratio, gated drag γ≈00.89 0.13
+> slow ×ratio, ungated gain g−0.01 0.69 −0.01
+
+core signal of generative world models) leaves γ at least as blind ( 0.03 –0.08 under both probe fami-lies) while replicating the touch-target mechanism (stiffness 0.61 ): blind region and target causality are shared by both deterministic point-prediction families we test, latent-target and pixel-target alike. The gap that remains between supervision ( 0.45 ) and certificate ( 0.89 ) marks what the current trunk and history length leave unrecovered even when the objective asks. Where exactly does acquisition stop? Four candidate attributes distinguish γ from the learned pa-rameters: slow (the parameter’s per-step effect on predicted observations lies below the per-channel noise floor—here, sub-pixel displacement and velocity increments below the readout residual; a 
+
+fast parameter exceeds it within single events), ratio-type (its readout from the model’s observation coordinates requires divisions rather than linear functionals—an attribute of the parameter–sensor pair, not of the parameter alone), temporally gated (informative only on glide segments), and low variance-share . An attribute matrix plus two dose–response interventions separates all four. Each cell carries two certificates where they differ—a linear probe on raw windows (the parameter’s linearly-accumulable trace) and a recurrent probe (its full window-recoverable content); both are empirical lower bounds, so every ratio compares the model to the best estimator we constructed (quoted fractions are therefore upper bounds on the truly acquired share). Table 1 carries the result. Stiffness, the fast parameter, is acquired at 0.6–0.7 of its certificate although no linear functional reads it: when the parameter is fast, the objective installs whatever computation its readout needs. The additive bias family, swept over three signal levels at fixed structure, decides what slowness does: its recurrent certificate stays near 0.95 at every level, yet the model tracks the linear certificate instead—a slow parameter is acquired only through its linear trace. The two slow ×ratio parameters, which have no linear trace, are not acquired at all. And variance-share is a throttle, not a key: a 30 × reallocation toward glide raises γ’s decodability only 0.08 → 0.27 while its functional test 
+
+worsens , and starving the contact-frame touch loss drives stiffness to zero, parameter-specifically, with data and certificates unchanged (App. C). This is the blind-region hypothesis , an empirical hypothesis about deterministic prediction objectives under these observation coordinates: fast pa-rameters are acquired as needed; slow parameters only through their linear trace; slow, ratio-type parameters not at all. (The certificate gate polices the matrix itself—it rejected three entangled constructions and forced the two-certificate protocol, App. C.) The hypothesis makes a falsifiable coordinate-level prediction: attributes belong to the parameter– sensor pair, so a coordinate in which drag’s trace becomes linear should unblind it. A log-speed input channel does exactly that ( ∆ log |v| = −γ ∆t on glide): γ’s linear certificate rises from ≈0 to 0.52 
+
+and the readout follows to 0.33 —0.64 of it, the fraction at which every linearly-traced parameter is acquired (App. C). Functional use in position forecasts, which still requires exponentiating the trace, does not follow. Mass calibrates a fifth lever, target precision : nominally fast ×ratio, it reads at 
+
+0.43 of its pixel certificate where stiffness reads at 0.64 –0.79 —its trace routes through the SIGReg-regularized latent target (the λ dose–response, §4.3, is its throttle), stiffness’s through raw-valued touch heads. A mechanism consistent with every cell is conditional-mean collapse : under squared-error point prediction, whatever a short history does not pin down is optimally answered by predicting under the population mean of the parameter, so nothing pressures an episode-specific belief. The ma-7Preprint trix reads naturally in these terms. Fast parameters sharpen the within-window posterior enough that the optimal prediction needs them. Additive parameters leak a linear trace into short-horizon states, and the model carries exactly that trace—it tracks its linear certificate across the bias sweep, never its recurrent one. Slow ×ratio parameters, whose effect on the loss within any prediction hori-zon stays below the noise floor, are answered by the prior mean—which also explains why a 30 ×
+
+loss reweighting raises decodability without creating functional use. A heteroscedastic Gaussian-NLL variant, which reweights gradients but leaves the mean-optimum unchanged, moves nothing (γ 0.10 vs. 0.12 )—as the mechanism requires; objectives whose optimum is not a conditional mean (episode-level latent variables, belief states) remain the discriminating test. Beyond the frontier, the same lens applies to viscosity, damping, and friction—with the caveat the definition already carries: the attributes belong to the parameter–sensor pair. Whether friction is fast or slow depends on the sensing (stick–slip transients are fast; smooth sliding is not), and charting exactly that is what the map and its certificates are for. 4.6 CONTROL UTILITY TRACKS STATE CONTENT 
+
+The map’s content transfers to closed-loop control, and control decomposes along the map’s rows: model-predictive control on the frozen latents ( same planner, budget, and environment for every representation; planner and episode in App. C.4, Fig. 10) reaches the goal region in 20% of episodes for the object-blind vision-only latent, 38 –44% when either target composition restores object state (VX t/VX p), and 57 % for the full model (random: 1% ; distance metric in App. C.4). Matched state content yields matched control whether or not the latent carries stiffness: the position-goal task discriminates state acquisition only, and force-limited manipulation is the natural next benchmark. 
+
+# 5 REAL -R OBOT DATA : THE MECHANISMS TRANSFER 
+
+Real scenes carry no ground-truth mass or stiffness, so this section tests whether the map’s mech-anisms —lazy equilibrium, target pressure, fusion, and their scaling behavior—govern real multi-modal streams. We port the recipe unchanged to RH20T (Fang et al., 2023): a KUKA and a Flexiv arm ( 896 and 4,258 episodes; corpus details App. C.5), 10 Hz, single 96 ×96 camera unless stated; episode-level splits, every headline metric also reported on entirely held-out tasks . Metrics are observation-space: force and end-effector position readout from the latent, open-loop and direct 16-step prediction vs. a static baseline, and contact-onset anticipation (AUC; definition in App. C.5). By the map’s own bandwidth lever, 10 Hz force sampling removes stiffness-type transients: the contact-parameter frontier is out of reach on this corpus by construction, and what transfers is the mechanism set. 
+
+The lazy equilibrium replicates; targets improve dynamics. Vision-only V loses end-effector state (position 0.76 IID, 0.48 OOD) and predicts worse than static (8.2 vs. 3.8 cm). Cross-modal targets (VX, VX t) cut rollout error up to 29% and lift anticipation AUC 0.70 → 0.80 —the toy’s target-pressure mechanism on real streams. 
+
+Fusion under target pressure delivers force; viewpoint selects observables. With force–torque fused and forecast as a target, VFX retains force ( 0.87 ; OOD 0.56 ), predicts 16 steps at 1.5 cm ( 2.5×
+
+better than static), and anticipates contact at AUC 0.86 . For camera-only latents the camera decides 
+
+what can be known: a far view carries pose but not contact, a close-up the reverse, and a two-view model takes the union (per-viewpoint numbers in App. C.5). Viewpoint is an observable selector ,multi-view its union operator. 
+
+The factorial at scale: scale cannot buy back what the objective refuses. Readout metrics on fused-input models can be input-driven, so we bound the trivial component first: an untrained copy of the fused architecture, probed identically, already reads force at 0.94 and position at 0.97 —random projections pass inputs through. Read against this bound, the 2×2 factorial (inputs × tar-gets), run across within-embodiment scaling ( 800 –4,258 episodes at fixed compute, with a +50% -compute control), assigns every metric its cause (Fig. 5; App. C). Position readout is passthrough: the fused arms sit at the bound at every scale, and the vision-only model sits at its own random-feature bound across the whole range—more compute does not change this. Force is where the factorial bites, and forecasting is its honest metric: current-force readout is passthrough-bounded, so the center panel asks the passthrough-immune question instead—predict force 0.4 s ahead. VFX 8Preprint approach onset t0 peak ‖ F‖ release                
+
+> 0
+> 20
+> ‖F‖ (N)  true ‖ F‖
+> latent readout
+> 0100 200 300 400 500
+> time step (10 Hz)
+> 0.0
+> 0.1
+> onset score
+> onset score (next 0.4 s) approach onset t0peak ‖ F‖release
+> 0
+> 20
+> ‖F‖ (N)  true ‖ F‖
+> latent readout
+> 0100 200 300 400 500 600
+> time step (10 Hz)
+> 0.0
+> 0.1
+> onset score
+> onset score (next 0.4 s)
+
+Figure 4: The latent reads contact physics on held-out real episodes, on both embodiments. 
+
+Top block: KUKA (53 s); bottom block: Flexiv (61 s). Each block shows camera frames at four interaction phases (native-resolution color, cropped to the manipulation zone and brightened for display—the model consumes 96 ×96 grayscale; orange overlay marks change since the previous panel; dotted connectors mark each frame’s time), force magnitude read from the frozen latent (blue) against the wrist sensor (black), and the trunk’s onset score, which rises ahead of contact ( t0, dashed; dotted: frame times)—anticipation, not detection. KUKA traces a full press-and-release arc; Flexiv resolves a train of sharp impulses peak by peak. beats the persistence baseline at every scale and its forecast improves with data ( 0.39 → 0.51 held-out)—the one metric where scale clearly pays (episode-bootstrap CIs, App. C); VX stays below persistence at every scale, because no amount of data supplies information the camera does not carry. The retention view (Fig. 11, appendix) confirms the factorial: VF, which receives force as an input, lands far below the untrained bound ( 0.15 vs. 0.91 )—training compresses away a sensed modality nothing pressures it to keep. The same signature runs through every learning metric: direct 16-step error improves monotonically as factors add ( 12 .0 → 2.3 cm; static 3.3), and camera-only anticipation is learned (AUC 0.62 → 0.77 ) while fused-model anticipation sits at its random-feature bound. Cross-robot differences that look like scale effects are the viewpoint lever again (App. C.5). 
+
+Objective structure decides what can be learned; data decides only how well. One model, two robots. A single configuration-blind VFX trained jointly on both corpora (no robot identifier) matches both specialists on position and anticipation and lifts the data-poor KUKA side’s force retention from 0.56 to 0.89 on held-out tasks: pooled cross-embodiment experience supplies the task coverage that stabilizes retention. Another robot’s experience is not interference but coverage. 9Preprint 800 2000 4258              
+
+> training episodes
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> dashed: held-out tasks
+> position readout R2
+> 800 2000 4258
+> training episodes
+> −0.2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> persistence baseline
+> future-force R2(held-out)
+> 800 2000 4258
+> training episodes
+> 2
+> 3
+> 5
+> 10
+> 16-step error (cm, log)
+> V (vision in, latent tgt) VX (+cross-modal targets) VF (fused in, latent tgt) VFX (fused + targets) static
+
+Figure 5: The four-arm factorial across scale. Flexiv, within-embodiment (identical robot, tasks, viewpoint, protocol; fixed compute; ×: +50% -compute control). Left: position readout—the fused-input arms sit at the passthrough bound regardless of targets (dashed: held-out tasks). Center: future-force forecasting on held-out tasks—the passthrough-immune force metric: VFX beats persistence at every scale and improves with data; VX never matches persistence. Right: direct 16-step error— the factors compose; V stays ∼4× worse than static at every scale. 
+
+# 6 DESIGN RULES 
+
+The map compresses into rules, each backed by a controlled comparison: 1. Every modality a prediction target —un-forecast fusion is discarded; forecast touch to know stiffness. 2. Sense at the physics’ bandwidth —sub-step tactile statistics, motion channels, derivative estimators. 3. Ask for the future at multiple horizons, directly —breaks the lazy equilibrium; beats autoregressive composition. 4. Tune anti-collapse to the data’s intrinsic dimension —an order of magnitude lighter on physical data. 5. Structure first, scale second —arms missing information or pressure stay flat across a 5×
+
+range. 
+
+# 7 LIMITATIONS 
+
+Both tested objectives are deterministic point predictions on one trunk. Objectives whose optimum is not a conditional mean, such as episode-level latent variables or belief states, are the discriminating test for the mechanism we propose, and they lie outside the family this study scopes; our Gaussian-NLL control is the closest variant we run, and it moves γ not at all. Blind-region statements are scoped accordingly. Second, the real-robot sections validate the map’s mechanisms on observables rather than parameter identifiability itself, since RH20T has no ground-truth object parameters; the direct test is a corpus of objects with known, varied physical parameters. Third, models are ∼5Mparameters on one GPU: what transfers is the protocol, not the ceiling. 
+
+# 8 CONCLUSION 
+
+We asked which physical quantities a prediction-trained latent contains. Certificates separate what the environment affords from what the objective acquires, and under that separation the answer is narrower than the premise we started from. A latent carries the parameters its prediction targets require of it, while a modality that is fused but never forecast contributes nothing. Additional data changes this in no arm that lacks either the information or the prediction pressure. One class of certified-recoverable parameters is acquired by none of the objectives we test, and naming that class precisely is what the environment and its certificates are for. 10 Preprint REPRODUCIBILITY STATEMENT 
+
+The environment, protocol, and all evaluation code run on one consumer GPU; exact configurations are in the appendix, and code will be released. 
+
+# REFERENCES 
+
+Fabio Arnez and Alexandra Gomez-Villa. The SIGReg objective as variational free energy: A theoretical active-inference account of JEPA world models. arXiv preprint arXiv:2607.13612 ,2026. Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. arXiv preprint arXiv:2301.08243 , 2023. Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba, Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khali-dov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nicolas Ballas. V-JEPA 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985 , 2025. Randall Balestriero and Yann LeCun. LeJEPA: Provable and scalable self-supervised learning with-out the heuristics. arXiv preprint arXiv:2511.08544 , 2025. Yonatan Belinkov. Probing classifiers: Promises, shortcomings, and advances. Computational Linguistics , 48(1):207–219, 2022. Jingyi Cui, Qi Zhang, Hongwei Wen, and Yisen Wang. A generalization theory for JEPA-based world models. arXiv preprint arXiv:2606.27014 , 2026. Hao-Shu Fang, Hongjie Fang, Zhenyu Tang, Jirong Liu, Chenxi Wang, Junbo Wang, Haoyi Zhu, and Cewu Lu. RH20T: A comprehensive robotic dataset for learning diverse skills in one-shot. 
+
+arXiv preprint arXiv:2307.00595 , 2023. Quentin Garrido, Nicolas Ballas, Mahmoud Assran, Adrien Bardes, Laurent Najman, Michael Rab-bat, Emmanuel Dupoux, and Yann LeCun. Intuitive physics understanding emerges from self-supervised pretraining on natural videos. arXiv preprint arXiv:2502.11831 , 2025. Robert Geirhos, J¨ orn-Henrik Jacobsen, Claudio Michaelis, Richard Zemel, Wieland Brendel, Matthias Bethge, and Felix A. Wichmann. Shortcut learning in deep neural networks. Nature Machine Intelligence , 2:665–673, 2020. Carles Gelada, Saurabh Kumar, Jacob Buckman, Ofir Nachum, and Marc G Bellemare. DeepMDP: Learning continuous latent space models for representation learning. In International Conference on Machine Learning , 2019. Zhaohan Daniel Guo, Bernardo Avila Pires, Bilal Piot, Jean-Bastien Grill, Florent Altch´ e, R´ emi Munos, and Mohammad Gheshlaghi Azar. Bootstrap latent-predictive representations for multi-task reinforcement learning. In International Conference on Machine Learning , 2020. Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104 , 2023. John Hewitt and Percy Liang. Designing and interpreting probes with control tasks. In Proceedings of EMNLP-IJCNLP , 2019. Carolina Higuera, Akash Sharma, Chaithanya Krishna Bodduluri, Taosha Fan, Patrick Lancaster, Mrinal Kalakrishnan, Michael Kaess, Byron Boots, Mike Lambeta, Tingfan Wu, and Mustafa Mukadam. Sparsh: Self-supervised touch representations for vision-based tactile sensing. arXiv preprint arXiv:2410.24090 , 2024. 11 Preprint Max Jaderberg, Volodymyr Mnih, Wojciech Marian Czarnecki, Tom Schaul, Joel Z Leibo, David Silver, and Koray Kavukcuoglu. Reinforcement learning with unsupervised auxiliary tasks. In 
+
+International Conference on Learning Representations , 2017. Yann LeCun. A path towards autonomous machine intelligence. Technical report, OpenReview, 2022. Lennart Ljung. System Identification: Theory for the User . Prentice Hall, 2nd edition, 1999. Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. LeWorld-Model: Stable end-to-end joint-embedding predictive architecture from pixels. arXiv preprint arXiv:2603.19312 , 2026. Saman Motamed, Laura Culp, Kevin Swersky, Priyank Jaini, and Robert Geirhos. Do generative video models understand physical principles? arXiv preprint arXiv:2501.09038 , 2025. Ishneet Sukhvinder Singh, Dhanoosh Pooranakumaran, Alex Nguyen, and Jia Qi Yip. Kepler-Encoder-v0.1: Towards a multimodal embedding model for robots. arXiv preprint arXiv:2607.13522 , 2026. Lirui Wang, Xinlei Chen, Jialiang Zhao, and Kaiming He. Scaling proprioceptive-visual learning with heterogeneous pre-trained transformers. arXiv preprint arXiv:2409.20537 , 2024. Jiajun Wu, Ilker Yildirim, Joseph J Lim, Bill Freeman, and Josh Tenenbaum. Galileo: Perceiving physical object properties by integrating a physics engine with deep learning. In Advances in Neural Information Processing Systems , 2015. Jiajun Wu, Joseph J Lim, Hongyi Zhang, Joshua B Tenenbaum, and William T Freeman. Physics 101: Learning physical object properties from unlabeled videos. In British Machine Vision Con-ference , 2016. Zhenjia Xu, Jiajun Wu, Andy Zeng, Joshua B Tenenbaum, and Shuran Song. DensePhysNet: Learn-ing dense physical object representations via multi-step dynamic interactions. In Robotics: Sci-ence and Systems , 2019. Wanghao Ye, Aarosh Das, Sihan Chen, Yiting Wang, Bowei Tian, Guoheng Sun, Shwai He, Zheyu Shen, Ziyao Wang, Yexiao He, Zhaoyi Liu, Meng Liu, Yuning Zhang, Meng Feng, Ziyi Wang, Yi-long Dai, Yifei Dong, Siyuan Peng, Zhenle Duan, Joshua Liu, Lang Xiong, and Ang Li. TacGen: Touch is a necessary dimension of physical-world representation – addressing tactile data scarcity with scalable vision-to-touch alignment and generation. arXiv preprint arXiv:2606.29173 , 2026. Hanzhe You, Yonggang Zhang, Maohao Ran, Zhiqin Yang, Zhenyuan Zhang, Wei Xue, Jun Song, Xinmei Tian, and Yike Guo. A control theory of predictability in latent world models. arXiv preprint arXiv:2607.10362 , 2026. Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. DINO-WM: World models on pre-trained visual features enable zero-shot planning. arXiv preprint arXiv:2411.04983 , 2024. Jianyi Zhou, Feiyang Hong, Yunhao Li, Yicheng Zhao, Yongjue Cen, Zirui Liu, Jiakang Huang, Zirui Chen, Ruiyang Zhang, Weizhuo Zhu, Xuhua Song, and Shuo Yang. TouchWorld: Apredictive and reactive tactile foundation model for dexterous manipulation. arXiv preprint arXiv:2607.07287 , 2026. 12 Preprint 
+
+# A ENVIRONMENT AND PROTOCOL DETAILS 
+
+Figure 6: The certificate-gated protocol. Every claim in the paper follows this path. Raw ob-servations must first certify a parameter as recoverable ( recoverable? ); input, target, and horizon interventions then train variants on identical data; and the frozen latent is read by probes ( decod-able? ) and by functional prediction and closed-loop control ( functionally used? ). Two testbeds instantiate it: P OKE WORLD , where the hidden parameters are known by construction, and RH20T, where only observables and held-out tasks are available. 
+
+Dynamics. Bodies follow semi-implicit Euler integration at dt=0 .05 with 20 substeps. The finger (mass 1, radius 0.06 ) is driven by a commanded force Fmax at, at ∈ [−1, 1] 2; the object (radius 0.09 )experiences drag force −γmv (so the velocity decay rate γ is mass-independent by construction), and finger–object contact follows a Hertzian penalty law Fc = k d 3/2 with normal damping at 
+
+ζ=0 .25 of critical, where d is the overlap. Underdamping matters: near-critical damping makes impact peaks damping-dominated and suppresses the stiffness signature that the tactile channel must carry. Parameters are sampled log-uniformly ( m ∈ [0 .5, 3] , k ∈ [500 , 6000] ) or uniformly ( γ ∈
+
+[0 .5, 4] ) per episode. 13 Preprint (a)          
+
+> γ= 0.5 γ= 4.0
+> (b)
+> m= 0.5 m= 3.0
+> (c)
+> k= 500 k= 6000
+
+Figure 7: Nothing in the rendering reveals a hidden parameter. Three matched pairs of P OKE -WORLD episodes. Within a pair the episodes start from an identical frame and are driven by an 
+
+identical action sequence; only one hidden parameter differs. Filled circles mark the start (object blue, finger gold), the hollow circle the object’s final position, the blue path its trajectory (light to dark with time), and the dotted path the finger. (a) drag: the low-drag object glides across the arena while the high-drag one stops almost immediately. (b) mass: the same strike sends the light object far and barely moves the heavy one. (c) stiffness: the impact transient differs, and with it the post-contact trajectory. Appearance is identical at every step—only the physics is not. 
+
+Sensors. Vision renders anti-aliased 64 ×64 grayscale; the model input adds a temporal-difference channel. Proprioception is finger position and velocity (4-d). Touch reports per-control-step sub-step statistics of the reaction force on the finger: mean force (2-d), peak magnitude, end-of-step force (2-d), contact duration fraction, and a contact flag (7-d total). Sensor noise σ=0 .02 is added to force channels. 
+
+Behavior policy. Episodes (64 steps) mix three modes with random switching—pursuit (sustained pushes), strike–retreat cycles (clean impacts followed by free glides), and Ornstein–Uhlenbeck drift—plus a fraction of episodes in which the object is launched with random velocity, so that contacts, impacts, and glides all appear in the marginal data distribution. 
+
+The oracle estimator. The oracle is a 2-layer GRU (width 96) over 16-step windows of raw ob-servations, trained directly on the parameter labels. Gates require contact-window R 2 of at least 
+
+0.4/0.4/0.25 for m/γ/k before any model result is interpreted. 
+
+Instrument hierarchy. Instrument choice is itself part of the protocol. A linear probe on raw win-dows cannot express the ratio m = F/a and scores near zero on all three parameters. A windowed 
+
+MLP recovers mass ( 0.45 ) but scores 0.0 on drag, even though a hand-written estimator (the median log velocity-ratio over glide frames) reaches 0.89 : drag is a temporally gated program that flat archi-tectures do not express. The recurrent oracle expresses both program classes and sets the certificates used throughout ( 0.86 /0.70 /0.87 ). Certificate estimators read trajectories of finger state (proprio-ception), touch, actions, and object state; object state is privileged relative to the pixel channel, and pixel-derived counterparts are reported in App. C. The same discipline applies on the model side: reported probes are ridge regressions, so every claimed acquisition is linearly available in the latent, and the functional glide test (App. C) separately checks whether the model’s own predictions use aparameter. 
+
+# B TRAINING DETAILS 
+
+Architecture. All models share per-frame encoders—a 4-stage CNN (channels 32 /64 /128 /256 ,stride 2) over the frame and temporal-difference channels, with small MLPs for proprioception and touch—fused and projected through a linear layer with BatchNorm . There is deliberately no trailing LayerNorm: a final LayerNorm constrains embeddings to a shell and blocks the isotropic-Gaussian target of SIGReg, reproducing the observation of Maes et al. (2026). The predictor is a 4-layer causal transformer (width 192, 8 heads, dropout 0.1) with zero-initialized AdaLN action conditioning. Prediction heads at ∆ ∈ { 1, 4, 16 } condition on the flattened intervening action window, and cross-modal forecasting heads (touch, proprioception) sit on the trunk where the variant specifies. The latent dimension is 128. 14 Preprint Table 2: Prediction targets decide representational content. Ridge R 2 from the frozen predictor state (contact windows; seeds s0/s 1; certificates in the last row). Stiffness enters the latent only 
+
+through touch-as-target; targets compose for localization.                                           
+
+> Variant Inputs Targets log klog mObj. pos. Vvision vision −0.02 /−0.02 0.15 /0.14 0.04
+> VF all vision −0.02 /−0.01 0.19 /0.21 —VX pvision +proprio −0.02 /−0.01 0.18 /0.18 0.09
+> VX tvision +touch 0.40 /0.43 0.26 /0.25 0.17
+> VX vision +both 0.46 /0.45 0.26 /0.28 0.58
+> VFX all all 0.50 /0.49 0.29 /0.31 0.98
+> Certificate raw obs. —0.87 0.86 ∼1
+
+Optimization. AdamW at learning rate 3×10 −4 with cosine decay and 500-step warmup, weight decay 0.05 , batches of 96–128 windows of 24 frames, 20k steps, bf16 autocast. SIGReg uses 1024 random directions with 17 integration knots, resampled every step. 
+
+Token-level SIGReg. For token-based variants, SIGReg is evaluated on 4096 subsampled token rows with 256 directions per step. Per-step resampling preserves coverage while cutting the regular-izer’s activation memory by two orders of magnitude—the change that makes token-level SIGReg practical at all. 
+
+Control variants. The reconstruction control replaces the latent targets with a shared deconvolu-tional decoder (four stride-2 upconvolutions from a 4×4 map, channels 256 /128 /64 /32 ) fed by per-horizon adapters (action-conditioned for ∆ > 1), decoding 8 uniformly subsampled positions per window and horizon; the touch and proprioception forecasting heads remain active, so only the visual latent target changes. SIGReg is omitted there, since pixel targets anchor the latent. The system-identification control adds a 2-layer head from the trunk to whitened (log m, γ, log k) at loss weight 0.5.
+
+Runtime. Toy models train in 30–45 minutes and real-data models in about 45 minutes on one RTX 4060 laptop GPU. 
+
+# C FULL RESULTS 
+
+This appendix expands every number cited in the main text into full tables, organized so that each subsection reads stand-alone: §C.1 covers the P OKE WORLD factorial, both probe families, and the regularizer sweep; §C.2 the attribute matrix, its constructions, and the two loss-share dose– responses; §C.3 the objective-attribution controls; §C.4 closed-loop planning; and §C.5 the complete real-robot results, including the untrained-encoder bounds. C.1 POKE WORLD : THE FACTORIAL , BOTH PROBE FAMILIES , AND THE REGULARIZER 
+
+Table 2 is the central input ×target factorial at the λ=0 .02 operating point, two seeds per variant, with the recoverability certificates in the last row. The ordering is robust in three directions. It is unchanged at λ=0 .1 and under a token-based encoder, where dense spatially aligned ∆=1 prediction lifts stiffness further, to 0.62 . Position probes for all multi-horizon variants lie in 0.95 –0.98 , and open-loop 8-step decoded error spans 0.062 –0.082 
+
+arena units against a static baseline of 0.109 . And the same ordering holds under nonlinear probes: early-stopped MLP readouts reproduce every cell, with γ at chance under both probe families. 15 Preprint 10 −2 10 −1      
+
+> SIGReg weight λ
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> probe  R 2
+> velocity
+> stiffness log k
+> mass log m
+> lighter regularization
+> 10 −2 10 −1
+> SIGReg weight λ
+> 0.10
+> 0.15
+> 0.20
+> 16-step error
+> static baseline
+> direct-16 error
+
+Figure 8: One knob, every readout. Lightening the anti-collapse weight λ monotonically sharpens every physical probe (left) and halves long-horizon prediction error against the static baseline (right); training is stable across the full 60 × range. Arrow: direction of lighter regularization. Table 3: Nonlinear probes reproduce the ordering. Early-stopped MLP readouts on the frozen predictor state (contact windows). Every cell matches the ridge ordering of Table 2, with γ at chance throughout. 
+
+MLP probe (contact windows) V VX p VX t VX VFX 
+
+log m 0.00 −0.01 0.20 0.21 0.26 
+
+γ 0.00 −0.01 0.06 0.05 0.06 log k −0.01 0.00 0.40 0.44 0.51 
+
+A note on the position column of Table 2: it reports the single-horizon operating point, where the lazy equilibrium is visible (§4.2); VF’s position under fused inputs is passthrough-dominated, so its informative version appears in the real-data factorial (§C.5). Table 4: The regularizer sweep behind Fig. 8. VFX, contact-window probes; 16-step direct error in arena units against a static baseline of 0.205 . Every readout sharpens monotonically as λ lightens. 
+
+λ 0.3 0.1 0.02 0.01 0.005 log k 0.12 0.24 0.50 0.54 0.57 log m 0.12 0.18 0.29 0.32 0.32 
+
+velocity 0.54 0.62 0.79 0.79 0.80 
+
+direct-16 error 0.128 0.111 0.099 0.096 0.095 
+
+Finally, the data-coverage intervention of §4.4: the identical VFX objective trained on 95%-glide data and evaluated on the standard probe distribution falls to log k 0.05 , log m 0.11 , position 0.87 ,velocity 0.58 , against 0.50 /0.29 /0.98 /0.79 with standard coverage—acquisition runs on the gradi-ent mass the data supplies. C.2 THE ATTRIBUTE MATRIX AND ITS DOSE –RESPONSES 
+
+The matrix asks which attributes of a physical parameter decide whether a prediction-trained latent acquires it. Each cell pairs a parameter with its recoverability certificate (the appropriate instrument per cell: GRU sequence probes for ratio-type parameters, linear and GRU probes for the linear cells, the physics-informed estimator for drag) and scores acquisition as model readout over certificate—a comparison to the best simple estimator, since certificates are lower bounds. 16 Preprint Table 5: The attribute matrix in full. Each cell pairs a parameter with its certificates and scores acquisition as model readout over certificate. The fast parameter is acquired beyond its linear trace; slow parameters only up to it.                                             
+
+> Cell Parameter Linear cert. Recurrent cert. Model vs. recurrent fast ×ratio stiffness k≈00.87 0.50 –0.62 0.6–0.7
+> slow ×linear, b∈ ± 0.5force bias 0.13 0.92 0.13 0.14
+> slow ×linear, b∈ ± 1.5force bias 0.51 0.96 0.39 0.41
+> slow ×linear, b∈ ± 2.5force bias 0.65 0.96 0.65 0.68
+> slow ×ratio, gated drag γ≈00.89 0.13 0.15
+> slow ×ratio, ungated actuation gain g−0.01 0.69 −0.01 0.0
+
+Down the bias family the model tracks its linear certificate and never its recurrent one, which stays near 0.95 at every signal level; the fast parameter alone is acquired beyond its linear trace. The two dose–responses below rule out variance-share as the missing explanation. 
+
+The coordinate test. Supplying a log-speed input channel (computed from the frozen flow sensor) linearizes glide decay. The linear γ certificate under this coordinate—ridge regression on log-speed sequences over glide windows ( 696 /351 fit/test)—is 0.52 , and the trained model’s glide-window readout rises from 0.08 to 0.33 (ridge; the MLP probe is unstable on this small subset), with stiffness, mass, and velocity unchanged. The functional glide test does not improve ( 0.114 against a median-γ
+
+reference of 0.054 ): the linear trace is acquired; its exponentiation into position forecasts is not. 
+
+Pixel-derived certificates. Replacing simulator object state with pixel-centroid estimates (finger disk masked using proprioception, 3-frame smoothing): the recurrent certificate reads m/γ/k =0.72 /0.43 /0.78 (state-based 0.86 /0.70 /0.87 ), and a centroid-based analytic γ estimator degrades to 0.05 —sub-pixel velocity precision is the binding constraint. Model readouts against pixel certifi-cates: stiffness 0.64 –0.79 , mass 0.43 , drag 0.30 .
+
+Constructing the cells. The slow ×linear cell required four constructions; the certificate gate re-jected the first three, each instructively: (i) a per-episode drift acceleration is unrecoverable from 16-step windows because it enters ˙v = ad − γv jointly with per-episode drag (certificate 0.03 ); (ii) fixing γ still fails a linear certificate because the drift is readable only on contact-free frames— temporal gating again; (iii) a multiplicative actuation gain is inherently ratio-type ( g = ∆ v/ (F a );certificate −0.00 ). The accepted construction is an additive per-episode force bias on the agent: 
+
+∆v = ( F a + b − cv ) d t is linear in (a, v, b ), ungated, and sub-pixel per step. Its linear certifi-cate is 0.13 ; the recurrent certificate ( 0.92 ) later exposed how loose that bound is, which is what motivated the two-certificate protocol and the three-level sweep in the table. The rejected actua-tion gain then serves as the slow ×ratio ×ungated cell in its own right: regenerated as a dedicated corpus ( g ∈ [0 .85 , 1.15] multiplying the commanded force), its linear certificate fails as designed (−0.013 ) while a GRU sequence certificate recovers it at 0.689 ; the trained model’s trunk reads it at 
+
+−0.011 (ridge) / −0.010 (MLP)—none of its recurrent certificate—in a run whose stiffness, mass, and position probes are at normal levels ( 0.34 /0.20 /0.96 ). 
+
+Dose–response 1: reweighting toward the blind parameter. Sampling zero-contact (glide) episodes at relative weights {1, 4, 16 , 64 } reallocates the expected loss mass of glide segments from 
+
+32% to 97% , with data, probe sets, and certificates unchanged. Linear decodability of γ creeps up-ward but never approaches its certificate ( 0.89 ); the functional glide test worsens ; and the acquired parameters pay the price. Table 6: Reweighting toward the blind parameter. As the glide loss share rises, γ’s decodability creeps upward, its functional test worsens , and the acquired parameters degrade.                         
+
+> glide loss share 32% 65% 88% 97%
+> γ(glide windows) 0.08 0.15 0.21 0.27
+> functional glide error (median-γref. 0.054 )0.098 0.108 0.116 0.136 log k0.42 0.34 0.20 0.10
+> velocity 0.85 0.79 0.70 0.65
+
+17 Preprint 0.0 0.2 0.4 0.6 0.8    
+
+> γreadout R2
+> multi-horizon heads
+> motion input channel
+> spatial tokens
+> motion-forecast targets
+> flow velocity sensor
+> glide-enriched data
+> Gaussian-NLL heads
+> loss reweighting ×30
+> log-speed coordinate
+> supervised system-ID
+> pixel-derived
+> certificate
+> state
+> certificate
+
+Figure 9: The γ intervention ledger. Best γ readout under every intervention deployed against drag, against the pixel-derived (dashed) and state-trajectory (dotted) certificates. Prediction-side mechanisms (gray) plateau; only a linearizing sensed coordinate (orange) and direct supervision (green) move it. 
+
+Dose–response 2: starving an acquired parameter. Scaling the contact-frame touch-loss weight down from its default drives stiffness to exactly zero, parameter-specifically—mass dips mildly and 
+
+γ does not move—again with data and certificates unchanged. Table 7: Starving an acquired parameter. Scaling the contact-frame touch-loss weight down drives stiffness to zero parameter-specifically, with data and certificates unchanged. 
+
+contact-frame touch weight 4 (default) 1 0.25 0log k 0.50 0.37 0.12 −0.005 log m 0.29 0.28 0.26 0.21 
+
+γ 0.12 0.14 0.13 0.14 
+
+Together: loss share is a continuous throttle on parameters the objective can acquire, and no amount of it unblinds the slow ×ratio conjunction. 
+
+The γ intervention ledger (Fig. 9). For completeness, every prediction-side mechanism deployed against drag, with its outcome: multi-horizon heads ( γ: 0.00 → 0.05 ), a motion input channel (→ 0.12 plateau), spatial tokens (no gain), magnitude-weighted motion-forecast targets (no gain), a frozen flow velocity sensor (velocity readout 0.79 → 0.88 ; the γ plateau unchanged), and glide-enriched data (no gain). The functional test evaluates the model’s own direct 16-step predictions on certified pure-glide windows against analytic references: an estimator that knows the true γ errs by 
+
+0.0002 , one that assumes the population-median γ by 0.049 , a static predictor by 0.144 ; the model sits above the median-γ reference at every loss share (Dose–response 1). γ-specific information is absent functionally , not merely linearly. C.3 OBJECTIVE -ATTRIBUTION CONTROLS 
+
+Both controls keep the VFX trunk, data, probes, and optimizer, and change only the objective. The supervised system-identification head shows the substrate carries every parameter the moment the objective asks for it; the reconstruction objective shows the blind region is not specific to latent targets, while the touch-target mechanism transfers. 18 Preprint Table 8: Objective-attribution controls. Same trunk, data, probes, and optimizer; only the objec-tive changes. Ridge readouts with early-stopped MLP in parentheses.                                                      
+
+> ridge (MLP), contact windows Objective log mγlog kposition velocity direct-16 VFX, latent targets 0.29 (0.26 )0.12 (0.06 )0.50 (0.50 )0.98 0.79 0.098
+> + system-ID head 0.72 (0.70 )0.45 (0.39 )0.91 (0.91 )0.98 0.78 0.101
+> VFX, Gaussian-NLL 0.31 (0.29 )0.10 (0.07 )0.49 (0.48 )1.00 0.88 0.143
+> V, reconstruction 0.16 (0.00 )0.08 (0.00 )−0.01 (−0.10 )0.75 0.47 —VFX, reconstruction 0.19 (0.19 )0.03 (−0.04 )0.61 (0.63 )0.95 0.64 —
+
+The reconstruction rows have no direct-16 entry because their latent prediction heads receive no gradient (App. B); the probes are the comparable quantity. The Gaussian-NLL row is the minimal belief-adjacent variant: heteroscedastic variance heads reweight gradients (velocity and position readouts improve) but leave the conditional-mean optimum—and the blind region—unchanged. 
+
+Composition probes. At the multi-horizon operating point, finger, object, and relative object– finger position probes saturate for every variant ( 0.96 –1.00 ): the composition effect of §4.1 belongs to the single-horizon regime of Table 2, where multi-horizon pressure is absent and object position differentiates ( 0.09 /0.17 /0.58 ). C.4 CLOSED -LOOP PLANNING 
+
+Push-to-goal with the same planner, budget, and environment for every representation (§4.6): CEM over smooth two-knot action programs, scored by the direct ∆=4 /16 heads, replanning every 4 steps; Fig. 10 contrasts two representations on one held-out episode. Deployment follows the map: smooth action candidates (forward heads respond faithfully where trained) and direct-∆ scoring, not composed rollouts (§4.2). Table 9: Closed-loop planning. Push-to-goal with an identical planner, budget, and environment for every representation: control tracks the state content of the latent.                
+
+> Controller random VVX tVX pVFX goal-region reach 1% 20% 38% 44% 57%
+> median distance improvement 0.00 0.02 0.15 0.18 0.24
+
+C.5 REAL -ROBOT RESULTS IN FULL 
+
+Three protocol notes apply throughout. Sensor streams are per-column clipped to robust ranges (0.1–99 .9 percentiles) before whitening. Contact-onset labels mark ∥F ∥ > 10 N within the next 4 steps; onset base rates differ across configurations ( 2.75% on cfg7, 0.64% on cfg1), so AUC values compare within, not across, configurations. Every IID/OOD pair is a probe-episode / held-out-task split. 
+
+The pilot configuration (KUKA, cfg7). Far camera; 896 episodes, 56 tasks, static baseline 3.8 cm. Table 10: KUKA (cfg7): all four variants. Readouts, 16-step prediction, and contact anticipation on the pilot configuration.                                            
+
+> force (IID/OOD) position (IID/OOD) 16-step (cm) AUC (IID/OOD) V−0.05 /−0.49 0.76 /0.48 8.20.70 /0.54
+> VX −0.02 /−0.70 0.75 /0.50 5.80.77 /0.69
+> VX t−0.04 /−0.61 0.77 /0.46 6.20.80 /0.72
+> VFX 0.87 /0.56 0.98 /0.98 1.50.86 /0.70
+
+19 Preprint ×
+
+> goal
+> object start
+> vision-only latent
+
+# ✓
+
+> fused + targets
+
+0 20 40 60 
+
+control step 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> object–goal distance  vision-only
+> fused + targets
+> goal region
+> distance to goal
+
+Figure 10: The same task on two frozen latents. One held-out episode, one planner, one budget; only the representation differs. Object path colored by time, finger path dotted, hollow circle the object’s start, shaded disc the goal region. Left: the object-blind vision-only latent ( ×) — the planner never reaches the object, and the distance never moves off its initial 0.55 . Center: the full model ( ✓) maneuvers the finger to the push side, then drives the object through the goal region. Right: both episodes as object–goal distance. 
+
+Viewpoint study (cfg7). Rows report the camera-only quantities at each viewpoint: force from VX, position from the best camera-only variant at that viewpoint. VFX is stable across all three ( 0.98 
+
+position, 0.84 –0.90 force). Table 11: Viewpoint selects observables (cfg7). A far view carries pose, a close-up carries contact cues, and two views take their union. 
+
+camera camera-only force camera-only position (IID/OOD) 16-step (cm) far view −0.02 0.76 / 0.48 5.8
+
+close-up +0 .10 0.48 / 0.17 —two views 0.08 0.81 / 0.60 5.0
+
+Scaling within one embodiment (Flexiv, cfg1). The numbers behind Fig. 5; static baseline 3.3 cm. At full scale the +50% -compute control leaves V’s position at 0.16 , and V’s open-loop 16-step rollout is 15 .7 cm. Table 12: The four-arm factorial across scale (Flexiv, cfg1). Every arm missing information or prediction pressure is flat in scale; only the full objective converts data into held-out gains. 
+
+arm episodes force IID force OOD pos. IID pos. OOD 16-step (cm) AUC OOD V 800 −0.07 −0.32 0.18 −0.06 11 .7 0.75 
+
+2000 −0.05 −0.35 0.14 0.04 12 .5 0.70 
+
+4258 −0.06 −0.30 0.23 0.02 12 .0 0.62 
+
+VX 800 −0.03 −0.31 0.33 0.30 10 .0 0.76 
+
+2000 −0.03 −0.26 0.30 0.22 10 .2 0.73 
+
+4258 −0.04 −0.27 0.34 0.24 10 .4 0.77 
+
+VF 800 0.15 −0.16 0.95 0.95 2.9 0.78 
+
+2000 0.15 −0.19 0.95 0.96 2.8 0.74 
+
+4258 0.15 −0.06 0.96 0.96 2.7 0.85 
+
+VFX 800 0.90 0.86 0.96 0.96 2.2 0.88 
+
+2000 0.91 0.85 0.96 0.97 2.5 0.88 
+
+4258 0.92 0.89 0.97 0.97 2.3 0.89 
+
+20 Preprint 800 2000 4258 
+
+training episodes  
+
+> −0.25
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00 untrained encoder (passthrough bound)
+> V (vision in, latent tgt)
+> VX (+cross-modal targets)
+> VF (fused in, latent tgt)
+> VFX (fused + targets)
+
+Figure 11: Current-force readout is passthrough-bounded. Held-out force readout of the four arms against the untrained-encoder bound (dotted): VX lacks the information, VF destroys it, VFX saturates the bound—which is why the main figure reports force forecasting instead. 
+
+Cross-robot differences are a viewpoint effect. The apparent V degradation across robots is the viewpoint effect of Table 11, not a scale effect. Table 13: Cross-embodiment comparison. The two-point contrast that motivated the within-embodiment scaling curves. 
+
+V (vision-only) VFX (multimodal) cfg7 cfg1 ( 5×) cfg7 cfg1 ( 5×)Position readout (IID) 0.76 0.23 0.98 0.97 
+
+Position readout (OOD) 0.48 0.02 0.98 0.97 
+
+Force readout (OOD) — — 0.56 0.89 
+
+Contact anticipation AUC (OOD) 0.54 0.62 0.70 0.89 
+
+16-step prediction (IID, cm) 8.2 15 .7 1.5 2.2
+
+static baseline (cm) 3.8 3.3 3.8 3.3
+
+Untrained-encoder bounds. Random weights, identical probe protocol: frame-level readout of fused inputs is passthrough, and prediction is not. Figure 11 plots the four arms’ current-force readout against this bound—the retention view of the factorial whose learning view (forecasting) appears in Fig. 5. Table 14: Untrained-encoder bounds. Random weights, identical probe protocol: frame-level readout of fused inputs is passthrough, and prediction is not. 
+
+architecture force (IID/OOD) position (IID/OOD) 16-step AUC (IID/OOD) VFX, untrained 0.94 / 0.91 0.97 / 0.98 23 m 0.87 / 0.88 
+
+V, untrained −0.01 / −0.16 0.21 / 0.13 185 m 0.72 / 0.51 
+
+Future-force forecasting. R2 of predicted force at t+∆ (IID/OOD) against a persistence baseline that repeats the last observed force. Forecasting is the passthrough-immune force metric: VFX doubles the persistence baseline at 0.4 s while camera-only VX cannot match it. 21 Preprint Table 15: Future-force forecasting. R2 of predicted force at t+∆ against a persistence baseline that repeats the last observed force—the passthrough-immune force metric.                        
+
+> ∆=1 (0.1s) ∆=4 (0.4s) VFX 0.72 /0.68 0.47 /0.51
+> VX 0.18 /−0.07 0.15 /−0.05
+> persistence 0.65 /0.61 0.24 /0.31
+
+Across the scaling arms, VFX’s held-out ∆=4 forecast rises 0.39 → 0.50 → 0.51 
+
+(800 /2,000 /4,258 episodes) while VX sits at −0.05 / − 0.11 / − 0.05 : the center panel of Fig. 5 in numbers. Paired episode-bootstrap 95% CIs of the model −persistence difference exclude zero at every scale for VFX ( [+0 .01 , +0 .17] at 800 ; [+0 .14 , +0 .28] at 4,258 ) and are strictly negative for VX ( [−0.55 , −0.15] ), so neither the advantage nor its growth with scale is a task-composition artifact. 22

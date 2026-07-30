@@ -1,0 +1,474 @@
+Title: XMix: Combating Extremely Noisy Labels via Local Smoothness in Self-Supervised Feature Space
+
+URL Source: https://arxiv.org/pdf/2607.23865v1
+
+Published Time: Tue, 28 Jul 2026 01:42:39 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# XMix: Combating Extremely Noisy Labels via Local Smoothness in Self-Supervised Feature Space 
+
+## Chengqi Li Yangdi Lu Zhihao Shi Wenbo He Department of Computing and Software, McMaster University Hamilton, ON, Canada Chamseddine Talhi Nadjia Kara Département de génie logiciel et TI, École de Technologie Supérieure Montreal, QC, Canada 
+
+## Abstract 
+
+Supervised deep learning models rely on large, accurately labeled datasets, yet noisy annotations are often unavoid-able and can severely degrade performance under high noise levels. Recent state-of-the-art methods tackle this by using sample selection strategies that exploit the memoriza-tion effect to filter out clean data for semi-supervised learn-ing. However, these methods struggle with extreme noise, class imbalance, and require careful tuning or prior noise knowledge. To address these limitations, we propose XMix, a novel framework that leverages local smoothness in the self-supervised feature space to systematically enhance all stages of the sample selection process, without dependence on potentially corrupted labels. First, XMix estimates the noise rate using maximum likelihood among self-supervised feature neighbors. Second, these neighbors then help iden-tify additional clean samples and ensure balanced selection across classes during sample selection. Finally, in the semi-supervised learning phase, XMix uses neighboring samples to generate more reliable pseudo-labels. Our empirical results show that XMix substantially outperforms existing methods in extremely noisy environments and maintains su-perior performance in standard LNL benchmarks. 
+
+Code: https://github.com/steveli88/XMix 
+
+## 1. Introduction 
+
+The availability of substantial amounts of precisely an-notated data is crucial for the performance of supervised deep learning models [7]. However, annotation errors are unavoidable due to the intrinsic limitations of both hu-man annotators [40] and automatic annotation systems [27]. Learning with Noisy Labels (LNL), initially formalized by Natarajan et al. [28], has emerged as an active area fo-
+
+(a) (b) 
+
+Figure 1. (a) Expanding clean sample selection via local smooth-ness in the self-supervised feature space. The red star denotes a clean sample initially selected by the low-loss criterion, while blue stars indicate additional clean samples identified. (b) Selected samples for each class (DivideMix vs XMix) on the CIFAR-10 dataset with 90% symmetric label noise. TP and FP represent true and false clean samples, displayed in light and dark shades, re-spectively. 
+
+cused on mitigating the negative effects of corrupted labels on deep image classification. Current LNL methods broadly fall into two categories: loss correction [12, 21, 31, 37, 41] and sample selection [11, 19, 30, 35, 38]. Loss correction methods estimate a noise transition matrix that adjusts the loss function to ac-count for mislabeled data. While conceptually appealing, these methods become unreliable when facing datasets with many classes or high noise levels, where estimating an ac-curate transition matrix is particularly challenging. In con-trast, sample selection methods use a low-loss criterion [11] based on the memorization effect [42], treating low-loss samples as labeled and the rest as unlabeled during the sub-sequent semi-supervised learning phase [2, 4]. Despite their empirical success and flexibility, existing sample selection 1arXiv:2607.23865v1 [cs.LG] 26 Jul 2026 Dataset CIFAR-10 CIFAR-100 Method\Noise rate 92% 95% 98% 92% 95% DivideMix [19] 57.6% 51.3% 17.2% 12.6% 7.7% UNICON [15] 87.6% 80.8% 50.6% 32.1% 19.1% CrossSplit [16] 80.4% 72.0% 31.3% 46.3% 30.0% ProMix [38] 79.7% 55.1% 42.0% 29.9% 8.5% PLReMix [24] 85.1% 79.3% 40.4% 40.7% 25.7% XMix (DivideMix+) 90.4% 85.2% 41.4% 28.5% 17.3% XMix (ProMix+) 93.9% 92.7% 56.5% 64.1% 31.4%  
+
+> Table 1. Classification accuracies on CIFAR-10 and CIFAR-100 under extreme label noise. The "+" sign following a method name means the method is enhanced with both balanced & expanded selection and nearest neighbor pseudo-labeling. The best results are in bold .
+
+approaches face notable limitations. They often struggle in scenarios with severe label noise, fail to identify a suf-ficiently large clean subset, and can introduce class imbal-ance within the selected samples. Moreover, these meth-ods typically require careful hyperparameter tuning or prior knowledge of the underlying noise distribution to remain effective. Typically, sample selection methods [19, 38] start with a warm-up phase where a neural network is trained on images and their noisy labels for a few epochs. Afterward, samples whose predictions align closely with their labels are treated as clean, leveraging the memorization effect [42]. How-ever, these methods rely on the joint distribution of images and noisy labels, often neglecting rich, noise-agnostic in-formation intrinsic to the images themselves. For instance, objects sharing similar colors or structures are more likely to belong to the same class, providing valuable prior infor-mation that could further enhance sample selection and im-prove resilience to severe noise. Building on the smoothness assumption [34] that sam-ples close to each other in feature space are likely to share the same label, we first estimate the class-wise noise rate within these local feature neighborhoods using maximum likelihood estimation. This estimated noise rate guides hy-perparameter selection for the baseline sample selection model, making it adaptable to varying noise levels with-out requiring prior knowledge of the noise. To further im-prove clean sample identification, we expand the clean set by including samples that share the same observed label as low-loss samples within the same neighbor cluster. This ap-proach not only introduces additional clean samples under high noise when semi-supervised learning methods struggle to converge with insufficient clean samples, but also helps balance the selected samples across classes by recovering more underrepresented examples from a broader neighbor-hood. Finally, during the semi-supervised learning phase, we leverage these feature neighbors to generate more accu-rate pseudo-labels for the unlabeled data, further improving overall performance. In summary, our major contributions are as follows: • Class-wise noise rate estimation: XMix estimates the class-wise noise rate within feature-space neighborhoods using maximum likelihood, enabling the model to au-tomatically adjust hyperparameters without prior knowl-edge of the noise level. • Balanced and expanded sample selection: By lever-aging feature-space neighbors, XMix expands the clean sample set beyond standard low-loss selection, recover-ing more clean samples under extreme noise and mitigat-ing class imbalance in the selected data. • Nearest neighbor pseudo-labeling: XMix uses neigh-bor information to generate more reliable pseudo-labels during semi-supervised learning, improving robustness in highly noisy scenarios. • Empirical validation: Experiments show that XMix consistently boosts the performance of sample selection baselines across multiple LNL benchmarks, achieving particularly large improvements under severe label noise. 
+
+## 2. Related Work 
+
+Early research in LNL focused on achieving an unbiased estimation of clean sample losses using loss correction [26, 31, 39]. These methods include robust variants of cross-entropy (CE) loss, such as information-theoretic loss [39], and loss normalization [26]. Another critical aspect of loss correction involves estimating the noise transition ma-trix [21, 31, 37], which allows for explicit correction of the loss function using the inverted matrix. While these loss correction methods are effective under moderate noise lev-els, their reliability declines as the noise level increases, be-cause estimations of clean sample losses become less accu-rate. Recent sample selection methods [11, 19, 35, 38] fo-cus on isolating clean samples. Early methods [11, 35] established a two-network framework, wherein one net-work is trained on clean samples selected by the other net-work according to the small loss criterion. Other studies [19, 30, 38] further incorporate semi-supervised learning techniques [4, 32], treating the selected clean samples as la-beled data and the remaining ones as unlabeled data. Hybrid sample selection methods, like ProMix [38], UNICON [15], and CrossSplit [16], progressively refine the process of sam-ple selection by incorporating pseudo-labeling and robust loss functions, thereby boosting the overall performance of the models. Sample selection methods have emerged as a dominant paradigm for LNL due to their robustness and flexibility. However, they require prior knowledge of the noise level for tuning, often lead to class-imbalanced selec-tion as some classes are easier to learn, and struggle to pro-vide sufficient clean samples for semi-supervised learning 2Dataset CIFAR-10 CIFAR-100 Method\Noise rate 20% 50% 80% 90% 40% Asym. 20% 50% 80% 90% 40% Asym. DivideMix [19] 96.1% 94.6% 93.2% 76.0% 91.7% 77.3% 74.6% 60.2% 31.5% 55.1% SELC [25] 95.0% - 78.6% - 92.9% 76.4% - 64.5% - 73.6% UNICON [15] 96.0% 95.6% 93.9% 90.8% 94.1% 78.9% 77.6% 63.9% 44.8% 74.8% CrossSplit [16] 96.9% 96.3% 95.4% 91.3% 96.0% 79.9% 75.7% 64.6% 52.4% 76.8% 
+
+RankMatch [44] 96.5% 95.6% 94.5% 92.6% 94.7% 79.5% 77.9% 67.6% 50.6% -ProMix [38] 97.7% 97.4% 95.5% 93.4% 96.6% 82.6% 80.1% 69.4% 42.9% 76.2% CLIPCleaner [9] 95.9% 95.7% 95.0% 94.2% 94.9% 78.2% 78.2% 69.7% 63.1% -L2B [45] 96.7% 95.6% 94.8% 94.4% 94.0% 80.1% 78.1% 69.6% 60.7% -PLReMix [24] 96.6% 95.7% 95.1% 92.7% 95.1% 78.0% 77.8% 68.8% 50.2% 64.9% XMix (DivideMix+) 96.4% 96.1% 94.4% 91.2% 94.6% 79.6% 76.1% 60.9% 38.8% 64.2% XMix (ProMix+) 97.8% 97.4% 96.3% 95.9% 96.6% 82.6% 80.3% 75.2% 68.0% 76.5%  
+
+> Table 2. Classification accuracies on CIFAR-10 and CIFAR-100 with synthetic label noise benchmarks. The "+" sign following a method name means the method is enhanced with both balanced & expanded selection and nearest neighbor pseudo-labeling. The best results are in bold .
+
+under severe noise. 
+
+## 3. Background 
+
+Consider a supervised multi-class classification task with 
+
+C classes. Suppose a clean training dataset D contains N
+
+samples, D = {(xi, yi)}Ni=1 , where xi ∈ Rd is an input image or feature, yi ∈ [0 , 1] C is the corresponding ground-truth label represented as a one-hot vector, and N is the total number of training samples. For supervised training with ground-truth labels, we minimize cross-entropy (CE) loss, LCE , over the entire training set D,
+
+LCE = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+yiT log(ˆ yi), ˆyi = fθ (xi). (1) Here, ˆyi is the model prediction for input xi with model parameters θ, and each logit of ˆyi represents the predicted probability for each class. However, annotation errors are inevitable, so in prac-tice we often train on a noisy dataset ˜D = {(xi, ˜yi)}Ni=1 ,where the observed labels ˜yi may not match the true labels. Despite this, our goal is to develop a model that learns ef-fectively from noisy samples and generalizes well to clean data. In our study, we consider both synthetic [18, 36] and real-world noisy datasets [20, 33, 36]. Synthetic noise in-cludes symmetric label noise (randomly flipping a label to any other class) and asymmetric label noise (flipping labels only between easily confused classes). Real-world noise, in contrast, comes from actual annotation errors made by humans or automated systems. 
+
+## 4. Proposed Method 
+
+This study aims to address key limitations of existing sam-ple selection methods for learning with noisy labels, such as their reliance on prior knowledge of the noise level, class imbalance in the selected clean subset, and poor perfor-mance under severe label noise. While current methods focus on extracting as much useful information as possi-ble from the noisy dataset through sample selection and semi-supervised learning, they often overlook a valuable source of reliable information already present: the input im-ages themselves. Shared visual patterns (such as textures, shapes, or color distributions) and similarities in feature space can provide strong cues that certain images are likely to belong to the same class, also known as the smoothness assumption [34]. Motivated by this, we propose using a pretrained self-supervised DINOv2 encoder gϕ(·) [29], fine-tuned on the target dataset, to extract features from all images. For each image xi, we then include its k nearest neighbors in the feature space to form a set of samples likely belonging to the same class. 
+
+Gki = (xj , ˜yj ) | j ∈ Smallest-k ∥vi − vj ∥2
+
+ (2) Here, vi = gϕ(xi) and vj = gϕ(xj ) are encoded fea-tures. Finally, this neighborhood information is integrated into different phases of the sample selection baseline, as de-tailed in Algorithm 1. 
+
+4.1. Class-Wise Noise Rate Estimation 
+
+For simplicity, we assume a classification dataset with C
+
+classes has a symmetric label noise at level η. Given a sam-ple (xj , ˜yj ), its k nearest neighbors in the feature space 
+
+(xj , ˜yj ) ∈ Gki should share the same label according to the smoothness assumption [34]. Assuming the observed label of the given sample is correct, the probability that the observed label matches within this local neighborhood is 3Algorithm 1 Training process of XMix. 
+
+Input : Training set ˜D = {(xi, ˜yi)}Ni=1 , Pretrained self-supervised encoder gϕ, Classification model fθ
+
+Parameter : Number of samples N , Number of classes C,Number of neighbors k
+
+Output : Trained model fθ∗
+
+▷ Nearest Neighbors in Self-Supervised Feature Space  
+
+> 1:
+
+vi = gϕ(xi), i ∈ { 1, ..., N } 
+
+> 2:
+
+Obtain Gki and G2ki according to Eq.(2), i ∈ { 1, ..., N }
+
+▷ Class-Wise Noise Rate Estimation  
+
+> 3:
+
+Estimate ˆηc according to Eq.(4)-(5), c ∈ { 1, ..., C } 
+
+> 4:
+
+fθ = WarmUp ( ˜D, f θ ) 
+
+> 5:
+
+for epoch = 1 , 2, . . . , do  
+
+> 6:
+
+ℓi = ∥fθ (xi) − ˜yi∥, i ∈ { 1, ..., N } 
+
+> 7:
+
+for j = 1 , 2, . . . , C do  
+
+> 8:
+
+Fit GMM on losses of class c 
+
+> 9:
+
+Given per-class threshold τ (ˆ ηc), find per-class clean subset Dcclean according to Eq.(6)  
+
+> 10:
+
+Dclean = ∪Cc=1 Dcclean 
+
+▷ Balanced and Expanded Sample Selection  
+
+> 11:
+
+for (xi, ˜yi) ∈ Dclean do  
+
+> 12:
+
+Find additional clean sample D+ 
+
+> clean
+
+in Gki (or 
+
+G2ki if ˜yi is least represented) according to Eq.(7)  
+
+> 13:
+
+Dclean = Dclean ∪ D+ 
+
+> clean
+> 14:
+
+Dnoisy = ˜D\Dclean 
+
+▷ Nearest Neighbor Pseudo-Labeling  
+
+> 15:
+
+Generate pseudo-labeled dataset D∗ 
+
+> noisy
+
+from 
+
+Dclean and Gki according to Eq.(9)-(11)  
+
+> 16:
+
+fθ = MixMatch (Dclean , D∗ 
+
+> noisy
+
+, f θ ) 
+
+> 17:
+
+return fθ∗
+
+given by: 
+
+Pr(˜ yj | ˜yi) = 
+
+(
+
+1 − C−1 
+
+> C
+
+η, if ˜yj = ˜ yi, 
+
+> C−1
+> C
+
+η, if ˜yj̸ = ˜ yi. (3) This can be modeled as a Bernoulli trial where a “success” occurs if a neighbor’s observed label matches that of the given sample, with success probability q = 1 − C−1 
+
+> C
+
+η. Us-ing the maximum likelihood principle, the empirical suc-cess probability is estimated by averaging over all neigh-bors: 
+
+ˆqi =
+
+P I(˜ yj = ˜ yi) + 1 
+
+k + 1 , ∀ (xj , ˜yj ) ∈ Gki (4) 
+
+ˆη = C(1 − ˆq)
+
+C − 1 , ˆq = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ˆqi (5) However, this estimate is inherently biased because the smoothness assumption holds for true labels, while the ob-served labels may already be noisy. The probability that the observed label matches the true label is itself 1 − C−1 
+
+> C
+
+η,so the correct success rate for the Bernoulli trial should be on the order of O(η2), as both the anchor sample and its neighbors must have correct observed labels. In our class-wise noise rate estimation, we simulate multiple known noise levels on the CIFAR-10 dataset and compute the em-pirical label matching rates among each sample’s nearest neighbors in feature space. These observed rates are then used to fit a quadratic correction model that adjusts for the bias. Once calibrated, this model serves as a coarse noise estimator for other datasets. Because it is calibrated on a specific synthetic setting and the underlying Bernoulli as-sumption is itself only approximate, the resulting estimate should not be interpreted as a precise recovery of the true noise rate. Instead, it is only meant to be accurate enough to place a dataset into one of a handful of noise regimes (e.g., low, moderate, high, or extreme), which is exactly the level of granularity the baseline sample selection methods need to pick their corresponding hyperparameter configu-ration (selection ratio and threshold schedule), without re-quiring prior ground-truth noise information. 
+
+Remark. For class-wise noise rate estimation, we apply the same procedure within each class according to the noisy labels. The class-wise noise rate estimation calibrated un-der synthetic noise also proves effective at identifying the appropriate hyperparameter regime on real-world datasets, despite not recovering their exact noise levels. 
+
+4.2. Balanced and Expanded Sample Selection in Self-Supervised Feature Neighborhood 
+
+Following DivideMix [19], we first perform supervised learning on noisy labels to activate the memorization effect of the classification network fθ (·). Subsequently, predic-tions are generated for each sample, and the discrepancies between predictions and given labels are measured. These discrepancies are then modeled using a two-component Gaussian Mixture Model (GMM) to partition the data into a clean subset and a noisy subset. 
+
+Dclean = (xi, ˜yi) GMM (clean | ℓi) > τ (6) Here, ℓi = ∥fθ (xi) − ˜yi∥ represents the loss for sample 
+
+i, GMM (clean | ℓi) denotes the posterior probability that sample (xi, ˜yi) is clean, given its loss ℓi, as estimated by the GMM. A sample is classified as clean if this probability exceeds a predefined threshold τ (ˆ η). This partition is class-wise imbalanced and will become less effective in select-ing the correct clean samples when label noise increases, as shown in Figure 2. Therefore, we propose to leverage information from self-supervised feature neighbors, following the smoothness as-sumption that feature-similar samples are likely to belong to the same class. This allows us to identify additional clean samples within the neighborhood of an already se-4lected clean sample. Given a clean sample (xi, ˜yi) and its feature neighbors Gki , the expansion of the clean sample subset can be formulated as follows. 
+
+D+ 
+
+> clean
+
+= (xj , ˜yj ) | (xi, ˜yi) ∈ Dclean 
+
+∧(xj , ˜yj ) ∈ Gki ∧ ˜yj = ˜ yi
+
+(7) 
+
+Dclean = Dclean ∪ D+ 
+
+> clean
+
+(8) This expansion helps address the challenge of selecting a sufficient number of clean samples in the presence of heavy label noise. To further balance the number of selected sam-ples across classes, we simply apply a different rule for the least represented class by considering 2k neighbors in-stead of k neighbors used for other classes. As training progresses, this strategy gradually helps the selected sam-ples become more class-balanced. It is worth noting that any sample not included in the clean subset is treated as a noisy sample, defined as Dnoisy = ˜D\Dclean . Additionally, we employ two networks in a co-training setup, where each network selects clean samples for the other. The expansion and balancing of clean samples are applied symmetrically to both branches. 
+
+4.3. Semi-Supervised Learning with Nearest Neigh-bor Pseudo-Labeling 
+
+The selected clean subset is treated as labeled data, while the remaining noisy samples are treated as unlabeled. We first train the model on the clean subset and then gener-ate pseudo-labels for the noisy subset by aggregating pre-dictions from their feature-space neighbors. Formally, the pseudo-labeled subset is defined as: 
+
+D∗ 
+
+> unlabeled
+
+= D∗ 
+
+> noisy
+
+= {(xj , yj )}Mj=1 (9) 
+
+yj = SoftMax 
+
+ kX
+
+> n=1
+
+wn · fθ (xn)
+
+
+
+, ∀xn ∈ Gkj (10) where the weight wn is defined as: 
+
+wn =
+
+(
+
+2 if xn ∈ Dclean ,
+
+1 if xn ∈ Dnoisy . (11) Here, the model fθ , trained on the labeled data, generates predictions for each unlabeled input’s feature-space neigh-bors. XMix then computes the pseudo-label by taking the softmax of the weighted sum of these predictions, assigning higher weight to predictions from identified clean samples. The model is then retrained on both the labeled and pseudo-labeled data, following MixMatch [2] to blend la-beled examples with unlabeled samples and their predicted pseudo-labels. 
+
+λ ∼ Beta (α, α ) (12) 
+
+λ′ = max( λ, 1 − λ) (13) 
+
+x′ = λ′x1 + (1 − λ′)x2 (14) 
+
+y′ = λ′y1 + (1 − λ′)y2 (15) where image-label pairs (x1, y1) and (x2, y2) are ran-domly sampled from the combined set Dlabeled ∪D∗
+
+> unlabeled
+
+.
+
+4.4. Discussion 
+
+As highlighted by the red blocks in Algorithm 1, XMix introduces several improvements over traditional sample se-lection methods such as DivideMix. 
+
+Estimating noise rate. Unlike DivideMix, which relies on prior knowledge of the noise level or manual tuning of thresholds, XMix adaptively estimates the class-wise noise rate using local neighbors in self-supervised feature space. This makes our approach more practical and robust, espe-cially in real-world scenarios where the true noise level is unknown. 
+
+Balanced and expanded sample selection. By leverag-ing local smoothness in feature space, XMix can identify additional true clean samples. This improvement is par-ticularly significant when the label noise is heavy, where standard methods often fail to collect enough clean samples for effective semi-supervised learning. Our method also addresses the common issue of class imbalance by adjust-ing the neighbor expansion strategy for underrepresented classes, resulting in a more balanced clean subset. 
+
+More accurate pseudo labels. Instead of simply averaging potentially unreliable predictions from augmented samples, our nearest neighbor pseudo-labeling mechanism leverages trustworthy local information in feature space. This enables XMix to generate more accurate pseudo-labels for noisy data, providing stronger training signals during the semi-supervised phase. Together, these contributions make XMix simple yet highly effective, and easily compatible with existing sam-ple selection frameworks. 
+
+## 5. Experiments 
+
+5.1. Settings 
+
+Datasets. We evaluate the effectiveness of XMix on several datasets, including CIFAR-10, CIFAR-100 [18], CIFARN [36], ANIMAL-10N [33], and Mini-WebVision [20]. For CIFAR-10 and CIFAR-100, we examine performance under synthetic symmetric and asymmetric label noise conditions, as outlined in Section 3. Additionally, CIFAR-10N and CIFAR-100N [36] variants, which use the same input im-ages but real-world noisy labels annotated via Amazon Me-chanical Turk, are included. The noise label portion in CI-FARN ranges from 9% to 40% . The ANIMAL-10N dataset, 5(a) 20% Sym (b) 50% Sym. (c) 80% Sym. (d) 90% Sym.    
+
+> Figure 2. Selected true clean samples at an early epoch of training on the CIFAR-10 dataset with different noise settings. Upper Row:
+> DivideMix vs. XMix (DivideMix+); Bottom Row: ProMix vs. XMix (ProMix+). TP (true positives) and FP (false positives) represent true and false clean samples, displayed in light and dark shades, respectively. Zoom in for details.
+
+another real-world collection of animal images, contains five pairs of easily confusable species and has a noise rate of approximately 8% . The last real-world noisy dataset is Mini-WebVision which contains about 61K Google images on the first 50 classes from the WebVision dataset, with an estimated label noise rate of 20% .
+
+Implementation details. We follow the same experi-mental settings as DivideMix and ProMix, employing a dual ResNet-18 architecture as the classification back-bone for both CIFAR-10 and CIFAR-100. For real-world datasets, we use different architectures to better suit their characteristics—for example, VGG-19 with batch normal-ization for ANIMAL-10N and InceptionResNetV2 for We-bVision. The model is trained for 300 epochs (600 epochs for the ProMix baseline), including a warm-up phase of 10 epochs for CIFAR-10 and 30 epochs for CIFAR-100 to ac-tivate the memorization effect. Training is optimized us-ing SGD with a momentum of 0.9 and a weight decay of 0.0005. We use a batch size of 256 and an initial learning rate of 0.05, which decays according to a cosine schedule. To adapt threshold selection, we estimate the noise rate class-wise and apply this estimate to determine the selection thresholds for DivideMix and ProMix according to their re-spective procedures. We utilize a pretrained DINOv2 self-supervised model to extract image features. Nearest neigh-bors are then computed for each sample in feature space using Euclidean distance; specifically, both the k and 2k
+
+nearest neighbors are identified, with k = 10 .
+
+5.2. Results on Synthetic Benchmarks 
+
+Classification results for CIFAR-10 and CIFAR-100 un-der different synthetic noise levels (symmetric or asymmet-ric) are presented in Table 1 and Table 2. Compared to state-of-the-art methods such as DivideMix, ProMix, and other recent approaches, our XMix framework consistently achieves competitive or superior results across different noise ratios. Notably, XMix outperforms the baselines more signifi-cantly as the noise level increases. For example, at extreme symmetric noise levels of 80% and 90% on CIFAR-10 and CIFAR-100, XMix achieves larger gains over its base mod-els (DivideMix and ProMix), highlighting the benefit of our balanced and expanded sample selection strategy. Addition-ally, the results under 40% asymmetric noise indicate that XMix remains robust to structured noise, matching or ex-ceeding other methods. These results confirm that XMix can effectively enhance standard sample selection methods, removing the need for prior noise knowledge and providing more balanced and re-liable training signals, especially in challenging high-noise scenarios. A finer breakdown across 10% , 30% , and 40% asymmet-ric noise (Table 8 in the supplementary material) confirms that XMix (ProMix+) achieves the best or near-best accu-racy at every level, e.g., 97 .6% at 10% noise on CIFAR-10 and 81 .1% at 10% noise on CIFAR-100. 65.3. Results on Real-World Benchmarks 
+
+We adopt ProMix as the base model for real-world bench-marks. On CIFAR-10N and CIFAR-100N (Table 4), XMix outperforms all other methods, with XMix showing clear advantages under higher noise. On ANIMAL-10N (Ta-ble 3), XMix achieves the best accuracy (90.3%), sur-passing all baselines. Results on Mini-WebVision and ILSVRC12 (Table 3) further demonstrate that XMix re-mains strong and competitive across diverse real-world noise settings. Method Acc. PLC [43] 83.4% SELC [25] 83.7% ProMix [38] 90.0% CLIPCleaner [9] 88.9% LSL [17] 89.1% XMix 90.3%                                      
+
+> Method WebVision ILSVRC12 top1 top5 top1 top5 DivideMix [19] 77.3% 91.6% 75.2% 90.8% SELC [25] 74.4% 90.7% 70.9% 90.7% UNICON [15] 77.6% 93.4% 75.3% 93.7% RankMatch [44] 79.9% 93.6% 77.4% 94.3% CLIPCleaner [9] 81.6% 93.3% 77.8% 92.1% LSL [17] 81.4% 93.0% 77.0% 91.8% PLReMix [24] 81.4% 93.7% 77.7% 93.0% XMix 80.2% 94.7% 76.9% 95.0%
+
+Table 3. Left : Classification accuracies on ANIMAL-10N. The best results are in bold . Right : Top-1 (Top-5) classification accu-racies on Mini-WebVision and ILSVRC12 validation set. The best results are in bold .
+
+Dataset CIFAR-10N CIFAR-100N Methods\Noise type Aggre Rand1 Worst Noisy Fine DivideMix [19] 95.0% 95.2% 92.6% 71.1% ELR+ [23] 94.8% 94.4% 91.1% 66.7% CORES [6] 95.3% 94.5% 91.7% 55.7% PES(Semi) [1] 94.7% 95.1% 92.7% 70.4% ProMix [38] 97.7% 97.4% 96.3% 73.8% PADDLES [13] 95.5% 95.9% 93.9% 71.3% CS-Isolate [22] 95.3% 95.4% 94.3% -LSL [17] - - 94.6% 74.5% 
+
+XMix 97.7% 97.5% 96.4% 74.2% 
+
+Table 4. Classification accuracies on CIFAR-10N and CIFAR-100N under real-world label noise (full breakdown including Rand2/Rand3 in the supplementary material, Table 9). The best results are in bold .
+
+5.4. Ablation Study 
+
+Compatibility of Proposed Modules. As shown in Ta-ble 2, XMix is compatible with existing sample selection methods such as DivideMix and ProMix; incorporating self-supervised features consistently improves the performance of these base methods across different noise settings. 
+
+Efficacy of class-wise noise rate estimation. For class-wise noise rate estimation, we first simulate various known noise levels on the CIFAR-10 dataset and measure the la-bel matching rates within each sample’s nearest neighbors in feature space. We then fit a quadratic correction model to adjust for estimation bias. This calibrated model is subse-quently applied to other datasets to provide a coarse class-wise noise estimate without requiring prior knowledge of the true noise level. This estimate is not intended to recover the precise noise rate; rather, it only needs to be accurate enough to place a dataset into one of a few discrete noise regimes, which is what determines the hyperparameter con-figuration (e.g., selection ratio and threshold schedule) used by the baseline sample selection method. In practice, we find this coarse estimate sufficient: baseline methods are far more sensitive to which regime they are assigned to than to the exact noise rate within that regime. Method\Noise rate 20% 50% 80% 90% XMix 96.4% 96.1% 94.4% 91.2% XMix (SimCLR [5]) 96.2% 95.1% 93.9% 87.2% XMix w/o B&E 96.1% 94.7% 93.3% 82.3% XMix w/o NN 96.2% 95.5% 93.9% 90.1% DivideMix 96.1% 94.6% 93.2% 76.0% 
+
+Table 5. Ablation study of XMix (DivideMix+) on CIFAR-10 with symmetric label noise. The method name in parentheses indicates the feature encoder; DINOv2 [29] is used by default unless other-wise specified. "B&E" denotes the balanced & expanded sample selection module, and "NN" refers to the nearest neighbor pseudo-labeling component. 
+
+Table 5 presents an ablation study of XMix on CIFAR-10 with symmetric label noise. Using a stronger encoder (DI-NOv2) yields a more consistent feature space, but replacing it with SimCLR results in comparable performance, indi-cating that the gains of XMix are not primarily driven by encoder strength. In contrast, removing either the balanced-and-expanded (B&E) sample selection or nearest-neighbor (NN) pseudo-labeling leads to noticeable degradation, par-ticularly under extreme noise. These results show that XMix’s performance improvements mainly stem from its feature-space clustering and filtering mechanisms, which consistently increase the number of correctly identified clean samples across different encoders. 
+
+Balanced and expanded sample selection. We evaluate the effectiveness of the XMix sample selection module by comparing the number of true clean samples it selects with those selected by base models. As shown in Figure 2, XMix consistently identifies significantly more true clean sam-ples, sometimes doubling or even tripling the count. This advantage is particularly clear under severe noise condi-tions, as illustrated in Figure 2(b) and (c), where XMix substantially expands the clean sample set for classes that would otherwise have very few selected examples, albeit with some errors. The results also reveal that class imbal-ance in the selected clean subset becomes more pronounced as noise levels increase. By leveraging class-aware expan-sion, XMix helps mitigate this imbalance, leading to a more 7balanced distribution of selected samples across classes. Conversely, at lower noise levels, the standard low-loss criterion alone is effective at identifying most clean sam-ples. Therefore, the benefit of expanding the clean set using neighborhood information becomes marginal. Moreover, XMix may sometimes misclassify noisy samples as clean samples. As shown in Figure 2(b), although XMix does slightly increase the number of true clean samples under lower noise, it also introduces a noticeable number of false positives. This trade-off means that the disadvantages of in-accurate expansion can outweigh its benefits in low-noise settings, which aligns with the observation that XMix’s per-formance gain diminishes at lower noise levels, as reflected in Table 2 and 5. 
+
+Nearest neighbor pseudo-labeling. As shown in Fig-ure 3 in the supplementary material, nearest neighbor pseudo-labeling produces more accurate pseudo-labels for the unlabeled data than the base models. This improved pseudo-label quality strengthens the semi-supervised learn-ing phase. While beneficial, the gains from nearest neigh-bor pseudo-labeling are incremental relative to the improve-ments achieved through balanced and expanded sample se-lection, as evidenced in Table 5. 
+
+## 6. Conclusion 
+
+We introduced XMix, a simple yet robust LNL framework that leverages the local smoothness of self-supervised fea-ture space to adaptively select balanced clean samples and generate more accurate pseudo-labels, outperforming exist-ing methods without requiring prior noise information. 
+
+## References 
+
+[1] Y. Bai, E. Yang, B. Han, Y. Yang, J. Li, Y. Mao, G. Niu, and T. Liu. Understanding and Improving Early Stopping for Learning with Noisy Labels. In NeurIPS , 2021. [2] D. Berthelot, N. Carlini, I. Goodfellow, N. Papernot, A. Oliver, and C. Raffel. MixMatch: A Holistic Approach to Semi-Supervised Learning. In NeurIPS , 2019. [3] Kamalika Chaudhuri and Daniel Hsu. Sample Complexity Bounds for Differentially Private Learning. In COLT , 2011. [4] Hao Chen, Ran Tao, Yue Fan, Yidong Wang, Jindong Wang, Bernt Schiele, Xing Xie, Bhiksha Raj, and Marios Sav-vides. SoftMatch: Addressing the Quantity-Quality Tradeoff in Semi-supervised Learning. In ICLR , 2023. [5] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Ge-offrey Hinton. A Simple Framework for Contrastive Learn-ing of Visual Representations. In ICML , 2020. [6] H. Cheng, Z. Zhu, X. Li, Y. Gong, X. Sun, and Y. Liu. Learn-ing with Instance-Dependent Label Noise: A Sample Sieve Approach. In ICLR , 2021. [7] J. Deng, W. Dong, R. Socher, L. Li, K. Li, and Li F. Ima-geNet: A large-scale hierarchical image database. In IEEE CVPR , 2009. [8] Cynthia Dwork and Aaron Roth. The Algorithmic Founda-tions of Differential Privacy. Foundations and Trends® in Theoretical Computer Science , 2013. [9] C. Feng, G. Tzimi., and I. Patras. CLIPCleaner: Cleaning Noisy Labels with CLIP. In ACM Multimedia , 2024. [10] Badih Ghazi, Noah Golowich, Ravi Kumar, Pasin Manu-rangsi, and Chiyuan Zhang. Deep Learning with Label Dif-ferential Privacy. In NeurIPS , 2021. [11] B. Han, Q. Yao, X. Yu, G. Niu, M. Xu, W. Hu, I. Tsang, and M. Sugiyama. Co-teaching: Robust training of deep neural networks with extremely noisy labels. In NeurIPS , 2018. [12] D. Hendrycks, M. Mazeika, D. Wilson, and K. Gimpel. Us-ing Trusted Data to Train Deep Networks on Labels Cor-rupted by Severe Noise. In NeurIPS , 2018. [13] H. Huang, H. Kang, S. Liu, O. Salvado, T. Rakotoarivelo, D. Wang, and T. Liu. Paddles: Phase-amplitude spectrum disentangled early stopping for learning with noisy labels. In IEEE ICCV , 2023. [14] Peter Kairouz, Keith Bonawitz, and Daniel Ramage. Dis-crete Distribution Estimation under Local Privacy. In ICML ,2016. [15] N. Karim, M. Rizve, N. Rahnavard, A. Mian, and M. Shah. UniCon: Combating Label Noise Through Uniform Selec-tion and Contrastive Learning. In IEEE CVPR , 2022. [16] J. Kim, A. Baratin, Y. Zhang, and S. Lacoste-Julien. CrossS-plit: Mitigating Label Noise Memorization through Data Splitting. In ICML , 2023. [17] N. Kim, J. Lee, and J. Lee. Learning with structural labels for learning with noisy labels. In IEEE CVPR , 2024. [18] A. Krizhevsky, G. Hinton, et al. Learning multiple layers of features from tiny images. Master’s thesis, Department of Computer Science, University of Toronto , 2009. [19] J. Li, R. Socher, and S. Hoi. DivideMix: Learning with Noisy Labels as Semi-supervised Learning. In ICLR , 2020. [20] W. Li, L. Wang, W. Li, E. Agustsson, and L. V. Gool. We-bVision Database: Visual Learning and Understanding from Web Data, 2017. [21] X. Li, T. Liu, B. Han, G. Niu, and M. Sugiyama. Provably End-to-end Label-noise Learning without Anchor Points. In 
+
+ICML , 2021. [22] Y. Lin, Y. Yao, X. Shi, M. Gong, X. Shen, D. Xu, and T. Liu. Cs-isolate: Extracting hard confident examples by content and style isolation. In NeurIPS , 2023. [23] S. Liu, J. Niles-Weed, N. Razavian, and C. Fernandez-Granda. Early-Learning Regularization Prevents Memoriza-tion of Noisy Labels. In NeurIPS , 2020. [24] Xiaoyu Liu, Beitong Zhou, Zuogong Yue, and Cheng Cheng. Plremix: Combating noisy labels with pseudo-label relaxed contrastive representation learning. In WACV , 2025. [25] Y. Lu and W. He. SELC: Self-Ensemble Label Correction Improves Learning with Noisy Labels. In IJCAI , 2022. [26] X. Ma, H. Huang, Y. Wang, S. Romano, S. Erfani, and J. Bailey. Normalized Loss Functions for Deep Learning with Noisy Labels. In ICML , 2020. [27] A. Makadia, V. Pavlovic, and S. Kumar. A New Baseline for Image Annotation. In ECCV . 2008. 
+
+8[28] N. Natarajan, I. Dhillon, P. Ravikumar, and A. Tewari. Learning with Noisy Labels. In NeurIPS , 2013. [29] Oquab, M., Darcet, T., Moutakanni, T.,... , Bojanowski, P. DINOv2: Learning Robust Visual Features without Supervi-sion. TMLR , 2023. [30] D. Ortego, E. Arazo, P. Albert, N. O’Connor, and K. McGuinness. Multi-Objective Interpolation Training for Ro-bustness To Label Noise. In IEEE CVPR , 2021. [31] G. Patrini, A. Rozza, A. Menon, R. Nock, and L. Qu. Mak-ing Deep Neural Networks Robust to Label Noise: A Loss Correction Approach. In IEEE CVPR , 2017. [32] Kihyuk Sohn, David Berthelot, Nicholas Carlini, Zizhao Zhang, Han Zhang, Colin A Raffel, Ekin Dogus Cubuk, Alexey Kurakin, and Chun-Liang Li. FixMatch: Simplify-ing Semi-Supervised Learning with Consistency and Confi-dence. In NeurIPS , 2020. [33] H. Song, M. Kim, and J. Lee. SELFIE: Refurbishing Un-clean Samples for Robust Deep Learning. In ICML , 2019. [34] J. E. van Engelen and H. H. Hoos. A survey on semi-supervised learning. Machine Learning , 109:373–440, 2020. [35] H. Wei, L. Feng, X. Chen, and B. An. Combating Noisy Labels by Agreement: A Joint Training Method with Co-Regularization. In IEEE CVPR , 2020. [36] J. Wei, Z. Zhu, H. Cheng, T. Liu, G. Niu, and Y. Liu. Learn-ing with Noisy Labels Revisited: A Study Using Real-World Human Annotations. In ICLR , 2021. [37] X. Xia, T. Liu, N. Wang, B. Han, C. Gong, G. Niu, and M. Sugiyama. Are Anchor Points Really Indispensable in Label-Noise Learning? In NeurIPS , 2019. [38] R. Xiao, Y. Dong, H. Wang, L. Feng, R. Wu, G. Chen, and J. Zhao. ProMix: Combating Label Noise via Maximizing Clean Sample Utility. In IJCAI , 2023. [39] Y. Xu, P. Cao, Y. Kong, and Y. Wang. L_dmi: A Novel Information-theoretic Loss Function for Training Deep Nets Robust to Label Noise. In NeurIPS , 2019. [40] Y. Yan, R. Rosales, G. Fung, R. Subramanian, and J. Dy. Learning from multiple annotators with varying expertise. 
+
+Machine Learning , 2014. [41] Y. Yao, T. Liu, B. Han, M. Gong, J. Deng, G. Niu, and M. Sugiyama. Dual T: Reducing Estimation Error for Transition Matrix in Label-noise Learning. In NeurIPS , 2020. [42] C. Zhang, S. Bengio, M. Hardt, B. Recht, and O. Vinyals. Understanding deep learning requires rethinking generaliza-tion. In ICLR , 2017. [43] Y. Zhang, S. Zheng, P. Wu, M. Goswami, and C. Chen. Learning with feature-dependent label noise: A progressive approach. In ICLR , 2021. [44] Z. Zhang, W. Chen, C. Fang, Z. Li, L. Chen, L. Lin, and G. Li. RankMatch: Fostering Confidence and Consistency in Learning with Noisy Labels. In IEEE ICCV , 2023. [45] Y. Zhou, X. Li, F. Liu, Q. Wei, X. Chen, L. Yu, C. Xie, M. P. Lungren, and L. Xing. L2b: Learning to bootstrap robust models for combating label noise. In IEEE CVPR , 2024. 
+
+9XMix: Combating Extremely Noisy Labels via Local Smoothness in Self-Supervised Feature Space 
+
+# Supplementary Material 
+
+## A. Additional Quantitative Results 
+
+Table 6 and Table 7 report the precision and recall of sample selection on CIFAR-10 across the full range of symmetric label noise levels studied in the main paper. As the noise level increases, both precision and recall decrease across all methods, reflecting the growing difficulty of accurately identifying clean samples. XMix exhibits a distinct trade-off between precision and recall, particularly under extreme noise. While it achieves slightly lower precision than its base methods (DivideMix and ProMix), XMix substantially improves recall at higher noise levels. For example, at 98% noise, XMix (Di-videMix+) achieves a recall of 75 .08% , compared to Di-videMix’s 31 .43% , while maintaining competitive preci-sion. This trade-off lets XMix recover far more clean samples than its base methods, which is essential for en-abling effective semi-supervised learning once label noise becomes severe; the results support prioritizing recall over precision in this regime. Noise Level DivideMix XMix (DivideMix+) ProMix XMix (ProMix+) 20% 99.31% 98.60% 96.82% 94.61% 50% 94.88% 87.41% 89.56% 78.70% 80% 80.32% 65.77% 65.54% 48.46% 90% 38.59% 25.59% 44.83% 34.44% 92% 31.75% 22.28% 37.34% 28.68% 95% 21.49% 16.42% 32.01% 26.14% 98% 17.33% 15.27% 14.78% 14.59% 
+
+Table 6. Precision of sample selection on CIFAR-10 under differ-ent levels of symmetric label noise.                                 
+
+> Noise Level DivideMix XMix (DivideMix+) ProMix XMix (ProMix+) 20% 84.53% 99.86% 96.76% 99.97% 50% 85.33% 99.88% 89.53% 99.97% 80% 52.71% 95.73% 65.80% 99.24% 90% 77.02% 99.22% 44.37% 96.30% 92% 77.55% 99.63% 39.27% 94.08% 95% 72.46% 98.48% 32.98% 87.64% 98% 31.43% 75.08% 15.07% 63.06%
+
+Table 7. Recall of sample selection on CIFAR-10 under different levels of symmetric label noise. 
+
+A finer breakdown of asymmetric-noise results (Ta-ble 8) and the full CIFAR-N breakdown including the Rand2/Rand3 splits (Table 9) are given below for complete-ness. Dataset CIFAR-10 CIFAR-100 Method\Noise rate 10% 30% 40% 10% 30% 40% DivideMix [19] 93.8% 92.5% 91.7% 71.6% 69.5% 55.1% SELC [25] - - 92.9% - - 73.6% UNICON [15] 95.3% 94.8% 94.1% 78.2% 75.6% 74.8% CrossSplit [16] 96.9% 96.4% 96.0% 80.7% 78.5% 76.8%                         
+
+> ProMix [38] 97.4% 97.0% 96.6% 80.3% 80.1% 76.2% CLIPCleaner [9] --94.9% ---L2B [45] --94.0% ---XMix (ProMix+) 97.6% 97.2% 96.6% 81.1% 80.8% 76.5%
+
+Table 8. Classification accuracies on CIFAR-10 and CIFAR-100 under asymmetric label noise, with noise levels ranging from 10% 
+
+to 40% . The best results are in bold .                                                              
+
+> Dataset CIFAR-10N CIFAR-100N Methods\Noise type Aggre Rand1 Rand2 Rand3 Worst Noisy Fine DivideMix [19] 95.0% 95.2% 95.2% 95.2% 92.6% 71.1% ELR+ [23] 94.8% 94.4% 94.2% 94.3% 91.1% 66.7% CORES [6] 95.3% 94.5% 94.9% 94.7% 91.7% 55.7% PES(Semi) [1] 94.7% 95.1% 95.2% 95.2% 92.7% 70.4% ProMix [38] 97.7% 97.4% 97.6% 97.5% 96.3% 73.8% PADDLES [13] 95.5% 95.9% 96.0% 96.0% 93.9% 71.3% CS-Isolate [22] 95.3% 95.4% 95.3% 95.5% 94.3% -LSL [17] ----94.6% 74.5%
+> XMix 97.7% 97.5% 97.4% 97.5% 96.4% 74.2%
+
+Table 9. Classification accuracies on CIFAR-10N and CIFAR-100N under real-world label noise, with the full set of noise types (Aggre, Rand1, Rand2, Rand3, Worst, Noisy Fine). The best re-sults are in bold .
+
+## B. Additional Qualitative Results 
+
+Symmetric label noise. Figure 4 and Figure 5 extend the qualitative comparison in Figure 2 to the full range of sym-metric noise levels studied in this paper. XMix consis-tently selects more true clean samples, nearly doubling the count in some cases; this is most evident in the extreme set-tings ( 92% –98% ), where only a handful of samples would otherwise be selected for certain classes. At lower noise levels, the low-loss criterion alone already recovers most clean samples, so the benefit of neighborhood expansion is smaller and occasionally introduces additional false posi-tives, consistent with the diminishing gains observed in Ta-ble 2. 
+
+Asymmetric and real-world label noise. Figure 6 and Fig-ure 7 show the corresponding sample selection results un-der asymmetric and CIFAR-N real-world label noise, re-spectively. In both settings, XMix selects noticeably more true clean samples than the base methods (DivideMix and ProMix), mirroring the trend observed under symmetric 10 (a) 20% Sym (b) 50% Sym. (c) 80% Sym. (d) 90% Sym.     
+
+> Figure 3. Pseudo-label recall at an early epoch of training on the CIFAR-10 dataset with different noise settings. Upper Row: DivideMix vs. XMix (DivideMix+); Bottom Row: ProMix vs. XMix (ProMix+). Zoom in for details.
+
+noise. 
+
+Pseudo-label quality. Figure 3 reports pseudo-label re-call at an early epoch of training on CIFAR-10 across the same symmetric noise levels. Nearest neighbor pseudo-labeling consistently produces more accurate pseudo-labels for the unlabeled data than the base models, strengthening the semi-supervised learning phase. 11 (a) 20% Sym (b) 50% Sym (c) 80% Sym (d) 90% Sym 
+
+Figure 4. Selected samples for each class at an early epoch of training on the CIFAR-10 dataset with different symmetric label noise levels. XMix selects noticeably more true clean samples as noise increases. Upper Row: DivideMix vs. XMix; Bottom Row: ProMix vs. XMix. TP/FP denotes true and false clean samples, shown in light and dark shades, respectively. Zoom in for details. 
+
+(e) 92% Sym (f) 95% Sym (g) 98% Sym 
+
+Figure 5. Continuation of Figure 4 at extreme symmetric noise levels. Upper Row: DivideMix vs. XMix; Bottom Row: ProMix vs. XMix. TP/FP denotes true and false clean samples, shown in light and dark shades, respectively. Zoom in for details. 
+
+12 (a) 10% Asym. (b) 30% Asym. (c) 40% Asym. 
+
+Figure 6. Selected samples for each class at an early epoch of training on the CIFAR-10 dataset with different asymmetric label noise levels. Upper Row: DivideMix vs. XMix; Bottom Row: ProMix vs. XMix. TP/FP denotes true and false clean samples, shown in light and dark shades, respectively. Zoom in for details. 
+
+(a) Aggregate (b) Random 1 (c) Random 2 (d) Random 3 (e) Worst 
+
+Figure 7. Selected samples for each class at an early epoch of training on CIFAR-N with real-world label noise. Upper Row: DivideMix vs. XMix; Bottom Row: ProMix vs. XMix. TP/FP denotes true and false clean samples, shown in light and dark shades, respectively. Zoom in for details. 
+
+13 C. Connection to Label Differential Privacy 
+
+Beyond standard LNL benchmarks, the symmetric noise setting studied in the main text also connects to Label Dif-ferential Privacy , where labels are deliberately and heavily corrupted to protect privacy. Building on the success of Dif-ferential Privacy (DP) [8], Label Differential Privacy [3] is a refined definition that adds calibrated noise to labels only, narrowing the protection scope and improving utility rel-ative to feature-level DP. We include this connection here because it explains why an LNL method robust to extreme 
+
+symmetric noise, the regime XMix targets, is directly useful for learning from privately labeled data. 
+
+Label Differential Privacy. The definition of Label Dif-ferential Privacy mirrors standard Differential Privacy [8] except for the notion of adjacency: two adjacent datasets differ in only one record’s label and must be statistically indistinguishable when processed through the same ran-domized mechanism. Formally, let ε, δ ∈ R+. A ran-domized mechanism M that maps a dataset to a priva-tized dataset is (ε, δ )-Label Differentially Private if, for all possible outputs S and any two neighboring datasets 
+
+D = {(x1, y1), . . . , (xi, yi), . . . , (xN , yN )} and D′ =
+
+{(x1, y1), . . . , (xi, y′
+
+> i
+
+), . . . , (xN , yN )} that differ only in a single label, yi̸ = y′ 
+
+> i
+
+for arbitrary i,
+
+Pr[ M(D) ∈ S ] ≤ exp( ε) Pr[ M(D′) ∈ S ] + δ, (16) where ε is the privacy parameter and δ is the probability of privacy breach; when δ = 0 , the mechanism achieves 
+
+ε-Label Differential Privacy [10]. 
+
+k-Randomized Response. A common mechanism for generating private labels that satisfy ε-Label Differential Privacy is the k-Randomized Response mechanism [14], which extends the classic Randomized Response mecha-nism [8] to k-ary categorical data such as classification la-bels. Let the randomized response MKRR be a mechanism over a categorical response [k] → [k]:
+
+MKRR (i) = 
+
+(i, w.p. exp( ε)exp( ε)+ k−1
+
+j, w.p. 1exp( ε)+ k−1
+
+(17) where j ∈ [k] \ { i}. This mechanism returns the true label with a probability that grows with ε, and otherwise distributes an incorrect label uniformly over the remaining 
+
+k −1 categories. Its privacy guarantee follows directly from the ratio of the highest to lowest output probabilities, 
+
+Pr[ M(D) ∈ S ]Pr[ M(D′) ∈ S ] ≤
+
+> exp( ε)exp( ε)+ k−11exp( ε)+ k−1
+
+= exp( ε), (18) confirming that MKRR is ε-Label Differentially Private. 
+
+Relation to symmetric label noise. Comparing the k-Randomized Response mechanism with the symmetric 14 noise model in Section 3 reveals a direct correspondence: learning from labels that satisfy ε-Label Differential Pri-vacy is equivalent to learning under symmetric label noise at level η = C 
+
+> exp( ε)+ C−1
+
+. Lower values of ε indicate stronger privacy, with ε = 0 .5 being a common setting for deep learning models; for a ten-class private classification task, this corresponds to an equivalent symmetric noise level of 
+
+94% , squarely within the extreme-noise regime XMix is de-signed for. Table 10 lists common privacy budgets used in practice together with their equivalent noise levels and ex-pected fraction of correctly labeled samples. 
+
+> Table 10. Relation between Label Differential Privacy and sym-metric label noise.
+
+Dataset ε η Expected clean labels CIFAR-10 0.5 93.9% 15.5% 1 85.3% 23.2% 2 61.0% 45.1% 4 15.7% 85.8% CIFAR-100 1 98.3% 2.7% 2 94.0% 6.9% 4 65.1% 35.5% 6 19.9% 80.3% Because Label Differential Privacy at practical pri-vacy budgets induces exactly the extreme symmetric noise regime that motivates this work, XMix’s balanced-and-expanded selection and nearest-neighbor pseudo-labeling are directly applicable to learning from privately labeled data, without any change to the method itself. 
+
+## D. Earlier Self-Supervised Clustering Variant 
+
+The neighbor-based formulation in Section 4 evolved from an earlier version of XMix that used global representation clustering rather than local feature-space neighbors. In that earlier design, a self-supervised encoder was trained with contrastive learning (SimCLR [5]) directly on the target dataset, and K-means clustering was applied to the result-ing representations to partition the training data into K clus-ters. Samples sharing the same observed label as a low-loss (clean) sample within the same cluster were then added to the clean subset, in place of the k-nearest-neighbor crite-rion used in the main text. This clustering-based variant es-tablished the core idea that self-supervised, label-agnostic structure in feature space can recover additional clean sam-ples beyond the low-loss criterion, and it is the basis of the ablation in Table 5 that replaces the DINOv2 encoder with a SimCLR encoder. However, fixed clusters computed once over the whole dataset are coarser than per-sample neigh-borhoods, do not naturally support the per-class rate esti-mation described in Section 4, and are less able to adapt to local variations in class boundaries. The k-nearest-neighbor formulation used throughout this paper addresses these lim-itations while preserving the same underlying smoothness assumption. 15

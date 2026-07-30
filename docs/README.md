@@ -6,57 +6,84 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-27
-- 运行时间：2026-07-27 21:53:15 UTC
+- 最新运行日期：2026-07-30
+- 运行时间：2026-07-30 21:51:52 UTC
 - 运行状态：成功
-- 本次总论文数：11
-- 精读区：7
-- 速读区：4
+- 本次总论文数：20
+- 精读区：8
+- 速读区：12
 
 ### 今日简报（AI）
-今日聚焦世界模型与表征学习，11篇论文中精读7篇，世界模型方向表现突出。
+今日精读20篇论文，重点聚焦两篇9.0分的世界模型研究。
 
-最值得关注精读中的两篇9分论文：《DWM》分离动作与世界效应，《TRW》提出世界模型的可审计一致性合约。
+最值得关注的方向：受控世界模型的可识别性理论，以及统一扩散架构WorldDiT在动作与情景建模中的突破。
 
-普通读者可优先阅读世界模型相关论文，了解动作与环境的解耦及模型验证思路；速读中《Node4All》的节点表征方法也值得留意。
-- 详情：[/202607/27/README](/202607/27/README)
+建议普通读者优先阅读这两篇高分论文，深入理解世界模型的可解释性与生成能力，后续可关注其在机器人控制与模拟中的应用。
+- 详情：[/202607/30/README](/202607/30/README)
 
 ### 精读区论文标签
-1. [DWM: Separating World Effects from Actions in Latent World Models](/202607/27/2607.18715v1-dwm-separating-world-effects-from-actions-in-latent-world-models)  
+1. [On the Identifiability of Controlled World Models](/202607/30/2607.22430v2-on-the-identifiability-of-controlled-world-models)  
    标签：评分：9.0/10、query:world-models
-   evidence：在潜在世界模型中分离世界效应与动作
-2. [TRW: TRACE-RealWorld---An Auditable Consistency Contract for World Models as Materialized Views](/202607/27/2607.21910v1-trw-trace-realworld---an-auditable-consistency-contract-for-world-models-as-materialized-views)  
+   evidence：高斯潜在状态可控世界模型的可识别性
+2. [WorldDiT: A Unified Diffusion Architecture for World and Action Modeling](/202607/30/2607.23909v1-worlddit-a-unified-diffusion-architecture-for-world-and-action-modeling)  
    标签：评分：9.0/10、query:world-models
-   evidence：将世界模型视为物化视图并提供一致性保证
-3. [TextSLIP: Text Self-Supervised CLIP for Medical Report Generation](/202607/27/2607.21970v1-textslip-text-self-supervised-clip-for-medical-report-generation)  
+   evidence：统一扩散Transformer用于世界与动作建模
+3. [Learning Implicit Causal World Models from Multi-Agent Demonstrations](/202607/30/2607.26336v1-learning-implicit-causal-world-models-from-multi-agent-demonstrations)  
+   标签：评分：9.0/10、query:world-models
+   evidence：从演示学习隐式因果世界模型用于强化学习
+4. [CG-World: A Large-Scale World-State Dataset and Protocol for World Models](/202607/30/2607.26452v1-cg-world-a-large-scale-world-state-dataset-and-protocol-for-world-models)  
+   标签：评分：9.0/10、query:world-models
+   evidence：用于世界模型的大规模世界状态数据集
+5. [JEPADepth: Masked Predictive Representation Learning for Self-Supervised Monocular Depth Estimation](/202607/30/2607.26600v1-jepadepth-masked-predictive-representation-learning-for-self-supervised-monocular-depth-estimation)  
    标签：评分：9.0/10、query:ssl
-   evidence：对文本对进行对比学习以改进CLIP报告生成
-4. [Music-JEPA: Learning a World Model of Sound from Action](/202607/27/2607.22000v1-music-jepa-learning-a-world-model-of-sound-from-action)  
+   evidence：用于自监督深度估计的掩码预测表示学习
+6. [What Can Latent World Models Know? Physical Parameter Identifiability in Multimodal Predictive Representations](/202607/30/2607.27017v1-what-can-latent-world-models-know-physical-parameter-identifiability-in-multimodal-predictive-representations)  
    标签：评分：9.0/10、query:world-models
-   evidence：明确使用JEPA学习声音世界模型
-5. [Unbiased Open World Regularization for Fair Self-Supervised Learning](/202607/27/2607.22149v1-unbiased-open-world-regularization-for-fair-self-supervised-learning)  
-   标签：评分：9.0/10、query:ssl
-   evidence：提出用于公平自监督学习的无偏开放世界正则化方法
-6. [Safe Learning Predictive Control for Ego-World Robotic Systems](/202607/27/2607.22225v1-safe-learning-predictive-control-for-ego-world-robotic-systems)  
+   evidence：直接研究潜在世界模型与预测表示
+7. [Mitigating Compounding Error via Video Representation Regularization](/202607/30/2607.27036v1-mitigating-compounding-error-via-video-representation-regularization)  
    标签：评分：9.0/10、query:world-models
-   evidence：学习其他机器人的内部世界模型以实现安全控制
-7. [On the Identifiability of Controlled World Models](/202607/27/2607.22430v1-on-the-identifiability-of-controlled-world-models)  
+   evidence：直接研究视频扩散世界模型预测未来状态及累积误差
+8. [Mental World Modeling](/202607/30/2607.27201v1-mental-world-modeling)  
    标签：评分：9.0/10、query:world-models
-   evidence：直接研究世界模型的可识别性
+   evidence：提出心理世界模型，将隐藏心理状态纳入世界模型
 
 ### 速读区论文标签
-1. [Node4All: Learning Node Representation Beyond Datasets](/202607/27/2607.17272v1-node4all-learning-node-representation-beyond-datasets)  
+1. [A Scale-adaptive Vision Model Links C. elegans Neuronal Morphology to Behavior for Neurotoxicity Assessment](/202607/30/2607.23183v1-a-scale-adaptive-vision-model-links-c-elegans-neuronal-morphology-to-behavior-for-neurotoxicity-assessment)  
    标签：评分：8.0/10、query:ssl
-   evidence：自监督学习用于节点表示
-2. [SCALE: Self-Supervised Constraint-Aware Layout GEneration for Local P&R DRV Fixing at Advanced Nodes](/202607/27/2607.21850v1-scale-self-supervised-constraint-aware-layout-generation-for-local-pr-drv-fixing-at-advanced-nodes)  
+   evidence：用于神经元形态学的自监督视觉模型
+2. [Neural operator discovery from heterogeneous trajectories](/202607/30/2607.23337v1-neural-operator-discovery-from-heterogeneous-trajectories)  
+   标签：评分：8.0/10、query:world-models
+   evidence：从轨迹中学习共享解算子和潜在表示
+3. [Neonatal Hypoxic-ischaemic Encephalopathy Classification from the EEG and HRV Signals Using a Conformer based Masked Autoencoder](/202607/30/2607.23554v1-neonatal-hypoxic-ischaemic-encephalopathy-classification-from-the-eeg-and-hrv-signals-using-a-conformer-based-masked-autoencoder)  
    标签：评分：8.0/10、query:ssl
-   evidence：自监督布局生成用于DRV修复
-3. [LunarFM: A Shared Multimodal Representation of the Moon's Surface](/202607/27/2607.22408v1-lunarfm-a-shared-multimodal-representation-of-the-moons-surface)  
+   evidence：使用掩码自编码器在生理信号上进行自监督学习
+4. [XMix: Combating Extremely Noisy Labels via Local Smoothness in Self-Supervised Feature Space](/202607/30/2607.23865v1-xmix-combating-extremely-noisy-labels-via-local-smoothness-in-self-supervised-feature-space)  
+   标签：评分：8.0/10、query:ssl
+   evidence：利用自监督特征空间中的局部平滑性
+5. [LoTA-N2N: Local Trace Adaptation for Zero-Shot Self-Supervised Image Denoising](/202607/30/2607.24135v1-lota-n2n-local-trace-adaptation-for-zero-shot-self-supervised-image-denoising)  
+   标签：评分：8.0/10、query:ssl
+   evidence：零样本自监督图像去噪方法
+6. [Self-Boosting Vision-Language Models with Noisy Student On-Policy Self-Distillation](/202607/30/2607.23125v1-self-boosting-vision-language-models-with-noisy-student-on-policy-self-distillation)  
    标签：评分：7.0/10、query:ssl
-   evidence：月球表面自监督表示学习
-4. [Exploring the role of prior exposure and image quality in neural and behavioural prediction effects](/202607/27/biorxiv-10-64898-2026-07-15-738617-v1-exploring-the-role-of-prior-exposure-and-image-quality-in-neural-and-behavioural-prediction-effects)  
+   evidence：利用预测差异作为自监督信号的自蒸馏方法
+7. [Towards Dual-Brain Minimal Sufficient Representation for Vision-Language Navigation](/202607/30/2607.23181v1-towards-dual-brain-minimal-sufficient-representation-for-vision-language-navigation)  
    标签：评分：7.0/10、query:world-models
-   evidence：大脑内部世界模型的预测处理理论
+   evidence：提及基于世界模型的方法并提出导航框架
+8. [AMRD: Adaptive Multi-Teacher Relational Distillation for Lightweight Speech Emotion Recognition](/202607/30/2607.25289v1-amrd-adaptive-multi-teacher-relational-distillation-for-lightweight-speech-emotion-recognition)  
+   标签：评分：7.0/10、query:ssl
+   evidence：自监督模型压缩与多教师关系蒸馏
+9. [Toward a Unified Statistical Theory of Unsupervised Pretraining and Supervised Neural Knowledge Graph Learning](/202607/30/2607.26346v1-toward-a-unified-statistical-theory-of-unsupervised-pretraining-and-supervised-neural-knowledge-graph-learning)  
+   标签：评分：7.0/10、query:ssl
+   evidence：无监督预训练用于表示学习
+10. [Controlling Embedding Spaces with Text-Conditioned Transformations](/202607/30/2607.22919v1-controlling-embedding-spaces-with-text-conditioned-transformations)  
+   标签：评分：6.0/10、query:ssl
+   evidence：文本条件变换视觉嵌入以强调属性
+11. [EGR: Embedding-Native Generative Retrieval with a Shared LLM](/202607/30/2607.23038v1-egr-embedding-native-generative-retrieval-with-a-shared-llm)  
+   标签：评分：6.0/10、query:ssl
+   evidence：使用联合对比训练的嵌入原生生成式检索
+12. [Soft-Constrained Optimization of Latent Space in Variational Autoencoders](/202607/30/2607.23751v1-soft-constrained-optimization-of-latent-space-in-variational-autoencoders)  
+   标签：评分：6.0/10、query:ssl
+   evidence：改进自编码器的潜在空间，与自监督表示学习相关
 
 
 <div class="dpr-home-promo-card">
