@@ -1,0 +1,572 @@
+Title: Unsupervised Graph Representation Learning with Complementary View Alignment
+
+URL Source: https://arxiv.org/pdf/2607.24338v1
+
+Published Time: Tue, 28 Jul 2026 01:54:54 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Unsupervised Graph Representation Learning with Complementary View Alignment 
+
+# Zengyi Wo 1, Shiyu Zhang 1, Qiyao Peng 2, Tianpeng Li 2, Xuan Guo 2
+
+> 1
+
+Nanjing University, Nanjing, China 2Tianjin University, Tianjin, China 
+
+Abstract 
+
+Unsupervised graph representation learning aims to derive meaningful node embeddings by capturing both structural and attribute information without relying on labeled data. Ex-isting methods, such as GAEs, have demonstrated effective-ness but typically rely on message-passing mechanisms that assume homophily, leading to performance degradation on heterophilous graphs, where connected nodes exhibit dissim-ilar features. This homophily bias results in the loss of crit-ical high-frequency components that are essential for iden-tifying heterophilous patterns. To address these challenges, we propose A LIGN GAE, a novel extension of MaskGAE 
+
+that preserves the full frequency spectrum through comple-mentary view alignment. Our framework introduces a dual-encoder architecture that separately processes structural and attribute information, incorporates node positional encoding to approximate Neighborhood Identity Distribution (NID), and employs dual reconstruction tasks for both edges and node attributes. We further propose theoretically grounded NID alignment strategies that ensure semantic consistency across views while preserving their distinct characteristics. Through comprehensive spectral analysis, we demonstrate that A LIGN GAE achieves optimal representation properties when the alignment loss converges. Extensive experiments across 12 benchmark datasets validate our approach, show-ing that A LIGN GAE outperforms state-of-the-art methods by up to 18.7% on heterophilous graphs in node classification, while maintaining competitive performance on homophilous graphs. Our results establish a new paradigm for frequency-aware graph representation learning. 
+
+# Introduction 
+
+Graph-structured data is ubiquitous in many critical do-mains, such as social networks (Kavanaugh et al. 2005), transportation systems (Cui et al. 2019), and financial ap-plications (Cheng et al. 2022). However, the inherent com-plexity of graph data, characterized by high-dimensionality and intricate relationships between entities, presents signif-icant challenges for machine learning. Unsupervised Graph Representation Learning (UGRL) has emerged as a promis-ing approach to address these challenges (Hamilton, Ying, and Leskovec 2017). UGRL methods learn low-dimensional node embeddings that preserve both structural and attribute 
+
+Copyright © 2026, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+information, without the need for labeled data. These em-beddings enable a broad range of downstream tasks, making UGRL highly valuable in real-world applications. Despite the progress in UGRL, capturing both ho-mophilous and heterophilous patterns remains a difficult problem. In particular, heterophilous graphs, where nodes connected by edges have dissimilar attributes, are challeng-ing to represent effectively. Traditional UGRL techniques often struggle in these scenarios, as they typically assume homophily—nodes that are connected tend to share similar attributes. This assumption leads to performance degrada-tion when applied to heterophilous graphs, where connected nodes exhibit substantial differences. Recent advancements, such as masked graph autoen-coders, have utilized message-passing mechanisms to en-code structural patterns through neighborhood aggrega-tion (Kipf 2016; Balcilar et al. 2021; Veliˇ ckovi´ c et al. 2017). These methods are based on graph signal processing, where graph signals are decomposed into low-frequency compo-nents that capture homophilous patterns and high-frequency components that are critical for heterophilous relationships. However, message-passing operations in these methods act as low-pass filters, emphasizing low-frequency components and suppressing high-frequency components (Bo et al. 2021; Zhu et al. 2020a). This limitation compromises the effective-ness of these techniques in handling heterophilous graphs, where high-frequency components play a crucial role in distinguishing nodes with different attributes (Morris et al. 2021; Pan and Kang 2023; Lin et al. 2023a). To overcome these challenges, we introduce A LIGN -GAE, a novel framework that integrates dual-view spectral alignment, allowing it to preserve the full frequency spec-trum. Our approach utilizes two complementary views: a neighborhood view that captures structural patterns through message-passing and a node view that preserves attribute information via non-convolutional processing. These views are aligned using a NID matching technique, ensuring se-mantic consistency while maintaining the distinct character-istics of each view. Theoretically, A LIGN GAE maximizes mutual informa-tion between the views, ensuring that they share consis-tent distributions. It effectively captures both low- and high-frequency signals, thanks to its dual-encoder architecture and dual reconstruction tasks. Extensive experiments on arXiv:2607.24338v1 [cs.LG] 27 Jul 2026 a variety of benchmark datasets demonstrate that A LIGN -GAE outperforms state-of-the-art methods, particularly in the context of heterophilous graphs, while maintaining com-petitive performance on homophilous graphs. In summary, our contributions are threefold: • We establish a theoretical connection between spec-tral decomposition and representation quality, with NID serving as a crucial bridge. • We introduce A LIGN GAE, a framework that extends masked graph autoencoders by incorporating dual-view spectral alignment to capture both homophilous and het-erophilous patterns. • We provide comprehensive experimental validation, showing that A LIGN GAE excels across a wide range of graph structures, especially in challenging heterophilous settings. This work pushes the boundaries of UGRL by overcoming the limitations of traditional message-passing methods through principled view alignment. 
+
+# Related Work 
+
+This section reviews the key methodologies in unsuper-vised graph representation learning (UGRL), focusing on approaches that inform our spectral decomposition frame-work. We discuss graph autoencoders and graph contrastive learning methods, emphasizing their limitations and how ALIGN GAE builds upon these foundations by addressing critical gaps. 
+
+Graph Autoencoders 
+
+Graph autoencoders (GAEs) have been a central approach for unsupervised graph representation learning. GAEs work by encoding graphs into low-dimensional embeddings and reconstructing structural or attribute information, with early work like GAE and VGAE (Kipf and Welling 2016) set-ting the foundation through link prediction objectives. Later methods, such as GALA (Park et al. 2019), expanded this to feature reconstruction. However, while these methods made significant strides in preserving local structure, they often prioritize proximity-based relationships and fail to capture the global structural properties of graphs effec-tively (Veliˇ ckovi´ c et al. 2018). This limitation becomes par-ticularly evident when dealing with heterophilous graphs, where connected nodes differ significantly in attributes, making simple proximity-based encoding insufficient. In an attempt to address these issues, recent approaches like MaskGAE (Li et al. 2023a) and GraphMAE (Hou et al. 2022) introduced masked autoencoder frameworks, which utilize edge perturbation and structured masking to maintain topological integrity during self-supervision. However, these approaches tend to focus on low-frequency signals, often overlooking the high-frequency components crucial for het-erophilous graph representation, as discussed in Section ?? .This gap limits their effectiveness on more complex graph structures, which is where A LIGN GAE provides a novel so-lution. 
+
+Graph Contrastive Methods 
+
+Graph contrastive learning (GCL) has emerged as a domi-nant paradigm for self-supervised learning of graph repre-sentations. GCL methods, like DGI (Veliˇ ckovi´ c et al. 2018), maximize mutual information between different views of the graph, using corrupted graph versions to train the model. Techniques like MVGRL (Hassani and Khasahmadi 2020) and GRACE (Zhu et al. 2020b) introduced various aug-mentations to improve robustness, such as edge dropping and feature masking. However, while these methods have achieved empirical success, they rely heavily on manually crafted augmentations whose effectiveness can vary signif-icantly across different types of graphs, particularly in het-erophilous graphs. The primary issue is that these methods, much like traditional message-passing approaches, are of-ten limited by their spectral filtering properties, which dis-regard high-frequency components critical for representing heterophilous relationships (Liu et al. 2023). ALIGN GAE extends the masked autoencoder framework by incorporating a dual-view architecture that preserves both low- and high-frequency signals through NID alignment. This enables the model to capture both homophilous and heterophilous patterns effectively without requiring task-specific adaptations. By overcoming the limitations of ex-isting methods, A LIGN GAE provides a principled way to handle complex graph structures across both homophilous and heterophilous domains, significantly improving perfor-mance on challenging graph tasks. 
+
+# Preliminary 
+
+This section outlines the theoretical foundations underly-ing A LIGN GAE, focusing on key concepts such as the NID, spectral decomposition, and optimal representation conditions. These concepts are central to the design of our method, as detailed in Section Methodology. We provide a rigorous framework that exploits both homophilous and het-erophilous signals through spectral decomposition, contrast-ing prior works that treat heterophilous graphs as problem-atic. The detailed proofs are included in the Appendix. 
+
+Notation We define the graph G = (V, E), where V =
+
+{v1, . . . , v n} represents the set of nodes and E ⊆ V × V 
+
+denotes the set of edges. The number of nodes and edges is given by |V| = n and |E| = m, respectively. The adja-cency matrix A ∈ { 0, 1}n×n is defined such that Aij = 1 
+
+if (vi, v j ) ∈ E , and Aij = 0 otherwise. The degree matrix 
+
+D ∈ Rn×n is diagonal, with Dii = P 
+
+> j
+
+Aij . Let X ∈ Rn×d
+
+represent the node attribute matrix, where xi ∈ Rd is the feature vector of node vi.
+
+Graph Signal Spectral Decomposition Consider a graph signal x ∈ Rn defined on the nodes of G. The normalized graph Laplacian is given by 
+
+L = I − D−1/2AD −1/2 = UΛU ⊤, (1) where U ∈ Rn×n contains the orthonormal eigenvectors 
+
+{uk}nk=1 , and Λ = diag (λ1, . . . , λ n) is the diagonal matrix of eigenvalues, where 0 = λ1 ≤ λ2 ≤ · · · ≤ λn ≤ 2.Any graph signal x has a unique spectral decomposition: 
+
+x =
+
+> n
+
+X
+
+> k=1
+
+ˆxkuk, where ˆxk = ⟨x, uk⟩. (2) We divide the frequency spectrum at the threshold λ∗ = 1 ,the midpoint of the eigenvalue range [0 , 2] :
+
+FL = {k : λk ≤ λ∗}, (low-frequency components) ,
+
+FH = {k : λk > λ ∗}, (high-frequency components) .
+
+(3) As established in (Liu et al. 2023), homophilous signals are primarily captured in FL, while heterophilous signals are concentrated in FH . This spectral separation forms the basis for our approach. Traditional message-passing graph neural networks (MPGNNs) act as low-pass filters, suppressing high-frequency components. This is represented in the spectral domain as: 
+
+H(l) = Ug(Λ)U⊤X, (4) where g(λk) ≈ 0 for λk > λ ∗, effectively discarding high-frequency signals. Consequently, for heterophilous graphs, the reconstruction error due to spectral truncation is non-zero: 
+
+∥X − UFL U⊤FL X∥2 
+
+> F
+
+> 0. (5) This spectral incompleteness leads to the performance degradation of masked graph autoencoders on heterophilous graphs. To address this, A LIGN GAE employs a dual-view spectral decomposition that explicitly preserves both low-and high-frequency signals, as shown in Theorem 2. 
+
+Neighborhood Identity Distribution The NID for a node vi
+
+is the probability distribution over pairwise feature distances in its neighborhood: 
+
+pgi (δ) = 1
+
+|N (i)|
+
+X 
+
+> j∈N (i)
+
+δD (∥xi − xj ∥2 − δ) , (6) where δD (·) denotes the Dirac delta function. Homophilous nodes exhibit a sharp NID peak near δ = 0, while het-erophilous nodes have broader, multimodal distributions. 
+
+Theorem 1. Let P ∈ Rn×k be the positional encod-ing derived from r random walks per node. The empirical NID ˆpi(δ) computed from random-walk trajectories approx-imates the true NID pgi (δ) with bounded total variation er-ror: 
+
+EWi [∥pgi (δ) − ˆpi(δ)∥TV ] ≤ O 
+
+ 1
+
+√r
+
+
+
+. (7) Theorem 1 justifies the use of random-walk positional encodings, showing that they capture feature inconsis-tency patterns, essential for aligning homophilous and het-erophilous representations. 
+
+Optimal Representation Conditions: The following the-orem formalizes the conditions under which A LIGN GAE achieves optimal representation learning by maintaining both spectral fidelity and structural consistency. 
+
+Theorem 2. Suppose the alignment loss Lalign → 0 in 
+
+ALIGN GAE . Then, the learned representations Zg (geomet-ric view) and Zm (message-passing view) satisfy maximum mutual information MI( Zg ; Zm) = H( Zg ) = H( Zm), iden-tical NID distributions pgi (δ) = pmi (δ) for all i ∈ V , and full frequency spectrum capture ∥X − UU ⊤(Zg + Zm)∥2 
+
+> F
+
+= 0 .
+
+Theorem 2 provides the theoretical basis for our dual-encoder architecture, dual reconstruction tasks, and NID-based alignment. It ensures that ALIGN GAE preserves both homophilous (low-frequency) and heterophilous (high-frequency) signals, addressing the spectral limitations of standard masked graph autoencoders. 
+
+# Methodology 
+
+Overview 
+
+Masked graph autoencoders have excelled in graph rep-resentation learning by capturing local structural patterns through message-passing. However, as discussed in Sec-tion Preliminary, these models predominantly focus on low-frequency components ( FL), neglecting high-frequency sig-nals ( FH ) essential for heterophilous relationships. To ad-dress this, A LIGN GAE extends the masked graph autoen-coder framework with dual-view spectral decomposition and alignment, enabling the model to capture both homophilous and heterophilous patterns. It processes graph data through two complementary encoders: one for structural patterns (neighborhood view) and another for node attributes (node view), aligning them via NID matching to ensure optimal representation. This approach enhances the original frame-work, preserving its strength in structural learning while im-proving its ability to handle diverse graph structures. The dual reconstruction tasks ensure spectral completeness, pre-serving both low- and high-frequency components, while the NID alignment guarantees semantic consistency between the views, resulting in more robust and generalizable node embeddings. 
+
+Node Positional Embedding 
+
+To integrate structural and attribute information, A LIGN -GAE introduces node positional embeddings that capture global topological context, complementing local neighbor-hood structures. These embeddings provide a grounded ap-proximation of the NID, which quantifies feature inconsis-tencies within a node’s neighborhood, as formalized in The-orem 1. Positional embeddings are derived from random walks, simulating diffusion processes over the graph. For each node 
+
+vi ∈ V , we perform r random walks of length l starting from 
+
+vi. The random walk sequences are used to train a Skip-gram model with negative sampling: 
+
+p(vj |vi) = exp( z⊤ 
+
+> j
+
+zi)
+
+P 
+
+> k∈V
+
+exp( z⊤ 
+
+> k
+
+zi) , (8) where p(vj |vi) is the probability of node vj appearing in the context of node vi within a random walk. The resulting node embeddings P = [ z1, z2, . . . , zn]⊤ ∈ Rn×dp provide complementary information to node features, enhancing the X P    
+
+> Maskedge
+> 4
+> 1
+> 2
+> 6
+> 37
+> 5
+> 84
+> 1
+> 2
+> 6
+> 37
+> 5
+> 8
+> 4
+> 1
+> 2
+> 6
+> 37
+> 5
+> 8
+> G
+> N
+> N
+> Random Walk
+> M
+> L
+> P
+> Alignment
+> M
+> L
+> P
+> M
+> L
+> P
+
+Figure 1: Overview of the A LIGN GAE framework. input to the node view encoder. This method captures global topological roles of nodes, which is particularly beneficial for heterophilous graphs where relationships depend more on global positioning than local homophily. 
+
+Dual-Encoder Architecture 
+
+ALIGN GAE employs a dual-encoder architecture that ex-plicitly encodes two complementary views of the graph, implementing the spectral decomposition principle out-lined in Section Preliminary. This design ensures that both homophilous (low-frequency) and heterophilous (high-frequency) signals are preserved, addressing the spectral completeness requirement. 
+
+Edge Masking To improve structural input and promote learning of long-range dependencies, we adopt a topology random masking strategy. This method extends standard masked graph autoencoder approaches by better preserv-ing heterophilous signals. Root nodes are sampled using a Bernoulli distribution with a mask ratio p = 0 .7, ensuring sufficient structural retention while maintaining meaning-ful occlusion. From each root node, random walks of length 
+
+l = 3 select edges, forming a mask matrix M ∈ { 0, 1}n×n,where Mij = 1 if edge (vi, v j ) is retained, and 0 otherwise. The masked adjacency matrix is computed as: 
+
+˜A = A ◦ M, (9) where ◦ denotes the Hadamard product. The masked graph 
+
+Ga = ( ˜A, X) is input to the neighborhood view encoder, en-couraging the model to infer missing connections from vis-ible edges. This improves its ability to capture higher-order structural dependencies while preserving spectral character-istics. 
+
+Node View Encoder The node view encoder preserves individual node characteristics, which are crucial for het-erophilous graphs, where aggregation may obscure differ-ences in node attributes. The encoder processes node fea-tures X ∈ Rn×d and positional embeddings P ∈ Rn×dp
+
+using a shared nonlinear mapper ψ:
+
+H = ψ(X; θ1), S = ψ(P; θ2), (10) where ψ consists of a linear layer followed by ELU activa-tion, and θ1, θ2 are learnable parameters. The transformed features are concatenated and processed by an MLP to pro-duce node-wise embeddings: 
+
+Zm = MLP (CONCAT (H, S); ω1), (11) where ω1 represents the MLP’s parameters. This design en-sures Zm retains high-frequency signals, including attribute variations and positional nuances, without the smoothing ef-fects of graph convolutions, directly addressing the spectral deficiency. 
+
+Neighborhood View Encoder The neighborhood view encoder utilizes a two-layer Graph Convolutional Network (GCN) with learnable skip connections to process the masked graph Ga, producing structural embeddings: 
+
+Zg = MPGNN (X, ˜A; ω2), (12) where ω2 are learnable parameters. Each GCN layer is de-fined as: 
+
+H(l+1) = σ
+
+
+
+αlH(l) + (1 − αl) ˜D− 12 ˜A ˜D− 12 H(l)W(l)
+
+,
+
+(13) where H(l) denote the hidden state at layer l, ˜D the de-gree matrix of the masked adjacency matrix ˜A, W(l) the weight matrix, σ the ELU activation, and αl a learnable skip-connection parameter. This formulation acts as a low-pass filter, emphasizing homophilous patterns, with ˜A capturing structural dependencies. The learnable skip connections en-able adaptive frequency filtering, offering a more flexible spectral response than standard MPGNNs. The node-wise embeddings Zm and structural embeddings Zg jointly form a comprehensive representation: Zm retains node-specific details, while Zg encodes collective structural insights. This dual-view approach ensures A LIGN GAE captures the full frequency spectrum, with the neighborhood view targeting low-frequency FL signals and the node view preserving high-frequency FH components, aligned via NID matching (see Section Preliminary). 
+
+Dual Reconstruction Tasks 
+
+To ensure spectral completeness and robust learning, ALIGN GAE employs dual reconstruction tasks that effec-tively capture both graph topology and node attributes, en-suring that both homophilous and heterophilous signals con-tribute to the learned representations. 
+
+Edge Reconstruction To reconstruct the graph topology, ALIGN GAE predicts masked edges using embeddings from both structural and positional encoders. The edge decoder integrates these embeddings to produce edge predictions: 
+
+p(i, j | ˆG) = σ  MLP  (zgi ◦ zgj ) ⊕ (pi ◦ pj ); ϕ1
+
+ , (14) where zgi ∈ Zg and pi ∈ P are the structural and posi-tional embeddings, ◦ and ⊕ represent element-wise multipli-cation and concatenation, respectively, and σ is the sigmoid function. This cross-view approach leverages low-frequency structural signals and positional context to improve edge prediction. The reconstruction loss uses binary cross-entropy: 
+
+Ledge = − 1
+
+|E m|
+
+X
+
+> (i,j )∈E m
+
+log p(i, j | ˆG)
+
+− 1
+
+|E n|
+
+X
+
+> (i,j )∈E n
+
+log 
+
+
+
+1 − p(i, j | ˆG)
+
+
+
+, (15) 
+
+Node Attribute Reconstruction For node attributes, ALIGN GAE reconstructs the concatenated features X ⊕ P
+
+using node embeddings Zm. The decoder is defined as: 
+
+ˆX = MLP (Zm; ϕ2), (16) where ϕ2 are learnable parameters. We use a scaled co-sine error (SCE) loss to account for differences between at-tributes and positional embeddings: 
+
+Lnode = 1
+
+n
+
+X
+
+> i∈V
+
+
+
+1 − ˆxi · (xi ⊕ pi)
+
+∥ˆxi∥∥ xi ⊕ pi∥
+
+α
+
+, (17) with α = 2 .
+
+Neighborhood Identity Distribution Alignment 
+
+Integrating structural and attribute information to generate coherent node embeddings is a central challenge in graph representation learning, especially in heterophilous graphs where neighbors often exhibit dissimilar features. To address this, we introduce NID alignment , which ensures that struc-tural and attribute embeddings are aligned while maintaining their complementary characteristics. 
+
+Aligning Structural and Attribute Views. In conventional graph neural networks (GNNs), structural and attribute in-formation are processed separately, often resulting in lost interactions between them. In A LIGN GAE, we unify these views by aligning the NIDs of the structural and attribute embeddings. This ensures consistent contributions from both the graph structure and node attributes, enabling the model to capture both homophilous (low-frequency) and heterophilous (high-frequency) patterns. 
+
+Alignment Strategies. We propose three alignment strate-gies for comparing the structural and attribute NIDs: • KL Divergence. The Kullback-Leibler (KL) divergence measures the dissimilarity between two probability dis-tributions. For the structural NID pgi (δ) and attribute NID 
+
+pmi (δ), it is defined as: 
+
+DKL (pgi (δ) ∥ pmi (δ)) = 
+
+Z
+
+> R
+
+pgi (δ) log pgi (δ)
+
+pmi (δ) dδ (18) Minimizing this divergence aligns the distributions of structural and attribute embeddings. • Wasserstein Distance. The Wasserstein distance, or Earth Mover’s Distance, quantifies the minimal ”effort” to transform one distribution into another: 
+
+W1 (pgi (δ), p mi (δ)) = inf  
+
+> γ∈Γ(pgi , p mi)
+
+Z
+
+> R×R
+
+∥δ1 − δ2∥1 dγ (δ1, δ 2)
+
+(19) Minimizing this distance ensures alignment with mini-mal transformation cost. • Contrastive Alignment. This method maximizes the similarity between the structural and attribute embed-dings of the same node while minimizing the similarity between different nodes. The contrastive loss is given by: 
+
+Lcont = − 1
+
+n
+
+X
+
+> i∈V
+
+log exp( sim (zgi , zmi )/τ )
+
+P  
+
+> j∈N (i)∪{ i}
+
+exp( sim (zgi , zmj )/τ )
+
+(20) This loss ensures that embeddings of the same node in both views are maximally similar, while embeddings of different nodes are distinguished. The NID alignment in A LIGN GAE, as formalized in The-orem 2, aims to preserve both low- and high-frequency sig-nals, ensuring structural and attribute embeddings capture complementary information. By aligning NIDs, A LIGN -GAE integrates structural patterns and attribute details into robust, generalizable node representations. The struc-tural view captures low-frequency components via neighbor-hood relationships, while the attribute view encodes high-frequency components. This alignment is vital for both homophilous and heterophilous graphs: in heterophilous graphs, it preserves meaningful structural relationships de-spite dissimilar node attributes, avoiding over-smoothing; in homophilous graphs, it reinforces shared neighbor charac-teristics. Thus, NID alignment enables A LIGN GAE to ef-fectively combine both signal types, supporting robust node representation learning across diverse graph structures. 
+
+Objective Function 
+
+The objective function of A LIGN GAE balances graph topol-ogy and node attribute reconstruction with semantic con-sistency across its dual-encoder architecture. The total loss combines reconstruction and alignment objectives: 
+
+L = Lnode + λLedge + μLalign , (21) Table 1: Summary of dataset characteristics. 
+
+Dataset Nodes Edges Feat. Cls. 
+
+Homophilic Graphs 
+
+Cora 2,708 10,556 1,433 7Citeseer 3,327 9,104 3,703 6CS 18,333 163,788 6,805 15 Physics 34,493 495,924 8,415 5
+
+Heterophilic Graphs 
+
+Cornell 183 295 1,703 5Wisconsin 251 499 1,703 5Texas 183 309 1,703 5Chameleon 2,277 36,051 2,325 5Squirrel 5,201 216,933 2,089 5where Lalign is the alignment loss. Hyperparameters λ and 
+
+μ are tuned to achieve optimal trade-offs across different datasets. This formulation enables A LIGN GAE to produce robust representations that satisfy the optimal conditions for spec-tral completeness, ensuring strong performance on both ho-mophilous and heterophilous graphs. 
+
+# Experiments 
+
+Datasets 
+
+To evaluate A LIGN GAE’s effectiveness, we conduct exper-iments on eleven benchmark datasets spanning four graph domains: citation, co-authorship, departmental webpage, and Wikipedia page networks. These datasets vary in scale and structure, categorized into homophilous graphs, where nodes with similar labels are more likely connected, and het-erophilous graphs, where connections often span dissimilar labels. For node classification, we use standard public splits from prior work (Kipf and Welling 2017; Pei et al. 2020; Yang, Cohen, and Salakhutdinov 2016) or widely accepted splits (Zhu et al. 2021b; Thakoor et al. 2023) to ensure com-parability. Key dataset statistics, including node and edge counts, feature dimensionality, and class numbers, are sum-marized in Table 1, grouped by structural homophily. 
+
+Baselines 
+
+To evaluate ALIGN GAE, we compare its performance against a range of unsupervised graph representation learn-ing methods, categorized into three paradigms: topology-only embedding, graph contrastive learning, and graph autoencoders. Topology-based methods, such as Deep-Walk (Perozzi, Al-Rfou, and Skiena 2014), capture lo-cal structural patterns using random walks. In graph con-trastive learning, methods like DGI (Veliˇ ckovi´ c et al. 2018), MVGRL (Hamilton, Ying, and Leskovec 2018), and 
+
+GRACE (Zhu et al. 2020b) learn robust node representa-tions by contrasting different graph views, while approaches such as GCA (Zhu et al. 2021c), GREET (Liu et al. 2023), and HGRL (Chen et al. 2022) refine augmentations to miti-gate issues like over-smoothing. Methods like GBT (Bielak, Kajdanowicz, and Chawla 2022) and BGRL (Thakoor et al. 2021) leverage bootstrap/self-distillation, while DSSL (Zhu Table 2: Node classification accuracy (%) on homophilous datasets.                                                                                                                                                                                         
+
+> Method Cora Cite. CS Phys.
+> DeepWalk 67.6 ±1.5 47.9 ±1.7 83.8 ±0.3 89.9 ±0.3 GRACE 80.8 ±1.0 69.7 ±1.4 92.2 ±0.2 93.2 ±0.2 DGI 78.4 ±0.7 70.9 ±1.5 93.5 ±0.2 93.9 ±0.4 MVGRL 82.3 ±1.2 68.2 ±1.0 92.1 ±0.4 95.2 ±0.1 GREET 82.9 ±0.7 72.6 ±0.7 94.0 ±0.2 95.1 ±0.2 HGRL 78.4 ±0.9 67.7 ±1.4 92.0 ±0.2 93.8 ±0.4 GCA 80.3 ±1.0 67.8 ±1.6 92.9 ±0.2 95.3 ±0.3 MVMI 73.8 ±1.5 63.1 ±2.8 89.1 ±1.0 94.4 ±0.3 MVGE 81.2 ±0.9 71.5 ±0.7 92.8 ±0.2 94.4 ±0.3 GAE 78.0 ±1.5 58.5 ±1.1 82.8 ±1.7 93.8 ±0.3 GraphMAE 81.2 ±0.6 70.8 ±0.5 90.2 ±0.5 94.1 ±0.1 MaskGAE 82.7 ±0.9 71.5 ±0.9 92.8 ±0.2 95.5 ±0.2 S2GAE 81.1 ±0.8 71.1 ±0.8 90.9 ±0.3 94.7 ±0.1 GiGaMAE 81.8 ±0.8 66.2 ±1.5 91.6 ±0.1 94.6 ±0.2 ALIGN GAE 84.7 ±0.5 73.2 ±0.5 94.3 ±0.2 95.9 ±0.2
+
+et al. 2021a) and SP-GCL (Wang et al. 2023) incorporate structural and spectral priors. In the graph autoencoder cate-gory, methods such as GAE (Hamilton, Ying, and Leskovec 2018) and MaskGAE (Li et al. 2023b) focus on reconstruct-ing graph structures, while GraphMAE (Hou et al. 2022) and 
+
+GiGaMAE (Shi et al. 2023) extend these methods to include node attribute reconstruction and joint edge/node masking. 
+
+MVGE (Lin et al. 2023b) and MVMI (Fan et al. 2022) inte-grate multiple attribute perspectives for enhanced represen-tation learning. 
+
+Training and Evaluation Protocol 
+
+To evaluate the quality of unsupervised embeddings for node classification, we employ a two-stage protocol. Mod-els are pretrained in an unsupervised manner on the full graph to generate 256-dimensional node embeddings over 500 epochs, using the Adam optimizer with a learning rate of 10 −2 or 10 −3 and a weight decay of 5 × 10 −5. The best checkpoint is selected every 25 epochs based on a held-out validation set. These frozen embeddings are then used as input features for a one-vs-rest logistic regression classifier. We adopt publicly available train/validation/test splits (Thakoor et al. 2023; Kipf 2016; Hamilton, Ying, and Leskovec 2017), conduct experiments with 10 random seeds, and report mean accuracy with standard deviation. For GDAE, hyperparameters are set to λ1 = 0 .1 and λ2 =10 −3, while baselines use their default hyperparameters. 
+
+Experimental Results 
+
+We evaluate A LIGN GAE on a diverse set of benchmark datasets, encompassing homophilous and heterophilous graphs. Results, summarized in Tables 2 and 3, show that A LIGN GAE consistently outperforms baseline methods across both graph types. We compare A LIGN GAE against representative methods from three categories: topology-based embeddings ( DeepWalk ), graph contrastive learning (DGI , GRACE ), and graph autoencoders ( GAE , MaskGAE ). Topology-based methods excel on homophilous graphs by capturing local structure, where nodes share similar at-Table 3: Node classification accuracy (%) on heterophilous datasets.                                                                                                                                                                           
+
+> Method Cornell Wisc. Texas Cham. Squir.
+> DeepWalk 41.1 ±6.6 48.0 ±6.6 58.4 ±4.1 42.0 ±2.4 28.7 ±1.4 GRACE 45.4 ±4.0 54.3 ±5.2 58.7 ±4.8 45.0 ±2.4 30.1 ±1.6 DGI 58.4 ±4.7 69.6 ±4.7 68.9 ±7.0 46.2 ±1.6 34.4 ±1.3 MVGRL 48.7 ±6.5 61.0 ±4.1 65.1 ±5.6 55.7 ±1.5 39.5 ±1.7 GREET 72.0 ±1.2 81.2 ±4.8 77.3 ±3.7 54.8 ±1.5 40.5 ±0.9 HGRL 70.8 ±5.9 78.2 ±2.8 74.6 ±6.3 45.0 ±1.8 36.2 ±1.3 GCA 45.1 ±6.5 53.3 ±4.0 60.3 ±5.7 49.8 ±2.2 35.5 ±1.6 MVMI 65.1 ±4.3 67.1 ±5.7 68.4 ±5.6 44.0 ±1.4 34.5 ±0.7 MVGE 71.1 ±3.8 80.6 ±4.3 76.2 ±4.5 47.5 ±2.5 31.2 ±1.4 GAE 45.7 ±6.2 53.3 ±7.1 60.0 ±5.8 48.5 ±2.2 32.9 ±1.2 GraphMAE 43.0 ±4.6 45.7 ±3.3 49.7 ±6.6 57.3 ±2.1 35.9 ±1.3 MaskGAE 63.0 ±4.5 58.2 ±3.8 63.5 ±5.0 57.9 ±2.4 41.3 ±0.6 S2GAE 49.7 ±7.9 59.6 ±4.4 60.0 ±9.0 57.0 ±2.0 42.5 ±2.1 GiGaMAE 52.2 ±5.0 46.5 ±2.5 56.8 ±4.0 44.6 ±1.2 29.1 ±1.6 ALIGN GAE 80.3 ±3.0 87.5 ±2.2 87.0 ±2.9 62.4 ±1.5 44.2 ±1.7
+
+Table 4: Ablation Study.                                                     
+
+> Method Texas Cornell Wisc. Cora Cite.
+> w/o Ledge 75.7 ±4.4 65.4 ±6.1 72.4 ±4.5 84.0 ±0.5 71.1 ±0.5 w/o Lnode 86.0 ±3.2 79.5 ±2.8 87.1 ±2.7 50.1 ±1.5 57.1 ±3.6 w/o Lalign 85.4 ±3.5 78.1 ±3.5 86.5 ±2.2 84.0 ±0.4 71.7 ±0.7 Full Model 87.0 ±2.9 80.3 ±3.0 87.5 ±2.2 84.7 ±0.5 73.2 ±0.5
+
+tributes. Contrastive methods learn robust representations by contrasting graph views but falter on heterophilous graphs. Graph autoencoders leverage reconstruction tasks to encode structure and attributes but are constrained by reliance on lo-cal patterns, limiting performance on heterophilous graphs. ALIGN GAE achieves up to 1.94% improvement over the best baseline on homophilous graphs (Cora, Citeseer) and up to 23.52% over MaskGAE on the heterophilous Texas dataset, consistent with our spectral analysis emphasizing high-frequency signals for heterophilous graphs. ALIGN GAE’s superior performance on heterophilous graphs stems from its ability to preserve high-frequency signals, crucial for distinguishing nodes with dissimilar at-tributes. Dual reconstruction tasks capture both low- and high-frequency components, while NID alignment ensures coherence between structural and attribute embeddings, en-abling effective learning of relationships in heterophilous settings. In contrast, methods relying on single views or structure alone suffer from over-smoothing, impairing node differentiation. On homophilous graphs, A LIGN GAE excels at preserving shared neighbor characteristics. These results demonstrate A LIGN GAE’s robustness in learning general-izable node representations across diverse graph structures and tasks. 
+
+Ablation Study 
+
+To validate the theoretical claims in Section Preliminary, we conduct an ablation study on A LIGN GAE’s core compo-nents: edge reconstruction loss ( Ledge ), node attribute recon-struction loss ( Lnode ), and NID alignment loss ( Lalign ). Node classification is evaluated on five datasets with varying ho-mophily: Texas, Cornell, Wisconsin, Cora, and Citeseer. Re-Table 5: Node classification accuracy (%) for different align-ment losses.                                       
+
+> Align. Loss Texas Cornell Wisc. Cora Cite.
+> LKL 86.5 ±4.2 79.7 ±4.2 87.3 ±2.9 84.2 ±0.5 71.1 ±0.5
+> LW88.4 ±3.2 80.8 ±1.9 86.9 ±2.3 83.5 ±0.5 69.9 ±0.6
+> Lcont 81.6 ±4.0 77.8 ±1.6 83.9 ±1.9 84.0 ±0.4 70.2 ±0.8
+
+sults in Table 4 show that omitting Ledge markedly degrades performance on heterophilous graphs, highlighting its role in capturing low-frequency structural signals. Removing Lnode 
+
+significantly reduces accuracy on homophilous graphs, un-derscoring the importance of high-frequency attribute sig-nals. Excluding Lalign leads to moderate accuracy drops, em-phasizing its necessity for aligning structural and attribute embeddings. These results demonstrate that A LIGN GAE’s superior performance stems from the synergistic interplay of all components. Specifically, Ledge drives performance on het-erophilous graphs, Lnode on homophilous graphs, and Lalign 
+
+ensures embedding coherence. This integration enables ALIGN GAE to effectively capture both low- and high-frequency signals, ensuring robustness across diverse graph structures and tasks. 
+
+Impact of Alignment Losses 
+
+To assess the impact of alignment losses on A LIGN GAE’s performance, we compare three loss functions: KL diver-gence ( LKL ), Wasserstein distance ( LW), and contrastive alignment ( Lcont ). These are evaluated on five benchmark datasets covering heterophilous and homophilous graphs: Texas, Cornell, Wisconsin, Cora, and Citeseer. Results in Table 5 show that LW outperforms others on heterophilous graphs, particularly Texas and Cornell, by effectively ad-dressing divergent structural and attribute distributions. In contrast, LKL excels on homophilous graphs like Cora and Citeseer, leveraging similar NIDs to minimize divergence. However, Lcont performs well on homophilous graphs but struggles with heterophilous ones due to difficulties in align-ing dissimilar node features. These findings emphasize the importance of tailoring alignment losses to graph structure. We adopt LKL in main experiments for its computational efficiency and robust per-formance, while LW is preferred for heterophilous graphs with complex distributional mismatches. This analysis un-derscores the critical role of loss selection and provides in-sights for enhancing graph representation learning across di-verse graph structures. 
+
+# Conclusion 
+
+This work demonstrates that existing unsupervised graph representation learning methods often act as low-pass filters, discarding high-frequency signals critical for heterophilous graphs and causing spectral incompleteness that limits per-formance across diverse structures. To address this, we in-troduce A LIGN GAE, a dual-view spectral alignment frame-work that preserves the full frequency spectrum through complementary representation learning. Using neighbor-hood and node view encoders, A LIGN GAE captures struc-tural and attribute information, respectively, while Neigh-borhood Identity Distribution alignment ensures view co-herence, as supported by Theorem 2. Dual reconstruction tasks restore graph topology and node attributes, main-taining spectral completeness. Experiments on nine bench-mark datasets show A LIGN GAE outperforms state-of-the-art methods, with significant gains on heterophilous graphs. 
+
+# Appendix 
+
+Appendix A: Theoretical Analysis of Alignment Strategies 
+
+This appendix provides complete proofs for the theoretical results presented in Section Preliminary, establishing rigor-ous connections between alignment losses and representa-tion quality. We demonstrate how NID alignment ensures the preservation of both homophilous and heterophilous sig-nals while maintaining semantic consistency between com-plementary representation views. These theoretical guaran-tees hold across different homophily regimes, explaining ALIGN GAE’s robust performance on diverse graph struc-tures. 
+
+Theorem 3 (Restatement of Theorem KL) . Minimizing the KL divergence alignment loss 
+
+LKL = 1
+
+n
+
+X
+
+> i∈V
+
+DKL 
+
+ pgi (δ) ∥ pmi (δ)
+
+maximizes mutual information between the geometric and message-passing views: 
+
+LKL → 0 = ⇒ MI( Zg ; Zm) = H( Zg ) = H( Zm). (22) 
+
+Proof. The KL divergence between structural pgi (δ) and at-tribute pmi (δ) is 
+
+DKL 
+
+ pgi (δ) ∥ pmi (δ) =
+
+Z
+
+pgi (δ) log pgi (δ)
+
+pmi (δ) dδ. 
+
+When LKL → 0, we obtain pgi (δ) = pmi (δ) for all i ∈ V ,showing that structural and attribute views encode the same neighborhood information. Consequently H( Zg | Zm) → 0,and Equation (22) follows. 
+
+Theorem 4 (Wasserstein Alignment Guarantees) . Minimiz-ing the Wasserstein alignment loss 
+
+LW = 1
+
+n
+
+X
+
+> i∈V
+
+W1
+
+ pgi (δ), p mi (δ)
+
+preserves the geometric structure of NID distributions while ensuring spectral completeness. Proof. The first-order Wasserstein distance is 
+
+W1
+
+ pgi (δ), p mi (δ) = inf   
+
+> γ∈Γ( pgi,p mi)
+
+Z
+
+|δ1 − δ2| dγ (δ1, δ 2),
+
+with Γ the set of admissible couplings. When LW → 0,the optimal plan γ∗ concentrates on the diagonal, aligning feature-distance distributions across views. Using the spec-tral decomposition, one obtains 
+
+U⊤FH (Zg − Zm) 2 
+
+> F
+
+≤ ϵ, 
+
+where ϵ depends on the Wasserstein distance, thus guaran-teeing spectral completeness (Theorem 2). 
+
+Theorem 5 (Contrastive Alignment Properties) . The con-trastive alignment loss Lcont enforces node-wise view con-sistency while maintaining global discriminability for both homophilous and heterophilous graphs. 
+
+Proof Sketch. Rewriting the InfoNCE loss reveals that 
+
+Lcont → 0 implies qi → 1 for every node, where qi measures relative similarity between positive and negative pairs. This yields local consistency and global separability; full deriva-tions appear in the supplementary material. 
+
+Appendix B: Spectral Analysis of Dual-Encoder Architecture 
+
+We analyze how the dual-encoder preserves the full frequency spectrum. The neighborhood view encoder (MPGNN) acts as a low-pass filter: 
+
+Zg = U g(Λ) U⊤X,
+
+with g(λk) ≈ 0 for λk > λ ∗. The node view encoder retains high-frequency information: 
+
+Zm = U h(Λ) U⊤X,
+
+where h(λk) remains significant when λk > λ ∗. Their sum satisfies 
+
+Z = U  g(Λ) + h(Λ)U⊤X.
+
+NID alignment promotes g(λk) + h(λk) ≈ 1 for all k, so 
+
+∥X − UU ⊤Z∥2 
+
+> F
+
+→ 0,
+
+achieving spectral completeness. 
+
+Appendix C: Positional Encoding Analysis 
+
+Theorem 6 (Restatement of Theorem 1) . Let P ∈ Rn×k
+
+be the positional encoding derived from r random walks per node. The empirical NID ˆpi(δ) approximates the true NID 
+
+pgi (δ) with 
+
+EWi
+
+h
+
+pgi (δ) − ˆpi(δ) TV 
+
+i
+
+≤ O  r−1/2.
+
+Proof Sketch. If the random-walk length l exceeds the mixing time τmix of the transition matrix, the Dvoret-zky–Kiefer–Wolfowitz inequality bounds the total-variation error by O(r−1/2), so even r = 10 −20 walks yield accurate NID estimates—consistent with empirical results. 
+
+# References 
+
+Balcilar, M.; H´ eroux, P.; Gauzere, B.; Vasseur, P.; Adam, S.; and Honeine, P. 2021. Breaking the limits of message passing graph neural networks. In International Conference on Machine Learning , 599–608. PMLR. Bielak, P.; Kajdanowicz, T.; and Chawla, N. V. 2022. Graph Barlow Twins: A self-supervised representation learning framework for graphs. Knowledge-Based Systems , 256: 109631. Bo, D.; Wang, X.; Shi, C.; and Shen, H. 2021. Beyond Low-frequency Information in Graph Convolutional Networks. arXiv:2101.00797. Chen, J.; Zhu, G.; Qi, Y.; Yuan, C.; and Huang, Y. 2022. To-wards self-supervised learning on graphs with heterophily. In Proceedings of the 31st ACM International Conference on Information & Knowledge Management , 201–211. Cheng, D.; Yang, F.; Xiang, S.; and Liu, J. 2022. Financial time series forecasting with multi-modality graph neural net-work. Pattern Recognition , 121: 108218. Cui, Z.; Henrickson, K.; Ke, R.; and Wang, Y. 2019. Traffic graph convolutional recurrent neural network: A deep learn-ing framework for network-scale traffic learning and fore-casting. IEEE Transactions on Intelligent Transportation Systems , 21(11): 4883–4894. Fan, X.; Gong, M.; Wu, Y.; and Li, H. 2022. Maximizing Mutual Information Across Feature and Topology Views for Learning Graph Representations. arXiv:2105.06715. Hamilton, W. L.; Ying, R.; and Leskovec, J. 2017. Represen-tation learning on graphs: Methods and applications. arXiv preprint arXiv:1709.05584 .Hamilton, W. L.; Ying, R.; and Leskovec, J. 2018. Inductive Representation Learning on Large Graphs. arXiv:1706.02216. Hassani, K.; and Khasahmadi, A. H. 2020. Con-trastive Multi-View Representation Learning on Graphs. arXiv:2006.05582. Hou, Z.; Liu, X.; Cen, Y.; Dong, Y.; Yang, H.; Wang, C.; and Tang, J. 2022. Graphmae: Self-supervised masked graph autoencoders. In Proceedings of the 28th ACM SIGKDD conference on knowledge discovery and data mining , 594– 604. Kavanaugh, A.; Carroll, J. M.; Rosson, M. B.; Zin, T. T.; and Reese, D. D. 2005. Community networks: Where offline communities meet online. Journal of Computer-Mediated Communication , 10(4): JCMC10417. Kipf, T. 2016. Semi-Supervised Classification with Graph Convolutional Networks. arXiv preprint arXiv:1609.02907 .Kipf, T. N.; and Welling, M. 2016. Variational graph auto-encoders. arXiv preprint arXiv:1611.07308 .Kipf, T. N.; and Welling, M. 2017. Semi-Supervised Classification with Graph Convolutional Networks. arXiv:1609.02907. Li, J.; Wu, R.; Sun, W.; Chen, L.; Tian, S.; Zhu, L.; Meng, C.; Zheng, Z.; and Wang, W. 2023a. What’s Behind the Mask: Understanding Masked Graph Modeling for Graph Autoencoders. arXiv:2205.10053. Li, J.; Wu, R.; Sun, W.; Chen, L.; Tian, S.; Zhu, L.; Meng, C.; Zheng, Z.; and Wang, W. 2023b. What’s Behind the Mask: Understanding Masked Graph Modeling for Graph Autoencoders. arXiv:2205.10053. Lin, B.; Li, Y.; Gui, N.; Xu, Z.; and Yu, Z. 2023a. Multi-View Graph Representation Learning Beyond Homophily. arXiv:2304.07509. Lin, B.; Li, Y.; Gui, N.; Xu, Z.; and Yu, Z. 2023b. Multi-View Graph Representation Learning Beyond Homophily. arXiv:2304.07509. Liu, Y.; Zheng, Y.; Zhang, D.; Lee, V. C.; and Pan, S. 2023. Beyond smoothing: Unsupervised graph representa-tion learning with edge heterophily discriminating. In Pro-ceedings of the AAAI conference on artificial intelligence ,volume 37, 4516–4524. Morris, C.; Ritzert, M.; Fey, M.; Hamilton, W. L.; Lenssen, J. E.; Rattan, G.; and Grohe, M. 2021. Weisfeiler and Leman Go Neural: Higher-order Graph Neural Networks. arXiv:1810.02244. Pan, E.; and Kang, Z. 2023. Beyond Homophily: Reconstructing Structure for Graph-agnostic Clustering. arXiv:2305.02931. Park, J.; Lee, M.; Chang, H. J.; Lee, K.; and Choi, J. Y. 2019. Symmetric graph convolutional autoencoder for un-supervised graph representation learning. In Proceedings of the IEEE/CVF international conference on computer vision ,6519–6528. Pei, H.; Wei, B.; Chang, K. C.-C.; Lei, Y.; and Yang, B. 2020. Geom-GCN: Geometric Graph Convolutional Net-works. arXiv:2002.05287. Perozzi, B.; Al-Rfou, R.; and Skiena, S. 2014. Deepwalk: Online learning of social representations. In Proceedings of the 20th ACM SIGKDD international conference on Knowl-edge discovery and data mining , 701–710. Shi, Y.; Dong, Y.; Tan, Q.; Li, J.; and Liu, N. 2023. GiGa-MAE: Generalizable Graph Masked Autoencoder via Col-laborative Latent Space Reconstruction. arXiv:2308.09663. Thakoor, S.; Tallec, C.; Azar, M.; Munos, R.; Veliˇ ckovi´ c, P.; and Valko, M. 2021. Bootstrapped Representation Learning on Graphs. Thakoor, S.; Tallec, C.; Azar, M. G.; Azabou, M.; Dyer, E. L.; Munos, R.; Veliˇ ckovi´ c, P.; and Valko, M. 2023. Large-Scale Representation Learning on Graphs via Bootstrap-ping. arXiv:2102.06514. Veliˇ ckovi´ c, P.; Cucurull, G.; Casanova, A.; Romero, A.; Lio, P.; and Bengio, Y. 2017. Graph attention networks. arXiv preprint arXiv:1710.10903 .Veliˇ ckovi´ c, P.; Fedus, W.; Hamilton, W. L.; Li` o, P.; Ben-gio, Y.; and Hjelm, R. D. 2018. Deep Graph Infomax. arXiv:1809.10341. Wang, H.; Zhang, J.; Zhu, Q.; Huang, W.; Kawaguchi, K.; and Xiao, X. 2023. Single-Pass Contrastive Learning Can Work for Both Homophilic and Heterophilic Graph. arXiv:2211.10890. Yang, Z.; Cohen, W. W.; and Salakhutdinov, R. 2016. Re-visiting Semi-Supervised Learning with Graph Embeddings. arXiv:1603.08861. Zhu, A.; Wang, Z.; Li, Y.; Wan, X.; Jin, J.; Wang, T.; Hu, F.; and Hua, G. 2021a. DSSL: Deep Surroundings-person Separation Learning for Text-based Person Retrieval. arXiv:2109.05534. Zhu, J.; Yan, Y.; Zhao, L.; Heimann, M.; Akoglu, L.; and Koutra, D. 2020a. Beyond Homophily in Graph Neu-ral Networks: Current Limitations and Effective Designs. arXiv:2006.11468. Zhu, Y.; Xu, Y.; Yu, F.; Liu, Q.; Wu, S.; and Wang, L. 2020b. Deep Graph Contrastive Representation Learning. arXiv:2006.04131. Zhu, Y.; Xu, Y.; Yu, F.; Liu, Q.; Wu, S.; and Wang, L. 2021b. Graph Contrastive Learning with Adaptive Augmentation. In Proceedings of the Web Conference 2021 , WWW ’21, 2069–2080. ACM. Zhu, Y.; Xu, Y.; Yu, F.; Liu, Q.; Wu, S.; and Wang, L. 2021c. Graph contrastive learning with adaptive augmentation. In 
+
+Proceedings of the web conference 2021 , 2069–2080. 
+
+# Reproducibility Checklist 
+
+1. General Paper Structure 
+
+1.1. Includes a conceptual outline and/or pseudocode de-scription of AI methods introduced (yes/partial/no/NA) yes 1.2. Clearly delineates statements that are opinions, hypoth-esis, and speculation from objective facts and results (yes/no) yes 1.3. Provides well-marked pedagogical references for less-familiar readers to gain background necessary to repli-cate the paper (yes/no) yes 
+
+2. Theoretical Contributions 
+
+2.1. Does this paper make theoretical contributions? (yes/no) no If yes, please address the following points: 2.2. All assumptions and restrictions are stated clearly and formally (yes/partial/no) no 2.3. All novel claims are stated formally (e.g., in theorem statements) (yes/partial/no) no 2.4. Proofs of all novel claims are included (yes/par-tial/no) no 2.5. Proof sketches or intuitions are given for complex and/or novel results (yes/partial/no) no 2.6. Appropriate citations to theoretical tools used are given (yes/partial/no) no 2.7. All theoretical claims are demonstrated empirically to hold (yes/partial/no/NA) NA 2.8. All experimental code used to eliminate or disprove claims is included (yes/no/NA) NA 
+
+3. Dataset Usage 
+
+3.1. Does this paper rely on one or more datasets? (yes/no) yes If yes, please address the following points: 3.2. A motivation is given for why the experiments are conducted on the selected datasets (yes/par-tial/no/NA) yes 3.3. All novel datasets introduced in this paper are in-cluded in a data appendix (yes/partial/no/NA) NA 3.4. All novel datasets introduced in this paper will be made publicly available upon publication of the pa-per with a license that allows free usage for research purposes (yes/partial/no/NA) NA 3.5. All datasets drawn from the existing literature (po-tentially including authors’ own previously pub-lished work) are accompanied by appropriate cita-tions (yes/no/NA) yes 3.6. All datasets drawn from the existing literature (potentially including authors’ own previously published work) are publicly available (yes/par-tial/no/NA) yes 3.7. All datasets that are not publicly available are de-scribed in detail, with explanation why publicly available alternatives are not scientifically satisficing (yes/partial/no/NA) NA 
+
+4. Computational Experiments 
+
+4.1. Does this paper include computational experiments? (yes/no) yes If yes, please address the following points: 4.2. This paper states the number and range of values tried per (hyper-) parameter during development of the paper, along with the criterion used for selecting the final parameter setting (yes/partial/no/NA) yes 4.3. Any code required for pre-processing data is in-cluded in the appendix (yes/partial/no) yes 4.4. All source code required for conducting and analyz-ing the experiments is included in a code appendix (yes/partial/no) yes 4.5. All source code required for conducting and ana-lyzing the experiments will be made publicly avail-able upon publication of the paper with a license that allows free usage for research purposes (yes/-partial/no) yes 4.6. All source code implementing new methods have comments detailing the implementation, with refer-ences to the paper where each step comes from (yes/-partial/no) yes 4.7. If an algorithm depends on randomness, then the method used for setting seeds is described in a way sufficient to allow replication of results (yes/par-tial/no/NA) yes 4.8. This paper specifies the computing infrastructure used for running experiments (hardware and soft-ware), including GPU/CPU models; amount of memory; operating system; names and versions of relevant software libraries and frameworks (yes/par-tial/no) yes 4.9. This paper formally describes evaluation metrics used and explains the motivation for choosing these metrics (yes/partial/no) yes 4.10. This paper states the number of algorithm runs used to compute each reported result (yes/no) yes 4.11. Analysis of experiments goes beyond single-dimensional summaries of performance (e.g., aver-age; median) to include measures of variation, con-fidence, or other distributional information (yes/no) yes 4.12. The significance of any improvement or decrease in performance is judged using appropriate statistical tests (e.g., Wilcoxon signed-rank) (yes/partial/no) yes 4.13. This paper lists all final (hyper-)parameters used for each model/algorithm in the paper’s experiments (yes/partial/no/NA) yes
