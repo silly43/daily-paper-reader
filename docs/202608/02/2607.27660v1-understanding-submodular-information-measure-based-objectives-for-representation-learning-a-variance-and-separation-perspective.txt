@@ -1,0 +1,1744 @@
+Title: Understanding Submodular Information Measure Based Objectives for Representation Learning: A Variance and Separation Perspective
+
+URL Source: https://arxiv.org/pdf/2607.27660v1
+
+Published Time: Fri, 31 Jul 2026 00:28:23 GMT
+
+Number of Pages: 34
+
+Markdown Content:
+# Understanding Submodular Information Measure Based Objectives for Representation Learning: A Variance and Separation Perspective 
+
+Rishabh Iyer 1, Truong Pham 1, and Anay Majee 21The University of Texas at Dallas, Richardson, TX, USA 
+
+> 2
+
+Adobe, San Jose, CA, USA 
+
+Abstract 
+
+Submodular Information Measures (SIMs) based objectives and loss functions have recently emerged as a powerful framework for representation learning and multi-modal learning. In particular, the SCORE framework [ 22 ] demonstrated that SIMs can serve as effective objectives for supervised contrastive representation learning, yielding strong performance across balanced and long-tailed recognition settings. Despite these empirical successes, the geometric and statistical properties induced by different submodular information measures remain poorly understood. In particular, it is unclear what notions of compactness, separation, diversity, and coverage are optimized by different SIM formulations. In this work, we develop a unified theoretical framework connecting submodular information measures to classical concepts in representation learning and statistical pattern recognition. We show that Total Information (TI) formulations based on diversity-oriented submodular functions naturally recover measures of intra-class variability. In particular, Graph Cut based TI objectives correspond to classical within-class variance, while LogDet based TI objectives recover generalized variance and covariance volume. We further show that Mutual Information (MI) formulations capture complementary notions of inter-class structure. Graph Cut based MI objectives are closely related to centroid separation and Fisher-style discriminative criteria, while Facility Location based MI objectives quantify representational overlap and modal coverage between classes. LogDet based MI objectives capture covariance-aware separation related to Mahalanobis and generalized discriminant distances. To validate these characterizations, we design a suite of controlled synthetic experiments that independently manipulate variance, covariance structure, class imbalance, class separation, and multimodal overlap. Across all settings, the empirical behavior of the corresponding information measures closely matches the proposed theoretical interpretations. Our analysis reveals that different submodular information measures induce fundamentally different geometric biases, ranging from variance reduction and covariance control to coverage and multimodal representation. These results provide the first unified understanding of SIMs for representation learning and offer principled guidance for selecting and designing future submodular objectives. 
+
+# 1 Introduction 
+
+Learning effective representations is a central problem in modern machine learning. Deep neural networks trained with cross-entropy objectives have achieved remarkable success across vision, language, and multimodal tasks [ 27 , 7, 30 , 18 ]. More recently, contrastive and metric-learning approaches such as SimCLR [ 2 ], MoCo [ 8], Supervised Contrastive Learning [ 14 ], ArcFace [ 3 ], CosFace [ 34 ], Triplet Loss [ 29 ], and Center Loss [ 36 ] have demonstrated that explicitly shaping the geometry of the representation space can substantially improve generalization, robustness, 1arXiv:2607.27660v1 [cs.LG] 30 Jul 2026 and transferability. Despite their diversity, these methods share a common objective: learning embeddings that simultaneously encourage intra-class compactness and inter-class separation. The importance of balancing compactness and separation can be traced back to classical discriminant analysis [ 4 ], where the quality of a representation is characterized by the ratio between between-class and within-class scatter. Modern representation learning methods instantiate this principle through a variety of objectives, including pairwise similarity losses [ 29 , 32 , 31 ], angular-margin losses [ 3, 34 ], contrastive objectives [ 14 , 2 ], covariance regularization [ 1 ], and neighborhood-preservation criteria [ 5 ]. While these objectives differ significantly in their formulation, they all seek to control the geometry of representations through notions of variance, covariance, separation, and diversity. In parallel, a distinct line of work has explored submodular optimization as a principled framework for modeling representation, diversity, coverage, and information [ 35 , 6 , 10 , 12 , 13 ]. Submodular functions have been widely applied to data subset selection, summarization, active learning, and representation learning [ 20 , 12 , 15 , 17 , 11 ]. A particularly powerful family of objectives is provided by submodular information measures (SIMs), which generalize classical notions of mutual information through submodular set functions [ 9 ]. SIMs have enabled targeted data selection [ 15 , 16 ], distribution-shift-aware subset selection [ 11 ], and more recently representation learning and multi-modal learning [22, 23]. SCORE [ 22 ] demonstrated that submodular information measures can serve as effective objec-tives for supervised representation learning. By constructing positive and negative sets from class labels and maximizing appropriate information measures between them, SCORE achieved competi-tive performance across multiple representation-learning benchmarks. SMILE [ 23 ] extended the formulation of SCORE to few-shot representation learning, and showed that using the submodular mutual information based objectives can enable learning of new classes without forgetting known classes. In [ 24 ], the authors proposed a framework called CROWD that used the objectives from SCORE and SMILE for open world learning problems, while [ 21 ] proposed a new family of loss functions for hard sample mining. Finally, [ 26 ] proposed the Submodular Modality Aligner , a new family of objective functions for multi-modal alignment. However, despite its empirical success, a fundamental question remains unanswered: what geometric properties of the embedding space are induced by different submodular information measures? . In SCORE [ 22 ], SMILE [ 23 ], SHaSaM [ 21 ], and SMA [ 26 ], various variants of Total Submodular Information (TI) and Submodular Mutual Information (SMI) variants have been proposed – including Facility Location TI, Log-Det TI, Graph Cut Mutual Information (GCMI), Facility Location Mutual Information (FLQMI), LogDet Mutual Information and their variants [ 17 , 11 , 9 ]. However, there is currently little understanding of the representation-learning biases encoded by these objectives. This lack of understanding creates an important gap between theory and practice. Existing work largely treats different SIMs as interchangeable objective functions, selecting them empirically based on downstream performance [ 22 , 23 , 21 , 26 ]. Yet our experiments reveal that different SIMs induce fundamentally different geometric structures. For example, Graph Cut based objectives are closely related to variance-separation criteria and favor global class separation, while Facility Location based objectives emphasize coverage and multimodal representation. LogDet-based objectives, in contrast, explicitly capture covariance structure and generalized variance. These differences become especially pronounced in settings involving multimodal classes, long-tailed distributions, and heterogeneous semantic concepts, where distinct SIMs exhibit markedly different behaviors. In this paper, we develop the first systematic theoretical and empirical study of submodular information measures for representation learning. We establish explicit connections between several widely used SIMs and classical statistical quantities including variance, covariance, generalized variance, class separation, and coverage. We show that Graph Cut based measures recover variance-2separation objectives analogous to Fisher-style discriminant criteria, while Facility Location based measures provide coverage-oriented objectives that better capture multimodal class structure. We further characterize the regimes in which these objectives agree and diverge, and derive theoretical results explaining their behavior under class imbalance and multimodal distributions. Our analysis yields both theoretical insights and practical guidance. Through synthetic studies, visualization experiments, and representation-learning benchmarks, we demonstrate that no single SIM is universally optimal. Instead, different information measures encode different inductive biases that make them suitable for different representation-learning regimes. These results provide a principled foundation for selecting and designing submodular information measures for representation learning and establish new connections between submodular optimization, information theory, and modern representation learning. 
+
+Contributions. Our primary contributions are: 1. A unified geometric theory of Submodular Information Measures. We develop a theoretical framework connecting Submodular Information Measures (SIMs) to classical concepts in statistical pattern recognition and representation learning. Our analysis reveals that different SIMs recover fundamentally different notions of intra-class variability and inter-class separation. 2. Characterization of Total Information objectives. We show that Graph Cut Total Information recovers classical within-class variance, LogDet Total Information recovers gener-alized variance through covariance volume, and Facility Location Total Information induces imbalance-aware separation margins that naturally emphasize rare and confusable classes. 3. Characterization of Mutual Information objectives. We establish that Graph Cut Mutual Information is intimately connected to aggregate centroid separation and show that the combined GC-TI and GCMI objective exactly recovers the classical aggregate mean-separation criterion. We further show that LogDet Mutual Information recovers Mahalanobis-style covariance-aware separation, while Facility Location Mutual Information captures nearest-mode representational overlap in multimodal settings. 4. A unified view of SCORE objectives. Our results provide the first theoretical explanation of the representation-learning biases induced by the SCORE framework, revealing how different combinations of Total Information and Mutual Information objectives recover distinct classical discriminative criteria. 5. Comprehensive empirical validation. We design a suite of controlled synthetic experiments that independently manipulate variance, covariance structure, class imbalance, centroid separa-tion, and multimodal overlap. Across all settings, the empirical behavior of the corresponding information measures closely matches the proposed theoretical characterizations. 
+
+# 2 Background and Preliminaries 
+
+In this section, we briefly review representation learning, submodular functions, submodular information measures, and the SCORE framework that motivates our analysis. 32.1 Representation Learning 
+
+Let D = (xi, y i)Ni=1 denote a labeled dataset with K classes, where yi ∈ 1, . . . , K . Given an encoder 
+
+f ∗ θ, each sample is mapped to a representation 
+
+zi = fθ(xi) ∈ Rd. (1) A central objective in supervised representation learning is to learn embeddings that are both compact within a class and well separated across classes. Classical approaches such as Fisher’s Linear Discriminant Analysis [ 4] formalize this principle through within-class and between-class scatter matrices, while modern metric-learning and contrastive-learning methods achieve similar goals through pairwise, triplet, or contrastive objectives [29, 36, 2, 14, 3, 34]. For a class Cc, let 
+
+μc = 1
+
+|Cc|
+
+> ∑
+> i∈Cc
+
+zi (2) denote the class centroid. Throughout the paper, we will connect submodular information measures to classical notions of: 
+
+• Intra-class variability , which measures how dispersed samples are within a class. 
+
+• Inter-class separation , which measures how distinct different classes are from one another. 
+
+• Coverage and representation , which quantify how well one set of samples represents another. 
+
+2.2 Submodular Functions 
+
+Let V denote a finite ground set. A set function f : 2 V → R is submodular if it satisfies the diminishing returns property: f (A ∪ j) − f (A) ≥ f (B ∪ j) − f (B), for all A ⊆ B ⊆ V and 
+
+j / ∈ B. Submodular functions naturally model notions of representation, diversity, and coverage and have been extensively used in subset selection, summarization, active learning, and information maximization [ 6 , 10 , 20 ]. Throughout this work, we focus on four commonly used submodular functions (Graph Cut, Facility Location, and Log Determinant): 
+
+Graph Cut (GC). Graph Cut captures a tradeoff between representation and diversity and is defined over a similarity matrix S as 
+
+fGC (A) = λ ∑
+
+> i∈A
+> ∑
+> j∈V
+
+sij − ∑
+
+> i,j ∈A
+
+sij . (3) 
+
+Facility Location (FL). Facility Location is a representation-oriented function that measures how well a subset represents the ground set: 
+
+fFL (A) = ∑
+
+> i∈V
+
+max  
+
+> j∈A
+
+sij . (4) 4LogDet (LD). LogDet is a diversity-oriented function based on the determinant of a similarity kernel. It is closely related to determinantal point processes and generalized variance [19]. 
+
+fLD (A) = log det( SA). (5) These functions represent distinct notions of diversity, coverage, and representation, and form the basis of the information measures [9] studied in this paper. 
+
+2.3 Submodular Information Measures 
+
+Submodular Information Measures (SIMs) generalize classical information-theoretic quantities using submodular set functions [ 9 ]. Given a submodular function f , the corresponding submodular mutual information between two sets A and B is defined as 
+
+If (A; B) = f (A) + f (B) − f (A ∪ B). (6) Different choices of f induce different notions of similarity and dependence. For example, Graph Cut Mutual Information (GCMI), Facility Location Mutual Information (FLQMI), and LogDet Mutual Information (LogDetMI) arise from choosing Graph Cut, Facility Location, and LogDet functions respectively [15, 17, 11]. Complementary to MI is the notion of Total Information (TI), which measures the aggregate dependence among multiple sets: 
+
+T I f (C1, . . . , C K ) = 
+
+> K∑
+> c=1
+
+f (Cc) (7) Throughout this work, we analyze mainly the TI and MI formulations and show that they capture distinct geometric properties of the representation space. 
+
+2.4 SCORE: Submodular Combinatorial Representation Learning 
+
+Recently, Majee et al. [ 22 ] proposed SCORE, a supervised representation learning framework based on submodular information measures. SCORE constructs positive and negative sets using class labels and optimizes submodular objectives directly in the embedding space. Given an embedding function fθ, SCORE defines a similarity matrix over representations and computes the Total Information (TI) and Total Correlation (TC) variants. Different choices of the underlying submodular function lead to different learning objectives, including Graph Cut, Facility Location, and LogDet variants. Empirically, SCORE demonstrated that submodular information measures provide effective objectives for supervised representation learning and achieve strong performance across balanced, imbalanced, and long-tailed recognition settings. However, despite these empirical successes, the geometric and statistical properties induced by different information measures remain poorly understood. The goal of this paper is to provide a unified theoretical understanding of these objectives. In particular, we ask: What notions of variability, separation, and coverage are optimized by different submod-ular information measures? By connecting SIMs to classical statistical quantities such as variance, covariance volume, mean separation, and modal coverage, we develop a principled understanding of the representation-learning biases induced by different submodular objectives. 53 A Unified Geometric View of Submodular Information Measures 
+
+The central goal of this paper is to understand the geometric biases induced by different submodular information measures. While prior work has demonstrated that Graph Cut, Facility Location, LogDet, and Coverage-based information measures are effective for representation learning [ 15 , 17 , 11 , 22 ], there is currently little understanding of the statistical quantities they optimize. In this section, we introduce the key geometric quantities studied throughout the paper, present a generic formulation of SCORE, and summarize the main theoretical results established in subsequent sections. 
+
+3.1 Variance, Separation, and Coverage 
+
+Consider a collection of classes C1, . . . , C K , where each class Cc consists of embedded samples 
+
+zi ∈ Rd. Let 1 
+
+> |Cc|
+> ∑
+> i∈Cc
+
+zi denote the centroid of class Cc, and let 1 
+
+> |Cc|
+> ∑
+> i∈Cc
+
+(zi − μc)( zi − μc)T
+
+denote its covariance matrix. A central theme of this paper is that there is no unique notion of either intra-class variability or inter-class separation. Instead, different objectives emphasize different geometric properties of the representation space. We therefore begin by introducing several classical quantities that will later be connected to specific submodular information measures. 
+
+3.1.1 Quantifying Intra-Class Structure 
+
+The most common notion of intra-class variability is the within-class variance: Intra-Class-Var (C1, · · · , C k) = 
+
+> K∑
+> c=1
+> ∑
+> i∈Cc
+
+|zi − μc|2 = 12
+
+> K∑
+> c=1
+
+1
+
+|Cc|
+
+> ∑
+> i,j ∈Cc
+
+|zi − zj |2 (8) The second equality holds using standard variance identities. Thus, within-class variance may be interpreted either through distances to class centroids or through average pairwise distances within a class. A more general notion of variability is provided by the generalized variance: Intra-Class-GenVar (C1, · · · , C k) = 
+
+> K∑
+> c=1
+
+log det(Σ c) (9) which captures not only the magnitude of variation but also the covariance structure and effective dimensionality of each class. 
+
+3.1.2 Quantifying Inter-Class Structure Mean-Based Inter-Class Separation. A classical notion of inter-class separation is the pairwise centroid separation: Mean-Separation M B (C1, · · · , C k) = ∑
+
+> i<j
+
+|μi − μj |2 (10) This quantity forms the basis of between-class scatter in Fisher’s discriminant analysis and measures how far apart class centroids are in the embedding space. 6Covariance-Aware Inter-Class Separation. A second notion of separation accounts for covari-ance structure through Mahalanobis distances: Cov-Separation (C1, · · · , C k) = ∑
+
+> i<j
+
+(μi − μj )T Σ−1(μi − μj ) (11) where Σ denotes an appropriate pooled covariance matrix. Unlike centroid separation, this quantity measures separation relative to the variability of the classes and therefore captures discriminability rather than distance alone. 
+
+Representational Overlap. A third notion of inter-class structure is representational rather than geometric. Instead of asking whether class centroids are far apart, one may ask whether the modes of one class can be represented by another class. If overlap occurs across many modes, the two classes exhibit high representational overlap. If overlap is confined to only a few modes, the classes remain distinguishable despite potentially similar centroid locations. As we show later, Facility Location based mutual information naturally captures this notion of representational overlap. 
+
+3.2 A Generic SCORE Objective 
+
+A central observation underlying SCORE [ 22 ] is that effective representation learning requires simultaneously controlling both intra-class variability and inter-class bias. The former determines the compactness and diversity of individual classes, while the latter governs the relationships among different classes. This perspective naturally motivates the use of submodular information measures within a representation learning framework. Let C = {C1, . . . , C K } denote the collection of classes and let 
+
+If (·; ·) denote a submodular mutual information measure induced by a submodular function f .A generic SCORE-style objective can be written as 
+
+LSCORE = λTI T I f (C1, . . . , C K ) + λSMI 
+
+> ∑
+> i<j
+
+If (Ci; Cj ), (12) where λTI and λSMI control the relative importance of the two terms. In the original SCORE paper [ 22 ], the first term (TI) was proposed while the second term was used for few-shot representation learning in [ 23 ]. In this paper, we analyze the combined objective, and we can get back the objective from [22] by setting λSMI as 0. This decomposition naturally separates representation learning into two components: SCORE = TI ︸︷︷︸ 
+
+> Multi-Class Information
+
++ SMI ︸ ︷︷ ︸ 
+
+> Pairwise Class Information
+
+. (13) A key observation of this paper is that neither TI nor SMI admits a universal geometric interpretation. Rather, the quantities captured by these objectives depend fundamentally on the choice of the underlying submodular function. Broadly speaking, submodular functions used in representation learning can be categorized according to whether they emphasize representation, diversity, or a combination of both. 
+
+• Representation-oriented functions emphasize how well one set represents another. Exam-ples include Facility Location and Saturated Coverage. 7• Diversity-oriented functions emphasize dispersion among elements. Examples include LogDet and dispersion-based objectives. 
+
+• Hybrid functions simultaneously contain representation and diversity components. The most prominent example is Graph Cut, 
+
+fGC (A) = λ ∑
+
+> i∈A
+> ∑
+> j∈V
+
+sij − ∑
+
+> i,j ∈A
+
+sij , (14) where the first term is representation-oriented while the second term is diversity-oriented. This distinction is important because the geometric interpretation of TI and SMI depends strongly on the underlying submodular function. For diversity-oriented functions such as Graph Cut and LogDet, the TI formulations will be shown to recover classical notions of intra-class variability, including pairwise variance and generalized variance. In contrast, for representation-oriented functions such as Facility Location and Saturated Coverage, the TI formulations induce quantities that are closely related to inter-class representation and bias. Similarly, different SMI functions induce different notions of inter-class structure. As we show later, Graph Cut Mutual Information is closely related to centroid separation, LogDet Mutual Information captures covariance-aware separation, while Facility Location Mutual Information captures representational overlap between classes. Consequently, the geometric behavior of a SCORE objective is determined jointly by two factors: 1. The information measure being optimized (TI or SMI). 2. The representation-versus-diversity characteristics of the underlying submodular function. The primary goal of this paper is to characterize the notions of intra-class variability and inter-class bias induced by different combinations of these two factors. 
+
+3.3 Summary of Main Results 
+
+The central question studied in this paper is: What notions of intra-class variability and inter-class bias are induced by different submodular information measures? Our analysis reveals that the behavior of a SCORE objective is governed jointly by the information measure being optimized (TI or SMI) and the representation-versus-diversity characteristics of the underlying submodular function. In particular, we establish the following results: 
+
+• Graph Cut TI and intra-class variance. We show that Graph Cut based Total Information admits a decomposition into inter-class bias and intra-class variance terms. Under suitable parameterizations, the diversity component recovers classical within-class variance and its equivalent pairwise-distance formulation. 
+
+• LogDet TI and generalized variance. We show that LogDet based Total Information recovers generalized variance and covariance volume, thereby capturing both the magnitude and covariance structure of within-class variability. 8Table 1: Summary of the geometric biases induced by different Submodular Information Measures.                 
+
+> Measure Category Quantity Recovered GC-TI Intra-Class Within-class variance LogDet-TI Intra-Class Generalized variance FL-TI Inter/Intra-Class Rare-class margin expansion GCMI Inter-Class Aggregate overlap / centroid separation GC-TI + GCMI Inter + Intra Class Aggregate mean separation LogDetMI Inter-Class Mahalanobis separation FLQMI Inter-Class Nearest-mode overlap
+
+• Representation-oriented TI objectives and inter-class bias. Unlike diversity-based objectives, representation-oriented functions such as Facility Location and Saturated Coverage induce Total Information formulations that depend explicitly on interactions between classes, yielding notions of inter-class representation and bias rather than classical intra-class variability. 
+
+• Graph Cut Mutual Information and mean separation. We establish a direct connection between Graph Cut Mutual Information and classical notions of centroid separation and between-class scatter. 
+
+• LogDet Mutual Information and covariance-aware separation. We show that LogDet Mutual Information captures covariance-aware notions of separation and admits connections to Mahalanobis and Fisher-style discriminative criteria. 
+
+• Facility Location Mutual Information and representational overlap. We show that Facility Location based mutual information induces a distinct notion of representational overlap, quantifying the extent to which the modes of one class are represented by another. Together, these results provide a unified geometric interpretation of submodular information measures and explain the distinct representation-learning biases induced by different SCORE objectives. Table 1 provides a clean summary of the different objectives (TI and MI) and the respective variance and bias quantities recovered. 
+
+# 4 Total Information Objectives 
+
+In this section, we study Total Information (TI) objectives and characterize the geometric quantities induced by different submodular functions. Recall that for a collection of classes C = C1, . . . , C K ,the Total Information induced by a submodular function f is given by 
+
+T I f (C1, . . . , C K ) = 
+
+> K∑
+> c=1
+
+f (Cc). (15) Unlike Submodular Mutual Information, which explicitly models interactions between pairs of classes, Total Information aggregates the contribution of each class independently. Nevertheless, as we show below, the resulting objective need not be purely intra-class in nature. Depending on the underlying submodular function, TI objectives can induce both intra-class variability terms and inter-class bias terms. A key observation of this paper is that the behavior of a TI objective depends strongly on whether the underlying submodular function is diversity-oriented, representation-oriented, or a 9combination of both. Diversity-based functions naturally recover classical notions of intra-class variability, while representation-based functions induce interactions between classes and therefore capture notions of inter-class representation and bias. In the remainder of this section, we analyze four widely-used submodular functions: (i) Graph Cut (GC), (ii) LogDet (LD), (iii) Facility Location (FL), and (iv) Saturated Coverage (SatCov). For each function, we derive the corresponding Total Information objective and connect it to classical statistical quantities arising in representation learning and pattern recognition. 
+
+4.1 Graph Cut Total Information 
+
+We begin with Graph Cut, which occupies a unique position among submodular functions because it simultaneously contains representation and diversity components. Recall that the Graph Cut function is defined as 
+
+fGC (A) = λ ∑
+
+> i∈A
+> ∑
+> j∈V
+
+sij − ∑
+
+> i,j ∈A
+
+sij , (16) where S = [ sij ] denotes a similarity matrix and λ ∈ [0 , 1] controls the balance between represen-tation and diversity. Substituting this expression into the Total Information objective yields 
+
+T I GC =
+
+> K∑
+> c=1
+
+fGC (Cc) = λ
+
+> K∑
+> c=1
+> ∑
+> k∈Cc
+> ∑
+> l∈V
+
+skl −
+
+> K∑
+> c=1
+> ∑
+> k,l ∈Cc
+
+skl . (17) Separating the first term into within-class and cross-class contributions gives 
+
+T I GC = λ
+
+> K∑
+> c=1
+> ∑
+> k∈Cc
+>  ∑
+> l∈Cc
+
+skl + ∑ 
+
+> l∈V\Cc
+
+skl  
+
+> 
+
+−
+
+> K∑
+> c=1
+> ∑
+> k,l ∈Cc
+
+skl (18) 
+
+= λ 
+
+> K∑
+> c=1
+> ∑
+> k∈Cc
+> ∑
+> l∈V\Cc
+
+skl − (1 − λ)
+
+> K∑
+> c=1
+> ∑
+> k,l ∈Cc
+
+skl . (19) Equation (19) reveals an important decomposition. The first term measures interactions between a class and all points outside the class and therefore induces a notion of inter-class bias. The second term depends only on pairwise similarities within each class and therefore captures intra-class variability. This decomposition is particularly interesting because it mirrors the classical representation learning objective of simultaneously maximizing inter-class separation while minimizing intra-class variability. Unlike purely diversity-oriented or purely representation-oriented functions, Graph Cut naturally contains both components within a single objective. In the next subsection, we establish a direct connection between the diversity component of Graph Cut Total Information and classical within-class variance under an appropriate similarity model. 
+
+4.1.1 Graph Cut TI and Within-Class Variance 
+
+We now establish a connection between the diversity component of Graph Cut Total Information and classical within-class variance. 10 Consider the shifted Euclidean similarity 
+
+sij = M − | zi − zj |2, (20) where M is a sufficiently large constant ensuring non-negativity of the similarity matrix. Substituting Equation (20) into the diversity component of Equation (19) yields 
+
+> ∑
+> k,l ∈Cc
+
+skl = ∑
+
+> k,l ∈Cc
+> (
+
+M − | zk − zl|2)
+
+= |Cc|2M − ∑
+
+> k,l ∈Cc
+
+|zk − zl|2. (21) Thus, up to an additive constant, maximizing the diversity component of Graph Cut TI is equivalent to maximizing the total pairwise distance within each class. The following theorem establishes the precise connection. 
+
+Theorem 1. Define the similarity kernel as follows: 
+
+sij = M − | zi − zj |2. (22) 
+
+The Graph-Cut Total Information with λ = 0 satisfies: TI GC (C1, · · · , C k) = −
+
+> K∑
+> c=1
+> ∑
+> k,l ∈Cc
+
+skl = −2
+
+> K∑
+> c=1
+
+|Cc| ∑
+
+> k∈Cc
+
+|zk − μc|2 + const , (23) 
+
+where μc denotes the centroid of class Cc. Consequently, Graph Cut Total Information recovers classical within-class variance up to a class-dependent scaling factor and an additive constant. 
+
+Theorem 1 provides a direct connection between Graph Cut based Total Information and one of the most fundamental quantities in statistical pattern recognition. In particular, the diversity component of Graph Cut TI recovers the classical within-class scatter objective used in Fisher’s Linear Discriminant Analysis. An important implication is that minimizing Graph Cut TI encourages compact class repre-sentations by reducing within-class variability. Furthermore, because the derivation is based on pairwise distances, the resulting objective remains valid for multimodal classes and does not rely on any explicit centroid computation. In Section 6, we empirically validate this characterization by constructing synthetic datasets with controlled within-class variance and demonstrating that Graph Cut Total Information tracks the resulting variability almost perfectly. 
+
+4.2 LogDet Total Information and Generalized Variance 
+
+We next consider LogDet, a diversity-oriented submodular function that has been widely used in subset selection, determinantal point processes, and diversity maximization. Recall that the LogDet function is defined as 
+
+fLD (A) = log det( KA), (24) where KA denotes the principal kernel matrix corresponding to the subset A. The corresponding Total Information objective is 
+
+T I LD (C1, · · · , C k) = 
+
+> K∑
+> c=1
+
+log det( KCc ). (25) 11 Unlike Graph Cut, which decomposes into representation and diversity terms, LogDet is purely diversity-oriented. Consequently, we expect LogDet based Total Information to capture a notion of intra-class variability. To formalize this connection, let 
+
+Σc = 1
+
+|Cc|
+
+> ∑
+> i∈Cc
+
+(zi − μc)( zi − μc)T (26) denote the covariance matrix of class Cc. A classical measure of variability is the generalized variance 
+
+GV (Cc) = log det(Σ c), (27) which measures the covariance volume occupied by the class. The following theorem establishes a connection between LogDet Total Information and generalized variance. 
+
+Theorem 2. Assume that the samples within each class are drawn from a distribution with covariance matrix Σc, and let KCc denote the corresponding kernel matrix constructed from these samples. Under standard regularity conditions and in the large-sample regime, 
+
+log det( KCc ) = ac + bc log det(Σ c) + o(1) , (28) 
+
+where ac and bc > 0 are constants depending on the kernel and embedding dimension. Consequently, 
+
+T I LD =
+
+> K∑
+> c=1
+
+log det( KCc ) (29) 
+
+is a monotone transformation of K∑
+
+> c=1
+
+log det(Σ c), (30) 
+
+and therefore recovers the generalized variance of the class distributions. 
+
+Theorem 2 reveals that LogDet Total Information captures a richer notion of variability than Graph Cut. While Graph Cut is related to within-class variance through pairwise distances, LogDet additionally incorporates covariance structure and effective dimensionality. In particular, two classes may have identical trace variance but very different covariance volumes. Graph Cut treats such classes similarly, whereas LogDet distinguishes them through the determinant of their covariance matrices. Consequently, LogDet TI may be viewed as a covariance-aware generalization of classical within-class variance. In Section 6, we validate this interpretation through synthetic experiments that independently vary covariance volume while controlling other factors. We observe an almost perfect monotonic relationship between LogDet Total Information and generalized variance, supporting the theoretical characterization above. 
+
+4.3 Facility Location Total Information and Rare Class Margins 
+
+We next consider Facility Location, one of the most widely used representation-oriented submodular functions. Recall that the Facility Location function is defined as 12 fFL (A) = ∑
+
+> i∈V
+
+max  
+
+> j∈A
+
+sij , (31) where V denotes the ground set and S = [ sij ] is a similarity matrix. The corresponding Total Information objective is 
+
+T I FL =
+
+> K∑
+> c=1
+
+fFL (Cc) = 
+
+> K∑
+> c=1
+> ∑
+> i∈V
+
+max 
+
+> j∈Cc
+
+sij . (32) Unlike Graph Cut and LogDet, Facility Location contains no explicit diversity component. Instead, it measures how well each class represents the points in the ground set through nearest-neighbor similarity. To understand the structure of Equation (32), we separate the contribution of points belonging to the class from those lying outside the class: 
+
+T I FL =
+
+> K∑
+> c=1
+> [ ∑
+> i∈Cc
+
+max 
+
+> j∈Cc
+
+sij + ∑ 
+
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij 
+
+> ]
+
+. (33) Assuming normalized similarities satisfying sii = 1 , the first term is constant since each point is maximally represented by itself. Consequently, 
+
+T I FL = N + 
+
+> K∑
+> c=1
+> ∑
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij , (34) where N denotes the total number of samples. Equation (34) reveals that Facility Location Total Information is entirely governed by cross-class interactions. Unlike Graph Cut and LogDet, which recover classical notions of intra-class variability, Facility Location TI measures how well each class represents the remainder of the dataset. To make this dependence explicit, define 
+
+Rc = 1
+
+N − nc 
+
+> ∑
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij , (35) where nc = |Cc| denotes the size of class Cc. The quantity Rc measures the average representa-tional affinity between class Cc and all samples outside the class. Substituting Equation (35) into Equation (34) gives 
+
+T I FL = N +
+
+> K∑
+> c=1
+
+(N − nc)Rc. (36) Consequently, the contribution of class Cc is weighted by N − nc. Classes with fewer samples therefore receive larger relative weight than classes with many samples. As a result, Facility Location Total Information naturally emphasizes rare and underrepresented classes. 
+
+Theorem 3 (Facility Location TI Induces Larger Margins for Rare Classes) . Assume normalized similarities satisfying sii = 1 and suppose each class Cc forms a compact cluster and let δc denote the distance between the centroid of class Cc and its nearest competing class. Further assume an RBF similarity 
+
+13 sij = exp 
+
+> (
+
+− ∥zi − zj ∥2
+
+2τ 2
+
+> )
+
+. (37) 
+
+Then the cross-class contribution of class Cc satisfies  
+
+> ∑
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij = Θ 
+
+> (
+
+(N − nc) exp 
+
+> (
+
+− δ2
+
+> c
+
+2τ 2
+
+> ))
+
+. (38) 
+
+Consequently, the influence of class Cc on Facility Location Total Information scales as 
+
+Influence( Cc) = Θ 
+
+> (
+
+(N − nc) exp 
+
+> (
+
+− δ2
+
+> c
+
+2τ 2
+
+> ))
+
+. (39) 
+
+Furthermore, if two classes Ca and Cb contribute equally to the objective, then 
+
+δ2 
+
+> a
+
+− δ2 
+
+> b
+
+= 2 τ 2 log  
+
+> (
+
+N − na
+
+N − nb
+
+> )
+
+. (40) 
+
+In particular, if na < n b, then δa > δ b. Thus, for the same effective contribution to the FL-TI objective, smaller classes require larger separation margins. 
+
+Interpretation. Theorem 3 provides a theoretical explanation for the strong empirical performance of Facility Location based SCORE objectives in long-tailed settings [ 22 ]. Unlike variance-based objectives, whose contribution typically scales with the number of samples within a class, Facility Location Total Information penalizes class overlap with a weight proportional to the number of samples outside the class. As a result, tail classes incur a larger penalty when they overlap with neighboring classes. To reduce the objective, the representation must therefore increase the separation of rare classes more aggressively than that of head classes. The induced margin grows approximately as 
+
+δ2 
+
+> c
+
+= 2 τ 2 log( N − nc) + const . (41) showing that Facility Location naturally allocates larger margins to underrepresented classes. This result provides a principled explanation for the long-tail robustness observed in SCORE-FL [ 22 ]and suggests that representation-oriented submodular objectives implicitly perform class-dependent margin adaptation without requiring explicit reweighting or resampling. 
+
+# 5 Submodular Mutual Information Objectives 
+
+In the previous section, we studied Total Information objectives and showed that different submodular functions induce different notions of intra-class variability and inter-class bias. We now turn our attention to Submodular Mutual Information (SMI) objectives. Recall that for two sets A and B, the submodular mutual information induced by a submodular function f is 
+
+If (A; B) = f (A) + f (B) − f (A ∪ B). (42) Unlike Total Information, which aggregates information within classes, SMI explicitly measures interactions between sets. Consequently, SMI objectives are naturally suited for modeling inter-class structure. A generic SCORE objective based on pairwise mutual information takes the form 14 ∑
+
+> i<j
+
+If (Ci; Cj ), (43) where Ci and Cj denote different classes. The central question studied in this section is: What notions of inter-class bias and separation are induced by different submodular mutual information measures? We answer this question for Graph Cut, LogDet, and Facility Location based mutual information and establish connections to classical notions of mean separation, covariance-aware discrimination, and representational overlap. 
+
+5.1 Graph Cut Mutual Information and Mean Separation 
+
+We now turn to Graph Cut Mutual Information (GCMI), which provides a complementary perspective to the Graph Cut Total Information objective studied in Section 4.1. While Graph Cut Total Information was shown to recover within-class variance, Graph Cut Mutual Information captures interactions between classes and therefore provides a natural measure of inter-class structure. For two classes Ca and Cb, Graph Cut Mutual Information takes the form 
+
+IGC (Ca; Cb) = ∑
+
+> i∈Ca
+> ∑
+> j∈Cb
+
+sij , (44) which measures the aggregate similarity between samples belonging to different classes. Intuitively, if two classes are well separated, cross-class similarities are small and the corresponding Graph Cut Mutual Information is low. Conversely, if two classes overlap substantially, many cross-class similarities become large, leading to a larger GCMI value. We now establish a precise connection between GCMI and classical notions of class separation. Consider two classes Ca and Cb with centroids μa and μb. Define the mean separation 
+
+D(Ca, C b) = ∥μa − μb∥2. (45) The following theorem shows that mean separation admits a decomposition into within-class variance terms and a Graph Cut Mutual Information term. 
+
+Theorem 4 (GC Decomposition of Aggregate Mean Separation) . Let 
+
+sij = M − ∥ zi − zj ∥2, (46) 
+
+where M is a sufficiently large constant, and let nc = |Cc|. Define the aggregate centroid-separation objective 
+
+Dmean = ∑
+
+> a<b
+
+nanb∥μa − μb∥2. (47) 
+
+Then minimizing the negative mean-separation objective is equivalent, up to positive scaling and additive constants, to minimizing 
+
+−D mean ≡ αTI ˜T I λ=0 GC + αMI 
+
+> ∑
+> a<b
+
+IGC (Ca; Cb), (48) 
+
+where 
+
+> ˜
+
+T I λ=0 GC =
+
+> K∑
+> c=1
+
+N − nc
+
+2nc
+
+> 
+
+− ∑
+
+> i,j ∈Cc
+
+sij  
+
+> 
+
+(49) 15 is a class-size weighted Graph Cut Total Information term, and αTI , α MI > 0 are constants depending only on normalization. In the balanced-class setting, ˜T I λ=0 GC reduces to a positive scalar multiple of the standard T I λ=0 GC .Thus, in the balanced case, the GC-based SCORE objective consisting of standard Graph Cut Total Information with λ = 0 and pairwise GCMI recovers the classical objective of maximizing aggregate inter-class centroid separation. 
+
+Interpretation. Theorem 4 shows that the natural multi-class separation objective ∑ 
+
+> a<b
+
+nanb∥μa−
+
+μb∥2 is exactly decomposed into two SCORE components: a TI term over classes and a pairwise SMI term over class pairs. Thus, the combined GC-based SCORE objective recovers the clas-sical discriminative principle of minimizing within-class scatter while maximizing between-class separation. 
+
+5.2 LogDet Mutual Information and Mahalanobis Separation 
+
+While Graph Cut Mutual Information captures centroid separation, it is insensitive to the covariance structure of the underlying classes. In many representation learning settings, classes may exhibit highly anisotropic or correlated distributions, making covariance-aware notions of separation more appropriate. To address this limitation, we consider LogDet Mutual Information (LogDetMI). Recall that 
+
+ILD (Ca; Cb) = fLD (Ca) + fLD (Cb) − fLD (Ca ∪ Cb), (50) where 
+
+fLD (A) = log det( KA), (51) and KA denotes the kernel matrix associated with subset A.Unlike Graph Cut Mutual Information, which depends primarily on cross-class similarities, LogDetMI incorporates the covariance structure of the participating classes through the determinants of the corresponding kernel matrices. The following theorem establishes a connection between LogDetMI and covariance-aware notions of class separation. 
+
+Theorem 5 (LogDetMI and Mahalanobis Separation) . Let classes Ca and Cb have means μa, μ b,covariance matrices Σa, Σb, and class proportions 
+
+p = na
+
+na + nb
+
+, q = nb
+
+na + nb
+
+. (52) 
+
+Define the pooled covariance 
+
+Σw = pΣa + qΣb (53) 
+
+and the Mahalanobis separation 
+
+Mab = ( μa − μb)T Σ−1 
+
+> w
+
+(μa − μb). (54) 
+
+Under the covariance LogDet approximation, LogDet Mutual Information satisfies 
+
+ILD (Ca; Cb) = const − log (1 + pq Mab ) . (55) 16 Consequently, LogDetMI is a monotone decreasing function of Mahalanobis separation. Thus, minimizing LogDetMI is equivalent, up to monotone transformations, to maximizing covariance-normalized class separation. 
+
+Interpretation. Theorem 5 reveals a fundamental distinction between Graph Cut and LogDet based mutual information. While Graph Cut Mutual Information is primarily governed by centroid separation, LogDetMI depends on the Mahalanobis separation between classes and therefore explicitly accounts for covariance structure and anisotropy. As a result, two pairs of classes with identical Euclidean centroid separation may receive substantially different LogDetMI values if their covariance structures differ. In particular, LogDetMI naturally favors separation along directions of low within-class variance, closely mirroring classical Fisher and Mahalanobis discriminative criteria. Consequently, LogDetMI may be viewed as a covariance-aware generalization of centroid separation, providing a richer notion of inter-class discrimination than Graph Cut Mutual Information. In Section 6, we validate this interpretation by independently varying centroid separation and covariance structure. The resulting experiments demonstrate a strong monotonic relationship between LogDetMI and Mahalanobis separation, supporting the theoretical characterization above. 
+
+5.3 Facility Location Mutual Information and Nearest Mode Overlap 
+
+While Graph Cut and LogDet based mutual information capture different notions of class separa-tion, Facility Location Mutual Information (FLQMI) captures a fundamentally different property: representational overlap. Recall that the Facility Location function is defined as 
+
+fFL (A) = ∑
+
+> i∈V
+
+max  
+
+> j∈A
+
+sij . (56) The corresponding Facility Location Mutual Information between two classes Ca and Cb is: 
+
+IFL (Ca; Cb) = fFL (Ca) + fFL (Cb) − fFL (Ca ∪ Cb). (57) The following theorem shows the connection between FLQMI and nearest-mode overlap. 
+
+Theorem 6 (FLQMI and Nearest-Mode Overlap) . Assume classes Ca and Cb consist of compact modes with centers {νa,r }ma 
+
+> r=1
+
+and {νb,s }mb
+
+> s=1
+
+, respectively, and let 
+
+drs = ∥νa,r − νb,s ∥ (58) 
+
+denote the distance between mode centers. Further assume an RBF similarity 
+
+sij = exp 
+
+> (
+
+− ∥zi − zj ∥2
+
+2τ 2
+
+> )
+
+. (59) 
+
+Then Facility Location Mutual Information admits the approximation 
+
+IFL (Ca; Cb) ≈ ∑
+
+> r,s
+
+wrs exp 
+
+> (
+
+− d2
+
+> rs
+
+2τ 2
+
+> )
+
+, (60) 
+
+where 
+
+wrs = na,r 1{s = s∗(r)} + nb,s 1{r = r∗(s)}, (61) 17 and s∗(r) and r∗(s) denote the nearest neighboring modes of mode r and mode s, respectively. Consequently, FLQMI is primarily governed by nearest-mode overlap rather than aggregate overlap across all mode pairs. 
+
+Interpretation. Theorem 6 reveals a fundamental distinction between Graph Cut and Facility Location based mutual information. While Graph Cut Mutual Information aggregates contributions from all pairs of modes, Facility Location Mutual Information is dominated by nearest-mode interactions. Consequently, GCMI measures aggregate overlap mass between classes, whereas FLQMI measures localized representational overlap. In multimodal settings, FLQMI is therefore more sensitive to rare or poorly separated modes and behaves as a soft nearest-mode separation criterion. This explains why two pairs of classes may exhibit similar aggregate overlap yet receive substantially different FLQMI values depending on how their modes are arranged in the representation space. 
+
+# 6 Experiments 
+
+In this section, we empirically validate the theoretical characterizations developed in Sections 4 and 5. Our goal is not to benchmark representation-learning performance, but rather to verify that the proposed information measures exhibit the geometric behavior predicted by the theory. To this end, we design a collection of controlled synthetic experiments in which individual geometric properties of the representation space can be manipulated independently. Specifically, we construct datasets that vary: 
+
+• within-class variance, 
+
+• covariance structure and anisotropy, 
+
+• class imbalance, 
+
+• centroid separation, and 
+
+• multimodal overlap. For each experiment, we compute the corresponding submodular information measure and compare it against the classical quantity predicted by the theory. A strong monotonic relationship between the two provides empirical support for the theoretical characterization. Unless otherwise specified, all synthetic datasets are generated from Gaussian mixtures in a 
+
+d-dimensional embedding space. Similarities are computed using either the shifted Euclidean kernel 
+
+sij = M − | zi − zj |2, (62) or the Gaussian RBF kernel 
+
+sij = exp 
+
+> (
+
+− |zi − zj |2
+
+2τ 2
+
+> )
+
+, (63) depending on the assumptions of the corresponding theorem. We evaluate the following theoretical predictions: 1. Graph Cut Total Information recovers within-class variance. 2. LogDet Total Information recovers generalized variance. 18 Table 2: Graph Cut Total Information recovers within-class variance exactly under the shifted Euclidean kernel.                                     
+
+> σStdVar Pairwise Identity GC Shift GC RBF 0.05 9.85 9.85 9.85 9.82 0.10 40.94 40.94 40.94 40.31 0.20 154.51 154.51 154.51 145.86 0.40 642.86 642.86 642.86 511.20 0.80 2531.28 2531.28 2531.28 1187.79 1.20 5617.50 5617.50 5617.50 1474.99 1.60 9858.35 9858.35 9858.35 1550.94 2.00 15831.65 15831.65 15831.65 1573.80
+
+3. Graph Cut Total Information and Graph Cut Mutual Information jointly recover aggregate mean separation. 4. Facility Location Total Information induces larger margins for rare classes. 5. LogDet Mutual Information recovers Mahalanobis separation. 6. Facility Location Mutual Information recovers nearest-mode overlap. We begin by validating the connection between Graph Cut Total Information and classical within-class variance. 
+
+6.1 Experiment 1: Graph Cut Total Information and Within-Class Variance 
+
+Theorem 1 states that Graph Cut Total Information with λ = 0 recovers the classical within-class variance when the similarity function is chosen as a shifted Euclidean kernel, sij = M − | zi − zj |2. To validate this result, we generate synthetic Gaussian classes while varying the within-class standard deviation σ. For each dataset, we compute: 1. the classical within-class variance, 2. the equivalent pairwise-distance formulation, 3. the quantity recovered by Graph Cut Total Information using the shifted Euclidean kernel, and 4. a Graph Cut objective computed using an RBF kernel. Table 2 summarizes the results. Several observations follow. First, the classical variance, pairwise-distance identity, and Graph Cut Total Information recovered using the shifted Euclidean kernel are numerically identical across all settings. This provides direct empirical verification of Theorem 1. Second, the RBF version exhibits a strong monotonic relationship with variance but does not recover the variance exactly. This behavior is expected since the RBF kernel introduces a nonlinear transformation of pairwise distances. Nevertheless, larger within-class variance consistently produces larger Graph Cut values, indicating that the variance interpretation extends qualitatively beyond the shifted Euclidean setting. Overall, these results confirm that Graph Cut Total Information recovers classical within-class variance and therefore behaves as a variance-minimization objective in representation learning. 19 Table 3: LogDet Total Information closely tracks generalized variance.                            
+
+> σCovLogDet LogDet-TI CentroidVar 0.05 -303.21 -2507.71 9.89 0.10 -233.78 -2366.14 39.65 0.20 -164.16 -1954.84 159.08 0.40 -95.29 -1194.24 631.07 0.80 -26.27 -373.00 2521.22 1.20 14.57 -95.03 5697.51 1.60 42.65 -23.05 10016.39 2.00 65.80 -4.94 15847.87
+
+Table 4: Correlation between generalized variance, LogDet Total Information, and classical variance.            
+
+> CovLogDet LogDet-TI CentroidVar CovLogDet 1.000 0.984 0.803 LogDet-TI 0.984 1.000 0.773 CentroidVar 0.803 0.773 1.000
+
+6.2 Experiment 2: LogDet Total Information and Generalized Variance 
+
+Theorem 2 suggests that LogDet Total Information recovers the generalized variance of the class distributions. Unlike Graph Cut Total Information, which measures classical within-class variance, LogDet Total Information incorporates the full covariance structure of the embeddings through the determinant of the covariance matrix. To validate this result, we generate Gaussian classes while varying the covariance scale parameter 
+
+σ. For each dataset, we compute: 1. the aggregate covariance log-determinant, 
+
+> ∑
+> c
+
+log det(Σ c), (64) 2. the corresponding LogDet Total Information objective, and 3. the classical centroid variance used in Experiment 6.1. Table 3 summarizes the result thaat LogDet TI closely tracks the generalized variance. The corresponding correlation matrix (between LogDet TI, the generalized variance, and the classical variance) is shown in Table 4. Several observations follow. First, LogDet Total Information exhibits an almost perfect monotonic relationship with the covariance log-determinant, achieving a correlation of 0.984 . This provides strong empirical support for Theorem 2. Second, while LogDet-TI remains correlated with classical variance, the relationship is substantially weaker. This is expected since the determinant captures covariance volume rather than merely the sum of marginal variances. Consequently, LogDet-TI incorporates information about anisotropy and covariance structure that is ignored by standard variance measures. Overall, these results confirm that LogDet Total Information behaves as a generalized variance objective and captures richer covariance information than Graph Cut Total Information. 20 Table 5: Per-class contribution shares on a long-tailed dataset.                
+
+> Class FL-TI GC-TI LogDet-TI Head ( n= 1000 )5.5% 91.5% 32.7% Medium ( n= 300 )1.0% 8.2% 33.4% Tail ( n= 50 )93.5% 0.2% 33.9%
+
+6.3 Experiment 3: Facility Location Total Information Emphasizes Rare and Confusable Classes 
+
+Theorem 3 predicts that Facility Location Total Information assigns larger weight to classes that are both rare and poorly separated from competing classes. To validate this prediction, we construct a long-tailed dataset consisting of three classes: a head class ( n = 1000 ), a medium class ( n = 300 ), and a tail class ( n = 50 ). The tail class is positioned near the head class, making it highly confusable, while the medium class is placed farther away. Table 5 reports the per-class contributions of GC-TI, LogDet-TI, and FL-TI. Several observations follow. 
+
+• First, GC-TI is dominated by the head class, reflecting its connection to within-class variance and class cardinality. 
+
+• Second, LogDet-TI distributes importance nearly uniformly across classes, since all classes possess similar covariance structure. 
+
+• In contrast, FL-TI assigns more than 93% of its total contribution to the rare and confusable tail class. This behavior is precisely predicted by Theorem 3, which shows that the influence of a class scales as (N − nc) exp( −δ2 
+
+> c
+
+/(2 τ 2)) .These results provide a theoretical explanation for the strong performance of Facility Location based SCORE objectives in long-tailed recognition settings. Unlike variance-based objectives, FL-TI naturally prioritizes underrepresented classes without requiring explicit class reweighting. 
+
+6.4 Experiment 4: Aggregate Mean Separation and the GC-SCORE Objective 
+
+Theorem 4 establishes a direct connection between classical discriminative representation learning and Submodular Information Measures. In particular, it shows that the aggregate centroid-separation objective 
+
+Dmean = ∑
+
+> a<b
+
+nanb|μa − μb|2 (65) admits an exact decomposition into a weighted Graph Cut Total Information term and a pairwise Graph Cut Mutual Information term. To validate this result, we generate synthetic datasets with increasing class separation and compute: 1. the aggregate mean-separation objective, 2. the weighted Graph Cut Total Information term, 3. the pairwise Graph Cut Mutual Information term, and 21 Table 6: Verification of the exact decomposition of aggregate mean separation into GC-TI and GCMI components.                             
+
+> Mean Sep −D mean GC-TI GCMI GC-TI + GCMI 1-79,303 -753,619 674,315 -79,303 2-295,956 -1,299,882 1,003,926 -295,956 4-1,225,091 -2,676,234 1,451,144 -1,225,091 6-2,773,310 -5,041,493 2,268,183 -2,773,310 8-4,906,642 -7,798,381 2,891,739 -4,906,642 10 -7,730,433 -11,006,376 3,275,943 -7,730,433
+
+Table 7: Reconstruction error of the GC-TI + GCMI decomposition.                   
+
+> Mean Sep Centered Error 10.028.7×10 −11
+> 42.3×10 −10
+> 61.4×10 −9
+> 81.9×10 −9
+> 10 3.7×10 −9
+
+4. their sum predicted by Theorem 4. Table 6 summarizes the results. To quantify the quality of the decomposition, we compare the centered versions of the two objectives. The absolute reconstruction error is shown in Table 7. The decomposition is exact up to numerical precision, with reconstruction errors on the order of 10 −9. Furthermore, the correlation between the theoretical objective −D mean and the recovered GC-SCORE objective is equal to 1.0.These results provide direct empirical verification of Theorem 4. More importantly, they reveal that the GC-based SCORE objective is not merely correlated with classical discriminative objectives but exactly recovers the aggregate centroid-separation criterion. Consequently, Graph Cut Total Information and Graph Cut Mutual Information together admit a precise geometric interpretation as a decomposition of classical mean-separation based representation learning. 
+
+6.5 Experiment 5: LogDet Mutual Information and Mahalanobis Separation 
+
+Theorem 5 predicts that LogDet Mutual Information is a monotone decreasing function of Maha-lanobis separation. Unlike Graph Cut Mutual Information, which depends primarily on centroid separation, LogDetMI additionally incorporates covariance structure and anisotropy through the pooled covariance matrix. To validate this characterization, we perform two complementary experiments. 
+
+Experiment 5A: Varying Centroid Separation. We first generate two Gaussian classes and vary the distance between their centroids while keeping the covariance structure fixed. Here 
+
+δ = ∥μa − μb∥. For each setting, we compute the covariance-based LogDetMI approximation and the corresponding Mahalanobis separation. Table 8 summarizes the results. The resulting correlations are corr (LogDetMI , M) = −0.968 and corr (δ, LogDetMI ) = −0.979 .These results confirm the strong monotonic relationship predicted by Theorem 5. 22 Table 8: LogDetMI as a function of centroid separation.                 
+
+> δLogDetMI Mahalanobis Separation 0.5 -0.270 0.097 1.0 -0.320 0.307 2.0 -0.491 1.109 3.0 -0.719 2.420 4.0 -0.969 4.241 6.0 -1.457 9.411 8.0 -1.887 16.619
+
+Table 9: Effect of covariance orientation on LogDetMI.               
+
+> Angle LogDetMI Mahalanobis Separation
+> 0◦-0.673 2.369
+> 15 ◦-1.002 2.818
+> 30 ◦-1.596 3.582
+> 45 ◦-2.072 3.987
+> 60 ◦-2.393 4.178
+> 90 ◦-2.636 4.295
+
+Experiment 5B: Varying Covariance Orientation. Next, we fix the centroid separation while varying the relative orientation of the covariance ellipses. This experiment isolates the covariance-dependent component of Mahalanobis separation. Table 9 summarizes the results. The correlation between LogDetMI and Mahalanobis separation in this setting is corr ( LogDetMI , M) = 
+
+−0.906 . Notably, substantial changes in LogDetMI occur despite the centroid distance remaining fixed. This behavior cannot be explained by Euclidean separation alone and directly reflects the covariance-aware nature of LogDetMI. Taken together, Experiments 5A and 5B provide strong empirical support for Theorem 5. While Graph Cut Mutual Information captures centroid separation, LogDetMI captures Mahalanobis separation and therefore incorporates covariance structure, anisotropy, and orientation into the representation-learning objective. 
+
+6.6 Experiment 6: FLQMI and Multimodal Representational Overlap 
+
+Theorem 6 predicts that Facility Location Mutual Information is governed by nearest-mode overlap rather than aggregate cross-class similarity. To validate this characterization, we construct a synthetic multimodal dataset in which aggregate overlap is held constant while representational overlap is varied. Class A consists of four equally-sized modes. We consider two configurations of class B:1. Concentrated Overlap : the overlap between the two classes is concentrated around a single mode of A.2. Distributed Overlap : the same amount of overlap is distributed across all four modes of A.By construction, the total cross-class similarity is nearly identical between the two settings. However, the distributed configuration provides representatives for a much larger fraction of the modes of class A.23 Table 10: FLQMI distinguishes distributed and concentrated overlap despite nearly identical aggregate overlap.                   
+
+> Setting GCMI FLQMI A→BCoverage B→ACoverage Concentrated 3384.78 129.15 79.39 49.76 Distributed 3384.52 439.35 389.58 49.77
+
+Table 10 summarizes the results. Several observations follow. First, GCMI remains essentially unchanged across the two settings, indicating that aggregate overlap mass is nearly identical. Consequently, Graph Cut Mutual Information is unable to distinguish between concentrated and distributed overlap. In contrast, FLQMI increases from 129 .15 to 439 .35 , a factor of approximately 3.4×. This increase mirrors the dramatic rise in representational coverage from class A to class B, while the reverse coverage remains nearly constant. These results provide strong empirical support for Theorem 6. While GCMI measures aggregate overlap across all mode pairs, FLQMI is sensitive to how that overlap is distributed among the modes. Consequently, FLQMI behaves as a nearest-mode or representational-overlap criterion, making it particularly well-suited for multimodal representation learning. 
+
+# 7 Conclusion 
+
+Submodular Information Measures have recently emerged as powerful objectives for representation learning, subset selection, and information maximization. Despite their empirical success, the geometric and statistical properties induced by different information measures have remained poorly understood. In this work, we developed a unified theoretical framework connecting Submodular Information Measures to classical notions of variance, covariance, separation, and representational overlap. Our analysis revealed that different information measures induce fundamentally different representation-learning biases. For Total Information objectives, we showed that Graph Cut Total Information recovers classical within-class variance, LogDet Total Information recovers gen-eralized variance through covariance volume, and Facility Location Total Information naturally emphasizes rare and confusable classes by inducing imbalance-aware separation margins. For Mutual Information objectives, we established connections between Graph Cut Mutual Information and aggregate centroid separation, LogDet Mutual Information and Mahalanobis separation, and Facility Location Mutual Information and nearest-mode representational overlap. Perhaps most notably, we showed that the combination of Graph Cut Total Information and Graph Cut Mutual Information admits an exact decomposition of the classical aggregate mean-separation objective. This result provides a direct bridge between Submodular Information Measures and classical discriminative representation learning, revealing that certain SCORE objectives recover well-studied statistical criteria exactly rather than approximately. We further validated these theoretical predictions through a suite of controlled synthetic experi-ments. Across all settings, the empirical behavior of the corresponding information measures closely matched the proposed theoretical characterizations, providing strong evidence that the geometric interpretations developed in this work accurately describe the behavior of SIM-based objectives. Beyond providing theoretical insight, our results offer practical guidance for selecting information measures in representation learning. Variance-oriented objectives such as Graph Cut are well 24 suited for compactness and class separation, LogDet based objectives provide covariance-aware discrimination, and Facility Location based objectives naturally emphasize multimodal structure, rare classes, and representational coverage. We believe that these insights will facilitate the principled design of future submodular objectives and contribute to a deeper understanding of combinatorial approaches to representation learning. An important direction for future work is extending these analyses beyond supervised repre-sentation learning to settings such as self-supervised learning, retrieval-augmented generation, and multimodal foundation models, where Submodular Information Measures have recently demonstrated strong empirical success. More broadly, we hope that the theoretical framework developed in this paper serves as a foundation for understanding and designing the next generation of representation learning, self-supervised learning, and multi-modal learning objectives guided by combinatorial objective functions. 
+
+# References 
+
+[1] Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regular-ization for self-supervised learning. arXiv preprint arXiv:2105.04906 , 2021. [2] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. Intl. Conf. on Machine Learning (ICML) ,2020. [3] Jiankang Deng, Jia Guo, Niannan Xue, and Stefanos Zafeiriou. Arcface: Additive angular margin loss for deep face recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 4690–4699, 2019. [4] Ronald A. Fisher. The use of multiple measurements in taxonomic problems. Annals of Eugenics , 1936. [5] Nicholas Frosst, Nicolas Papernot, and Geoffrey E. Hinton. Analyzing and improving represen-tations with the soft nearest neighbor loss. In International Conference on Machine Learning ,2019. [6] Satoru Fujishige. Submodular functions and optimization . Elsevier, 2005. [7] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for Image Recognition. In IEEE Conf. on Computer Vision and Pattern Recognition (CVPR) , 2016. [8] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. Momentum contrast for unsupervised visual representation learning. In 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2020. [9] Rishabh Iyer, Ninad Khargonkar, Jeff Bilmes, and Himanshu Asnani. Generalized submod-ular information measures: Theoretical properties, examples, optimization algorithms, and applications. IEEE Transactions on Information Theory , 68(2):752–781, 2022. [10] Rishabh Krishnan Iyer. Submodular optimization and machine learning: Theoretical results, unifying and scalable algorithms, and applications . PhD thesis, 2015. [11] Athresh Karanam, Krishnateja Killamsetty, Harsha Kokel, and Rishabh Iyer. Orient: Sub-modular mutual information measures for data subset selection under distribution shift. In 
+
+Advances in Neural Information Processing Systems , volume 35, 2022. 25 [12] Vishal Kaushal, Rishabh Iyer, Khoshrav Doctor, Anurag Sahoo, Pratik Dubal, Suraj Kothawade, Rohan Mahadev, Kunal Dargan, and Ganesh Ramakrishnan. Demystifying multi-faceted video summarization: tradeoff between diversity, representation, coverage and importance. In 2019 IEEE Winter Conference on Applications of Computer Vision (WACV) , pages 452–461. IEEE, 2019. [13] Vishal Kaushal, Rishabh Iyer, Suraj Kothawade, Rohan Mahadev, Khoshrav Doctor, and Ganesh Ramakrishnan. Learning from less data: A unified data subset selection and active learning framework for computer vision. In 2019 IEEE Winter Conference on Applications of Computer Vision (WACV) , 2019. [14] Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce Liu, and Dilip Krishnan. Supervised contrastive learning. In Advances in Neural Information Processing Systems , 2020. [15] Suraj Kothawade, Nathan Beck, Krishnateja Killamsetty, and Rishabh Iyer. SIMILAR: Sub-modular information measures based active learning in realistic scenarios. Advances in Neural Information Processing Systems , 34, 2021. [16] Suraj Kothawade, Saikat Ghosh, Sumit Shekhar, Yu Xiang, and Rishabh K. Iyer. Talisman: Targeted active learning for object detection with rare classes and slices using submodular mutual information. In Computer Vision - ECCV 2022 - 17th European Conference , 2022. [17] Suraj Kothawade, Vishal Kaushal, Ganesh Ramakrishnan, Jeff A. Bilmes, and Rishabh K. Iyer. PRISM: A rich class of parameterized submodular information measures for guided data subset selection. In Thirty-Sixth AAAI Conference on Artificial Intelligence, AAAI , pages 10238–10246, 2022. [18] Alex Krizhevsky, Ilya Sutskever, and Geoffrey E Hinton. Imagenet classification with deep convolutional neural networks. In Advances in Neural Information Processing Systems , 2012. [19] Alex Kulesza. Determinantal point processes for machine learning. Foundations and Trends ®
+
+in Machine Learning , 5(2–3):123–286, 2012. ISSN 1935-8245. [20] Hui Lin and Jeff Bilmes. A class of submodular functions for document summarization. In 
+
+Proceedings of the 49th Annual Meeting of the Association for Computational Linguistics: Human Language Technologies , 2011. [21] Anay Majee and Rishabh Iyer. Shasam: Submodular hard sample mining for fair facial attribute recognition. In Proc. WACV , 2026. [22] Anay Majee, Suraj Kothawade, Krishnateja Killamsetty, and Rishabh Iyer. Score: Submodular combinatorial representation learning. In ICML , 2024. [23] Anay Majee, Ryan Sharp, and Rishabh Iyer. Smile: Leveraging submodular mutual information for robust few-shot object detection. In European Conference on Computer Vision , pages 350–366. Springer, 2024. [24] Anay Majee, Amitesh Gangrade, and Rishabh Iyer. Looking beyond the known: Towards a data discovery guided open-world object detection. Advances in Neural Information Processing Systems , 38:25050–25078, 2026. 26 [25] James Mercer. Functions of positive and negative type, and their connection with the theory of integral equations. Philosophical Transactions of the Royal Society of London. Series A , 209: 415–446, 1909. [26] Truong Pham, Anay Majee, and Rishabh Iyer. Sma: Submodular modality aligner for data efficient multimodal learning. arXiv preprint arXiv:2605.12872 , 2026. [27] David E Rumelhart, Geoffrey E Hinton, and Ronald J Williams. Learning representations by back-propagating errors. nature , 323(6088):533–536, 1986. [28] Bernhard Schölkopf, Alexander Smola, and Klaus-Robert Müller. Nonlinear component analysis as a kernel eigenvalue problem. In Neural Computation , volume 10, pages 1299–1319, 1998. [29] Florian Schroff, Dmitry Kalenichenko, and James Philbin. Facenet: A unified embedding for face recognition and clustering. In IEEE Conf. on Computer Vision and Pattern Recognition (CVPR) , 2015. [30] Karen Simonyan and Andrew Zisserman. Very deep convolutional networks for large-scale image recognition. In Intl. Conf. on Learning Representations , 2015. [31] Kihyuk Sohn. Improved deep metric learning with multi-class n-pair loss objective. In Advances in Neural Inf. Processing Systems , 2016. [32] Hyun Oh Song, Yu Xiang, Stefanie Jegelka, and Silvio Savarese. Deep metric learning via lifted structured feature embedding. In Computer Vision and Pattern Recognition (CVPR) , 2016. [33] Ingo Steinwart and Clint Scovel. Mercer’s theorem on general domains: On the interaction between measures, kernels, and rkhss. Constructive Approximation , 35:363–417, 2012. [34] Hao Wang, Yitong Wang, Zheng Zhou, Xing Ji, Dihong Gong, Jingchao Zhou, Zhifeng Li, and Wei Liu. Cosface: Large margin cosine loss for deep face recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , June 2018. [35] Kai Wei, Rishabh Iyer, and Jeff Bilmes. Submodularity in data subset selection and active learning. In ICML , 2015. [36] Yandong Wen, Kaipeng Zhang, Zhifeng Li, and Yu Qiao. A discriminative feature learning approach for deep face recognition. In Bastian Leibe, Jiri Matas, Nicu Sebe, and Max Welling, editors, Computer Vision – ECCV 2016 , pages 499–515, 2016. 
+
+# A Proofs of Theoretical Results 
+
+In this appendix, we provide proofs of the theoretical results presented in the main paper. 
+
+A.1 Proof of Theorem 1 
+
+Proof. For λ = 0 , the Graph-Cut Total Information is 
+
+TI GC (C1, . . . , C K ) = −
+
+> K∑
+> c=1
+> ∑
+> k,l ∈Cc
+
+skl . (66) 27 Substituting skl = M − ∥ zk − zl∥2 gives 
+
+TI GC (C1, . . . , C K ) = −
+
+> K
+
+∑
+
+> c=1
+
+∑
+
+> k,l ∈Cc
+
+(
+
+M − ∥ zk − zl∥2)
+
+(67) 
+
+= −M
+
+> K
+
+∑
+
+> c=1
+
+|Cc|2 +
+
+> K
+
+∑
+
+> c=1
+
+∑
+
+> k,l ∈Cc
+
+∥zk − zl∥2. (68) The first term is independent of the representations and is therefore an additive constant. Hence, 
+
+TI GC (C1, . . . , C K ) = 
+
+> K
+
+∑
+
+> c=1
+
+∑
+
+> k,l ∈Cc
+
+∥zk − zl∥2 + const . (69) Using the standard identity 
+
+∑
+
+> k,l ∈Cc
+
+∥zk − zl∥2 = 2 |Cc| ∑
+
+> k∈Cc
+
+∥zk − μc∥2, (70) we obtain 
+
+TI GC (C1, . . . , C K ) = 2 
+
+> K
+
+∑
+
+> c=1
+
+|Cc| ∑
+
+> k∈Cc
+
+∥zk − μc∥2 + const . (71) Thus, Graph-Cut Total Information with λ = 0 recovers the classical within-class variance up to a class-dependent scaling factor and an additive constant. 
+
+A.2 Proof of Theorem 2 
+
+Proof. We first prove the result for the covariance, or linear, kernel, and then describe the extension to general positive-definite kernels. Let Zc ∈ Rnc×d denote the centered data matrix for class Cc, whose rows are zi − μc. The empirical covariance is ̂
+
+Σc = 1
+
+nc
+
+ZTc Zc. (72) For the linear kernel, 
+
+KCc = ZcZTc . (73) Since ZcZTc and ZTc Zc have the same nonzero eigenvalues, the nonzero determinant, or pseudo-determinant, satisfies 
+
+log pdet( KCc ) = log pdet( ZcZTc ) (74) 
+
+= log det( ZTc Zc) (75) 
+
+= log det( nĉ Σc) (76) 
+
+= d log nc + log det( ̂Σc). (77) 28 Under standard regularity assumptions, the empirical covariance ̂ Σc converges to the population covariance Σc as nc → ∞ . Therefore, 
+
+log pdet( KCc ) = d log nc + log det(Σ c) + o(1) . (78) Thus, for the linear kernel, the claim holds with 
+
+ac = d log nc, bc = 1 . (79) For more general positive-definite kernels, the kernel matrix KCc is an empirical discretization of the kernel covariance or integral operator associated with the class-conditional distribution. Under the usual assumptions for Mercer kernels, the empirical spectrum of KCc converges to the spectrum of the corresponding population operator. This is the standard operator-theoretic view underlying kernel PCA and Mercer decompositions [28, 25, 33]. For smooth radial kernels, local changes in the covariance volume of the distribution induce monotone changes in the volume spanned by the corresponding feature embeddings. Hence, in the large-sample regime, the LogDet objective admits the asymptotic form 
+
+log det( KCc ) = ac + bc log det(Σ c) + o(1) , (80) for constants ac and bc > 0 depending on the kernel, embedding dimension, and sample size. Summing over classes gives 
+
+T I LD =
+
+> K∑
+> c=1
+
+log det( KCc ) (81) 
+
+=
+
+> K∑
+> c=1
+
+(ac + bc log det(Σ c)) + o(1) . (82) Since bc > 0, LogDet Total Information is a monotone transformation of the aggregate generalized variance 
+
+> K∑
+> c=1
+
+log det(Σ c). (83) This proves the claim. 
+
+A.3 Proof of Theorem 3 
+
+Proof. Recall that Facility Location Total Information is 
+
+T I FL =
+
+> K∑
+> c=1
+> ∑
+> i∈V
+
+max 
+
+> j∈Cc
+
+sij . (84) Since similarities are normalized so that sii = 1 , for each i ∈ Cc we have 
+
+max 
+
+> j∈Cc
+
+sij = 1 . (85) Therefore, 29 T I FL =
+
+> K
+
+∑
+
+> c=1
+
+ ∑
+
+> i∈Cc
+
+max 
+
+> j∈Cc
+
+sij + ∑ 
+
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij 
+
+ (86) 
+
+= N +
+
+> K
+
+∑
+
+> c=1
+
+∑ 
+
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij . (87) Thus, the non-constant contribution of class Cc is 
+
+Influence( Cc) = ∑ 
+
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij . (88) Under the RBF kernel, 
+
+max 
+
+> j∈Cc
+
+sij = exp 
+
+(
+
+− min j∈Cc ∥zi − zj ∥2
+
+2τ 2
+
+)
+
+. (89) Since class Cc is assumed to be compact, the nearest point in Cc to an external point from its nearest competing class lies at distance comparable to δc. Points from classes farther away contribute exponentially less. Therefore, 
+
+∑ 
+
+> i∈V\Cc
+
+max 
+
+> j∈Cc
+
+sij = Θ 
+
+(
+
+(N − nc) exp 
+
+(
+
+− δ2
+
+> c
+
+2τ 2
+
+)) 
+
+. (90) This proves the stated scaling for the influence of class Cc.Now suppose two classes Ca and Cb contribute equally to the FL-TI objective. Then 
+
+(N − na) exp 
+
+(
+
+− δ2
+
+> a
+
+2τ 2
+
+)
+
+= ( N − nb) exp 
+
+(
+
+− δ2
+
+> b
+
+2τ 2
+
+)
+
+. (91) Taking logarithms gives 
+
+log( N − na) − δ2
+
+> a
+
+2τ 2 = log( N − nb) − δ2
+
+> b
+
+2τ 2 . (92) Rearranging, 
+
+δ2 
+
+> a
+
+− δ2 
+
+> b
+
+= 2 τ 2 log 
+
+( N − na
+
+N − nb
+
+)
+
+. (93) If na < n b, then N − na > N − nb, and hence 
+
+log 
+
+( N − na
+
+N − nb
+
+)
+
+> 0. (94) Therefore, 
+
+δ2 
+
+> a
+
+> δ 2 
+
+> b
+
+, (95) which implies δa > δ b. Thus, for the same effective contribution to the FL-TI objective, smaller classes require larger separation margins. 30 A.4 Proof of Theorem 4 
+
+Proof. For two classes Ca and Cb, let 
+
+W (Ca) = ∑
+
+> i,j ∈Ca
+
+∥zi − zj ∥2 (96) denote the pairwise within-class scatter. Using the standard identity 
+
+∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+∥zi − zj ∥2 = nb
+
+∑
+
+> i∈Ca
+
+∥zi − μa∥2 + na
+
+∑
+
+> j∈Cb
+
+∥zj − μb∥2 + nanb∥μa − μb∥2, (97) and 
+
+W (Ca) = 2 na
+
+∑
+
+> i∈Ca
+
+∥zi − μa∥2, (98) we obtain 
+
+nanb∥μa − μb∥2 = ∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+∥zi − zj ∥2 − nb
+
+2na
+
+W (Ca) − na
+
+2nb
+
+W (Cb). (99) Summing over all pairs a < b gives 
+
+Dmean = ∑
+
+> a<b
+
+∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+∥zi − zj ∥2 −
+
+> K
+
+∑
+
+> c=1
+
+N − nc
+
+2nc
+
+W (Cc). (100) Therefore, 
+
+−D mean = − ∑
+
+> a<b
+
+∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+∥zi − zj ∥2 +
+
+> K
+
+∑
+
+> c=1
+
+N − nc
+
+2nc
+
+W (Cc). (101) Now substitute the shifted Euclidean similarity 
+
+sij = M − ∥ zi − zj ∥2. (102) For the cross-class term, 
+
+− ∑
+
+> a<b
+
+∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+∥zi − zj ∥2 = ∑
+
+> a<b
+
+∑
+
+> i∈Ca
+
+∑
+
+> j∈Cb
+
+sij + const . (103) This is precisely the pairwise Graph Cut Mutual Information term, up to the convention-dependent constant factor in the definition of IGC .Similarly, by Theorem 1, for λ = 0 ,
+
+− ∑
+
+> i,j ∈Cc
+
+sij = W (Cc) + const . (104) Hence the second term in Equation (101) is a class-size weighted Graph Cut Total Information term: 31 K∑
+
+> c=1
+
+N − nc
+
+2nc
+
+W (Cc) = 
+
+> K
+
+∑
+
+> c=1
+
+N − nc
+
+2nc
+
+− ∑
+
+> i,j ∈Cc
+
+sij 
+
+ + const . (105) Combining the two parts, we obtain 
+
+−D mean = αTI ˜T I λ=0 GC + αMI 
+
+∑
+
+> a<b
+
+IGC (Ca; Cb) + const , (106) where ˜T I λ=0 GC denotes the class-size weighted Graph Cut Total Information term and αTI , α MI > 0
+
+depend only on the normalization convention. In the balanced-class case, where nc = n for all c, the class-size weights satisfy 
+
+N − nc
+
+2nc
+
+= K − 12 , (107) which is constant across classes. Therefore, ˜T I λ=0 GC reduces to a positive scalar multiple of the standard unweighted T I λ=0 GC .Thus, minimizing the negative aggregate mean-separation objective is equivalent, up to positive scaling and additive constants, to minimizing a GC-TI term together with the pairwise GCMI term. This proves the claim. 
+
+A.5 Proof of Theorem 5 
+
+Proof. Under the covariance LogDet approximation, we replace the LogDet score of a class by the log determinant of its covariance matrix. Thus, 
+
+ILD (Ca; Cb) = log det(Σ a) + log det(Σ b) − log det(Σ ab ) + const , (108) where Σab denotes the covariance of the union Ca ∪ Cb.Let 
+
+∆ = μa − μb. (109) The covariance of the mixture Ca ∪ Cb is 
+
+Σab = pΣa + qΣb + pq ∆∆ T . (110) Using the pooled within-class covariance 
+
+Σw = pΣa + qΣb, (111) we can write 
+
+Σab = Σ w + pq ∆∆ T . (112) By the matrix determinant lemma, 
+
+det(Σ w + pq ∆∆ T ) = det(Σ w)
+
+(
+
+1 + pq ∆T Σ−1 
+
+> w
+
+∆
+
+)
+
+. (113) Taking logarithms gives 
+
+log det(Σ ab ) = log det(Σ w) + log 
+
+(
+
+1 + pq ∆T Σ−1 
+
+> w
+
+∆
+
+)
+
+. (114) 32 By definition, 
+
+Mab = ∆ T Σ−1 
+
+> w
+
+∆. (115) Therefore, 
+
+ILD (Ca; Cb) = log det(Σ a) + log det(Σ b) − log det(Σ w) (116) 
+
+− log (1 + pq Mab ) + const . (117) The first three terms depend only on the within-class covariance structure and are independent of the mean separation. Absorbing them into the constant with respect to Mab yields 
+
+ILD (Ca; Cb) = const − log (1 + pq Mab ) . (118) Since the function 
+
+− log(1 + pqx ) (119) is strictly decreasing in x for p, q > 0, LogDetMI is a monotone decreasing function of the Mahalanobis separation Mab . Therefore, minimizing LogDetMI is equivalent, up to monotone transformations, to maximizing covariance-normalized class separation. 
+
+A.6 Proof of Theorem 6 
+
+Proof. Let the modes of Ca and Cb be {Ca,r }ma 
+
+> r=1
+
+and {Cb,s }mb 
+
+> s=1
+
+with corresponding mode centers 
+
+{νa,r } and {νb,s }. Denote the mode cardinalities by 
+
+na,r = |Ca,r |, nb,s = |Cb,s |. (120) Assume each mode is ρ-compact, i.e., 
+
+∥zi − νa,r ∥ ≤ ρ, ∀zi ∈ Ca,r , (121) and similarly for every mode of Cb.Recall that Facility Location Mutual Information is 
+
+IFL (Ca; Cb) = ∑
+
+> i∈Ca
+
+max 
+
+> j∈Cb
+
+sij + ∑
+
+> j∈Cb
+
+max 
+
+> i∈Ca
+
+sij . (122) Consider the first term. For any point zi ∈ Ca,r ,
+
+max 
+
+> j∈Cb
+
+sij = max 
+
+> j∈Cb
+
+exp 
+
+(
+
+− ∥zi − zj ∥2
+
+2τ 2
+
+)
+
+(123) 
+
+= exp 
+
+(
+
+− min j∈Cb ∥zi − zj ∥2
+
+2τ 2
+
+)
+
+. (124) Let 
+
+s∗(r) = arg min  
+
+> s
+
+drs , (125) where 33 drs = ∥νa,r − νb,s ∥. (126) Since every mode is compact, 
+
+dr,s ∗(r) − 2ρ ≤ min 
+
+> j∈Cb
+
+∥zi − zj ∥ ≤ dr,s ∗(r) + 2 ρ. (127) Hence, 
+
+max 
+
+> j∈Cb
+
+sij = exp 
+
+(
+
+− d2
+
+> r,s ∗(r)
+
+2τ 2
+
+)
+
+(1 + o(1)) , (128) as ρ/τ → 0.Summing over all points in mode Ca,r yields 
+
+∑
+
+> i∈Ca,r
+
+max 
+
+> j∈Cb
+
+sij = na,r exp 
+
+(
+
+− d2
+
+> r,s ∗(r)
+
+2τ 2
+
+)
+
++ o(1) . (129) Summing over all modes, 
+
+∑
+
+> i∈Ca
+
+max 
+
+> j∈Cb
+
+sij =
+
+> ma
+
+∑
+
+> r=1
+
+na,r exp 
+
+(
+
+− d2
+
+> r,s ∗(r)
+
+2τ 2
+
+)
+
++ o(1) . (130) Applying the same argument in the reverse direction, define 
+
+r∗(s) = arg min  
+
+> r
+
+drs . (131) Then, 
+
+∑
+
+> j∈Cb
+
+max 
+
+> i∈Ca
+
+sij =
+
+> mb
+
+∑
+
+> s=1
+
+nb,s exp 
+
+(
+
+− d2
+
+> r∗(s),s
+
+2τ 2
+
+)
+
++ o(1) . (132) Combining Equations (130) and (132) gives 
+
+IFL (Ca; Cb) = 
+
+> ma
+
+∑
+
+> r=1
+
+na,r exp 
+
+(
+
+− d2
+
+> r,s ∗(r)
+
+2τ 2
+
+)
+
+(133) 
+
++
+
+> mb
+
+∑
+
+> s=1
+
+nb,s exp 
+
+(
+
+− d2
+
+> r∗(s),s
+
+2τ 2
+
+)
+
++ o(1) . (134) Finally, regrouping the two sums according to the mode pair (r, s ) yields 
+
+IFL (Ca; Cb) = 
+
+> ma
+
+∑
+
+> r=1
+> mb
+
+∑
+
+> s=1
+
+wrs exp 
+
+(
+
+− d2
+
+> rs
+
+2τ 2
+
+)
+
++ o(1) , (135) where 
+
+wrs = na,r 1{s = s∗(r)} + nb,s 1{r = r∗(s)}. (136) Thus, only nearest neighboring mode pairs receive nonzero weight in the approximation. Con-sequently, Facility Location Mutual Information is governed by nearest-mode overlap rather than aggregate overlap across all pairs of modes. 34

@@ -1,0 +1,332 @@
+Title: CDAE: Enhancing Perturbation Robustness in Pretrained Language Models with Contrastive Denoising
+
+URL Source: https://arxiv.org/pdf/2607.28236v1
+
+Published Time: Fri, 31 Jul 2026 01:06:16 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# CDAE: E NHANCING PERTURBATION ROBUSTNESS IN 
+
+# PRETRAINED LANGUAGE MODELS WITH CONTRASTIVE 
+
+# DENOISING 
+
+1st Sina Heydari 
+
+Department of Computer Science and Information Technology Institude for Advanced Studies in Basic Sciences (IASBS) Zanjan, Iran, 45137-66731 
+
+sinaheydari@iasbs.ac.ir 
+
+2nd Amirreza Abbasi 
+
+Department of Computer Science and Information Technology Institude for Advanced Studies in Basic Sciences (IASBS) Zanjan, Iran, 45137-66731 
+
+a.abbasi@iasbs.ac.ir 
+
+3rd Mohsen Hooshmand 
+
+Department of Computer Science and Information Technology Institude for Advanced Studies in Basic Sciences (IASBS) Zanjan, Iran, 45137-66731 
+
+mohsen.hooshmand@iasbs.ac.ir 
+
+4th Majid Ramezani 
+
+Department of Computer Science and Information Technology Institude for Advanced Studies in Basic Sciences (IASBS) Zanjan, Iran, 45137-66731 
+
+ramezani@iasbs.ac.ir 
+
+July 31, 2026 
+
+## ABSTRACT 
+
+Pre-trained language models have significantly improved sentence representation learning, yet their embedding remain sensitive to semantic preserving textual perturbations such as synonym substitution, masking and word dropout. This work proposes a lightweight Contrastive Denoising Autoencoder (CDAE) that refines pre-trained BERT embedding by jointly optimizing contrastive and reconstruc-tion objective to learn perturbation-invariant representation. We evaluate the proposed framework using multiple perturbation strategies with varying strengths and compare it against the original BERT embeddings and SimCSE. Experimental results show that CDAE consistently preserves higher embedding similarity under perturbations, with the improvements becoming more pronounced as framework effectively enhances representation stability while preserving semantic information, high-lighting perturbation-invariant learning as a promising direction for improving sentence embeddings. The source code is publicly available at: https://github.com/ComputationIASBS/CDAE 
+
+Keywords Sentence Embeddings · Textual Perturbation · Contrastive Learning · Denoising Autoencoder · Robust Representation Learning · BERT arXiv:2607.28236v1 [cs.AI] 30 Jul 2026 A PREPRINT - J ULY 31, 2026 
+
+## 1 Introduction 
+
+Pre-trained Language Models generates embeddings from an input text vector which their significance play an important role in downstream tasks [ 1]. The resulted sentence embedding is the representation of natural language text in the form of a vector of numbers that encodes meaningful semantic information [ 2]. Although, a plethora of methods and approaches have been introduced to have a meaningful sentence embedding, transformer-based models have become the dominant architecture for learning contextual sentence representations [ 3 ]. A major milestone in this direction was the introduction of the BERT model, which uses a dedicated token (CLS) at the beginning of each sentence. The final hidden representation of this token encodes information about the entire sentence and is commonly used as its representation for downstream tasks [ 2]. Although BERT was a pioneer in this field, its sentence embeddings perform poorly when used directly for semantic similarity tasks, consequently, causes a challenge in robust representation of the input texts. To address this limitation, Sentence-BERT (SBERT) [ 4] significantly improved sentence embeddings by adopting a Siamese network architecture and fine-tuning BERT on the SNLI dataset [ 5]. In recent years, sentence embeddings have gained great importance due to the many applications of large language models (LLMs) in information retrieval, recommender systems, semantic search, etc [ 6]. Currently, sentence embeddings play a prominent role in these applications because of their ability to capture semantic similarity between sentences, enabling more accurate retrieval and comparison of semantically related texts [3]. After several years of evolution, sentence embedding models reached a point where they were able to produce meaningful semantic representations. However, another important challenge emerged in the form of adversarial attacks, which aims to manipulate machine learning models through carefully crafted inputs. Due to their security implications, considerable research has focused on improving the robustness of models against such attacks. However, in many practical situations, the challenge is not an adversarial attack but rather natural semantic-preserving perturbations [ 7]. Previous studies have shown that pre-trained models are sensitive to common perturbations such as synonym replacement, word masking, and word dropout, which may substantially alter the resulting sentence representations. This does not imply that the models are ineffective, but rather that there is still room for improving their robustness. In general, a good and robust sentence embedding should remain relatively stable under small semantic-preserving changes to the input sentence. Most current research focuses on contrastive learning, denoising [ 8], and robustness-oriented training strategies [ 9]. These methods generally aim to improve semantic alignment [ 10 ], downstream task performance, or robustness against adversarial attacks by learning more discriminative sentence representations. Our review indicates that considerably less attention has been devoted to understanding the behavior of pre-trained sentence representations under natural semantic-preserving perturbations and improving their stability. Without such an understanding, it is difficult to identify which components of transformer models are most sensitive to natural linguistic variations. Therefore, studying this problem may provide new insights into improving the robustness of sentence embeddings against semantic-preserving perturbations. To better understand this problem, we first investigate the behavior of pre-trained sentence embedding models under semantic-preserving perturbations. Our empirical analysis shows that such perturbations can substantially change sentence representations depending on the perturbation type and perturbation strength. These observations indicate that pre-trained models are not always successful in preserving semantic representations under semantic-preserving perturbations. As an approach to this challenge, we propose a perturbation-invariant sentence representation learning framework that enhances the capabilities of pre-trained models using a Contrastive Denoising AutoEncoder (CDAE) architecture. The framework first encodes the original sentence and its perturbed counterpart using a shared frozen pre-trained encoder to obtain their sentence representations. A lightweight refinement network is then trained to preserve semantic consistency while reducing the sensitivity of sentence representations to perturbations. By operating on top of a frozen pre-trained encoder, the proposed framework introduces only a small number of trainable parameters. Based on this framework, this work: • Differentiates between perturbations and adversarial attacks. The latter is a normal intrinsic property of each language and this work emphasizes to improve such perturbations. • Conducts a systematic analysis of the stability of pre-trained sentence representations under controlled semantic-preserving perturbations and provide empirical insights into the sensitivity of transformer models and their layers to such perturbations. • Based on these observations, proposes a perturbation-invariant sentence representation learning framework that improves the stability of sentence embeddings without modifying the weights of pre-trained language models and can be integrated with different embedding architectures. • Conducts a comprehensive evaluation of the CDAE-generated embeddings with BERT-generated as well as SimCSE-generated embeddings. 2A PREPRINT - J ULY 31, 2026 The structure of the paper is as follows. Section 2 reviews the related work in generation embeddings. Section 3 introduces the proposed method. Section 4 presents the results and finally, Section 5 concludes the paper. 
+
+## 2 Related Work 
+
+This section reviews and categorizes the related work on embedding and representation learning in three categories, i.e., sentence embedding learning , contrastive and denoising representation learning , and textual perturbation and robustness .
+
+2.1 Sentence Embedding Learning 
+
+Pre-retrained language models have substantially advanced sentence representation learning by enabling the extraction of contextual semantic information from large-scale corpora [ 2 ]. Early approaches, such as SBERT, introduced Siamese and triplet network architectures to generate fixed-length sentence embeddings that preserve semantic similarity while significantly reducing inference costs for retrieval and clustering tasks [ 4 ]. Subsequent studies further improved representation quality through contrastive learning objectives and large-scale pretraining strategies, exemplified by SimCSE [ 9] and the E5 family [ 11 ] of embedding models. Recent benchmarks such as MTEB [ 12 ] have also emphasized the importance of evaluating sentence embeddings across diverse downstream tasks rather than relying solely on semantic similarity benchmarks. 
+
+2.2 Contrastive and Denoising Representation Learning 
+
+Contrastive learning has emerged as one of the dominant paradigms for sentence representation learning by encouraging semantically related sentences to occupy nearby regions of the embedding space while separating unrelated instances. SimCSE [ 9 ] demonstrated that even simple stochastic dropout can provide an effective augmentation strategy for constructing positive training pairs, whereas supervised variants further exploit natural language inference datasets to improve semantic alignment. Complementary approaches have explored denoising objectives, where corrupted sentences are reconstructed to encourage robust latent representations [ 13 ]. More recently, robustness-oriented frameworks have incorporated adversarial perturbations into contrastive objectives to improve embedding robustness under malicious textual attacks [ 10 ]. Although these methods significantly improve representation quality and downstream performance, they primarily optimize semantic alignment or adversarial robustness rather than explicitly investigating the stability of pre-trained sentence representations under natural semantic-preserving perturbations. 
+
+2.3 Textual Perturbation and Robustness 
+
+Textual perturbations have been extensively studied in the context of adversarial robustness and model evaluation. Existing methods generate perturbations through lexical substitutions, contextual editing, or adversarial optimization to assess the vulnerability of pre-trained language models and develop more robust training strategies [ 7]. While these studies provide valuable insights into model robustness against intentionally crafted perturbations, they primarily focus on degrading model performance or defending against adversarial attacks. Comparatively less attention has been devoted to understanding how naturally occurring semantic-preserving perturbations influence pre-trained sentence 
+
+Figure 1: Distribution of SNLI sentence lengths after re-moving the duplicates. 
+
+Figure 2: Example perturbations applied to an input sen-tence under each of the three perturbation strategies. 3A PREPRINT - J ULY 31, 2026 
+
+Figure 3: Overall architecture of CDAE, illustrating sentence perturbation, embedding generation, and the flow of original and perturbed representations through the autoencoder. representations or to explicitly promoting representation stability as a learning objective [ 10 ]. This observation motivates the perturbation-invariant representation learning framework proposed in this work. 
+
+## 3 Proposed Method 
+
+As mentioned above, Pre-trained Language Models (PLMs) embeddings suffer from the divergence of the perturbed (synonym, etc.) embedding from its corresponding original embedding which is against the sematic goals of LLMs. To overcome this, it is necessary to introduce a method to overcome this challenge. We propose CDAE, shown in Figure 3, in the following sections. beforehand, we describe the dataset briefly and then propose CDAE. 
+
+3.1 Dataset 
+
+CDAE uses the Stanford Natural Language Inference (SNLI) corpus as the source of unlabeled natural language sentences for self-supervised representation learning [ 5 ]. Although SNLI contains premise-hypothesis pairs with entailment, contradiction, and neutral labels, these annotations are not used during training. Instead, only the premise sentences are utilized as textual inputs. Since premises may appear multiple times with different hypotheses, duplicate premises are removed to prevent redundant samples and bias during contrastive training. After removing duplicates and invalid entries, totaling 568484 examples used to train and evaluate the autoencoder. Figure 1 depicts the distribution of SNLI sentence lengths after deduplication, peaking around 7 to 9 tokens per sentence, with the bulk falling between roughly 5 and 15 words (mean 8.8, median 8.0). A long tail extends out to 40–60 tokens, considered as rare outliers. This concentration around short sentence lengths resulted in the choice of setting a maximum length of 64 in the embedding process, comfortably covering nearly all examples without wasting compute on padding, while keeping the truncation loss negligible. 
+
+3.2 Methodology 
+
+We propose a Contrastive Denoising Autoencoder (CDAE) that learns compact, semantically robust sentence em-beddings by combining two complementary training signals on top of a frozen pre-trained sentence encoder: (i) a 
+
+contrastive loss that aligns a sentence with a lexically perturbed version of itself while pushing apart unrelated sentences in a batch, and (ii) a reconstruction loss that trains a decoder to recover the clean 768-dimensional backbone embedding from the latent code of a perturbed input. The two objectives interact with the autoencoder differently (a distinction we formalize in Section 3.2.6) while the final sentence representation used for evaluation is the low-dimensional bottleneck vector z ∈ R128 .
+
+3.2.1 Perturbed Sentence Generation 
+
+To construct positive pairs for contrastive learning and noisy inputs for denoising, CDAE generates for each sentence 
+
+sio, i ∈ 1, · · · , n a corresponding perturbed variant sip using one of three following strategies (Figure 2): (a) Synonym replacement ; content words are replaced with a randomly chosen WordNet [ 14 ] synonym. (b) Word dropout ; content 4A PREPRINT - J ULY 31, 2026 words are independently removed. (c) Masking : content words are replaced with the tokenizer’s mask token. In the above strategies, content words imply nouns, verbs, adjectives, or adverbs, are identified via POS tagging. These perturbations use a strength parameter, ρ ∈ [0 , 1] .
+
+3.2.2 Sentence Embedding 
+
+In the next step, for each sentence, either so or sp, CDAE produces their corresponding embedding using 
+
+bert-base-uncased [2] as a frozen backbone BERT : S → R768 , where S shows the set of all sentences. Given an input sentence si, CDAE tokenizes it and obtains contextualized token representations Hi ∈ RL×768 from the final hidden layer, where L is the sequence length. The sentence-level embeddings are obtained via mean pooling over non-padding tokens of the last hidden output as follows. 
+
+z = BERT (s) = 
+
+PLj=1 mj · hj
+
+PLj=1 mj
+
+, (1) where hj is the contextual representation of token j and mj ∈ { 0, 1} is the attention mask. All backbone parameters are frozen, so z is treated as a fixed input feature rather than a learnable representation. 
+
+3.2.3 CDAE Architecture 
+
+The autoencoder consists of an encoder Enc (·; ϕ) and decoder Dec (·; ψ), both multilayer perceptrons operating on the fixed 768-dimensional BERT embedding. 
+
+Encoder The encoder maps the input embedding through hidden layers of size 512 → 256 , each followed by batch normalization, ReLU, and dropout ( p = 0 .30 ), before a final linear projection to the 128-dimensional latent space 
+
+¯zi = Enc (zi; ϕ) ∈ R128 . Since CDAE utlizes the InfoNCE loss [ 15 ], which operates directly on zi, the final projection layer is left unactivated (no ReLU). 
+
+Decoder The decoder mirrors the encoder in reverse, mapping ¯zi through hidden layers of size 256 → 512 back to the original 768-dimensional space ˆzi = Dec (¯ zi; ψ) ∈ R768 .
+
+3.2.4 Loss Functions Contrastive Loss (InfoNCE) For a batch of sentences B, let Z = {z1, . . . , z B } and ˜Z = {˜z1, . . . , ˜zB } denote the 
+
+ℓ2-normalized latent codes of the clean and perturbed views. Sentence i’s perturbed view is treated as its corresponding positive pair, and every other sentence in the batch (both clean and perturbed) serves as a negative. The similarity matrix is shown in (2): logits ij = z⊤ 
+
+> i
+
+˜zj
+
+τ , (2) where τ is a temperature hyperparameter. Equation (3) , shows how we compute a symmetric InfoNCE loss [ 15 ] in both directions: 
+
+Lcontrast = − 12
+
+"
+
+1
+
+B
+
+> B
+
+X
+
+> i=1
+
+log exp( logits ii )
+
+PBj=1; j̸ =i exp( logits ij )
+
+| {z }
+
+> original →perturbed
+
++ 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+log exp( logits ii )
+
+PBj=1; j̸ =i exp( logits ji )
+
+| {z }
+
+> perturbed →original
+
+#
+
+.
+
+(3) No memory bank or momentum encoder is used; negatives are drawn exclusively from the current mini-batch. 
+
+Reconstruction Loss The reconstruction loss in (4) , combines a denoising term and an identity term, both measured as mean squared error against the clean embedding z either zo or zp:
+
+Lrecon = ∥ˆzp − zp∥22
+
+| {z }
+
+> denoising term
+
++ ∥ˆzo − zo∥22
+
+| {z }
+
+> identity term
+
+. (4) 5A PREPRINT - J ULY 31, 2026 
+
+3.2.5 Combined Objective 
+
+Equation (5) shows the full training objective which is a weighted sum of the two losses: 
+
+Ltotal = λrecon Lrecon + λcontrast Lcontrast . (5) 
+
+3.2.6 Gradient Flow 
+
+A central design property of the CDAE is that the two losses reach the shared parameters asymmetrically. Because the backbone is frozen, gradients only propagate through ϕ (encoder) and ψ (decoder). Equation (6) , shows that the contrastive loss depends solely on the latent codes z, ˜z and therefore updates only the encoder: 
+
+∂Lcontrast 
+
+∂ψ = 0 ,∂Lcontrast 
+
+∂ϕ = ∂Lcontrast 
+
+∂z o
+
+∂z o
+
+∂ϕ + ∂Lcontrast 
+
+∂z p
+
+∂z p
+
+∂ϕ ̸ = 0 .
+
+(6) The reconstruction loss in (7) , in contrast, propagates through the decoder and back through the encoder (since 
+
+ˆz = Dec (Enc (z; ϕ); ψ)): 
+
+∂Lrecon 
+
+∂ψ ̸ = 0 ,∂Lrecon 
+
+∂ϕ = ∂Lrecon 
+
+∂ ˆzo
+
+∂ ˆzo
+
+∂z o
+
+∂z o
+
+∂ϕ + ∂Lrecon 
+
+∂ ˆzp
+
+∂ ˆzp
+
+∂z p
+
+∂z p
+
+∂ϕ ̸ = 0 .
+
+(7) Consequently, the encoder receives gradient contributions from both objectives, while the decoder is shaped exclusively by the reconstruction objective. This asymmetry is intentional; it lets the latent space be organized primarily by semantic similarity (via InfoNCE) while still being constrained to remain information-preserving enough to reconstruct the original embedding. 
+
+## 4 Results 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9                                           
+
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cosine Similarity
+> Synonym
+> CDAE (Ours)
+> BERT
+> SimCSE
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Mask
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Dropout
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Perturbation Strength
+> 0.0
+> 0.1
+> 0.2
+> Gap
+> CDAE BERT
+> CDAE SimCSE
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Perturbation Strength
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Perturbation Strength
+
+Figure 4: Perturbation robustness results over different perturbation strengths. All experiments were implemented in Python 3.10 using PyTorch [ 16 ] as the core deep learning framework and HuggingFace Transformers [ 17 ] for the pre-trained BERT [ 2] backbone, and were conducted on a single machine equipped with an NVIDIA GeForce RTX 4060 Laptop GPU (8GB VRAM) and a 13th Gen Intel Core CPU, with all training and inference performed on the GPU (CUDA). The Contrastive Denoising Autoencoder was built on top of a frozen bert-base-uncased backbone and trained for 20 epochs with a batch size of 512, using AdamW [ 18 ] with a learning rate of 1 × 10 −4 and weight decay of 1 × 10 −5, and a dropout rate of 0.3 applied throughout the encoder 6A PREPRINT - J ULY 31, 2026 and decoder layers to mitigate overfitting. During training, input sentences were perturbed at a strength of 0.7 (70% of eligible content words affected) using a randomly selected strategy from synonym replacement, word dropout, or masking to generate the noisy pair used for the denoising and contrastive objectives. The SNLI dataset [ 5 ] was loaded via HuggingFace Datasets [ 19 ] and processed with pandas [ 20 ] and NumPy [ 21 ]. The training, validation, and test splits contain 548820, 9840, and 9824 sentences, respectively. Sentence perturbation used NLTK [ 22 ], drawing on WordNet [ 14 ] for synonym replacement and its POS tagger for content-word identification. Progress was tracked with tqdm, and robustness results were plotted with Matplotlib. All test results reported in this work was performed with a single robustness sweep. For each perturbation method 
+
+m ∈ { synonym , dropout , mask } and perturbation strength ρ ∈ { 0.1, 0.2, . . . , 0.9}, a fixed set of N =1000 was sampled containing the test sentences and constructing a perturbed counterpart of each sentence using m and ρ. Afterwards, the mean and standard deviation of the cosine similarity between clean and perturbed representations were measured according to (8): 
+
+¯cm,ρ = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+cos  xoi , x pi
+
+,
+
+(xoi , x pi ) ∈ { (zoi , z pi ), (¯ zoi , (¯ zpi )},
+
+(8) computed twice per (m, ρ ) pair: once using the CDAE latent space ¯zi = Enc (BERT (si); ϕ), and once using the raw embeddings zi = Baseline (si) as a baselin. The difference between the two, 
+
+∆m,ρ = ¯ c CDAE  
+
+> m,ρ
+
+− ¯c BERT  
+
+> m,ρ
+
+,
+
+∆m,ρ = ¯ c CDAE  
+
+> m,ρ
+
+− ¯c SimCSE  
+
+> m,ρ
+
+, (9) is reported as the gap of the learned latent space over the raw backbone representation at that method/strength combination. A positive ∆m,ρ (gap) indicates the 128-dimensional latent space preserves semantic identity under perturbation better than the 768-dimensional raw embedding does, at the corresponding noise level. We note that this comparison uses raw , uncalibrated cosine similarity across the two spaces. Because the latent space is 128-dimensional and the raw BERT space is 768-dimensional. Figure 4 visializes the model robustness under three perturbation strategies (synonym replacement, masking, and dropout) applied at increasing strengths (0.1 to 0.9), measured via cosine similarity between clean and perturbed sentence representations for CDAE, BERT, and SimCSE. CDAE consistently outperforms both baselines across all three strategies, with the gap widening as perturbation strength increases. The advantage is largest under masking and dropout, where CDAE retains similarity above 0.7 at strength 0.9 while BERT and SimCSE drop below 0.6. The synonym condition shows a smaller but consistent margin. As the perturbation strength increases, CDAE degrades more gracefully than either baseline across all perturbation strategies. 
+
+## 5 Conclusion 
+
+This work proposed a lightweight Contrastive Denoising Autoencoder (CDAE) that learns perturbation robust latent representation through a joint contrastive and denoising objective useful in improving robustness of pre-trained sentence embedding under semantic-preserving textual perturbation. Experimental results demonstrate that the proposed framework consistently preserve semantic similarity more effectively than the original BERT embedding and SimCSE across different perturbation strategies and perturbation strengths, even for more pronounced under stronger perturbation, indicating that CDAE learns more stable and robust sentence representation while maintaining the semantic knowledge encoded by the pre-trained language model. An important direction for future work is to investigate how perturbation sensitivity evolves across different transformers layers and multiple BERT-based models. A layer-wise analysis may provide deeper insights into where semantic robustness is established within pre-trained language models and further guide the design of perturbation-invariant representation learning method. 
+
+## References 
+
+[1] Matthew E. Peters et al. Deep contextualized word representations. In Proceedings of NAACL-HLT , 2018. [2] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. BERT: Pre-training of deep bidirectional transformers for language understanding. In Jill Burstein, Christy Doran, and Thamar Solorio, editors, Proceedings 
+
+7A PREPRINT - J ULY 31, 2026 
+
+of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers) , pages 4171–4186, Minneapolis, Minnesota, June 2019. Association for Computational Linguistics. [3] Chongyang Tao, Tao Shen, Shen Gao, Junshuo Zhang, Zhen Li, Kai Hua, Wenpeng Hu, Zhengwei Tao, and Shuai Ma. Llms are also effective embedding models: An in-depth overview. arXiv preprint arXiv:2412.12591 , 2024. [4] Nils Reimers and Iryna Gurevych. Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Kentaro Inui, Jing Jiang, Vincent Ng, and Xiaojun Wan, editors, Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP) , pages 3982–3992, Hong Kong, China, November 2019. Association for Computational Linguistics. [5] Samuel R. Bowman, Gabor Angeli, Christopher Potts, and Christopher D. Manning. A large annotated corpus for learning natural language inference. In Lluís Màrquez, Chris Callison-Burch, and Jian Su, editors, Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing , pages 632–642, Lisbon, Portugal, September 2015. Association for Computational Linguistics. [6] Xinyi Hou, Yanjie Zhao, and Haoyu Wang. Llm applications: Current paradigms and the next frontier. arXiv preprint arXiv:2503.04596 , 2025. [7] Yunxiang Zhang, Liangming Pan, Samson Tan, and Min-Yen Kan. Interpreting the robustness of neural NLP models to textual perturbations. In Smaranda Muresan, Preslav Nakov, and Aline Villavicencio, editors, Findings of the Association for Computational Linguistics: ACL 2022 , pages 3993–4007, Dublin, Ireland, May 2022. Association for Computational Linguistics. [8] Liang Wang, Nan Yang, Xiaolong Huang, Linjun Yang, Rangan Majumder, and Furu Wei. Multilingual e5 text embeddings: A technical report, 2024. [9] Tianyu Gao, Xingcheng Yao, and Danqi Chen. SimCSE: Simple contrastive learning of sentence embeddings. In Marie-Francine Moens, Xuanjing Huang, Lucia Specia, and Scott Wen-tau Yih, editors, Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing , pages 6894–6910, Online and Punta Cana, Dominican Republic, November 2021. Association for Computational Linguistics. [10] Javad Rafiei Asl, Prajwal Panzade, Eduardo Blanco, Daniel Takabi, and Zhipeng Cai. Robustsentembed: Robust sentence embeddings using adversarial self-supervised contrastive learning. In Findings of the Association for Computational Linguistics: NAACL 2024 , pages 3795–3809, 2024. [11] Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang, Rangan Majumder, and Furu Wei. Text embeddings by weakly-supervised contrastive pre-training. arXiv preprint arXiv:2212.03533 , 2022. [12] Niklas Muennighoff, Nouamane Tazi, Loïc Magne, and Nils Reimers. Mteb: Massive text embedding benchmark. In Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics ,pages 2014–2037, 2023. [13] Kexin Wang, Nils Reimers, and Iryna Gurevych. Tsdae: Using transformer-based sequential denoising auto-encoderfor unsupervised sentence embedding learning. In Findings of the association for computational linguistics: EMNLP 2021 , pages 671–688, 2021. [14] George A. Miller. WordNet: A lexical database for English. In Speech and Natural Language: Proceedings of a Workshop Held at Harriman, New York, February 23-26, 1992 , 1992. [15] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding, 2019. [16] Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen, Zeming Lin, Natalia Gimelshein, Luca Antiga, Alban Desmaison, Andreas Köpf, Edward Yang, Zach DeVito, Martin Raison, Alykhan Tejani, Sasank Chilamkurthy, Benoit Steiner, Lu Fang, Junjie Bai, and Soumith Chintala. Pytorch: An imperative style, high-performance deep learning library, 2019. [17] Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Remi Louf, Morgan Funtowicz, Joe Davison, Sam Shleifer, Patrick von Platen, Clara Ma, Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao, Sylvain Gugger, Mariama Drame, Quentin Lhoest, and Alexander Rush. Transformers: State-of-the-art natural language processing. In Qun Liu and David Schlangen, editors, Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations , pages 38–45, Online, October 2020. Association for Computational Linguistics. [18] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization, 2019. 8A PREPRINT - J ULY 31, 2026 [19] Quentin Lhoest, Albert Villanova del Moral, Yacine Jernite, Abhishek Thakur, Patrick von Platen, Suraj Patil, Julien Chaumond, Mariama Drame, Julien Plu, Lewis Tunstall, Joe Davison, Mario Šaško, Gunjan Chhablani, Bhavitvya Malik, Simon Brandeis, Teven Le Scao, Victor Sanh, Canwen Xu, Nicolas Patry, Angelina McMillan-Major, Philipp Schmid, Sylvain Gugger, Clément Delangue, Théo Matussière, Lysandre Debut, Stas Bekman, Pierric Cistac, Thibault Goehringer, Victor Mustar, François Lagunas, Alexander Rush, and Thomas Wolf. Datasets: A community library for natural language processing. In Heike Adel and Shuming Shi, editors, Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing: System Demonstrations , pages 175–184, Online and Punta Cana, Dominican Republic, November 2021. Association for Computational Linguistics. [20] Wes McKinney. Data Structures for Statistical Computing in Python. In Stéfan van der Walt and Jarrod Millman, editors, Proceedings of the 9th Python in Science Conference , pages 56 – 61, 2010. [21] Charles R. Harris, K. Jarrod Millman, Stéfan J. van der Walt, Ralf Gommers, Pauli Virtanen, David Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J. Smith, Robert Kern, Matti Picus, Stephan Hoyer, Marten H. van Kerkwijk, Matthew Brett, Allan Haldane, Jaime Fernández del Río, Mark Wiebe, Pearu Peterson, Pierre Gérard-Marchant, Kevin Sheppard, Tyler Reddy, Warren Weckesser, Hameer Abbasi, Christoph Gohlke, and Travis E. Oliphant. Array programming with NumPy. Nature , 585(7825):357–362, September 2020. [22] Steven Bird and Edward Loper. NLTK: The natural language toolkit. In Proceedings of the ACL Interactive Poster and Demonstration Sessions , pages 214–217, Barcelona, Spain, July 2004. Association for Computational Linguistics. 9
