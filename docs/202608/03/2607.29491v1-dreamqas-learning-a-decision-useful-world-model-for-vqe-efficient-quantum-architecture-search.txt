@@ -1,0 +1,1011 @@
+Title: DreamQAS: Learning a Decision-Useful World Model for VQE-Efficient Quantum Architecture Search
+
+URL Source: https://arxiv.org/pdf/2607.29491v1
+
+Published Time: Mon, 03 Aug 2026 01:01:22 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+Preprint. Under review. 
+
+# DREAM QAS: LEARNING A DECISION -U SEFUL 
+
+# WORLD MODEL FOR VQE-E FFICIENT QUANTUM 
+
+# ARCHITECTURE SEARCH 
+
+Jiayang Niu 1, Yan Wang 1, Jie Li 1, Ke Deng 1, Azadeh Alavi 1, Muhammad Usman 2, Yongli Ren 1,* 1School of Computing Technologies, RMIT University 
+
+> 2
+
+Quantum Systems, Data61, CSIRO 
+
+> *
+
+Corresponding author: yongli.ren@rmit.edu.au 
+
+## ABSTRACT 
+
+Reinforcement-learning-based quantum architecture search (RL-QAS) repeatedly optimizes a variational quantum eigensolver (VQE) after extending a circuit, al-though circuit construction and action legality are deterministic and known. We introduce DreamQAS, a model-based RL framework that preserves these exact circuit dynamics and learns only the expensive post-VQE feedback. A recurrent randomized-prior ensemble predicts an oracle-free score relative to an empiri-cal energy frontier and supports multi-step imagined policy learning over explicit legal circuits. Ranking-based activation, uncertainty-aware pessimism and trun-cation, and selective real-VQE verification form a reliability-controlled learning loop. Under a common 15,000-episode budget and frozen evaluation for the RL methods, DreamQAS has the lowest mean frozen-policy energy error on four of five molecular tasks and the second-lowest on one. At fine-error targets reached by all seeds of both methods, it uses 1.6×–2.0× fewer real VQE calls on four tasks and 10 .6× fewer on BeH 2-8q. Counterfactual action-ranking utility in-creases across all five tasks ( ∆ρ = 0 .346 , 95% CI [0 .185 , 0.507] ), while direct greedy and beam use of the same model does not recover the gains of imagined policy learning. Ensemble disagreement also improves risk–coverage over ran-dom rejection on all three probed tasks. These results establish a world-model design for QAS whose value lies in decision-useful feedback rather than exact energy prediction. 
+
+## 1 INTRODUCTION 
+
+The variational quantum eigensolver (VQE) estimates molecular ground-state energies by optimiz-ing the continuous parameters of a quantum circuit ansatz (Peruzzo et al., 2014; Kandala et al., 2017; Tilly et al., 2022). Its accuracy and trainability depend strongly on the ansatz architecture, yet the best architecture varies with the molecule, Hamiltonian, and hardware. Quantum architecture search (QAS) addresses this design problem by constructing circuits from a prescribed gate space using differentiable, discrete, generative, or learned search procedures (Zhang et al., 2022; Du et al., 2022; Lu et al., 2023; Nakaji et al., 2024; He et al., 2024). The evaluation bottleneck is especially severe in RL-QAS. A policy appends one legal gate at a time, and the environment evaluates each new circuit prefix by optimizing its parameters with VQE. Policy training repeats this operation over thousands of trajectories. The resulting cost is structurally asymmetric: appending a gate and updating action legality are exact and inexpensive, whereas post-optimization feedback is expensive and initially unknown. This suggests a QAS-specific model-based formulation that preserves the known circuit transition and learns only the feedback that would otherwise require another VQE call. Turning this asymmetry into useful synthetic experience is not equivalent to fitting a globally accu-rate energy regressor. First, an RL-QAS decision is conditional: the model must distinguish legal continuations of the same circuit prefix, even when its errors are nonuniform across the full archi-tecture space. Second, deployable training feedback cannot assume access to the exact ground-state energy, and its useful scale changes as the empirical search frontier improves. Third, imagina-1arXiv:2607.29491v1 [cs.LG] 31 Jul 2026 Preprint. Under review. tion shifts the policy toward model-preferred circuits, so systematic errors can be amplified across consecutive decisions. A QAS world model must therefore represent ordered prefixes, learn an oracle-free decision signal, and expose reliability information that controls when and how imagined feedback is used. Predictor-assisted QAS amortizes evaluation by learning a surrogate for architecture quality (Zhang et al., 2021; He et al., 2023; Deng et al., 2023; Soloviev et al., 2024; Martyniuk et al., 2025). Such predictors are often used to rank or screen candidates. A reusable circuit-construction policy poses a different problem: predicted feedback must provide credit across a sequence of gate decisions. Directly following the circuit that a surrogate scores best can concentrate search in model-biased regions. In contrast, a world model can generate internal experience for policy learning (Ha & Schmidhuber, 2018; Janner et al., 2019; Hafner et al., 2020), but generic world-model agents usually learn latent transitions together with rewards or values. QAS permits a sharper factorization: the circuit is kept explicit, its transition remains exact, and only the post-VQE feedback is modeled. We propose DreamQAS, a QAS-specific world-model framework built around this factorization. A recurrent ensemble represents each variable-length circuit prefix and predicts an oracle-free, frontier-relative feedback score. Starting from VQE-verified replay prefixes, the actor constructs multi-step imagined trajectories using exact legal transitions and learned feedback. A ranking gate activates imagination when the model becomes decision-ready; ensemble disagreement supplies pessimism and confidence-based truncation; and selected promising or uncertain circuits are periodically veri-fied using real VQE and returned to training. The paper follows four connected questions. First, does DreamQAS improve final QAS quality and the number of real VQE calls required to reach a target error? Second, does the feedback model acquire action-level decision utility? Third, can the same model be used directly as a surrogate searcher, or is multi-step imagined policy learning essential? Fourth, can ensemble disagreement monitor where model feedback is risky? Under a common 15,000-episode RL budget and frozen evaluation, DreamQAS has the lowest mean final error on four tasks and the second-lowest on one. At fine-error targets reached by every seed of both methods, it uses 1.6×–2.0× fewer real VQE calls than NoImag on four tasks and 10 .6× fewer on BeH 2-8q. Meanwhile, final action-ranking utility improves over its start checkpoint by ∆ρ = 0 .346 across tasks, and disagreement-based rejection lowers risk by 24% –46% at half coverage. Our contributions are: • We formulate RL-QAS as a known-dynamics, expensive-feedback problem and introduce a feedback-only world model that never requires the exact ground-state energy during train-ing or search. • We develop a QAS-aware recurrent ensemble, frontier-relative target, decision-oriented replay, and multi-step imagination scheme, integrated with ranking activation, pessimism, truncation, and selective verification. • Across five molecular tasks, we demonstrate strong common-budget final quality and sub-stantial real-VQE savings over matched internal controls, then explain these gains through counterfactual action utility, same-model deployment controls, transition-matched hori-zons, and uncertainty risk–coverage. 
+
+## 2 RELATED WORK 
+
+Adaptive VQE constructs an ansatz iteratively by selecting chemistry-motivated or qubit operators from a pool, often using measured gradients (Grimsley et al., 2019; Tang et al., 2021). QAS instead treats the architecture itself as a search object in a prescribed gate space and has been approached through differentiable supercircuits (Zhang et al., 2022; Wu et al., 2023), discrete search (Du et al., 2022), generative construction (Nakaji et al., 2024), and training-free structural criteria (He et al., 2024). These approaches automate circuit design under different structural assumptions. Our setting focuses on gate-level sequential construction, where evaluating each newly visited prefix requires a complete post-optimization feedback signal. RL-QAS makes this sequential structure explicit: a partial circuit is the state, and a legal gate in-sertion or modification is the action. Prior work has studied value-based ansatz construction, cur-riculum learning, robustness to hardware errors, joint discrete–continuous decisions, and controlled agent comparisons (Ostaszewski et al., 2021; Patel et al., 2024; Niu et al., 2025; Ikhtiarudin et al., 2Preprint. Under review. 2025). Benchmarking efforts further expose differences among search spaces, evaluators, and proto-cols (Lu et al., 2023; Niu et al., 2026). These methods improve how the policy explores or optimizes the architecture space, but fresh policy experience is still predominantly obtained from newly VQE-evaluated circuits. DreamQAS is complementary: it targets the cost of producing that feedback and reuses verified experience to train the construction policy. Predictor-assisted QAS amortizes circuit evaluation by learning performance models for candidate screening, active label acquisition, progressive search, or architecture benchmarking (Zhang et al., 2021; He et al., 2023; Deng et al., 2023; Soloviev et al., 2024; Martyniuk et al., 2025). Neural predictors can substantially reduce the number of labeled circuit evaluations, while training-free proxies avoid supervised labels altogether (Zhang et al., 2021; He et al., 2024). Their usual deploy-ment unit is a complete candidate whose score guides selection or acquisition. Sequential policy learning requires a different form of utility: the model must rank legal continuations conditional on a policy-visited prefix, and its predictions alter the future prefix distribution on which it is used. DreamQAS therefore consumes learned feedback through real-anchored imagined trajectories rather than treating the globally best predicted circuit as the answer. Section 5.4 compares these two uses of the same model. Model-based RL has long interleaved real and model-generated experience for learning and plan-ning (Sutton, 1991). Modern approaches use probabilistic ensembles to represent predictive uncer-tainty (Chua et al., 2018), branch short synthetic rollouts from real data to limit model bias (Jan-ner et al., 2019), or learn latent dynamics for multi-step imagination (Ha & Schmidhuber, 2018; Hafner et al., 2020; Schrittwieser et al., 2020). Uncertainty-penalized objectives provide a comple-mentary defense against policies exploiting unsupported model predictions (Yu et al., 2020), while iterative data aggregation addresses the distribution shift induced by a learned decision rule (Ross et al., 2011). Model-based QAS has also used learned dynamics inside tree search (Rapp et al., 2025). DreamQAS specializes these principles to molecular RL-QAS: symbolic circuit transitions and legality remain explicit and exact, only post-VQE feedback is learned, and ranking activation, ensemble pessimism, rollout truncation, and selective VQE verification regulate how that feedback enters policy learning. 
+
+## 3 PROBLEM FORMULATION 
+
+An RL-QAS episode constructs a parameterized circuit one gate at a time. Let st = ( a1, . . . , a t)
+
+denote the explicit circuit prefix after t steps and A(st) its legal-action set. Selecting at+1 ∈ A (st)
+
+gives the known transition 
+
+st+1 = Tcirc (st, a t+1 ) = st ⊕ at+1 . (1) Evaluating the new prefix is expensive because its continuous parameters must be optimized, 
+
+E∗(st+1 ) = min  
+
+> ϑ
+
+⟨0|U †(st+1 , ϑ)HU (st+1 , ϑ)|0⟩. (2) The search objective is to learn a construction policy that discovers a low-energy circuit under a finite budget of real VQE optimizations. This separates an exact, inexpensive circuit transition from an expensive feedback function and motivates DreamQAS to model only the latter. 
+
+## 4 DREAM QAS 
+
+Figure 1 summarizes the learning loop. Real trajectories anchor the policy and provide post-VQE energies for feedback-model training. The model then supplies additional multi-step imagined tra-jectories without VQE at imagined steps. Reliability signals determine when and how strongly this synthetic feedback enters policy learning, while selective real verification expands the trusted data distribution. 4.1 ORACLE -F REE FEEDBACK WORLD MODEL 
+
+The circuit transition in Eq. (1) is already known; the learned component predicts only the post-VQE feedback associated with the resulting prefix. Training must also avoid assuming the exact 3Preprint. Under review. imagined reward 
+
+Replay Buffer   
+
+> Verified prefix data
+> •circuit prefixes
+> •post -VQE log -error
+> labels
+
+Actor Policy 
+
+Real VQE rollouts 
+
+(accurate but expensive) C! C"…C#C$ C%
+
+…
+
+…
+
+…
+
+…
+
+…
+
+…                             
+
+> Gate
+> Sequence
+> (prefix)
+> Gate
+> embeddings
+> C$C%C#C&C&'$C(')
+> GRU
+> unrolled
+> 𝑒 %𝑒 $𝑒 (𝑒 #𝑒 ('$𝑒 (')
+> ℎ$ℎ%ℎ#ℎ(ℎ('$ℎ(')
+> Kindependent GRU members
+> Batch of N imagined rollouts
+> 𝑁 *+,-≥𝜏 .,*/ 𝑎𝑛𝑑 Acc 0123 ≥𝜏 0123
+> each starts from a replay -sampled prefix
+> 𝑎 $𝑎 %𝑎 #𝑎 4𝑎 5
+> 𝑎 ('$𝑎 (')
+> Real and VQE -verified
+> prefix data
+> E(C!)E(C!)
+> Prefix Replay & State Restoration Imagined
+
+VQE Parameter Optimizer       
+
+> Ensemble Aggregation
+> K-Member Recurrent Feedback Evaluation
+> Member 1 Member 2Member K
+> h&
+> $
+> Member …
+> h&
+> %h&
+> 6
+> h&
+> …
+> h&'$
+> $
+> Ensemble Aggregation
+> Ensemble Aggregation
+> h&'8
+> $h&'8
+> %h&'8
+> 6
+> h&'8
+> …
+
+… … … …            
+
+> 𝑎 &'$
+> 𝑎 &'%
+> 𝑎 &'8
+> h&'$
+> 6h&'$
+> …
+> h&'$
+> %
+> h,&
+> h,&'$
+> h,&'89$
+> Real
+> policy
+> gradient
+> WM
+> update
+> Ensemble Aggregation
+> ℎ"ℎ#ℎ…ℎ%
+> 𝑦 '"𝑦 '#𝑦 '…
+> each member head + frozen prior
+> Mean representation ℎ(
+> 𝑦 '%
+> mean log -error 𝑦 (Uncertainty 𝜎
+> Reliability Control
+> Imagined
+> policy
+> gradient
+> DAgger verification:
+> low -error / high -uncertainty circuits
+> E(C#)E(C&)E(C&)
+
+Figure 1: DreamQAS training loop. Real QAS trajectories provide post-VQE energies for an oracle-free recurrent ensemble. Starting from verified prefixes, exact circuit rules and learned feed-back generate multi-step imagined trajectories for policy learning. Ranking readiness, ensemble pessimism, confidence truncation, and selective real-VQE verification form the reliability loop. ground-state energy E0. Let Fk be the empirical frontier adopted at the kth feedback-model refresh and define the displacement in mHa as 
+
+d(k)
+
+t = E∗(st) − Fk
+
+10 −3 Ha . (3) DreamQAS uses the signed-log score 
+
+yt = Sk(E∗(st)) = sign( d(k)
+
+t ) log 10 1 + |d(k)
+
+t |
+
+m
+
+!
+
+, m = 0 .1 mHa . (4) This strictly monotone transform compresses deviations on both sides of the frontier while pre-serving their energy ordering. A pending frontier tracks the best observed real optimized energy continuously. At a model refresh it is adopted atomically as Fk; the replay buffer stores raw ener-gies, so all labels are recomputed under the current scale. Real policy learning uses the improvement reward 
+
+rreal 
+
+t+1 = yt − yt+1 , (5) which is positive when the extended circuit lowers the optimized energy. The exact E0 is used only after training to express frozen-policy evaluation in mHa. The resulting composite model is 
+
+cMϕ(st, a t+1 ) = 
+
+Tcirc (st, a t+1 )
+
+| {z }
+
+st+1 
+
+, Fϕ(st+1 )
+
+| {z }
+
+(¯ht+1 ,¯yt+1 ,σ t+1 )
+
+ , (6) where the first component is exact and the second is learned. The full frontier adoption and replay relabeling procedure is given in Appendix A.1. 4.2 QAS-A WARE FEEDBACK LEARNING 
+
+Circuit prefixes are ordered and variable in length. DreamQAS therefore uses K = 3 independently initialized recurrent members. Member k embeds the gate sequence and encodes the complete prefix with a GRU, h(k)
+
+t = fϕk (a1: t). Its prediction combines a trainable head and a frozen randomized prior function (Osband et al., 2018): 
+
+by(k)
+
+t = gϕk (h(k)
+
+t ) + βrpf p(k)(h(k)
+
+t ). (7) 4Preprint. Under review. Independent encoders, per-member bootstrap samples, and randomized priors produce an ensemble mean and disagreement, 
+
+¯yt = 1
+
+K
+
+X
+
+> k
+
+by(k) 
+
+> t
+
+, σt = Std k[by(k) 
+
+> t
+
+], ¯ht = 1
+
+K
+
+X
+
+> k
+
+h(k) 
+
+> t
+
+. (8) The actor consumes the detached recurrent representation sg( ¯ht), while ¯yt and σt replace expensive feedback during imagination. Real VQE trajectories enter an all-history replay buffer. Training batches mix elite circuits, priority-weighted feedback regions, stratified targets, and uniform samples so that rare improvements and policy-visited prefixes remain represented. With padding mask qit , member bootstrap mask μ(k) 
+
+> it
+
+,and decision-oriented weight w(yit ), the supervised objective is 
+
+LWM = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+P 
+
+> i,t
+
+qit μ(k) 
+
+> it
+
+w(yit )ℓH(by(k) 
+
+> it
+
+− yit )
+
+P 
+
+> i,t
+
+qit μ(k)
+
+> it
+
+. (9) Architecture, replay composition, and optimization details are reported in Appendix A.2. 4.3 MULTI -S TEP IMAGINED POLICY LEARNING 
+
+Real trajectories always anchor the actor. Let bAreal  
+
+> t
+
+be the standardized advantage derived from discounted real rewards. The real policy objective is 
+
+Lreal = −Et
+
+h
+
+log πθ (at+1 | st) bAreal 
+
+> t
+
+i
+
+− cent Et[H(πθ )] . (10) The action distribution is masked and renormalized over the exact legal set. An imagined rollout starts from a VQE-verified replay prefix. At each imagined step, the actor chooses a legal gate, Eq. (1) appends it to the explicit circuit, and the recurrent ensemble predicts the new feedback. To limit exploitation of uncertain predictions, DreamQAS defines the pessimistic potential 
+
+Φt = −(¯ yt + βpes σt), rimag  
+
+> t+1
+
+= Φ t+1 − Φt. (11) Masked multi-step returns over the trusted part of each trajectory produce bAimag  
+
+> t
+
+and 
+
+Limag = −
+
+P 
+
+> t
+
+zt log πθ (at+1 | st) sg( bAimag  
+
+> t
+
+)
+
+P 
+
+> t
+
+zt
+
+, (12) where zt masks steps after the legal action space is exhausted or confidence truncation is triggered. Because the reward is a potential difference, policy learning consumes predicted improvements along a trajectory rather than using the model as a terminal circuit scorer. The default horizon is 
+
+H = 15 ; complete return and rollout specifications are in Appendix A.3. 4.4 RELIABILITY -C ONTROLLED LEARNING 
+
+The feedback model is introduced into policy learning through a closed loop. First, after a real-data warm-up, a global ranking gate activates imagination when pairwise accuracy on VQE-verified prefixes reaches τpair :
+
+Acc pair = E(u,v )∼Unif( P) [I[(¯ yu − ¯yv )( yu − yv ) > 0]] . (13) Second, ensemble disagreement enters the pessimistic potential at every imagined step. Third, σt >τσ truncates low-confidence returns. Finally, a small deduplicated mixture of model-preferred and high-disagreement circuits is periodically evaluated with real VQE. These observations are returned to replay in a DAgger-style feedback step (Ross et al., 2011), and every verification call is charged to the real-feedback budget. The combined actor objective is 
+
+Lactor = Lreal + ωim I[Nep ≥ Nwarm ∧ Acc pair ≥ τpair ] Limag . (14) Appendix A provides the complete algorithm, thresholds, verification schedule, and VQE account-ing. 5Preprint. Under review. 
+
+## 5 EXPERIMENTS 
+
+We organize the evaluation around four questions: RQ1 final policy quality and real-VQE effi-ciency; RQ2 learned action-level decision utility; RQ3 the role of multi-step imagined policy learn-ing beyond direct surrogate exploitation; and RQ4 uncertainty-based monitoring of world-model feedback. 5.1 EXPERIMENTAL SETUP 
+
+We study five molecular QAS tasks from the HamQASBench evaluation framework (Niu et al., 2026): LiH-4q, BeH 2-6q, LiH-6q, BeH 2-8q, and BeH 2-10q. LiH-4q allows up to 40 construc-tion steps and the remaining tasks allow 50. The 4- and 6-qubit tasks use COBYLA with at most 1,000 optimizer iterations; the 8- and 10-qubit tasks use GPU-accelerated ROTOSOLVE with three sweeps. All episode-based RL methods use 15,000 construction episodes. Each cell contains five independent training seeds; the frozen policy is evaluated for 100 fresh episodes per seed, and ta-bles report the cross-seed mean and sample standard deviation of mean frozen-policy energy error. DreamQAS and its internal controls use the exact ground-state energy only after training to con-vert evaluation energies to mHa. Training curves include every real VQE call, including selective verification. Internal controls share the environment, action space, VQE optimizer, and real episode budget. DREAM QAS-RL removes the feedback model and imagination; N OIMAG retains recurrent repre-sentation and feedback learning without imagined policy updates; N ODAG uses uncertainty-aware imagination but does not return selectively verified samples to replay. All methods use the same Hamiltonians, circuit-depth caps, task-level optimizer families, and five-run protocol. The RL methods additionally share the 15,000-episode budget and frozen-evaluation metric. CRLQAS (Pa-tel et al., 2024) and HyRLQAS (Niu et al., 2025) retain their original E0-informed learning rules. GQE (Nakaji et al., 2024), TFQAS (He et al., 2024), and QuantumDARTS (Wu et al., 2023) use their native search budgets and provide final-quality context only, not matched-VQE efficiency compar-isons. Complete molecular specifications, gate spaces, VQE configurations, baseline provenance, run protocols, and statistical procedures are provided in Appendix B; complete run inventories and data lineage are provided in Appendix H. 5.2 RQ1: S EARCH QUALITY AND REAL -VQE E FFICIENCY 
+
+Within the RL block of Table 1, DreamQAS has the lowest mean error on LiH-4q, BeH 2-6q, LiH-6q, and BeH 2-8q and the second-lowest on BeH 2-10q. It reaches chemical accuracy ( 1.6 mHa )on LiH-4q, BeH 2-6q, and BeH 2-10q. Against the matched oracle-free internal controls, the full method improves mean frozen-policy energy error on every task. The method-specific lower block is retained as broader final-quality context and does not support a matched-resource ranking. At the finest task-specific targets reached by all five seeds of both methods, DreamQAS requires 
+
+1.6×–2.0× fewer real VQE calls than NoImag on LiH-4q, BeH 2-6q, LiH-6q, and BeH 2-10q, and 
+
+10 .6× fewer on BeH 2-8q. The complete seed-level sustained crossings, reach counts, and four-level error ladders are reported in Appendix C. DreamQAS is not uniformly faster at loose targets; its advantage grows as the target tightens. Thus imagination primarily accelerates fine-error refinement, where search must repeatedly improve already competitive circuits. The model apparatus adds approximately 10 .9–12 .7% wall-clock overhead relative to NoImag in same-load state-vector timing runs, while verification is its largest single component. Because veri-fication VQE is included on the efficiency axis, the reported savings account for the real evaluations used to maintain the world model. Full VQE, optimizer-evaluation, model-query, and runtime ac-counting is given in Appendix C. 5.3 RQ2: L EARNED DECISION UTILITY 
+
+For each policy-visited real prefix, we construct up to ten legal next-action continuations, score them with the frozen feedback model, and evaluate the same candidates with matched real VQE. We measure within-prefix Spearman correlation ρact , normalized regret of the model-ranked top action, and its win rate against matched random legal actions. 6Preprint. Under review. 
+
+Method LiH-4q BeH 2-6q LiH-6q BeH 2-8q BeH 2-10q 
+
+RL methods: common 15,000-episode budget and frozen evaluation 
+
+DreamQAS 0.053 ±0.024 0.058 ±<0.001 11 .4±0.47 2.17 ±0.00 1.03 ±0.29 
+
+NoImag 0.221 ±0.062 0.328 ±0.12 13 .6±3.5 2.35 ±0.40 2.18 ±0.91 
+
+DREAM QAS-RL 0.391 ±0.074 0.098 ±0.061 26 .3±1.1 3.12 ±0.96 9.88 ±13 .0
+
+CRLQAS 4.73 ±1.30 1.78 ±1.30 17 .3±3.9 5.04 ±2.40 2.65 ±1.90 
+
+HyRLQAS 16 .5±24 309 ±690 215 ±410 18 .4±23 0.897 ±<0.001 
+
+Method-specific search procedures; final-quality context 
+
+GQE 128 ±79 235 ±220 108 ±45 261 ±130 345 ±400 
+
+TFQAS 32 .7±1.3 20 .3±4.0 36 .0±0.62 56 .7±10 77 .9±5.4
+
+QuantumDARTS 2.74 ±0.91 1.26 ±2.40 10 .4±5.1 38 .0±49 113 ±120 
+
+Table 1: Mean frozen-policy energy error in mHa (mean ± sample std over five seeds; lower is better). Bold and underline mark the lowest and second-lowest means within the RL block. CRLQAS and HyRLQAS retain their original E0-informed learning rules. The lower block uses method-specific search procedures and is shown as final-quality context without cross-block rank-ing. QuantumDARTS reports one final architecture per independent search; its variation is across five searches rather than frozen-policy rollout variation. 10 4 10 5          
+
+> cumulative real VQE calls
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> training episode-best error (mHa, 100-ep moving mean)
+> chem. acc.
+> LiH (4q)
+> 1.5× fewer VQE
+> 10 410 510 6
+> cumulative real VQE calls
+> 10 1
+> LiH (6q)
+> 2.1× fewer VQE
+> 10 410 510 6
+> cumulative real VQE calls
+> 10 1
+> 10 2
+> chem. acc.
+> BeH 2(8q)
+> 9.0× fewer VQE
+> DreamQAS No-imag DreamQAS-RL CRLQAS HyRLQAS
+
+Figure 2: Training quality versus cumulative real VQE calls on three representative tasks. Curves show the across-seed median and IQR of the trailing-100-episode mean; all verification calls are included. Arrows denote visual gaps between median curves at the stated error levels; all numerical speedup claims use the seed-level sustained-crossing estimator. Complete five-task curves, reach counts, and seed ranges are reported in Appendix C. Table 2 shows a consistent training trajectory: mean ρact increases from start to quarter budget and again from quarter to final on all five tasks. Treating tasks as the cross-task unit, the mean final-minus-start improvement is ∆ρ = 0 .346 (95% CI [0 .185 , 0.507] , p = 0 .004 ). Final normalized regret is at most 0.152 , and the model-ranked continuation beats a matched random legal action with probability 0.649 –0.978 . The feedback model therefore acquires the local ordering information required for policy improvement. The oracle-free target preserves this decision direction without access to E0. On the same real rollout transitions, its reward has Spearman correlation 0.973 –1.000 with the corresponding FCI-referenced reward. Together, the reward audit and the counterfactual probe show that the empirical frontier supplies a practical training signal while the learned model improves its action-level ranking over time. Detailed reward, action-probe, and calibration analyses are in Appendix D. 5.4 RQ3: B EYOND DIRECT SURROGATE SEARCH 
+
+Action-level ranking alone does not determine how the model should be used. We first freeze the same feedback model and compare imagined policy learning with direct greedy variants. We then hold the trusted imagined-transition budget fixed and vary how those transitions are organized into horizons. 7Preprint. Under review.                                 
+
+> Task ρstart act ρ1/4act ρfinal act NReg final ↓WM >rand final ↑
+> LiH-4q 0.234 ±0.106 0.469 ±0.034 0.683 ±0.092 0.026 ±0.046 0.942 ±0.040
+> BeH 2-6q 0.078 ±0.072 0.175 ±0.089 0.226 ±0.073 0.152 ±0.056 0.649 ±0.106
+> LiH-6q 0.155 ±0.055 0.330 ±0.036 0.436 ±0.087 0.054 ±0.048 0.707 ±0.078
+> BeH 2-8q 0.074 ±0.089 0.417 ±0.115 0.515 ±0.099 0.000 ±0.000 0.973 ±0.060
+> BeH 2-10q 0.000 ±0.051 0.384 ±0.059 0.411 ±0.054 0.000 ±0.000 0.978 ±0.031
+
+Table 2: Oracle-free counterfactual action utility at the common 15,000-episode budget. Bold highlights the final action-ranking measurement, which increases from the start checkpoint on every task. Entries are mean ± sample standard deviation over five seeds. Probe construction, tie handling, and per-seed tests are reported in Appendix D. 
+
+LiH-4q LiH-6q BeH 2-8q 
+
+(a) Same feedback model, different deployment 
+
+NoImag 0.221 13 .6 2.35 
+
+WM-Greedy, β = +1 6.42 36 .9 2.17 
+
+WM-Greedy, β = −1 5.91 32 .0 2.17 
+
+DreamQAS-NoDAG 0.073 11 .4 2.53 
+
+(b) Transition-matched imagined horizon 
+
+H = 1 1.223 ±1.804 19 .032 ±10 .281 2.175 ±0.000 
+
+H = 5 0.137 ±0.031 11 .756 ±1.012 2.175 ±0.001 
+
+H = 15 0.073 ±0.036 11 .866 ±1.950 2.440 ±0.436 
+
+Table 3: Same-model deployment and transition-matched horizons. Panel (a) compares direct and policy-based use of the same feedback model; panel (b) matches trusted imagined transitions across horizons. Values are mean frozen-policy energy errors in mHa; lower is better. Bold marks the imagined-policy result in (a) and multi-step improvements over H = 1 in (b). Direct use of the same feedback model does not recover the policy-learning gain. On LiH-4q and LiH-6q, DreamQAS-NoDAG reaches 0.073 and 11 .4 mHa , whereas direct greedy deployment gives 
+
+5.91 –6.42 and 32 .0–36 .9 mHa . Beam and exploratory deployment controls show the same separa-tion (Appendix E). The actor benefits from feedback differences across many real-anchored trajec-tories rather than repeatedly selecting the circuit with the most favorable absolute prediction. The horizon control isolates the role of multi-step credit assignment. At a matched trusted-transition budget, H = 5 and H = 15 both improve substantially over H = 1 on LiH-4q and LiH-6q. The 
+
+H = 5 and H = 15 outcomes are comparable, so the mechanism result is that multi-step imagi-nation outperforms one-step imagination, rather than that a universally longest rollout is required. Complete deployment variants, paired comparisons, and transition accounting are provided in Ap-pendix E. 5.5 RQ4: M ONITORING WORLD -M ODEL RELIABILITY 
+
+We evaluate whether ensemble disagreement can rank prediction risk on candidates that are period-ically checked with real VQE. To separate this test from disagreement-based candidate acquisition, risk–coverage is computed on the value-selected verification stratum. Risk is the mean absolute error in the oracle-free frontier-score space after retaining the stated fraction of candidates. Figure 3 shows that disagreement improves over random rejection on all three tasks. At 50% cov-erage it lowers risk by 24% on LiH-4q, 26% on LiH-6q, and 46% on BeH 2-8q relative to retaining every candidate. LiH-6q also exposes the value of separating confidence from predicted score: re-taining the predicted-best half raises risk by 34%, while disagreement-based rejection lowers it by 26%. This connects the monitoring result to RQ3, where direct greedy search targets precisely the model-preferred region. Disagreement is used continuously through the pessimistic potential and selectively through con-fidence truncation and verification. Its strongest end-to-end ablation appears on BeH 2-10q, where removing uncertainty control raises final error from 1.03 to 2.24 mHa . The complete AURC ta-8Preprint. Under review. 0.2 0.4 0.6 0.8 1.0                           
+
+> Coverage (fraction kept)
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> 0.50
+> 0.55
+> Mean |predicted  real|
+> (frontier score  S; lower is better)  n.s. vs predicted value
+> (a) LiH (4q)
+> no rejection
+> -24%
+> -26%
+> AURC (n=5)
+> disagreement 0.293±0.033
+> predicted value 0.301±0.039
+> 0.2 0.4 0.6 0.8 1.0
+> Coverage (fraction kept)
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> (b) LiH (6q)
+> -26%
+> +34%
+> -34%
+> AURC (n=5)
+> disagreement 0.290±0.141
+> predicted value 0.526±0.236
+> inverse value 0.283±0.105
+> 0.2 0.4 0.6 0.8 1.0
+> Coverage (fraction kept)
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> n.s. vs predicted value
+> (c) BeH 2(8q)
+> -46%
+> AURC (n=5)
+> disagreement 0.130±0.132
+> predicted value 0.206±0.045
+> Ensemble disagreement Predicted value Inverse value (diagnostic) Random rejection
+
+Figure 3: Risk–coverage of oracle-free ensemble disagreement. Rejecting candidates with high disagreement lowers retained-set prediction risk relative to random rejection on LiH-4q, LiH-6q, and BeH 2-8q. Insets report AURC across five seeds. At 50% coverage, disagreement reduces risk relative to no rejection by 24%, 26%, and 46%, respectively. Complete AURC values, confidence intervals, and sampling details are in Appendix F. ble, threshold activation, selective-verification analysis, and component ablations are reported in Appendices F and G. 
+
+## 6 DISCUSSION AND LIMITATIONS 
+
+The experiments support a system-level account of decision-useful world modeling for QAS. The recurrent prefix representation provides a state for variable-length circuits; the oracle-free target and replay strategy turn real VQE outcomes into relative feedback; and multi-step imagination con-verts that feedback into policy improvement. The action probe verifies that useful local ordering is learned, while the same-model deployment and horizon controls show that this information is most effective when used for multi-step credit assignment rather than direct surrogate exploitation. The reliability mechanisms complete this loop. Ranking readiness controls when imagination be-gins, ensemble pessimism shapes every imagined reward, truncation limits low-confidence credit, and verification connects selected imagined regions back to real VQE. The risk–coverage result pro-vides direct evidence that disagreement carries actionable information about feedback error. Across the component study, imagination provides the broadest contribution, while uncertainty and replay mechanisms contribute complementary, task-dependent improvements; the full breakdown is in Ap-pendix G. Three limitations define the present scope. First, all experiments use state-vector simulation, so hardware noise and queue-dependent wall-clock cost remain to be evaluated. Second, some tasks reach an ansatz or search-space floor, limiting the resolution of late-stage comparisons. Third, en-semble disagreement provides a useful ranking of prediction risk but is not a complete probabilistic calibration guarantee. 
+
+## 7 CONCLUSION 
+
+DreamQAS treats molecular RL-QAS as a known-dynamics, expensive-feedback problem. It pre-serves exact legal circuit transitions, learns an oracle-free recurrent ensemble of post-VQE feedback, and converts that feedback into multi-step imagined policy gradients. Across five tasks, it achieves a strong final-quality profile while reaching matched error levels with fewer real VQE calls than a non-imaginative control. Counterfactual probes show that the model learns action-level utility; direct use of the same model cannot replace imagined policy learning; and ensemble disagreement identifies risky feedback. World models for QAS therefore need not reproduce the full environment 9Preprint. Under review. or act as exact energy oracles: they should preserve known structure and learn the feedback required for reliable sequential decisions. 
+
+## REFERENCES 
+
+Kurtland Chua, Roberto Calandra, Rowan McAllister, and Sergey Levine. Deep reinforcement learn-ing in a handful of trials using probabilistic dynamics models. Advances in neural information processing systems , 31, 2018. Maijie Deng, Zhimin He, Shenggen Zheng, Yan Zhou, Fei Zhang, and Haozhen Situ. A progressive predictor-based quantum architecture search with active learning. The European Physical Journal Plus , 138(10):905, 2023. Yuxuan Du, Tao Huang, Shan You, Min-Hsiu Hsieh, and Dacheng Tao. Quantum circuit architecture search for variational quantum algorithms. npj Quantum Information , 8(1):62, 2022. Harper R Grimsley, Sophia E Economou, Edwin Barnes, and Nicholas J Mayhall. An adaptive varia-tional algorithm for exact molecular simulations on a quantum computer. Nature communications ,10(1):3007, 2019. David Ha and J¨ urgen Schmidhuber. World models. arXiv preprint arXiv:1803.10122 , 2(3):440, 2018. Danijar Hafner, Timothy Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to control: Learning behaviors by latent imagination. In International Conference on Learning Representations , 2020. Zhimin He, Xuefen Zhang, Chuangtao Chen, Zhiming Huang, Yan Zhou, and Haozhen Situ. A gnn-based predictor for quantum architecture search: Z. he et al. Quantum Information Processing ,22(2):128, 2023. Zhimin He, Maijie Deng, Shenggen Zheng, Lvzhou Li, and Haozhen Situ. Training-free quantum architecture search. In Proceedings of the AAAI conference on artificial intelligence , volume 38, pp. 12430–12438, 2024. Azhar Ikhtiarudin, Aditi Das, Param Thakkar, and Akash Kundu. Benchrl-qas: Benchmarking reinforcement learning algorithms for quantum architecture search. In Proceedings of the AAAI Symposium Series , volume 7, pp. 358–367, 2025. Michael Janner, Justin Fu, Marvin Zhang, and Sergey Levine. When to trust your model: Model-based policy optimization. Advances in neural information processing systems , 32, 2019. Abhinav Kandala, Antonio Mezzacapo, Kristan Temme, Maika Takita, Markus Brink, Jerry M Chow, and Jay M Gambetta. Hardware-efficient variational quantum eigensolver for small molecules and quantum magnets. nature , 549(7671):242–246, 2017. Xudong Lu, Kaisen Pan, Ge Yan, Jiaming Shan, Wenjie Wu, and Junchi Yan. Qas-bench: rethinking quantum architecture search and a benchmark. In International conference on machine learning ,pp. 22880–22898. PMLR, 2023. Darya Martyniuk, Johannes Jung, Daniel Barta, and Adrian Paschke. Benchmarking quantum ar-chitecture search with surrogate assistance. arXiv preprint arXiv:2506.06762 , 2025. Kouhei Nakaji, Lasse Bjørn Kristensen, Ryota Kemmoku, Jorge A Campos-Gonzalez-Angulo, Mo-hammad Ghazi Vakili, Haozhe Huang, Mohsen Bagherimehrab, Christoph Gorgulla, FuTe Wong, Alex McCaskey, et al. The generative quantum eigensolver (gqe) and its application for ground state search. arXiv preprint arXiv:2401.09253 , 2024. Jiayang Niu, Yan Wang, Jie Li, Ke Deng, Azadeh Alavi, Muhammad Usman, and Yongli Ren. Hybrid action reinforcement learning for quantum architecture search. arXiv preprint arXiv:2511.04967 , 2025. Jiayang Niu, Akib Karim, Yan Wang, Jie Li, Ke Deng, Azadeh Alavi, Muhammad Usman, and Yongli Ren. Hamqasbench: A hamiltonian-informed diagnostic benchmark for evaluating quan-tum architecture search. arXiv preprint arXiv:2607.04845 , 2026. 10 Preprint. Under review. Ian Osband, John Aslanides, and Albin Cassirer. Randomized prior functions for deep reinforcement learning. Advances in neural information processing systems , 31, 2018. Mateusz Ostaszewski, Lea M Trenkwalder, Wojciech Masarczyk, Eleanor Scerri, and Vedran Dun-jko. Reinforcement learning for optimization of variational quantum circuit architectures. Ad-vances in neural information processing systems , 34:18182–18194, 2021. Yash J Patel, Akash Kundu, Mateusz Ostaszewski, Xavier Bonet-Monroig, Vedran Dunjko, and Onur Danaci. Curriculum reinforcement learning for quantum architecture search under hardware errors. arXiv preprint arXiv:2402.03500 , 2024. Alberto Peruzzo, Jarrod McClean, Peter Shadbolt, Man-Hong Yung, Xiao-Qi Zhou, Peter J Love, Al´ an Aspuru-Guzik, and Jeremy L O’brien. A variational eigenvalue solver on a photonic quan-tum processor. Nature communications , 5(1):4213, 2014. Frederic Rapp, David A Kreplin, Marco F Huber, and Marco Roth. Reinforcement learning-based architecture search for quantum machine learning. Machine Learning: Science and Technology ,6(1):015041, 2025. St´ ephane Ross, Geoffrey Gordon, and Drew Bagnell. A reduction of imitation learning and struc-tured prediction to no-regret online learning. In Proceedings of the fourteenth international con-ference on artificial intelligence and statistics , pp. 627–635. JMLR Workshop and Conference Proceedings, 2011. Julian Schrittwieser, Ioannis Antonoglou, Thomas Hubert, Karen Simonyan, Laurent Sifre, Simon Schmitt, Arthur Guez, Edward Lockhart, Demis Hassabis, Thore Graepel, et al. Mastering atari, go, chess and shogi by planning with a learned model. Nature , 588(7839):604–609, 2020. Vicente P Soloviev, Vedran Dunjko, Concha Bielza, Pedro Larra˜ naga, and Hao Wang. Trainabil-ity maximization using estimation of distribution algorithms assisted by surrogate modelling for quantum architecture search. EPJ Quantum Technology , 11(1):69, 2024. Richard S Sutton. Dyna, an integrated architecture for learning, planning, and reacting. ACM Sigart Bulletin , 2(4):160–163, 1991. Ho Lun Tang, VO Shkolnikov, George S Barron, Harper R Grimsley, Nicholas J Mayhall, Ed-win Barnes, and Sophia E Economou. qubit-adapt-vqe: An adaptive algorithm for constructing hardware-efficient ans¨ atze on a quantum processor. PRX Quantum , 2(2):020310, 2021. Jules Tilly, Hongxiang Chen, Shuxiang Cao, Dario Picozzi, Kanav Setia, Ying Li, Edward Grant, Leonard Wossnig, Ivan Rungger, George H Booth, et al. The variational quantum eigensolver: a review of methods and best practices. Physics Reports , 986:1–128, 2022. Wenjie Wu, Ge Yan, Xudong Lu, Kaisen Pan, and Junchi Yan. Quantumdarts: differentiable quan-tum architecture search for variational quantum algorithms. In International conference on ma-chine learning , pp. 37745–37764. PMLR, 2023. Tianhe Yu, Garrett Thomas, Lantao Yu, Stefano Ermon, James Y Zou, Sergey Levine, Chelsea Finn, and Tengyu Ma. Mopo: Model-based offline policy optimization. Advances in neural information processing systems , 33:14129–14142, 2020. Shi-Xin Zhang, Chang-Yu Hsieh, Shengyu Zhang, and Hong Yao. Neural predictor based quantum architecture search. Machine Learning: Science and Technology , 2(4):045027, 2021. Shi-Xin Zhang, Chang-Yu Hsieh, Shengyu Zhang, and Hong Yao. Differentiable quantum architec-ture search. Quantum Science & Technology , 7(4):045023, 2022. 11 Preprint. Under review. 
+
+## A METHOD AND ALGORITHM DETAILS 
+
+A.1 ORACLE -F REE FEEDBACK CONSTRUCTION 
+
+The QAS environment exposes an exact circuit transition and an expensive post-VQE feedback function. For a real optimized energy E, DreamQAS stores the raw energy and constructs the supervision label only when the world model is refreshed. Let Fpending be the running minimum over every real optimized energy observed in policy rollouts or selective verification. At a world-model refresh, DreamQAS atomically adopts 
+
+Fk ← Fpending (15) and increments the scale version. The adopted frontier remains fixed until the next refresh, so every label in a supervised update uses the same reference. This pending/adopted separation makes the supervision coordinate system explicit. A newly ob-served low energy changes the frontier-relative score of every stored example, not only the newest transition. Updating the reference inside a world-model optimization block would therefore mix la-bels from different scale versions and confound model residuals with target movement. DreamQAS instead stores raw energies, adopts one frontier per refresh, and relabels replay atomically. Historical circuits remain usable after the search improves because their targets can always be reconstructed under the current version. For an energy E, define 
+
+dk(E) = E − Fk
+
+10 −3 Ha , Sk(E) = sign( dk(E)) log 10 
+
+
+
+1 + |dk(E)|
+
+m
+
+
+
+, m = 0 .1 mHa . (16) The transform is strictly monotone, continuous, and differentiable at the frontier. Raw energies in replay are relabeled using Eq. (16) after each frontier adoption. The corresponding positive com-panion scale s mHa = m10 Sk (E) is used by the oracle-free quality sampler. Real trajectory rewards are score differences, 
+
+rreal  
+
+> t+1
+
+= Sk(Et) − Sk(Et+1 ). (17) No ground-state energy enters frontier construction, model supervision, replay sampling, action selection, or checkpoint selection. For d ≥ 0, the score has the same reward differences as the legacy log 10 (m + d) transform because the two differ only by the constant log 10 m. For d < 0, the signed-log branch compresses improve-ments beyond the current frontier logarithmically instead of extending the positive branch linearly. This is the transform used in all oracle-free runs reported in the paper. A.2 WORLD -M ODEL ARCHITECTURE AND REPLAY 
+
+The feedback model is an ensemble of K = 3 fully independent members. Each member contains its own gate embedding, two-layer GRU, and prediction head 
+
+LayerNorm → Linear( h, 128) → SiLU → Linear(128 , 1) . (18) The default GRU hidden size is 384 , with task-specific sizes 256 on LiH-4q and 512 on BeH 2-10q. Each prediction combines a trainable head and a frozen randomized prior function (Osband et al., 2018), scaled by βrpf = 3 . During each supervised update, every member receives an independent 
+
+80% bootstrap mask. The actor feature is the mean of the members’ recurrent representations; the predicted feedback and epistemic signal are the ensemble mean and population standard deviation. The recurrent state represents the complete ordered circuit prefix rather than a learned transition state. After an imagined gate is appended by the exact QAS transition, each ensemble member encodes the resulting explicit gate sequence and predicts only its post-VQE feedback. Imagined rollouts therefore do not autoregress through a learned circuit-dynamics model, and transition error cannot compound with rollout length. Independent encoders, bootstrap masks, and randomized pri-ors provide three sources of ensemble diversity. The actor consumes the mean recurrent feature with a stopped gradient, so policy updates cannot reshape the feedback representation to make imagined returns easier to optimize. 12 Preprint. Under review. The all-history replay sampler draws four complementary subsets: 
+
+pelite = 0 .25 , ppriority = 0 .35 , pstratified = 0 .20 , puniform = 0 .20 . (19) Priority combines recency, oracle-free quality, and the most recent world-model error. Stratification covers ten target deciles. Decision-oriented inverse-density reweighting smooths a 40-bin histogram of frontier scores with a Gaussian kernel of width two bins and applies weights proportional to the inverse square root of density, normalized to mean one and capped at 50 . The four replay subsets address different failure modes of QAS feedback data. Elite sampling preserves rare low-energy prefixes; priority sampling revisits recent or poorly predicted policy-visited regions; target stratifica-tion keeps the dominant plateaus from occupying an entire update; and uniform sampling maintains coverage outside these selected regions. Inverse-density weighting changes the optimization empha-sis within the resulting batch but never changes the stored raw energy or frontier-relative target. It is therefore a decision-oriented allocation of supervised capacity, rather than a new reward definition. The weighted per-member Huber loss is 
+
+LWM = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+P 
+
+> i,t
+
+qit μ(k) 
+
+> it
+
+w(yit )ℓH(by(k) 
+
+> it
+
+− yit )
+
+P 
+
+> i,t
+
+qit μ(k)
+
+> it
+
+. (20) A.3 IMAGINED POLICY LEARNING AND RELIABILITY CONTROLS 
+
+Each update collects four real policy episodes. Every appended gate is followed by a real VQE optimization, so an episode of realized depth d costs d real VQE calls. Real REINFORCE uses a batch-mean baseline and standardized real advantages; no learned critic is used. Once the ranking gate is active, 64 replay prefixes are sampled from the most recent 200 episodes. Each prefix is cut at a uniformly sampled position and extended for up to H = 15 exact legal transitions. The pessimistic potential and imagined reward are 
+
+Φt = −(¯ yt + βpes σt), rimag  
+
+> t+1
+
+= Φ t+1 − Φt, (21) with βpes = 1 . Imagined returns use γ = 0 .99 and λ = 0 .95 . A trajectory is truncated when the exact legal-action set becomes empty or σt > 0.60 ; the rejected step receives no credit. The global ranking gate is evaluated every 20 iterations after at least 500 real episodes. It samples 50,000 pairs from at most 200 recent held-out episodes and enables imagination when pairwise ranking accuracy reaches 0.70 . Every 20 iterations, selective verification generates fresh imagined candidates, deduplicates them, selects five with the best predicted value and five with the largest disagreement, and replays each selected circuit through the real VQE environment from the empty circuit. Verified trajectories are returned to replay in the full method. These controls act at distinct levels of the learning loop. The ranking gate is a global readiness test that determines whether model-generated policy updates are enabled at all. Pessimism continuously modifies feedback at every accepted imagined step, whereas truncation determines how far a partic-ular trajectory is trusted. Selective verification operates at the candidate level: value-based selection checks regions the policy is encouraged to exploit, and disagreement-based selection checks poten-tial blind spots. Returning both strata as raw-energy trajectories closes the loop without changing the exact circuit transition or exposing the policy to E0.The implementation maintains three counters. vqe calls contains real rollout steps plus full-method selective-verification replays and is the reported acceleration budget. calib vqe calls 
+
+records the identical diagnostic probe in controls that do not feed verified data back and is excluded from their training budget. eval vqe calls records frozen-policy evaluation and is excluded for every method. 
+
+## B TASKS , B ASELINES , AND EVALUATION PROTOCOL 
+
+B.1 MOLECULAR TASKS AND QAS E NVIRONMENT 
+
+Table 5 records the molecular geometries and basis sets used in the five tasks. LiH-4q, LiH-6q, and BeH 2-6q use STO-3G. BeH 2-8q and BeH 2-10q correspond to the HamQASBench entries 
+
+BeH2 631G and BeH2 6311G , respectively. 13 Preprint. Under review.                                           
+
+> Group Parameter Value
+> World model ensemble members / GRU layers 3/2
+> embedding / default hidden size 64 /384
+> hidden overrides LiH-4q: 256 ; BeH 2-10q: 512
+> randomized-prior scale 3.0
+> optimizer / learning rate / weight decay Adam / 10 −3/10 −5
+> refresh interval / gradient steps 20 iterations / 200
+> Actor hidden size / layers 512 /3
+> optimizer / learning rate Adam / 3×10 −5
+> discount / entropy coefficient 0.99 /10 −3
+> gradient clipping 10 .0
+> Replay batch size / elite capacity 64 /1000
+> elite / priority / stratified / uniform .25 /. 35 /. 20 /. 20
+> DIR bins / smoothing / maximum weight 40 /2.0/50
+
+Table 4: World-model, actor, and replay hyperparameters used by the oracle-free full method. Task-specific settings not listed here are given in Section B. 
+
+Algorithm 1 Oracle-free DreamQAS training  
+
+> 1:
+
+Initialize actor πθ , ensemble Fϕ, replay D, pending/adopted frontiers, and VQE counters  
+
+> 2:
+
+for training iteration i = 1 , . . . , N do  
+
+> 3:
+
+Collect four real QAS episodes with exact legal transitions  
+
+> 4:
+
+Run VQE after each applied gate; add raw energies and circuits to D; update the pending frontier  
+
+> 5:
+
+Update πθ using real REINFORCE returns  
+
+> 6:
+
+if i is a world-model refresh iteration then  
+
+> 7:
+
+Adopt the pending frontier and relabel replay from raw energies  
+
+> 8:
+
+Train each ensemble member for 200 bootstrapped replay updates  
+
+> 9:
+
+Evaluate pairwise ranking readiness on held-out real prefixes  
+
+> 10:
+
+end if  
+
+> 11:
+
+if warm-up and ranking gate permit imagination then  
+
+> 12:
+
+Sample 64 verified replay prefixes and generate exact-transition imagined rollouts of hori-zon at most 15  
+
+> 13:
+
+Compute pessimistic feedback, confidence masks, and imagined multi-step returns  
+
+> 14:
+
+Update πθ using the combined real and imagined loss  
+
+> 15:
+
+end if  
+
+> 16:
+
+if i is a selective-verification iteration then  
+
+> 17:
+
+Select five predicted-best and five highest-disagreement circuits  
+
+> 18:
+
+Replay them using real VQE and charge the calls to the real budget  
+
+> 19:
+
+Add verified trajectories to replay  
+
+> 20:
+
+end if  
+
+> 21:
+
+end for 
+
+For n qubits, the action dictionary contains n(n − 1) directed CNOT actions and 3n single-qubit rotations, giving n(n + 2) actions in total. CNOTs are unparameterized. Each rotation introduces one angle, and VQE reoptimizes all angles after every gate placement. The legality mask forbids im-mediate repetition of the same single-qubit rotation or the same directed CNOT. The same stateless legality implementation is used by real and imagined rollouts. Training terminates an episode at the task-specific curriculum threshold or at the maximum structural depth. Frozen evaluation disables the accuracy stop and always constructs to the structural termina-tion condition. Thus policies are compared under the same evaluation trajectory length rather than under their training-time stopping behavior. 14 Preprint. Under review.                                             
+
+> Task Geometry ( ˚ A) Basis nq
+> LiH-4q Li (0 ,0,0) ; H (0 ,0,3.4) STO-3G 4BeH 2-6q Be (0 ,0,0) ; H (0 ,0,1.33) ; H (0 ,0,−1.33) STO-3G 6LiH-6q Li (0 ,0,0) ; H (0 ,0,2.2) STO-3G 6BeH 2-8q Be (0 ,0,0) ; H (0 ,0,1.326) ; H (0 ,0,−1.326) 6-31G 8BeH 2-10q Be (0 ,0,0) ; H (0 ,0,1.326) ; H (0 ,0,−1.326) 6-311G 10
+
+Table 5: Molecular geometries and basis sets. The LiH-4q, LiH-6q, and BeH 2-6q geometries fol-low the experiment geometry table; the BeH 2-8q and BeH 2-10q rows follow the HamQASBench molecule-generation table.                                                                   
+
+> LiH-4q BeH 2-6q LiH-6q BeH 2-8q BeH 2-10q
+> Mapping parity JW JW JW JW Symmetry taper Yes No No Yes Yes Exact E0(Ha) −7.78908889 −14 .86158918 −7.84487909 −15 .76150376 −15 .76512417
+> Pauli terms 100 34 118 60 155 Hamiltonian dimension 16 64 64 256 1024
+> Maximum circuit depth 40 50 50 50 50 Action-space size 24 48 48 80 120 VQE optimizer COBYLA COBYLA COBYLA ROTOSOLVE ROTOSOLVE Inner budget 1000 iters 1000 iters 1000 iters 3 sweeps 3 sweeps Training backend CPU c128 CPU c128 CPU c128 GPU c64 GPU c64 Main episodes 15,000 15,000 15,000 15,000 15,000 Training seeds 55555
+
+Table 6: Recorded Hamiltonian, search-space, and optimization settings. JW denotes the Jordan– Wigner mapping. The mapping and taper entries for LiH-4q, BeH 2-6q, and LiH-6q follow the experiment geometry/mapping table; the 8q/10q taper flags follow the run configuration. Frozen evaluation of GPU-trained tasks is recomputed on a complex128 reference backend. B.2 BASELINES AND STATISTICAL PROTOCOL 
+
+Internal controls share the oracle-free training signal, task environment, action space, VQE im-plementation, and 15,000-episode main checkpoint. DREAM QAS-RL is the model-free policy. NOIMAG keeps the recurrent circuit representation and supervised feedback training but removes imagined policy updates. N ODAG keeps ranking-gated, uncertainty-controlled imagination but dis-cards selectively verified samples. Additional controls remove decision-oriented reweighting or both uncertainty uses. Table 7 records only the settings needed to interpret the comparison. CRLQAS and HyRLQAS retain their original E0-informed learning rules under the common 15,000-episode RL budget. The remaining baselines use method-native search units, so their results provide final-quality context only. Real-VQE efficiency claims are restricted to the exactly matched DreamQAS internal controls. At the main checkpoint, each frozen policy runs 100 fresh stochastic evaluation episodes per training seed. The energy error of an evaluation episode is defined by the lowest post-VQE energy among its circuit prefixes. The per-seed score is the mean over these 100 episode-level errors, and tables report mean ± sample standard deviation across five training seeds. We refer to this quantity as the 
+
+mean frozen-policy energy error . During frozen evaluation, E0 is used only to convert the selected energy to a physical error in mHa. Training-efficiency curves use the trailing-100-episode mean within each seed and pointwise median and IQR across seeds. Seed-level crossings are evaluated every 50 episodes after the trailing window is full. For a fixed error y, the crossing is the first point at which a seed remains below y for three consecutive reported points. Seed-level summaries take the median only over seeds that reach y and always report the reach count; unreached seeds are right-censored and never imputed. A crossing is reported only when at least three of five seeds reach it. A ≤ marker denotes a left-censored crossing: at least one contributing seed had already reached the target at the first admissible full-window point, so the displayed call count is an upper bound. 15 Preprint. Under review.                     
+
+> Method Algorithm family Search budget Training reference
+> CRLQAS (Patel et al., 2024) N-step DQN with curriculum 15,000 episodes Exact E0
+> HyRLQAS (Niu et al., 2025) Hybrid REINFORCE 15,000 episodes Exact E0
+> GQE (Nakaji et al., 2024) Transformer generative search 1,000–1,500 epochs Native objective TFQAS (He et al., 2024) Training-free screening 11,250 candidates Native objective QuantumDARTS (Wu et al., 2023) Differentiable search 500–800 epochs Native objective
+
+Table 7: Compact baseline configuration summary. All methods use the same Hamiltonians, circuit-depth caps, task-level optimizer families, and five-run protocol. Full run configurations are provided with the supplementary artifact. Paired quality comparisons use percentile bootstrap intervals on the paired mean difference. Action-utility growth additionally reports Holm-adjusted one-sample t-test p-values and a task-cluster-aware summary using the five task means as the experimental units. Risk–coverage computes AURC per seed and then applies paired bootstrap contrasts across five seeds. 
+
+## C COMPLETE PERFORMANCE AND EFFICIENCY RESULTS 
+
+C.1 FULL VQE-E FFICIENCY CURVES AND CROSSINGS 
+
+The main paper presents LiH-4q, LiH-6q, and BeH 2-8q. Figure 4 supplies the remaining BeH 2-6q and BeH 2-10q curves under the same trailing-window and real-VQE accounting. The figures aggregate curves pointwise across seeds for visualization, whereas every numerical speedup claim below first computes a sustained crossing within each seed and only then aggregates across reached seeds. Table 8 selects the finest task-specific target reached by all five seeds of both matched oracle-free methods. It therefore avoids comparing a survivor-biased median from a partially reaching method with a fully reaching method. The full ladders in Tables 9–13 report every pre-specified target. Each cell gives median cumulative real training VQE calls and reach count on the first line, followed by the min–max range over reached seeds. DreamQAS-family counts include selective-verification VQE and exclude frozen-evaluation VQE; LiH-6q is capped at the locked 15,000-episode budget. The ladders show that the matched DreamQAS advantage is concentrated in fine-error refinement rather than coarse basin entry. At loose targets NoImag or DreamQAS-RL can cross first, whereas tightening the target increases the Full-versus-NoImag saving to the values summarized in Table 8. DreamQAS-RL also reaches loose LiH-6q targets but reaches neither 20 mHa nor 15 mHa in any seed. This separates cheap entry into a coarse-quality region from reliable refinement using learned feedback and imagination. CRLQAS and HyRLQAS share the prefix-VQE counting unit but use canonical E0-informed re-wards and stopping rules. Their rows are therefore descriptive training-curve references, not matched causal speed comparisons. In particular, a low reached-seed crossing need not imply strong frozen-policy quality: on BeH 2-8q, HyRLQAS reaches several targets on four seeds with low call counts yet has substantially worse frozen-policy error in Table 1. GQE, TFQAS, and Quantum-DARTS are omitted because their native search units do not admit the same prefix-VQE crossing estimator. Final policy quality and fixed-error crossings measure different properties. The former asks what a frozen policy produces at the common checkpoint; the latter asks how much real feedback was required before training reached a specified quality level. A crossing is counted only after the curve remains below its target for three reported points, which prevents a single favorable episode from defining the cost. Seed-level summaries retain the reach count and right-censor unreached runs, so a ratio is reported only where the target is supported by the observed training trajectories. This is why the efficiency claim is stated at task-specific achieved errors rather than at one universal threshold. 16 Preprint. Under review. 10 4 10 5        
+
+> cumulative real VQE calls
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> training episode-best error (mHa, 100-ep moving mean)
+> chem. acc.
+> BeH 2(6q)
+> 2.0× fewer VQE
+> 10 410 5
+> cumulative real VQE calls
+> 10 0
+> 10 1
+> 10 2
+> chem. acc.
+> BeH 2(10q)
+> 1.9× fewer VQE
+> DreamQAS No-imag DreamQAS-RL CRLQAS HyRLQAS
+
+Figure 4: Additional oracle-free VQE-efficiency curves. Training quality is plotted against cumu-lative real VQE calls for BeH 2-6q and BeH 2-10q. Curves use the same across-seed median and IQR construction as the main-text figure. 
+
+Task / target DreamQAS NoImag Reach Saving 
+
+LiH-4q, 1 mHa 166,396 266,292 5/5 vs. 5/5 1.60 ×
+
+BeH 2-6q, 1 mHa 237,538 426,911 5/5 vs. 5/5 1.80 ×
+
+LiH-6q, 20 mHa 212,738 418,657 5/5 vs. 5/5 1.97 ×
+
+BeH 2-8q, 3 mHa 39,714 420,128 5/5 vs. 5/5 10 .58 ×
+
+BeH 2-10q, 5 mHa 30,427 50,625 5/5 vs. 5/5 1.66 ×
+
+Table 8: Fine-target seed-level sustained crossings used for the main-text efficiency claim. Calls are medians over reached seeds; every selected cell has full reach for both methods. Saving is NoImag divided by DreamQAS and is not averaged across tasks. 
+
+Method ≤ 10 mHa ≤ 5 mHa ≤ 2 mHa ≤ 1 mHa 
+
+Oracle-free internal campaign 
+
+DreamQAS 15,563 (5/5) [12,551–16,475] 26,823 (5/5) [25,181–36,502] 91,653 (5/5) [62,542–94,747] 166,396 (5/5) [150,005–186,911] NoImag 18,206 (5/5) [8,054–22,114] 33,246 (5/5) [23,574–38,988] 126,924 (5/5) [94,252–150,645] 266,292 (5/5) [225,211–294,966] DreamQAS-RL 6,968 (5/5) [5,729–21,851] 53,775 (5/5) [19,417–255,156] 184,694 (5/5) [133,948–365,808] 252,045 (5/5) [207,953–410,515] 
+
+Canonical external reference 
+
+CRLQAS 67,887 (5/5) [51,998–87,710] 131,745 (5/5) [75,601–135,479] – (0/5) – (0/5) HyRLQAS 18,668 (5/5) [16,214–23,912] 42,683 (5/5) [26,258–228,412] 149,900 (4/5) [66,529–188,432] – (0/5) 
+
+Table 9: LiH-4q sustained-crossing ladder. Cell format is median calls (reach), followed by the reached-seed min–max range. C.2 COMPUTATIONAL COST 
+
+Verification accounts for approximately 11 .1% and 8.7% of total runtime on LiH-4q and LiH-6q, respectively. Including verification, imagination, and the incremental difference from the recurrent model apparatus, the full method adds 12 .7% over NoImag on LiH-4q and 10 .9% on LiH-6q. Verification is the largest single added component. These percentages describe state-vector training and are not hardware wall-clock estimates. 17 Preprint. Under review. 
+
+Method ≤ 10 mHa ≤ 5 mHa ≤ 2 mHa ≤ 1 mHa 
+
+Oracle-free internal campaign 
+
+DreamQAS 17,882 (5/5) [17,275–28,288] 55,161 (5/5) [30,026–58,084] 172,719 (5/5) [151,191–230,552] 237,538 (5/5) [196,712–328,375] NoImag 16,039 (5/5) [15,199–22,365] 77,798 (5/5) [59,852–133,100] 290,576 (5/5) [256,133–345,756] 426,911 (5/5) [393,764–514,785] DreamQAS-RL 24,468 (5/5) [20,703–32,221] 134,990 (5/5) [34,596–200,903] 274,842 (5/5) [257,069–293,816] 373,258 (5/5) [312,813–425,345] 
+
+Canonical external reference 
+
+CRLQAS 110,633 (5/5) [76,232–137,771] 154,472 (5/5) [80,674–187,433] 264,993 (4/5) [217,858–442,842] – (1/5) HyRLQAS 9,691 (5/5) [7,848–11,350] 181,812 (5/5) [25,478–474,415] 183,658 (4/5) [41,109–335,371] 186,714 (4/5) [57,210–363,272] 
+
+Table 10: BeH 2-6q sustained-crossing ladder. Formatting follows Table 9. 
+
+Method ≤ 50 mHa ≤ 30 mHa ≤ 20 mHa ≤ 15 mHa 
+
+Oracle-free internal campaign 
+
+DreamQAS 9,645 (5/5) [9,460–10,863] 19,460 (5/5) [15,782–27,628] 212,738 (5/5) [163,799–255,392] 239,289 (5/5) [234,646–301,878] NoImag 10,458 (5/5) [9,769–10,844] 15,340 (5/5) [9,769–29,692] 418,657 (5/5) [301,236–703,450] 479,310 (4/5) [333,836–509,356] DreamQAS-RL 8,885 (5/5) [8,547–9,391] 9,391 (5/5) [8,689–25,722] – (0/5) – (0/5) 
+
+Canonical external reference 
+
+CRLQAS ≤ 5,050 (5/5) [5,050–5,050] 102,550 (5/5) [77,550–132,550] 265,050 (5/5) [100,050–703,665] – (2/5) HyRLQAS 7,151 (5/5) [5,128–7,385] 23,255 (5/5) [19,167–43,049] – (1/5) – (0/5) 
+
+Table 11: LiH-6q sustained-crossing ladder at the locked 15,000-episode budget. The ≤ entry is left-censored and is an upper bound. 
+
+Method ≤ 20 mHa ≤ 10 mHa ≤ 5 mHa ≤ 3 mHa 
+
+Oracle-free internal campaign 
+
+DreamQAS 23,885 (5/5) [21,262–34,472] 25,494 (5/5) [22,144–37,314] 38,400 (5/5) [25,316–72,726] 39,714 (5/5) [27,984–129,365] NoImag 25,461 (5/5) [21,035–30,931] 33,769 (5/5) [26,830–203,238] 281,678 (5/5) [43,890–343,209] 420,128 (5/5) [136,128–502,705] DreamQAS-RL 45,225 (5/5) [30,223–64,163] 51,824 (5/5) [31,252–73,455] 52,080 (5/5) [36,261–84,196] 80,105 (5/5) [65,589–151,659] 
+
+Canonical external reference 
+
+CRLQAS 60,050 (5/5) [55,021–77,541] 70,021 (5/5) [60,050–110,040] 130,021 (5/5) [117,550–417,536] 305,048 (4/5) [142,550–432,423] HyRLQAS 22,951 (5/5) [4,615–29,312] 20,920 (4/5) [4,615–31,436] 22,442 (4/5) [4,724–33,827] 23,507 (4/5) [4,724–36,163] 
+
+Table 12: BeH 2-8q sustained-crossing ladder. Formatting follows Table 9. 18 Preprint. Under review.              
+
+> Method ≤30 mHa ≤15 mHa ≤10 mHa ≤5 mHa
+> Oracle-free internal campaign
+> DreamQAS 27,486 (5/5) [16,370–29,093] 28,727 (5/5) [17,121–30,032] 29,699 (5/5) [17,121–31,011] 30,427 (5/5) [18,542–32,015] NoImag 25,168 (5/5) [15,219–31,448] 29,715 (5/5) [15,219–34,418] 32,486 (5/5) [21,387–50,147] 50,625 (5/5) [38,516–84,838] DreamQAS-RL 67,204 (4/5) [49,028–223,080] 72,882 (4/5) [53,156–320,680] 73,530 (4/5) [60,083–320,680] 77,178 (3/5) [65,672–83,404]
+> Canonical external reference
+> CRLQAS 22,016 (5/5) [16,387–28,424] 26,147 (5/5) [24,622–33,180] 28,241 (5/5) [26,500–36,264] 34,844 (5/5) [26,688–43,615] HyRLQAS 27,271 (5/5) [12,237–30,887] 28,195 (5/5) [13,657–32,996] 28,299 (5/5) [13,657–32,996] 28,400 (5/5) [13,657–33,893]
+
+Table 13: BeH 2-10q sustained-crossing ladder. Formatting follows Table 9.                             
+
+> Task Arm Real VQE Rollout/enc. WM train Imagine Other
+> LiH-4q Full 92 .8% 3.0% 1.8% 1.6% 0.8%
+> NoImag 94 .7% 3.3% 1.9% 0.0% 0.0%
+> LiH-6q Full 89 .0% 5.0% 2.5% 2.2% 1.3%
+> NoImag 90 .9% 6.1% 2.9% 0.0% 0.0%
+
+Table 14: Steady-state phase shares from controlled state-vector timing runs (iterations ≥ 300 ). Absolute seconds are omitted because both arms ran under shared node load; phase shares and matched-load ratios are the intended quantities. The timing decomposition also separates computational overhead from real-VQE efficiency. Re-current encoding, world-model fitting, and imagination add classical work, while verification adds both classical replay work and charged real VQE calls. The crossing analysis already includes those verification calls; the reported feedback savings therefore do not treat model maintenance as free. 
+
+## D ORACLE -F REE SIGNAL AND DECISION UTILITY 
+
+D.1 ORACLE -F REE REWARD AUDIT 
+
+We recompute the oracle-free and FCI-referenced rewards on the identical real rollout transitions used for training: 
+
+rOF (t) = S(Et) − S(Et+1 ), rFCI (t) = log 10 (Et − E0) − log 10 (Et+1 − E0). (22) The FCI quantity is a read-only diagnostic and never enters training. Both scores are strictly in-creasing in energy, so an actual energy change has the same reward direction under both transforms. Table 15 measures how closely their magnitudes are ordered on transitions whose logged energy changes. The ranking correlation remains between 0.988 and 0.998 over the full trajectories and between 
+
+0.973 and 1.000 in the late stage. The largest magnitude differences occur near the empirical fron-tier. LiH-6q has the smallest late-stage magnitude distortion but the largest adopted-frontier lag, indicating that moving-reference nonstationarity is distinct from per-step reward distortion. The reward audit tests the target, not the learned model. Monotonicity gives direction agreement analytically, while the measured Spearman correlation asks whether the relative magnitudes of im-provements are preserved along the actual training distribution. The later counterfactual probe asks a separate question—whether a fitted ensemble can rank several legal continuations from the same prefix. Keeping these tests separate distinguishes the quality of the oracle-free supervision signal from the quality of the model learned from it. For sensitivity, Table 16 compares independently trained oracle-free and canonical campaigns. This is not a paired intervention, but it quantifies the task-dependent cost of removing E0 from training. 19 Preprint. Under review.                                                 
+
+> Task Moved/seed ρ(rOF , r F CI )Sign E[∆ r]SD (∆ r)P95 |∆r|
+> LiH-4q 426,757 0.990 ±0.002 0.9998 −0.0072 0.1189 0.1645 BeH 2-6q 190,261 0.988 ±0.004 0.9995 −0.0223 0.1997 0.4274 LiH-6q 247,351 0.998 ±0.002 0.9992 +0 .0051 0.0751 0.0609 BeH 2-8q 70,443 0.990 ±0.004 0.9995 +0 .0999 0.4105 0.7266 BeH 2-10q 65,318 0.995 ±0.004 0.9993 +0 .1411 0.3387 0.6924
+
+Table 15: Same-transition oracle-free reward audit, aggregated across the full training trajectory. Statistics are computed per seed and then averaged across five seeds. The residual deviation from unit sign agreement comes from six-digit logging precision on near-zero changes.                               
+
+> Task Oracle-free Canonical Relative change
+> LiH-4q 0.053 ±0.024 0.038 ±0.057 +42%
+> BeH 2-6q 0.058 0.058 0%
+> LiH-6q 13 .4±2.410 .1±2.0+33%
+> BeH 2-8q 2.17 2.17 0%
+> BeH 2-10q 1.03 ±0.29 1.70 ±1.10 −40%
+
+Table 16: Cross-campaign sensitivity of mean frozen-policy energy error in mHa. The campaigns differ in training signal and stochastic draws; the table is a sensitivity analysis rather than a paired causal comparison. D.2 COUNTERFACTUAL ACTION -U TILITY PROTOCOL AND TESTS 
+
+For each of 15 policy-visited real prefixes per seed, the probe samples up to ten legal next actions. The frozen ensemble predicts each continuation, and the same candidates are evaluated using real VQE. Within each prefix, the probe computes Spearman ranking correlation, normalized regret 
+
+NReg = e(aWM ) − min a e(a)max a e(a) − min a e(a) , (23) and the frequency with which the WM-selected action is no worse than matched random legal choices. Per-prefix statistics are averaged within seed before the five-seed summary. All five paired changes are positive and remain below 0.05 after Holm adjustment. The distribution-free Wilcoxon results are included because with n = 5 its minimum attainable two-sided p-value is 
+
+0.0625 . The cluster-aware summary is therefore the primary cross-task test used in the main paper. The probe uses ordinal ranks and excludes constant candidate vectors from the correlation. Constant vectors still contribute to NReg and WM >random; for a fully tied candidate set NReg is defined as zero. The final BeH 2-8q and BeH 2-10q candidate sets contain extensive ties, so their NReg values are interpreted together with ρact rather than in isolation. The three action metrics are complementary. Spearman correlation evaluates the ordering of all sampled legal continuations, normalized regret evaluates the cost of the model’s top-ranked choice, and WM >random evaluates whether that choice improves on a matched uninformed decision. The increase in rank correlation from the start checkpoint to the operating checkpoint shows that the ordering signal is acquired during training; the final regret and WM >random values then quantify whether that learned ordering supports useful choices. D.3 AUXILIARY WORLD -M ODEL DIAGNOSTICS 
+
+The ranking gate observes high pairwise fidelity on all three diagnostic tasks. Depth-stratified end-point analyses are reported only as diagnostic accuracy versus circuit depth; they are distinct from the controlled imagined-horizon experiment in Appendix E. 20 Preprint. Under review.                                          
+
+> Task ∆ρBootstrap CI ptpHolm pWilcoxon
+> LiH-4q +0.449 [+0 .343 ,+0 .554] .0018 .0059 .0625 BeH 2-6q +0.148 [+0 .057 ,+0 .238] .0481 .0481 .1250 LiH-6q +0.281 [+0 .170 ,+0 .386] .0105 .0211 .0625 BeH 2-8q +0.441 [+0 .340 ,+0 .538] .0015 .0059 .0625 BeH 2-10q +0.411 [+0 .352 ,+0 .470] .0003 .0014 .0625 Task-cluster summary +0.346 [+ 0.185 ,+0.507 ].0040 ––
+
+Table 17: Growth in action-ranking utility from start to the 15,000-episode checkpoint. Per-task pt
+
+values are two-sided one-sample t-tests over five paired seed differences; Holm adjusts this five-test family. Bootstrap CIs and t-test p-values are separately computed summaries. The final row treats the five task means as the experimental units.                                
+
+> Task Pairwise fidelity Calibration MAE ρ(σ, |error |)
+> LiH-4q 0.949 ±0.006 0.396 ±0.015 0.289 ±0.037
+> LiH-6q 0.790 ±0.017 0.338 ±0.127 0.296 ±0.106
+> BeH 2-8q 0.963 ±0.017 0.599 ±0.237 0.720 ±0.041
+
+Table 18: Final logged oracle-free world-model diagnostics. Calibration MAE is measured in the frontier-score space and should not be numerically compared with canonical log-error calibration. 
+
+## E DIRECT DEPLOYMENT AND HORIZON CONTROLS 
+
+E.1 SAME -M ODEL DEPLOYMENT CONTROLS 
+
+To isolate deployment from model training, Table 20 starts from a single frozen NoDAG checkpoint for each seed and changes only the rule that converts its ensemble predictions into actions. Greedy 
+
+ϵ = 0 constructs one deterministic trajectory, greedy ϵ > 0 adds exploratory action sampling, and beam search retains the ten highest-scoring prefixes at each depth. Beam search uses no real VQE for expansion or pruning; its final trajectory is evaluated only after the search terminates. Relative to WM-Greedy with β = +1 , NoDAG improves paired error by 6.351 mHa on LiH-4q (95% CI [5 .319 , 6.949] in magnitude) and 25 .516 mHa on LiH-6q (95% CI [25 .006 , 26 .084] ); all five seeds favor imagined policy learning. Reversing or increasing optimism does not close the gap. In the stricter same-frozen-WM control, the learned actor improves over beam search by 
+
+4.361 mHa on LiH-4q (95% CI [4 .332 , 4.388] in magnitude) and 25 .830 mHa on LiH-6q (95% CI 
+
+[24 .475 , 27 .488] ); all five paired seeds favor the actor. The corresponding actor–exploratory-greedy gaps are 3.305 mHa (95% CI [2 .768 , 3.747] ) and 23 .210 mHa (95% CI [19 .438 , 25 .601] ). BeH 2-8q is saturated and does not distinguish the deployment rules. This result should be read together with the counterfactual action probe. DreamQAS’s ensemble can acquire useful local rankings while direct greedy use of its absolute predictions still performs poorly. Greedy deployment commits to one model-preferred continuation at each prefix; imagined policy learning instead aggregates predicted improvement signals over many replay-anchored trajectories before changing the actor. The comparison therefore isolates how the same feedback capability is consumed, rather than comparing a strong model with a deliberately weakened surrogate. E.2 TRANSITION -M ATCHED HORIZON CONTROL 
+
+The H = 1 and H = 5 arms receive an explicit transition budget equal to the trusted imagined transitions used by the reference H = 15 arm: 954 per update on LiH-4q, 960 on LiH-6q, and 601 on BeH 2-8q. Thus the comparison changes how model queries are organized into trajectories, not their total number. The non-saturated LiH tasks support the same mechanism conclusion: organizing trusted model transitions into multi-step trajectories improves final policy quality relative to independent one-step feedback. The comparison between H = 5 and H = 15 does not establish a universal preference for the longest horizon. 21 Preprint. Under review.                                                     
+
+> Arm LiH-4q LiH-6q BeH 2-8q
+> NoImag 0.221 ±0.062 13 .6±3.52.35 ±0.40
+> WM-Greedy, β= +1 6.42 ±1.236 .9±0.02.17 ±0.0
+> WM-Greedy, β=−15.91 ±1.432 .0±11 .02.17 ±0.0
+> WM-Greedy, β=−2–36 .9±0.0–DreamQAS-NoDAG 0.073 ±0.036 11 .4±0.72.53 ±0.49
+
+Table 19: Mean frozen-policy energy error in mHa at 15,000 episodes. All model-based deployment rows use the same learned feedback capability; only its use for direct selection or imagined policy learning changes.                                                   
+
+> Task Checkpoint Actor Greedy ϵ= 0 Greedy ϵ > 0Beam B= 10
+> LiH-4q 15k 0.073 ±0.036 4.280 ±1.966 3.378 ±0.622 4.434 ±0.000
+> LiH-6q 30k 11 .055 ±1.949 31 .974 ±10 .982 34 .265 ±5.916 36 .885 ±0.000
+> BeH 2-8q 15k 2.529 ±0.495 2.175 ±0.000 2.175 ±0.001 2.175 ±0.000
+
+Table 20: Same-frozen-WM deployment control: post-VQE energy error in mHa (mean ± sample std across five seeds). The actor and exploratory-greedy columns average 100 frozen rollouts per seed; deterministic greedy and beam produce one circuit per seed. Within each task, all four rules use identical NoDAG world-model weights and the same checkpoint; only deployment changes. The LiH-6q control uses the shared 30,000-episode checkpoint available for all four rules and is separate from the 15,000-episode main comparison. Lower is better. Because every imagined gate uses the exact circuit transition and the trusted transition count is matched, this control does not exchange a larger model-query budget for better quality. It changes only whether trusted feedback terms are organized as independent one-step updates or as temporally connected returns. The LiH contrasts therefore identify multi-step credit assignment as the relevant mechanism; the saturated BeH 2-8q task does not resolve horizon quality at its floor. 
+
+## F UNCERTAINTY AND VERIFICATION 
+
+F.1 RISK –C OVERAGE CONSTRUCTION AND AURC The risk–coverage sample contains candidates selected by predicted value (selection tag top or 
+
+both ); candidates admitted solely by disagreement are excluded. Ensemble disagreement therefore does not determine membership in the analyzed sample. For each seed and rejection rule, candidates are sorted by the rule, retained at coverage levels from 0.10 to 1.00 , and risk is the retained mean absolute prediction error in frontier-score units. AURC is the normalized trapezoidal area under the resulting curve. At 50% coverage, disagreement changes risk from 0.3617 to 0.2760 on LiH-4q ( −24% ), from 
+
+0.3745 to 0.2759 on LiH-6q ( −26% ), and from 0.2357 to 0.1270 on BeH 2-8q ( −46% ). On LiH-6q, keeping the predicted-best half instead increases risk to 0.5011 (+34% ), while keeping the predicted-worst half lowers it to 0.2480 (−34% ). Restricting this analysis to value-selected candidates prevents the evaluation set from being defined by the same disagreement score used to rank risk. AURC then measures whether disagreement orders absolute prediction error better than the controls; it does not require disagreement to be a calibrated error probability. This ordering property is exactly what the deployed controls use: pessimism consumes disagreement continuously, while truncation rejects the upper tail of uncertain imagined steps. F.2 THRESHOLD AND VERIFICATION BEHAVIOR 
+
+At the deployed threshold σ ≤ 0.60 , the value-selected and disagreement-selected strata retain 
+
+98% /79% of candidates on LiH-4q, 99% /99% on LiH-6q, and 76% /34% on BeH 2-8q. Thus hard 22 Preprint. Under review.                                         
+
+> Task Contrast Paired ∆95% CI Interpretation
+> LiH-4q H1−H15 +1.150 [+ 0.223 ,+2.763 ]multi-step better LiH-4q H5−H15 +0 .064 [+0 .033 ,+0 .090] sub-chemical LiH-6q H1−H15 +7.166 [+ 1.226 ,+13 .785 ]multi-step better LiH-6q H5−H15 +0 .379 [−0.412 ,+1 .452] comparable BeH 2-8q H1−H15 −0.265 [−0.536 ,+0 .000] saturated
+
+Table 21: Paired horizon contrasts at a matched trusted-transition budget. Positive H1−H15 means the one-step arm has higher error. Values are in mHa.                                             
+
+> Task n/seed Disagreement Value Inverse value Random
+> LiH-4q 935 0.2927 ±0.0327 0.3009 ±0.0394 0.4312 ±0.0251 0.3686 ±0.0205
+> LiH-6q 1870 0.2900 ±0.1407 0.5264 ±0.2359 0.2832 ±0.1055 0.3720 ±0.1462
+> BeH 2-8q 935 0.1301 ±0.1322 0.2060 ±0.0447 0.3157 ±0.2680 0.2332 ±0.1485
+
+Table 22: Per-seed AURC (mean ± sample std over five seeds; lower is better). Bold marks the low-est mean rule for each task. Inverse value is a diagnostic control rather than a deployable uncertainty score. truncation is most active on BeH 2-8q, while uncertainty remains active on every task through the continuous pessimistic potential. The clearest correction effect appears on BeH 2-8q, including both the value-selected and disagreement-selected strata. Other tasks show mixed population changes, consistent with treat-ing selective verification as a targeted feedback route rather than the sole source of the final-quality gain. Verification complements rather than duplicates the risk gate. The value-selected stratum checks regions likely to be exploited, while the disagreement-selected stratum probes regions the ensemble identifies as blind spots. Their real VQE outcomes are returned as ordinary raw-energy trajectories, so any correction enters later world-model updates through the same frontier versioning and replay pipeline as on-policy experience. 
+
+## G COMPONENT ABLATIONS 
+
+The oracle-free component campaign evaluates five arms at the same 15,000-episode checkpoint. Each cell contains five training seeds and uses the same mean frozen-policy energy error as the main table. Imagination has the broadest final-quality contribution and also accounts for the largest fine-error VQE-efficiency gains. Uncertainty has a clear non-saturated effect on BeH 2-10q. DIR improves LiH-4q but reverses direction on LiH-6q, showing that label-density correction interacts with the task’s feedback distribution. The −uncertainty arm jointly removes pessimism and hard truncation, so these two uses are not causally separated by the present campaign. Similarly, the ranking gate is part of the deployed system but has no independent zero-threshold arm. The component results are most informative when combined with the targeted mechanism experi-ments. The same-model deployment and matched-horizon controls isolate multi-step use of feed-back more directly than the −imagination arm, which also removes verification feedback. The uncertainty contrast on BeH 2-10q aligns with the independent risk–coverage evidence that disagree-ment carries useful error-ordering information. DIR has the expected benefit on LiH-4q but reverses on LiH-6q, showing that redistributing supervised capacity is task-dependent even when the target itself is unchanged. Saturated columns demonstrate that the system reaches the available floor, but they do not supply resolution for ranking components at convergence. 23 Preprint. Under review.                                                
+
+> Task Contrast ∆AURC 95% CI Better seeds
+> LiH-4q disagreement −value −0.0081 [−0.0202 ,+0 .0034] 4/5 LiH-4q disagreement −random −0.0759 [−0.0875 ,−0.0642 ]5/5 LiH-6q disagreement −value −0.2364 [−0.3177 ,−0.1552 ]5/5 LiH-6q disagreement −random −0.0821 [−0.0991 ,−0.0586 ]5/5 BeH 2-8q disagreement −value −0.0759 [−0.1352 ,+0 .0126] 4/5 BeH 2-8q disagreement −random −0.1031 [−0.1180 ,−0.0902 ]5/5
+
+Table 23: Paired AURC contrasts using 10,000 percentile-bootstrap resamples over five seeds. Neg-ative values favor ensemble disagreement. Bold marks intervals that exclude zero.                  
+
+> Verified stratum LiH-4q BeH 2-6q LiH-6q BeH 2-8q BeH 2-10q
+> All +0 .011 −0.015 −0.089 −0.477 +0 .137
+> Value-selected −0.029 −0.014 −0.108 −0.485 −0.003
+> Disagreement-selected +0 .052 −0.017 −0.062 −0.392 +0 .277
+
+Table 24: Late-budget Full-minus-NoDAG change in mean absolute calibration error per verification event. Negative values indicate lower error when verified samples are returned to replay. Bold marks cells whose paired bootstrap interval excludes zero in the improving direction. Complete intervals are supplied in the artifact. 
+
+## H REPRODUCIBILITY AND ARTIFACT INVENTORY 
+
+H.1 HARDWARE AND SOFTWARE ENVIRONMENT 
+
+All DreamQAS and baseline experiments ran on AWS EC2 g6.24xlarge instances using the shared crlqas env Conda environment. Each run was assigned one GPU and used no cross-GPU communication. Tables 27 and 28 record the execution environment; OpenFermion and PySCF were used only for offline molecule generation or validation and were not part of the training loop. H.2 TRAINING SCHEDULE AND RANDOMNESS 
+
+Every main arm uses five training seeds, indexed 0–4. An iteration contains four real episodes, a real actor update, optional imagination, and periodic world-model refresh and verification. The common reported checkpoint is 15,000 episodes. Frozen evaluation uses separate evaluation seeds and 100 episodes per training seed. Randomness enters actor initialization and sampling, ensemble initialization, per-member bootstrap masks, replay sampling, imagined-prefix selection, and frozen evaluation. Ranking-gate pairs use a fixed random generator. The risk–coverage random baseline uses a molecule-specific CRC32 seed so its value does not depend on task iteration order. H.3 LOGGED ARTIFACTS AND DATA LINEAGE 
+
+The final lineage audit resolves all 23 analysis chains to a training run, checkpoint, seed set, and reducer. The main oracle-free tables use the current t1a probe.json action statistics, the order-independent risk baseline, the common 15,000-episode evaluation, and the trailing-window width 
+
+W = 100 . Canonical development campaigns are kept separate from the oracle-free main campaign in every table. H.4 SOFTWARE AND HARDWARE BOUNDARY 
+
+The 4- and 6-qubit tasks use a CPU complex128 Qulacs path; the 8- and 10-qubit tasks train with a GPU batched complex64 VQE path and are reevaluated using a complex128 reference implemen-tation. Dependency versions, CPU/GPU model, driver version, and final repository commit should be exported from the frozen submission environment together with the code release. The wall-clock 24 Preprint. Under review. 
+
+Arm LiH-4q BeH 2-6q LiH-6q BeH 2-8q BeH 2-10q 
+
+Full 0.053 ± 0.024 0.058 11 .4 ± 0.47 2.17 1.03 ± 0.29 
+
+−DAgger 0.073 ± 0.036 0.058 11 .4 ± 0.70 2.53 ± 0.49 1.03 ± 0.29 
+
+−DIR 0.125 ± 0.070 0.058 11 .1 ± 0.63 2.17 1.03 ± 0.29 
+
+−uncertainty 0.053 ± 0.048 0.058 11 .2 ± 1.0 2.53 ± 0.49 2.24 ± 1.6
+
+−imagination † 0.221 ± 0.062 0.328 ± 0.12 13 .6 ± 3.5 2.35 ± 0.40 2.18 ± 0.91 
+
+Table 25: Oracle-free component ablation: mean frozen-policy energy error in mHa at 15,000 episodes. Bold marks the best mean on the non-saturated tasks. The BeH 2-6q and BeH 2-8q columns reach search-space floors and are not used to rank components. †Removing imagination also dis-ables DAgger because verification is tied to surrogate imagination. 
+
+Removed component Task ∆ 95% CI Interpretation 
+
+DIR LiH-4q +0.072 [+ 0.006 , +0.152 ] improves quality DIR LiH-6q −0.380 [−0.606 , −0.105 ] task-dependent reversal Uncertainty BeH 2-10q +1.213 [+ 0.129 , +2.738 ] improves quality Imagination † LiH-4q +0.168 [+ 0.124 , +0.209 ] improves quality Imagination † BeH 2-6q +0.271 [+ 0.175 , +0.366 ] saturated final cell Imagination † BeH 2-10q +1.158 [+ 0.515 , +1.673 ] improves quality 
+
+Table 26: Component-removal contrasts whose paired interval excludes zero. ∆ = ablated arm minus Full, so positive values indicate that removal increases error. The DIR result is heterogeneous across tasks. study in Appendix C is a same-load state-vector comparison and does not estimate queueing or execution time on a quantum processor. 25 Preprint. Under review. 
+
+Item Configuration 
+
+Instance AWS EC2 g6.24xlarge 
+
+CPU AMD EPYC 7R13; 48 physical cores, two hardware threads per core ( 96 vCPUs), one NUMA node Memory 363 GiB GPU 4× NVIDIA L4, 23,034 MiB each; compute capability 8.9 (Ada Lovelace) GPU interconnect PCIe Gen4 ×16 , without NVLink; one GPU per run and no cross-GPU commu-nication Driver NVIDIA 580.126.16; driver-reported CUDA 13.0 Storage 123 GiB root EBS and 3.4 TiB local ephemeral NVMe used for run outputs 
+
+Table 27: Hardware used for DreamQAS and the five baseline campaigns. 
+
+Component Version or configuration 
+
+Operating system Ubuntu 24.04.4 LTS; Linux kernel 6.17.0-1007-aws Runtime Python 3.10.20; shared Conda environment crlqas env 
+
+PyTorch 2.10.0+cu128; CUDA runtime 12.8; cuDNN 9.10.2 NumPy / SciPy NumPy 2.2.6; SciPy 1.15.2 Qulacs 0.6.13 GPU build; QuantumStateGpu available; no separate qulacs-gpu 
+
+wheel installed Baseline utilities PennyLane 0.42.3; tqdm 4.67.3; Matplotlib 3.10.8; Weights & Biases 0.25.1 (dis-abled at runtime with --use-wandb 0)Offline chemistry OpenFermion 1.7.1 and PySCF 2.13.1, used only for molecular generation and validation 
+
+Table 28: Software environment. DreamQAS itself imports PyTorch, NumPy, SciPy, and Qulacs; the remaining packages support baselines, logging, or offline molecular preparation. 
+
+Artifact Principal fields Paper use 
+
+metrics.jsonl iteration, VQE counters, training errors, model loss, ranking gate, frontier version, timing fields efficiency curves, cost, frontier lag, timing 
+
+trajectory.jsonl circuit step, action, raw energy, reward, frontier score, evaluation-only true error reward audit and depth diagnostics 
+
+calibration.jsonl selection stratum, predicted and real scores, absolute error, disagreement, circuit length risk–coverage and verification analy-sis 
+
+imag.jsonl imagined return, advantage, horizon, dis-agreement, seed count, transition budget horizon matching and model-query accounting 
+
+fidelity.jsonl pairwise accuracy, gate state, episode count, model loss ranking-readiness diagnostics 
+
+eval traces*.jsonl episode-level minimum-prefix energies, evaluation count, checkpoint, cumulative training cost all frozen-policy energy error tables 
+
+t1a probe.json action correlation, regret, random compari-son, horizon and advantage diagnostics counterfactual action utility 
+
+Table 29: Run artifacts and their role in the paper. Every displayed number is derived from stored run outputs rather than reconstructed from plotted pixels. 26

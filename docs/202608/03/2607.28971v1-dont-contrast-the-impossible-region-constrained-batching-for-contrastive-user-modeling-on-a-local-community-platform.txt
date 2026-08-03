@@ -1,0 +1,228 @@
+Title: Don't Contrast the Impossible: Region-Constrained Batching for Contrastive User Modeling on a Local Community Platform
+
+URL Source: https://arxiv.org/pdf/2607.28971v1
+
+Published Time: Mon, 03 Aug 2026 00:26:19 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Don’t Contrast the Impossible: Region-Constrained Batching for Contrastive User Modeling on a Local Community Platform 
+
+## Seungho Han ∗
+
+hawke@daangn.com Danggeun Market Inc. (Karrot) Seoul, Korea 
+
+## Byeongchang Kim ∗
+
+ben.kim@daangn.com Danggeun Market Inc. (Karrot) Seoul, Korea 
+
+## Jin Yu 
+
+jin.yu@daangn.com Danggeun Market Inc. (Karrot) Seoul, Korea 
+
+## Abstract 
+
+Contrastive learning is widely used for user modeling in large-scale recommender systems, where standard in-batch negatives implicitly assume universal exposure that any user can be shown any item. On local community platforms such as Karrot, however, exposure is geographically constrained; many user-item pairs are impossible by design yet still treated as negatives during training, diluting the contrastive learning signal. We address this impossi-ble negatives problem and propose Region-Constrained Batch Sampling (RCBS) , a simple yet effective batching method that constructs region-homogeneous mini-batches so that users are con-trasted primarily against items they could feasibly see. By replacing impossible negatives with feasible ones, RCBS naturally introduces harder and more informative negatives under realistic exposure constraints. With offline evaluations and online A/B tests, we show that RCBS consistently improves user representation quality and consequently enhances home feed ranking, retrieval, and display ads ranking. The resulting user embeddings have been deployed in production across various applications. 
+
+## CCS Concepts 
+
+• Information systems → Personalization ; Recommender systems .
+
+## Keywords 
+
+Recommender Systems, User Representation, Representation Learn-ing, User Modeling 
+
+ACM Reference Format: 
+
+Seungho Han, Byeongchang Kim, and Jin Yu. 2026. Don’t Contrast the Impossible: Region-Constrained Batching for Contrastive User Modeling on a Local Community Platform. In Proceedings of the 49th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR ’26), July 20–24, 2026, Melbourne, VIC, Australia. ACM, New York, NY, USA, 5 pages. https://doi.org/3805712.3808467 
+
+## 1 Introduction 
+
+Contrastive learning is now a standard paradigm for learning user representations in large-scale recommender systems [ 1, 11 , 26 ].  
+
+> ∗Both authors contributed equally to this research.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> SIGIR ’26, Melbourne, VIC, Australia
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2599-9/2026/07 https://doi.org/3805712.3808467
+
+Figure 1: Illustration of exposure feasibility on Karrot. For user 𝑢 , only items located within the user’s viewable cells (𝑖 1, 𝑖 2, 𝑖 3) can appear in the home feed. Items outside the view-able cells (red dots) are never exposed to the user. 
+
+These methods treat observed user-item engagement pairs as posi-tives and other in-batch items as negatives to learn discriminative user representations. A common, but often implicit, assumption behind random mini-batches is universal exposure: any user could be exposed to any item. This assumption breaks on local community platforms , where exposure is geographically constrained by design. On Karrot 1, for example, users interact with nearby residents across multiple verticals (local buy & sell, pre-owned cars, local jobs, social groups, local business, etc . ). More than 86% of transactions occur within a 5km radius, and items outside a user’s viewable region are never exposed. Figure 1 illustrates the boundaries that define feasibility for exposure, highlighting that only items in the same or adjacent regions appear in a user’s home feed. Under such constraints, random mini-batches inevitably contain negatives that, by platform policy rather than by user preference, the platform does not expose to users. We distinguish two categories of negatives in geographically constrained contrastive learning: (i) 
+
+feasible negatives , which a user could have been exposed to but chose not to engage with, and (ii) impossible negatives , which a user could never have been exposed to due to platform’s exposure rules. The former carry a meaningful preference signal, as non-engagement reflects preference; the latter carries little signal since non-engagement is determined by system rather than user. When impossible negatives dominate a batch, the contrastive signal for preference can weaken and the resulting user representations can become less discriminative. This issue can extend beyond Karrot to other location-aware services. For example, restaurant and grocery delivery apps surface only merchants and items within predefined service areas. Dating apps typically prioritize or filter candidates within distance thresholds. In all these settings, mini-batches that ignore exposure feasibility risk learning user representations mis-aligned with user preferences.  
+
+> 1https://karrotmarket.com/about/ arXiv:2607.28971v1 [cs.IR] 31 Jul 2026 SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia Seungho Han, Byeongchang Kim, and Jin Yu
+
+To address this, we propose Region-Constrained Batch Sampling (RCBS), a simple yet effective batching method that reduces impos-sible negatives by constructing region-homogeneous mini-batches. RCBS leaves the model architecture and loss unchanged and modi-fies only how batches are formed so that users are contrasted against candidates they could feasibly see. Our experiments empirically show that feasible negatives act as harder negatives than impossible negatives; correspondingly, a lower impossible negative ratio in a mini-batch correlates with better user-modeling performance (see Section 4.2). Both offline evaluation and online A/B tests show that the proposed RCBS improves user representation quality and con-sequently increases retrieval and ranking performance for Karrot’s home feed and display ads. The resulting user embeddings have been deployed in production at Karrot across various applications. Our contributions are highlighted as follows: 
+
+• We identify the problem of impossible negatives in region-constrained recommendation systems and propose Region-Constrained Batch Sampling (RCBS) to remove geographically impossible negatives from in-batch negative sampling. 
+
+• With offline and online evaluation, we show that RCBS im-proves user representation quality, and downstream retrieval and ranking performance. As a result, user representation learned with RCBS has been deployed in production at Kar-rot. 
+
+## 2 Related Work 
+
+Contrastive Learning for User Representation . Contrastive learning (CL) is now the de facto standard for learning representa-tions from behavioral logs in recommendation systems [ 22 , 23 , 26 ]. PinnerFormer [ 11 ] leverages Transformer-based sequence model-ing to build user representations at scale. Shin et al . [18] shows recommendation models trained with contrastive objective exhibit scaling laws. Recently, Chen et al . [1] introduced PinFM, a founda-tion model trained on Pinterest’s massive user activity sequences. Although our work builds on these advances, to the best of our knowledge we are the first to address impossible negatives that arise in region-constrained recommender systems. 
+
+Hard-negative Mining and Negative Sampling for CL. Hard negatives are known to improve performance of contrastive learn-ing [ 2, 14 , 17 ]. In vision-language and metric learning, Faghri et al .[4] highlights the effectiveness of hard negatives for tightening image-text embeddings, and Kalantidis et al . [6] propose curriculum-like mixtures to stabilize training. In NLP, SimCSE [ 5 ] and RocketQA [ 13 ] mine or synthesize hard negatives for sentence embeddings and dense passage retrieval. In recommendation, Yang et al . [25] blends multiple negative sources to improve learning signals, and Wang et al . [20] increase the pool of negatives via cross-batch sam-pling. In contrast to explicit hard-negative mining, our approach constructs region-constrained mini-batches that remove geograph-ically impossible negatives, thereby naturally introducing feasible negatives as harder negatives. 
+
+Propensity-Based Debiasing in Recommendations. Inverse propensity scoring (IPS) corrects for non-uniform exposure by re-weighting each observed user-item interaction by the inverse of its exposure probability [ 16 ]. Saito et al . [15] extend IPS to implicit feedback under missing-not-at-random assumptions, Qin et al . [12] develop attribute-based propensity estimation for unbiased recom-mendation, and Lee et al . [7] combine IPS with contrastive learning. All IPS methods require the positivity assumption , namely that every user-item pair must have strictly positive exposure probability. On region-constrained platforms, however, geographic policy creates 
+
+structural positivity violations. Impossible user-item pairs have zero exposure probability by design, so no interaction exists for IPS to re-weight. RCBS and IPS are therefore complementary, as RCBS ensures the batch is composed of feasible pairs that carry a meaningful exposure signal, while IPS can correct residual expo-sure imbalance among them. We discuss this complementarity in Section 3.2. 
+
+## 3 Approach 
+
+We present a batching method for contrastive user modeling under region-constrained exposure conditions. We first review the stan-dard contrastive learning framework for user modeling (Section 3.1), then introduce Region-Constrained Batch Sampling (RCBS), where our major contribution lies (Section 3.2). Figure 2 compares random batching and region-constrained batching under region-constrained exposure conditions. 
+
+## 3.1 User Modeling with Contrastive Learning 
+
+Problem Setup . We consider a user modeling task where U de-notes the set of users and I denotes the set of items. For each user 
+
+𝑢 ∈ U , we observe a time-ordered sequence of user actions 𝑆 𝑢 of length 𝑇 :
+
+𝑆 𝑢 = {𝑠 𝑢, 1, . . . , 𝑠 𝑢,𝑇 }, 𝑠 𝑢,𝑡 = (𝑎 𝑢,𝑡 , 𝜏 𝑢,𝑡 , 𝑖 𝑢,𝑡 ), (1) where 𝑎 𝑢,𝑡 is the action type (e.g., click, watch, chat), 𝜏 𝑢,𝑡 is the timestamp, 𝑖 𝑢,𝑡 ∈ I is the item interacted with at step 𝑡 . Each item 
+
+𝑖 ∈ I is represented by its features. Given a user’s action sequence 
+
+𝑆 𝑢, 1: 𝑡 , our goal is to distinguish the user’s next item 𝑖 𝑢,𝑡 +1 from other candidates. 
+
+Two-tower Model . We use a standard two-tower model [ 3] for learning user and item representations. The user tower 𝑓 user encodes the action sequence 𝑆 𝑢 into a sequence of user representations, 
+
+H𝑢 = {h𝑢,𝑡 }𝑇 𝑡 =1 = 𝑓 user (𝑆 𝑢 ) ∈ R𝑇 ×𝑑 , (2) implemented with a Pre-LN Transformer [ 19 , 24 ]. The item tower 
+
+𝑓 item encodes each item into the same embedding space, 
+
+v𝑖 = 𝑓 item (𝑖 ) ∈ R𝑑 . (3) We ℓ2-normalize both user and item embeddings, and score affinity by the inner product 𝑠 (h𝑢,𝑡 , v𝑖 ) = h⊤ 
+
+> 𝑢,𝑡
+
+v𝑖 .
+
+Batching and Objective . The model is trained using mini-batches of shape [𝐵,𝑇 ], where 𝐵 denotes the number of users and 𝑇 
+
+represents the sequence length. For every position in this sequence, we use the next interacted item as a positive target v+ 
+
+> 𝑏,𝑡
+
+, and use all other positive items in the batch as negatives. We optimize the InfoNCE loss [10] with temperature 𝜏 > 0:
+
+LNCE = − 1
+
+𝐵𝑇 
+
+> 𝐵
+
+∑︁ 
+
+> 𝑏 =1
+> 𝑇
+
+∑︁ 
+
+> 𝑡 =1
+
+log exp  𝑠 (h𝑏,𝑡 , v+ 
+
+> 𝑏,𝑡
+
+)/ 𝜏 Í𝐵 𝑏 ′=1
+
+Í𝑇 𝑡 ′=1 exp  𝑠 (h𝑏,𝑡 , v+  
+
+> 𝑏 ′,𝑡 ′
+
+)/ 𝜏  . (4) This objective encourages the user embedding to align with its positive item while separating it from in-batch negatives. Don’t Contrast the Impossible: Region-Constrained Batching for Contrastive User Modeling on a Local Community Platform SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia 
+
+Figure 2: Comparison between standard random batching and the proposed Region-Constrained Batch Sampling (RCBS) under region-constrained exposure. For a given user 𝑢 , RCBS constructs mini-batches from region-homogeneous users (within blue cells), thereby substantially reducing the presence of impossible negatives (red cells) compared to random batching. 
+
+## 3.2 Region-Constrained Batch Sampling 
+
+Standard random batching assumes universal exposure: any item could be exposed to any user. However, on region-constrained platforms such as Karrot, many user-item pairs are ineligible for ex-posure, creating impossible negatives that misguide the contrastive objective. 
+
+Exposure Feasibility. We partition the geographic space into a discrete set of region cells 𝑟 ∈ R . Each user 𝑢 ∈ U and item 𝑖 ∈ I 
+
+has location coordinates, which are mapped to specific region cells via a function 𝑟 (·) , yielding 𝑟 (𝑢 ) ∈ R and 𝑟 (𝑖 ) ∈ R , respectively. We define exposure feasibility between a user-item pair as: feas (𝑢, 𝑖 ) = 1[dist (𝑟 (𝑢 ), 𝑟 (𝑖 )) ≤ 𝛿 𝑢 ], (5) where dist (· , ·) represents a non-negative, symmetric distance met-ric between region cells, and 𝛿 𝑢 ∈ {0, 1, 2, . . . } denotes a user-specific exposure radius measured in region cells. In practice, 𝛿 𝑢 
+
+is determined by platform policy ( e.g . user-configured radius), en-abling different exposure ranges across users. When 𝛿 𝑢 = 0, ex-posure requires exact region match, while 𝛿 𝑢 > 0 includes items from adjacent regions within the specified threshold. An impossible negative for user 𝑢 is any negative item 𝑖 with feas (𝑢, 𝑖 ) = 0.
+
+Region-constrained Batching. RCBS reduces impossible neg-atives by forming mini-batches B𝑟 homogeneous in region: 
+
+B𝑟 = {( 𝑢 𝑏 , 𝑆 𝑢 𝑏 )} 𝑀 𝑏 =1, 𝑢 𝑏 ∼ Uniform (𝑈 𝑟 ), (6) where 𝑈 𝑟 = {𝑢 ∈ U| 𝑟 (𝑢 ) = 𝑟 } is the pool of users located in region 
+
+𝑟 . Since users in B𝑟 share exposure constraints, most in-batch items are feasible negatives for each user. Under exact region matching ( i.e . 𝛿 𝑢 = 0 for all 𝑢 ∈ U ), the expected fraction of impossible negatives within a mini-batch is 
+
+𝜌 = 1 −∑︁  
+
+> 𝑟 ∈ R
+
+𝑝 2 
+
+> 𝑟
+
+, (7) where 𝑝 𝑟 is the probability that a user in the batch belongs to region 
+
+𝑟 . For random batching, the probability distribution across regions approximates a uniform distribution, yielding 𝜌 ≈ 1− 1min ( | B | ,| R | ) .This results in a high fraction of impossible negatives that grows with system scale. On the other hand, RCBS concentrates the proba-bility mass on a single region, achieving 𝑝 𝑟 ≈ 1 for the target region and 𝑝 𝑟 ≈ 0 for others. This drives 𝜌 close to zero, independent of batch size |B| and the number of distinct regions |R| .In practice, the fraction of impossible negatives 𝜌 for B𝑟 may not reach exactly zero for two major reasons. First, varying exposure radii 𝛿 𝑢 across users inevitably introduce some impossible nega-tives. For instance, items feasible for users with larger 𝛿 𝑢 may be impossible for users with smaller 𝛿 𝑢 . Second, a user’s region 𝑟 (𝑢 )
+
+can occasionally change over time ( e.g . relocation), resulting in historical interactions spanning multiple regions. After batch construction, we train with the same contrastive objective in Eq.(4), without modifying the model architecture. 
+
+Relationship to Propensity-Based Debiasing. IPS and RCBS operate at different stages of the training pipeline. IPS is a loss-level 
+
+correction that re-weights each observed user-item interaction by inverse exposure probability, and therefore requires 𝑝 (𝑜 =1 |
+
+𝑢, 𝑖 ) > 0 for every pair. RCBS is a data-level correction that changes which items appear in the denominator of Eq. (4) by forming region-homogeneous mini-batches. On region-constrained platforms, im-possible negatives have 𝑝 (𝑜 =1 | 𝑢, 𝑖 ) = 0 by policy, so no observed interaction exists for IPS to re-weight. Under random batching, 
+
+𝜌 train =0.98 (Table 1), meaning 98% of in-batch negatives fall into this category. RCBS reduces 𝜌 train to 0.30, ensuring that the majority of negatives are feasible. Propensity correction can then be applied within a region-homogeneous batch to address residual exposure imbalance among the feasible pairs. 
+
+## 4 Experiments 4.1 Experimental Setting 
+
+We compare RCBS with standard random batching on a next-action user-modeling pretraining task, and evaluate the learned user em-beddings on three downstream applications: home feed ranking, home feed retrieval, and display ads ranking. 
+
+Dataset. For user-modeling pretraining, we use two years of production logs comprising ∼25M users and ∼15B actions. Actions are time-ordered per user, and each user sequence is truncated to at most 1,024 actions. We split 95% of users for training, 5% for evaluation. For downstream task training, we use service logs that do not overlap with the pretraining period: three weeks for home feed ranking, one week for home feed retrieval, and four weeks for display ads ranking. Each downstream task employs a time-split evaluation set comprising 24 hours for home feed ranking and display ads ranking, and 6 hours for home feed retrieval. SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia Seungho Han, Byeongchang Kim, and Jin Yu 
+
+Table 1: Quantitative results on user-modeling pretraining task under different combinations of train-time (rows) and evaluation-time (columns) batching methods.                      
+
+> Random-Eval RCBS-Eval (fine) Method R@10 R@100 R@10 R@100 𝜌 train
+> Random-Train 0.100 0.422 0.082 0.349 0.98 RCBS-Train (coarse) 0.125 0.456 0.112 0.403 0.79 RCBS-Train (fine) 0.149 0.474 0.139 0.435 0.30
+
+Table 2: Offline experimental results on downstream tasks.                   
+
+> Feed ranking Ads ranking Feed retrieval Method ΔN@10 ΔOPA ΔR-A ΔP-A ΔR@10 ΔR@100 Random-Train +0.22% +0.17% +0.25% +1.21% +4.44% +2.36% RCBS-Train (fine) +1.18% +1.07% +0.53% +3.38% +7.56% +4.61%
+
+Evaluation Metrics. For user-modeling evaluation, we report Recall@10 (R@10) and Recall@100 (R@100) under two distinct evaluation-time batching methods: (i) Random-Eval , in which users are sampled uniformly at random, and (ii) RCBS-Eval , in which users are sampled following RCBS. We also report the fraction of impossible negatives 𝜌 train from Eq. (7) to quantify the prevalence of impossible negatives within train-time mini-batch. For downstream tasks, we use standard evaluation metrics for each task. We use NDCG@10 (N@10) and Ordered-Pair Accuracy (OPA) of click prediction for home-feed ranking, Recall@10 and Recall@100 for home-feed retrieval, and ROC-AUC (R-A) and PR-AUC (P-A) for display-ads ranking. Due to confidentiality, we report relative improvements over the production baselines. 
+
+User-modeling Pretraining Model. We use a standard two-tower architecture, consisting of a Transformer-based user tower and a 3-layer MLP item tower. For item features, we use embeddings obtained from a pretrained embedding model [ 8, 9], which takes an item’s title, content, metadata and image as input and produces the corresponding item representations. We train the model with RCBS at two regional granularities supported by our system, and a random batching baseline: (i) RCBS-Train (coarse) , using coarse regional groupings, (ii) RCBS-Train (fine) , using finer regional groupings, and (iii) Random-Train , using random batches. We use a batch size of 18 and sequence length of 1,024, yielding 18,432 total candidates per mini-batch. We keep these settings fixed, along with all other hyperparameters and training steps, for fair evaluation. 
+
+Downstream Task Model. We use our production models for downstream tasks. For home feed ranking and display ads ranking, we use DCN-based models [ 21 ] and add the learned user represen-tation as an additional feature. For home feed retrieval, we use a two-tower model [ 3] and inject the user representation into the user tower. We compute user embeddings daily by running the user tower on a user’s recent 1,024 actions and use mean-pooled output as final user representations. 
+
+## 4.2 Results 
+
+User-modeling Experiments. Table 1 reports quantitative results on the user-modeling pretraining task. RCBS-Train consistently outperforms Random-Train on both Random-Eval and RCBS-Eval. The fraction of impossible negative 𝜌 train correlates well with better 
+
+Table 3: Online A/B test results when adding our best user embeddings, RCBS-Train (fine), as an additional feature to the production baselines. DAV denotes daily active viewers.          
+
+> Home feed (ranking + retrieval) Ads ranking
+> ΔClicks ΔImpressions ΔDAV ΔeCPM ΔAdCTR +10.0% +5.12% +1.91% +6.01% +7.46%
+
+recall metrics, empirically validating that feasible negatives pro-vide more discriminative training signals. Notably, the RCBS-Eval consistently yields lower scores compared to Random-Eval, further supporting the proposition that feasible negatives constitute harder negatives compared to impossible negatives. 
+
+Offline Experiments. Table 2 summarizes offline experimental results when user representations are used as additional features in home feed ranking, home feed retrieval, and display-ads rank-ing. User embeddings trained with RCBS consistently outperform those learned with random batching across all downstream tasks, demonstrating enhanced discriminative capability when trained with feasible negatives. The marginal gains from random-batch user embeddings in home feed ranking highlight the need for RCBS to learn meaningful representations. The substantially larger gains in home feed retrieval, relative to feed and ads ranking, reflects the structural similarity between the retrieval and pretraining objec-tives. 
+
+Online A/B Experiments. We select the best user representa-tion, RCBS-Train (fine), based on the offline experiments and con-duct A/B tests on home feed recommendation (retrieval + ranking) and display ads ranking. Table 3 summarizes online experimen-tal results comparing treatment groups (with user representation) against control groups (without user representation). The consis-tent improvements across all primary metrics confirm that RCBS improves production metrics, leading to production deployment across multiple applications. 
+
+## 5 Conclusion 
+
+In this work, we identify and address the impossible negatives prob-lem in region-constrained recommendation systems by introducing RCBS, a batching method that constructs region-homogeneous mini-batches. We show that feasible negatives provide stronger training signals than impossible negatives, and that RCBS increases the fraction of feasible negatives within each mini-batch. Experi-ments show that RCBS improves user representation quality and consequently improves performance on downstream tasks. Impor-tant future directions include exploring adaptive region group-ing methods for dynamic feasibility constraints and combining propensity-based correction within region-homogeneous batches to address residual exposure imbalance. 
+
+## Acknowledgments 
+
+We thank Lyn Kim for her help with the figures in this paper, Sang Wook Park and Beomju Kwak for their help with the ads experi-ments, and Kyuhyun Byun for his help with large-scale inference. Don’t Contrast the Impossible: Region-Constrained Batching for Contrastive User Modeling on a Local Community Platform SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia 
+
+## Presenter Biography 
+
+Seungho Han is a Tech Lead Manager at Karrot, South Korea’s leading hyper-local community platform. He has over 6 years of experience in search and recommendation systems. His research interests include large-scale machine learning with applications in search and recommendation systems. 
+
+## References 
+
+[1] Xiangyi Chen, Kousik Rajesh, Matthew Lawhon, Zelun Wang, Hanyu Li, Haomiao Li, Saurabh Vishwas Joshi, Pong Eksombatchai, Jaewon Yang, Yi-Ping Hsu, Jiajing Xu, and Charles Rosenberg. 2025. PinFM: Foundation Model for User Activity Sequences at a Billion-scale Visual Discovery Platform. In RecSys .[2] Ching-Yao Chuang, Joshua W. Robinson, Yen-Chen Lin, Antonio Torralba, and Stefanie Jegelka. 2020. Debiased Contrastive Learning. In NeurIPS .[3] Paul Covington, Jay Adams, and Sargin Emre. 2016. Deep Neural Networks for YouTube Recommendations. In RecSys .[4] Fartash Faghri, David J. Fleet, Jamie Ryan Kiros, and Sanja Fidler. 2018. VSE++: Improving Visual-Semantic Embeddings with Hard Negatives. In BMVC .[5] Tianyu Gao, Xingcheng Yao, and Danqi Chen. 2021. SimCSE: Simple Contrastive Learning of Sentence Embeddings. In EMNLP .[6] Yannis Kalantidis, Mert Bulent Sariyildiz, Noe Pion, Philippe Weinzaepfel, and Diane Larlus. 2020. Hard Negative Mixing for Contrastive Learning. In NeurIPS .[7] Jae-woong Lee, Seongmin Park, Mincheol Yoon, and Jongwuk Lee. 2023. uCTRL: Unbiased Contrastive Representation Learning via Alignment and Uniformity for Collaborative Filtering. In SIGIR .[8] Zach Nussbaum and Brandon Duderstadt. 2025. Training Sparse Mixture Of Experts Text Embedding Models. In arXiv .[9] Zach Nussbaum, Brandon Duderstadt, and Andrly Mulyar. 2024. Nomic Embed Vision: Expanding the Latent Space. In arXiv .[10] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. 2018. Representation Learning with Contrastive Predictive Coding. In arXiv .[11] Nikil Pancha, Andrew Zhai, Jure Leskovec, and Charles Rosenberg. 2022. Pinner-Former: Sequence Modeling for User Representation at Pinterest. In KDD .[12] Zhen Qin, Suming Jeremiah Chen, Don Metzler, Yongwoo Noh, Jingzheng Qin, and Xuanhui Wang. 2020. Attribute-based Propensity for Unbiased Learning in Recommender Systems: Algorithm and Case Studies. In KDD .[13] Yingqi Qu, Yuchen Ding, Jing Liu, Kai Liu, Ruiyang Ren, Wayne Xin Zhao, Daxi-ang Dong, Hua Wu, and Haifeng Wang. 2021. RocketQA: An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering. In 
+
+NAACL .[14] Joshua Robinson, Ching-Yao Cuang, Suvrit Sra, and Stefanie Jegelka. 2021. Con-trastive Learning with Hard Negative Samples. In ICLR .[15] Yuta Saito, Suguru Yaginuma, Yuta Nishino, Hayato Sakata, and Kazuhide Nakata. 2020. Unbiased Recommender Learning from Missing-Not-At-Random Implicit Feedback. In WSDM .[16] Tobias Schnabel, Adith Swaminathan, Ashudeep Singh, Navin Chandak, and Thorsten Joachims. 2016. Recommendations as Treatments: Debiasing Learning and Evaluation. In ICML .[17] Wentao Shi, Jiawei Chen, Fuli Feng, Jizhi Zhang, Junkang Wu, Chongming Gao, and Xiangnan He. 2023. On the Theories Behind Hard Negative Sampling for Recommendation. In TheWebConf .[18] Kyuyong Shin, Hanock Kwak, Su Young Kim, Max Nihlen Ramstrom, Jisu Jeong, Jung-Woo Ha, and Kyung-Min Kim. 2023. Scaling Law for Recommendation Models: Towards General-purpose User Representations. In AAAI .[19] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is All You Need. In NeurIPS .[20] Jinpeng Wang, Jieming Zhu, and Xiuqiang He. 2021. Cross-Batch Negative Sampling for Training Two-Tower Recommenders. In SIGIR .[21] Ruoxi Wang, Rakesh Shivanna, Derek Z. Cheng, Sagar Jain, Dong Lin, Lichan Hong, and Ed H. Chi. 2021. DCN V2: Improved Deep & Cross Network and Practical Lessons for Web-scale Learning to Rank Systems. In TheWebConf .[22] Chuhan Wu, Fangzhao Wu, Yang Yu, Tao Qi, Yongfeng Huang, and Xing Xie. 2022. UserBERT: Contrastive User Model Pre-training. In SIGIR .[23] Xu Xie, Fei Sun, Zhaoyang Liu, Shiwen Wu, Jinyang Gao, Bolin Ding, and Bin Cui. 2021. Contrastive Learning for Sequential Recommendation. In SIGIR .[24] Ruibin Xiong, Yunchang Yang, Di He, Kai Zheng, Shuxin Zheng, Chen Xing, Huishuai Zhang, Yanyan Lan, Liwei Wang, and Tie-Yan Liu. 2020. On Layer Normalization in the Transformer Architecture. In ICML .[25] Ji Yang, Xinyang Yi, Derek Zhiyuan Cheng, Lichang Hong, Yang Li, Simon Wang, Taibai Xu, and Ed H. Chi. 2020. Mixed Negative Sampling for Learning Two-tower Neural Networks in Recommendations. In TheWebConf .[26] Wei Zhang, Dai Li, Chen Liang, Fang Zhou, Zhongke Zhang, Xuewei Wang, Ru Li, Yi Zhou, Yaning Huang, Dong Liang, Kai Wang, Zhangyuan Wang, Zhengxing Chen, Fenggang Wu, Minghai Chen, Huayu Li, Yunnan Wu, Zhan Shu, Mindi Yuan, and Sri Reddy. 2024. Scaling User Modeling: Large-scale Online User Representations for Ads Personalization in Meta. In TheWebConf .
