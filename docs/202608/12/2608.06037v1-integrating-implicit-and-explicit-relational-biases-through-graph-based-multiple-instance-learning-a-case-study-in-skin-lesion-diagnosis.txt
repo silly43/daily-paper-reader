@@ -1,0 +1,188 @@
+Title: Integrating Implicit and Explicit Relational Biases through Graph-Based Multiple Instance Learning: A Case Study in Skin Lesion Diagnosis
+
+URL Source: https://arxiv.org/pdf/2608.06037v1
+
+Published Time: Fri, 07 Aug 2026 01:01:30 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# INTEGRATING IMPLICIT AND EXPLICIT RELATIONAL BIASES THROUGH GRAPH -B ASED MULTIPLE INSTANCE LEARNING :A C ASE STUDY IN SKIN LESION DIAGNOSIS ∗
+
+Rafał Buler 1† Jakub Buler 1 Maciej Bobowicz 2
+
+Michał Grochowski 11 Gda´ nsk University of Technology, Gda´ nsk, Poland  
+
+> 2
+
+Medical University of Gda´ nsk, Gda´ nsk, Poland 
+
+{rafal.buler, jakub.buler, michal.grochowski}@pg.edu.pl maciej.bobowicz@gumed.edu.pl 
+
+## ABSTRACT 
+
+Relational inductive biases are essential for capturing structural dependencies among data. This study investigates a dual-level relational framework for image classification, bridging the gap between implicit representation learning and explicit structural modelling. We begin by establishing a baseline using an EfficientNetB3 architecture. To move beyond standard convolutional biases, we adopt a patch-based strategy, employing a convolutional masked autoencoder to learn implicit inter-patch relationships through self-supervised reconstruction. We then extend this approach by incorporating explicit relational modelling, organizing the learned embeddings into various graph topologies, including grid-based, random, and k-nearest neighbour structures. Experimental results on the ISIC-2018 and ISIC-2019 skin lesion diagnosis benchmarks show that combining implicit inter-patch modelling with explicit graph-based message passing yields the best performance. On the ISIC-2018 test set, the baseline model achieves a balanced accuracy of 76.17%, which improves to 77.12% with implicit patch-based relational modelling. The fully integrated grid-structured Graph Attention Network further increases performance to 79.27%. Similarly, on ISIC-2019, the implicit approach reaches 59.84% balanced accuracy, while the combination of implicit and explicit modelling yields 60.67%. 
+
+Keywords relational inductive bias, self-supervised learning, graph neural networks, multiple instance learning, skin cancer classification. 
+
+## 1 Introduction 
+
+Relational inductive biases guide how neural networks learn to capture dependencies within input data [1]. In the case of medical image analysis, feature extraction can be viewed as operating on a set of image entities, such as pixels, superpixels, or patches, with different modelling paradigms defining how relationships between these entities are captured. Deep convolutional neural networks treat individual pixels as fundamental entities and rely on hierarchical receptive fields to model spatial dependencies implicitly across the image. Superpixel-based approaches represent images as sets of homogeneous regions, where relationships between regions are modelled explicitly using graph neural networks (GNNs). Patch-based approaches instead represent images as collections of patch-level entities, which are typically encoded independently using convolutional networks, with relationships between patches introduced only at a downstream stage. As an alternative, Vision Transformer (ViT) architectures encode patches as tokens and model their interactions via self-attention [2]. 
+
+> ∗
+
+Accepted as a short paper for presentation at the 21st International Conference on Computational Intelligence Methods for Bioinformatics and Biostatistics (CIBB 2026). 
+
+> †
+
+Corresponding author: rafal.buler@pg.edu.pl arXiv:2608.06037v1 [cs.AI] 6 Aug 2026 The limited availability of annotated medical data has driven the adoption of self-supervised learning (SSL) for representation learning from unlabelled images. Early methods relied on pretext tasks to capture spatial and semantic structure, while more recent approaches are dominated by contrastive learning, which enforces invariance through data augmentation [3]. However, such augmentations may distort clinically relevant features. Masked image modelling has therefore emerged as an alternative, learning representations by reconstructing masked regions and better preserving fine-grained structure [4]. In parallel, multiple instance learning (MIL) has become a standard framework for medical image classification when only image-level labels are available. Images are treated as bags of instances (e.g. patches), and attention-based pooling enables adaptive aggregation of informative regions [5]. More recently, graph-based extensions of MIL incorporate GNNs to explicitly model relationships between instances, refining patch representations through message passing [6]. Despite these advances, it remains unclear whether relational modelling at the feature extraction stage alone is sufficient for downstream tasks, or whether combining it with explicit graph-based aggregation provides additional benefits. This study addresses this gap by analysing skin lesion classification, a task that requires integrating spatially distributed visual cues. Specifically, this work compares three complementary paradigms for medical image analysis. First, a conventional pipeline based on pretrained fully convolutional feature extraction applied to the entire image, followed by classification. Second, a self-supervised approach that learns patch-level representations through masked reconstruction, enabling the model to implicitly capture local spatial context without explicit relational modelling. Third, a two-stage strategy that augments such learned embeddings with graph-based aggregation, introducing explicit relational inductive bias between patches prior to classification. These approaches are evaluated on two datasets, with the aim of quantifying the impact of relational modelling at different stages. 
+
+## 2 Methodology 
+
+The methodology instantiates this comparison within a unified pipeline. Patch-level representations are obtained from a frozen self-supervised autoencoder and used either directly in an attention-based MIL classifier or combined with graph-based aggregation via three construction strategies (random, grid, kNN) to introduce explicit inter-patch interactions (Figure 1). Graph Graph-structured    
+
+> Embeddings
+> Graph Construction Graph Neural
+> Network Graph
+> Graph
+> Representation
+> A-MIL
+> Classifiers
+> Extraction of
+> Patch Embeddings
+> (196×768)
+> Input Image
+> (224×224×3) Encoder Decoder
+> Masked Image Reconstruction
+> Convolutional Masked
+> AutoEncoder
+> Random Graph
+> Node connected to
+> rrandom nodes.
+> Grid Graph
+> Node connected to its
+> spatial neighbours.
+> k-NN Graph
+> Node connected to its
+> k-NN in feature space. θ196 1×768
+> Pre-trained
+> Encoder
+
+Downstream Task 
+
+Self-supervised Pre-training  Graph Construction 
+
+> 16 px
+> 16 px
+> 14 patches
+> 14 patches  The transformer divides the image into 16×16
+> pixel patches, yielding 14×14 (196) patches. Each patch is encoded with a 768-dimensional embedding.
+
+Figure 1: Pipeline overview: patch embeddings are aggregated using graph or non-graph MIL. 22.1 Dataset and Preprocessing 
+
+The study utilised both the ISIC-2018 Challenge Task 3 dataset and the ISIC-2019 dataset, each providing dermoscopic images annotated with diagnostic labels and dedicated test sets. ISIC-2018 consists of 10,015 training and 1,514 test images across seven classes, while ISIC-2019 comprises 25,331 training and 8,238 test images, extending the taxonomy with one additional class and a further “unknown” category intended for out-of-distribution evaluation. The “unknown” samples were excluded from the experiments due to the absence of corresponding training data. For self-supervised representation learning, images from both datasets were combined and used jointly to train the masked autoencoder. As this stage does not rely on labels, no annotation information was used and therefore no label leakage occurs. To further avoid redundancy, duplicate images appearing across datasets were removed prior to pretraining. For downstream evaluation, the datasets were treated independently. On ISIC-2018, a five-fold cross-validation (CV) protocol was applied to the training set for model training and validation, while the official test set was used exclusively for final evaluation. Similarly, for ISIC-2019, models were trained on the training split and evaluated on its dedicated test set. This setup ensures a fair and consistent assessment on two independent benchmarks. All images were centre-cropped into a square, resized to 224 × 224 px, and normalised using ImageNet statistics. Class imbalance was addressed using weighted sampling during the training. 
+
+2.2 Self-Supervised Patch Representation Learning 
+
+Patch-level representations were learned using a convolutional masked autoencoder with a ViT backbone (Con-vMAE) [4]. During pre-training, several configurations were explored by different masking ratios (0.25–0.75) and reconstruction losses, including mean squared error and its normalized variant computed after per-patch normalization of target pixels. The model selection was based on linear probing performance on ISIC-2018 after discarding the decoder and freezing the encoder. As SSL is used here to obtain representations rather than optimise pretraining performance, this comparison is kept minimal to focus on downstream relational modelling. The selected encoder was then fixed and used across all experiments to ensure a consistent feature space. Each image was decomposed into 
+
+14 × 14 = 196 non-overlapping patches (size 16 × 16 each), producing embeddings xi. This patch-level representation naturally supports a MIL formulation used in subsequent experiments. 
+
+2.3 Multiple Instance Learning Baseline 
+
+As a baseline, image-level classification was performed using an attention-based multiple instance learning (AMIL) model adopted from [5]. Each image was represented as a bag of patches, where the patch embeddings produced by the encoder were treated as independent instances. Formally, let an image be represented by a bag X = {xi}Ni=1 , xi ∈ Rd,
+
+where N = 196 denotes the number of patches and d = 768 is the dimensionality of each patch embedding, corresponding to the output channel size of the final transformer block, which balances representation capacity and computational efficiency consistent with standard MAE and ViT architectures. The bag X corresponds to a single image-level label y, while no supervision is available at the instance-level. An attention mechanism was used to compute a normalised importance weight ai for each instance xi:
+
+ai = exp  w⊤ tanh( Vx i)PNj=1 exp ( w⊤ tanh( Vx j )) , (1) where V and w are learnable parameters. The image-level representation was then obtained by pooling the patch embeddings using an attention mechanism: 
+
+z =
+
+> N
+
+X
+
+> i=1
+
+aixi. (2) The aggregated representation z was subsequently passed to a classifier to produce the final image-level prediction. This MIL formulation is permutation-invariant with respect to patch ordering and treats all patch embeddings as independent instances, without explicitly modelling spatial or semantic relationships. It therefore serves as a reference point for assessing the effect of introducing explicit inter-patch relational modelling in subsequent variants. 
+
+2.4 Graph Construction over Patch Representations 
+
+To incorporate the relational structure among the patch embeddings, the set of patch-level features was reformulated as an undirected graph. Specifically, each image was represented as a graph G = ( V, E), where the node set V = {vi}Ni=1 
+
+corresponded to the patch embeddings, and each node vi was associated with the feature vector xi ∈ Rd. The edge set 
+
+E defines the relationships between patches and was constructed according to different strategies. 3The random graph serves as a non-structured baseline, where each node vi is connected to up to r randomly sampled nodes from V, with r ∈ 1, 2, 3, 4. This spans from a sparsely connected setting close to the MIL case to a denser configuration comparable to a grid graph, allowing isolation of connectivity effects from structured inductive biases. The MIL baseline corresponds to the degenerate case E = ∅, where no message passing is performed and patch embeddings are aggregated directly via attention pooling without explicit relational modelling. The grid graph is defined using the original 14 × 14 spatial layout, where edges connect spatially adjacent patches. An edge (vi, v j ) ∈ E is added if the corresponding patches are neighbours on the grid. Two variants are considered: 4-neighbourhood connectivity and 8-neighbourhood connectivity. The k-nearest neighbour (kNN) graph defines edges in feature space based on Euclidean distance. For each node vi, edges are added to its k nearest neighbours: 
+
+E = ( vi, v j ) | vj ∈ kNN (xi). (3) 
+
+2.5 Graph Neural Networks with MIL Pooling 
+
+Graph-structured patch representations were processed with GNNs to model inter-patch interactions prior to aggregation. This included multiple variants to be analysed: graph convolutional networks (GCN), graph attention networks (GAT), and graph transformer-based architectures. Given a graph G = ( V, E) with node features {xi}Ni=1 , each layer performs message passing: 
+
+h(l+1)  
+
+> i
+
+= ϕ
+
+
+
+h(l) 
+
+> i
+
+, h(l) 
+
+> j
+
+| (vi, v j ) ∈ E 
+
+
+
+, (4) where h(0)  
+
+> i
+
+= xi and ϕ(·) is a learnable aggregation function. After L layers, node embeddings h(L) 
+
+> i
+
+were aggregated using the same attention-based MIL pooling as in the baseline, followed by classification. This ensures that differences relative to the MIL baseline arise solely from relational modelling via message passing. To isolate the effect of relational learning from increased model capacity, an additional setting with frozen GNN layers was evaluated. Here, message passing was performed with fixed weights and only the MIL classifier was trained. 
+
+2.6 Hyperparameter Tuning Protocol 
+
+Hyperparameter optimisation was conducted under a unified protocol across all models, including the MIL baseline and graph-based variants. Shared hyperparameters included the learning rate, optimiser type, dropout rate, and the hidden dimensions of both the classifier and attention layers. For graph-based models, additional parameters were tuned, including the GNN type, number of message-passing layers, hidden dimensions, graph construction strategy, diagonal connectivity in grid graphs, and neighbourhood size in kNN and random graphs. Tuning was performed using five-fold CV on the training sets, with balanced accuracy as the selection metric. Reported results correspond to the best-performing hyperparameter configurations. 
+
+## 3 Results 
+
+To establish a strong foundation for the downstream task, patch embeddings were first learnt using a ConvMAE. Linear probing of the ConvMAE encoder on the ISIC-2018 training set showed that a masking ratio of 0.50 resulted in the lowest reconstruction loss, indicating optimal patch reconstruction. Therefore, the encoder trained on 0.50 masking ratio was selected for feature extraction in all downstream task based on AMIL and Graph AMIL based aggregation. Building on SSL-based patch representations, AMIL was used for image-level aggregation, capturing relational information both implicitly in the embedding space and explicitly via graph-based message passing. The AMIL model achieved a mean balanced accuracy (BAcc) of 77 .12% , outperforming a conventional end-to-end CNN baseline (76 .17% ). Introducing explicit relational modelling further improved performance. Random graphs yielded moderate gains (best at r = 2 ), while the highest BAcc of 79 .27% was obtained with a grid graph without diagonal connections combined with GAT layers. The freezing of GNN parameters resulted in a considerable decrease, suggesting that learned relational modelling, rather than augmented capacity, is a primary factor contributing to performance. Overall, grid-based MIL outperforms prior single-model approaches and remains competitive with ensemble methods that aggregate predictions from up to 90 deep neural models. On ISIC-2019, the proposed approach achieves strong performance (60.67% BAcc) with a kNN graph ( k = 4 ) processed with GAT layers, surpassing several existing methods and remaining competitive with more complex ensemble-based solutions. All evaluated approaches are reported in Table 1. 4Table 1: Performance comparison on ISIC-2018 (left) and ISIC-2019 (right) dedicated test sets. Results are reported as mean ± SD over 5-fold cross-validation. Results from prior work are included only when explicitly reported on the corresponding dedicated test set. In the table, P denotes pixel-level interactions, I implicit patch relational modelling, and E explicit patch relational modelling. †Results obtained from the official ISIC-2019 challenge leaderboard.                                                                     
+
+> Model Relational BAcc [%] EfficientNet-B3 P76.17 ±0.89 Base AMIL P+I77.12 ±1.49 Graph AMIL (r=2) P+I+ERandom 78.24 ±0.86 Graph AMIL (Frozen) P+I+EGrid 34.28 ± 3.39 Graph AMIL P+I+EGrid 79.27 ±1.38
+> Deep Hierarchical [7] -72.60 Ensemble (4 models) [8] -78.50 Ensemble (25 models) [9] -84.00 Ensemble (90 models) [10] -86.20
+> Model Relational BAcc [%] Base AMIL P+I59.84 ±1.50 Graph AMIL P+I+EkN N 460.67 ±0.68
+> Non-Ensemble-Top-5 †-56.90 Ensemble-Top-4 †-57.80 Ensemble-Top-3 †-59.30 Ensemble-Top-2 †-60.70 Ensemble-Top-1 †-63.60
+
+## 4 Discussion and Conclusion 
+
+Our results demonstrate that the self-supervised patch representations learnt via masked image modelling provide a robust foundation for downstream classification. Incorporating explicit relational modelling through GNNs further improves performance. The substantial drop in performance when freezing the GNN parameters underscores the importance of learnt message passing for capturing meaningful inter-patch relationships. These findings indicate that relational information can be effectively encoded in an intermediate manner during the SSL and enhanced through additional explicit graph modelling. The proposed relationally aware framework achieves competitive results compared to previous single-model deep learning approaches and ensemble methods, highlighting the value of combining self-supervised learning with graph-based relational modelling in image analysis. This study emphasises the complementary roles of implicit and explicit relational modelling in patch-based classification, providing guidance for the design of efficient and effective architectures for image analysis. The proposed approach exhibits strong generalisation capabilities, demonstrating that it can be applied to model data relations and solve diagnostic and classification tasks across other medical domains. 
+
+## Conflict of interests 
+
+The authors declare that they have no competing interests. 
+
+## Acknowledgments 
+
+The authors acknowledge the EUCAIM #101100633 consortium and the Centre of Informatics Tricity Academic Supercomputer and networK CI-TASK (project no. 01191) for their support. 
+
+## Availability of data and software code 
+
+The datasets used in this study are publicly available. The software code is available from the corresponding author upon reasonable request. 
+
+## References 
+
+[1] Peter W Battaglia, Jessica B Hamrick, Victor Bapst, Alvaro Sanchez-Gonzalez, Vinicius Zambaldi, Mateusz Malinowski, Andrea Tacchetti, David Raposo, Adam Santoro, Ryan Faulkner, et al. Relational inductive biases, deep learning, and graph networks. arXiv preprint arXiv:1806.01261 , 2018. [2] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929 , 2020. [3] Jie Gui, Tuo Chen, Jing Zhang, Qiong Cao, Zhenan Sun, Hao Luo, and Dacheng Tao. A survey on self-supervised learning: Algorithms, applications, and future trends. IEEE Transactions on Pattern Analysis and Machine Intelligence , 46(12):9052–9071, 2024. 5[4] Peng Gao, Teli Ma, Hongsheng Li, Ziyi Lin, Jifeng Dai, and Yu Qiao. Mcmae: Masked convolution meets masked autoencoders. Advances in Neural Information Processing Systems , 35:35632–35644, 2022. [5] Maximilian Ilse, Jakub Tomczak, and Max Welling. Attention-based deep multiple instance learning. In 
+
+International Conference on Machine Learning , pages 2127–2136. PMLR, 2018. [6] Thomas N. Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907 , 2016. [7] Catarina Barata, M Emre Celebi, and Jorge S Marques. Explainable skin lesion diagnosis using taxonomies. 
+
+Pattern Recognition , 110:107413, 2021. [8] Yeong Chan Lee, Sang-Hyuk Jung, and Hong-Hee Won. Wonderm: Skin lesion classification with fine-tuned neural networks. arXiv preprint arXiv:1808.03426 , 2018. [9] S Talayeh Tabibi, Alireza Nikravanshalmani, and Hadi Saboohi. An ensemble classifier based on diverse convolutional neural networks for skin lesions classification. IEEE Access , 2024. [10] Amirreza Mahbod, Gerald Schaefer, Chunliang Wang, Georg Dorffner, Rupert Ecker, and Isabella Ellinger. Transfer learning using a multi-scale and multi-network ensemble for skin lesion classification. Computer Methods and Programs in Biomedicine , 193:105475, 2020. 6

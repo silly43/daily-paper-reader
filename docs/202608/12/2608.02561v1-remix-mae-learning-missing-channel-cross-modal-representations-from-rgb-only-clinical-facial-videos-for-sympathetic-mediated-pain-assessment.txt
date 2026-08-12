@@ -1,0 +1,742 @@
+Title: ReMiX-MAE: Learning Missing-Channel Cross-Modal Representations from RGB-Only Clinical Facial Videos for Sympathetic-Mediated Pain Assessment
+
+URL Source: https://arxiv.org/pdf/2608.02561v1
+
+Published Time: Tue, 04 Aug 2026 02:52:15 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# ReMiX-MAE: Learning Missing-Channel Cross-Modal Representations from RGB-Only Clinical Facial Videos for Sympathetic-Mediated Pain Assessment 
+
+## Nan Bi 1, Taoyue Wang 1, Lijun Yin 1 and Vandana Sharma 2 
+
+> 1
+
+School of Computing, Binghamton University, Binghamton, NY, USA  
+
+> 2
+
+Department of Anesthesiology, SUNY Upstate Medical University, Syracuse, NY, USA 
+
+Abstract — Automated pain assessment in real clinics is limited by scarce clinically grounded facial video data with weak labels (often sequence-level self-report) and by the fact that pain cues can be subtle or near-neutral in RGB, while thermal/depth signals are informative yet impractical to deploy routinely. To address these challenges, we propose ReMiX-MAE (Reconstructing Missing-Channel Cross-Modal Masked Autoencoder), a self-supervised multimodal masked pretraining framework that learns transferable facial representations from synchronized RGB, thermal, and depth videos and explicitly trains robustness to missing modalities, enabling RGB-only deployment. To fill the gap of clinically grounded facial pain data with video-level self-report and longitudinal treatment trajectories, we collect the Sympathetic-Mediated Pain (SMP) dataset with paired pre/post recordings across multiple visits. Under RGB-only deployment, we evaluate ReMiX-MAE using both direct feature extraction and pseudo-multimodal features decoded from RGB. ReMiX-MAE consistently outperforms an RGB-only masked autoencoder baseline on SMP, with pseudo-multimodal features providing additional gains in the challenging five-class setting. Across external datasets, ReMiX-MAE further shows more robust and label-efficient transfer than RGB-only baselines, highlighting its advantage in data-limited clinical settings. 
+
+I. INTRODUCTION Pain severity is most meaningfully grounded in patient self-report, commonly measured by the Visual Analog Scale (VAS) or the Numeric Rating Scale (NRS), which remains central to clinical decision-making. However, self-report is not always available, timely, or practical in routine care, and pain trajectories can fluctuate within and across clini-cal encounters [9], [27]. Pain assessment is also prone to systematic biases in both self- and other-report, motivating more objective estimates from routine recordings [7], [34], [30], [22]. These limitations have motivated growing interest in automated pain assessment methods that estimate pain-related states from observable physiological and behavioral cues. Rather than replacing patient-reported outcomes, such systems aim to complement them by providing continuous, scalable, and reproducible monitoring signals that can assist clinicians when self-report is missing, delayed, or difficult to obtain. Among available signals, facial expressions are particularly compelling because they are contact-free, easily captured, and closely linked to affective and autonomic states. 
+
+> This work was supported by Watson College-Upstate Medical Pilot Research Grant Program and NSF(CNS-1629898)
+
+Analyzing facial behavior from RGB images or videos provides a contact-free and readily deployable solution for real-world clinical use. In this context, the Facial Action Coding System (FACS) [10] has enabled the widely adopted Prkachin and Solomon Pain Intensity (PSPI) score [25], which offers frame-level estimates of pain-related facial action. Beyond facial video, a line of work has explored ad-ditional physiological measurements—such as galvanic skin response, photoplethysmography, electrodermal activity, and respiratory effort [31], [11], [2] —to improve pain inference. While informative, such contact-based measurements typi-cally require specialized hardware and skin contact, limiting scalability and routine clinical deployment. Recent clinical studies [12], [1], [3] suggest a more prac-tical, camera-based alternative: thermal and depth imaging. These modalities can capture pain-related changes in cuta-neous perfusion and temperature patterns as well as subtle three-dimensional facial micro-movements, providing com-plementary information beyond RGB. However, an impor-tant hurdle remains. Whereas RGB cameras are ubiquitous, dedicated thermal and depth sensors are frequently unavail-able in routine clinical workflows, creating a gap between multimodal research settings and RGB-only deployment in practice. To bridge this gap, we leverage multimodal data (RGB, thermal, and depth) only during representation learning, while maintaining RGB-only inference to preserve practical-ity at deployment. We propose ReMiX-MAE (Reconstructing Missing-Channel Cross-Modal Masked Autoencoder), a self-supervised framework that learns transferable facial repre-sentations by reconstructing masked regions while explicitly simulating missing modalities via dynamic channel routing. By training the model to operate under modality-missing conditions, ReMiX-MAE leverages thermal and depth as complementary training-time signals to learn representa-tions that remain effective under RGB-only deployment. The pretrained encoder is subsequently used as a frozen feature extractor paired with lightweight downstream heads, enabling data-efficient learning in small clinical datasets and facilitating transfer across heterogeneous cohorts. Progress in automated pain assessment also depends on the availability of clinically relevant datasets, yet public resources remain limited. The UNBC-McMaster Shoulder Pain dataset (UNBC) [21] is widely used in the literature, arXiv:2608.02561v1 [cs.CV] 3 Aug 2026 containing video sequences from a small number of pa-tients with corresponding annotations. Much prior work has focused on frame-level PSPI labels rather than video-level self-report pain score (VAS), in part because the number of annotated sequences is limited. Importantly, based on the study in [25], PSPI is statistically related to VAS but only moderately correlated (0.36-0.37), suggesting that estimating VAS may better align with clinically meaningful, patient-reported pain severity. In this work, we use UNBC’s provided sequence-level self-reported VAS scores as ground truth (not PSPI-derived expression intensity). In contrast, datasets collected under tightly controlled laboratory conditions, where acute experimental pain is induced in healthy participants via heat or pressure, are typically easier to acquire at scale and therefore substantially larger. BioVid [31] is a representative example, providing thousands of videos with well-defined pain stimuli at multi-ple intensities and accompanying physiological recordings. However, prior work [24], [23] has shown that models trained exclusively on experimental datasets often exhibit a marked performance drop when transferred to clinical data, indicating a substantial domain gap and suggesting that salient facial cues may differ across experimental and clinical settings. Motivated by this gap, we collect a clinical pain video dataset focusing on patients experiencing chronic SMP. Com-pared with UNBC, the observed distribution of video-level self-report pain score in our dataset is less skewed, and although we include fewer sequences, our recordings are longer and therefore yield a larger total number of frames. In contrast to experimental datasets such as BioVid, our cohort is clinically grounded. To our knowledge, this is the first clinical facial pain video dataset that provides within-subject longitudinal recordings before and after treatment, enabling analysis of pain-related facial dynamics across therapeutic change and clinically aligned evaluation of automated pain assessment models. Our work makes the following primary contributions: 1) Method: We propose ReMiX-MAE, a self-supervised cross-modal masked autoencoder that distills comple-mentary thermal/depth cues into a channel-agnostic encoder via explicit missing-modality simulation, en-abling RGB-only inference. We validate its effectiveness through targeted ablations and comparisons to strong supervised and self-supervised baselines, as well as transfer experiments across experimental and clinical datasets. 2) Dataset: We collect a clinical chronic pain video dataset with video-level self-report pain score annotations and, to our knowledge, the first within-subject pre-/post-treatment facial recordings in a clinical pain corpus. The dataset supports self-report pain score evaluation and longitudinal analysis of whether automated predictions track therapeutic change. II. R ELATED WORK 
+
+A. Facial Pain Assessment: Datasets and Methods 
+
+Automatic pain assessment from facial behavior has been studied extensively, motivated by the need to support vulner-able or non-communicative patients. Prior surveys highlight persistent challenges for clinical deployment, including am-biguities in ground-truth definition, the scarcity of clinically validated datasets, and the relative lack of focus on chronic pain compared to acute or stimulus-driven settings [33]. Facial videos captured in clinical environments are highly variable in pose, illumination, and background, and are typically annotated using patient self-report or clinical pain scales. For example, Liu et al. [20] collected an emergency-room dataset with RGB and Kinect v2 videos, paired with sequence-level self-reported pain scores and biochemical markers (COX-2 and iNOS), to link facial behavior to clinical pain context. A substantial body of work evaluates pain recognition methods on the UNBC-McMaster Shoulder Pain Expression Archive [21], which provides frame-level FACS-based [10] annotations and PSPI scores [25], as well as sequence-level self-reported pain score. Most studies treat PSPI as the primary supervision signal and model pain at the frame level, with representative approaches spanning handcrafted descriptors with regression [17], [32], temporal modeling with recurrent networks [41], and feature fusion strategies that combine heterogeneous representations [38], [26], [36], [28], [15]. Beyond appearance cues, non-contact physiolog-ical correlates have also been explored: Yang et al. [37] predicted remote photoplethysmography (rPPG) from facial videos and leveraged it as an auxiliary task, reporting im-proved robustness on UNBC and BioVid. In contrast to clinically oriented datasets, experimen-tal benchmarks such as BioVid [31] are collected under tightly controlled stimulus protocols, enabling larger-scale data collection and multimodal sensing. BioVid provides video-level labels corresponding to no-pain and four graded stimulus intensities (often used as a proxy for pain severity), together with synchronized physiological signals such as galvanic skin response (GSR), electrocardiography (ECG), and electromyography (EMG). Recent work reports strong performance on BioVid using modern video architectures and multimodal pipelines [13], [14]. However, prior studies also show that models trained primarily on experimental datasets can exhibit marked performance drops when transferred to clinical data [24], [23], highlighting the challenge of generalization across recording conditions, label definitions, and pain settings. 
+
+B. Self-Supervised and Multimodal Video Representation Learning 
+
+Self-supervised masked modeling has become a strong paradigm for learning transferable visual representations without manual labels. VideoMAE-style masked video au-toencoding learns spatio-temporal features by reconstructing masked tokens from partially observed inputs, providing a Fig. 1. SMP example for one subject (pre/post at initial and final visits). Pain scores: 9, 3, 2, 1. 
+
+scalable pretraining approach for downstream recognition tasks [29]. Frameworks such as MARLIN [4] extend masked mod-eling to facial representation learning, demonstrating that masked objectives can learn robust facial video encoders that transfer effectively to downstream affective tasks. Zhang 
+
+et al. [39] proposed Multimodal Channel-Mixing (MCM), a channel-dropping and reconstruction strategy for frame-level facial action unit detection. These developments moti-vate studying channel-missing reconstruction under spatio-temporal video modeling, particularly in settings where modality availability differs between training and deploy-ment (e.g., RGB-only inference). III. SMP V IDEO DATASET 
+
+A. Clinical Motivation and Dataset Overview 
+
+Publicly available facial pain datasets with clinically grounded, video-level self-reported labels remain limited, and longitudinal recordings that capture treatment-related change are particularly rare. To address this gap, we collect the SMP dataset, a clinical facial video corpus of patients experiencing chronic SMP, designed to support (i) RGB-only pain assessment under real outpatient conditions and (ii) 
+
+within-subject analysis of pain trajectories across treatment. SMP presents a stringent testbed for vision-based pain modeling. Compared to experimentally induced pain, facial manifestations in SMP are often subtle, intermittent, and context-dependent, with many frames appearing near-neutral in RGB despite meaningful self-reported pain. Clinically, SMP is often associated with autonomic dysregulation and central sensitization, and its presentation can be heteroge-neous across patients; as a result, pain may not consistently elicit overt facial actions. Fig. 1 shows an illustrative within-subject example high-lighting that large self-reported pain changes may correspond to only subtle visual differences in RGB. Overall, SMP contains recordings from 36 unique patients (24 female, 12 male), with up to four clips per patient across multiple clinically meaningful timepoints (not all participants have all four recordings due to clinical workflow and recording quality). In total, 72 video recordings were collected. Each clip is approximately one minute long, providing a longer observation window and a larger number of frames per sequence, which is beneficial when pain-related evidence is sparse or intermittent. 
+
+B. Study Design, Ethics, and Longitudinal Protocol 
+
+SMP was collected as part of a prospective observational study conducted at a university-affiliated pain management clinic, with institutional review board (IRB) approval and written informed consent from all participants. Participants were adult patients scheduled for routine pain-relief injection procedures as part of standard clinical care (e.g., lumbar epidural steroid injections and sympathetic block injections). Importantly, the clinical workflow was not modified for data collection. Each participant was recorded longitudinally at two clini-cally meaningful visits: an initial visit and a final follow-up visit in the care trajectory. At each visit, recordings were acquired immediately before the injection procedure and 
+
+shortly after the procedure when applicable. This design yields up to four clips per patient (pre/post at the initial visit and pre/post at the final follow-up), enabling within-subject comparisons of both short-term treatment effects and longer-term changes across the treatment trajectory. 
+
+C. Video Acquisition in Real-World Clinical Conditions 
+
+All videos were captured in the outpatient clinic using a consumer-grade smartphone (iPhone) at 720p resolution and 30 fps without specialized imaging hardware, reflecting the practical constraints of routine clinical workflows. Record-ings were collected under natural environmental conditions, resulting in unconstrained variations in pose, illumination, background, and patient appearance. No scripted expres-sions or elicited tasks were used; instead, SMP captures spontaneous facial behavior representative of real outpatient encounters and aligns with practical RGB-only deployment. 
+
+D. Pain Labels and Dataset Statistics 
+
+Immediately after each recording, patients reported their current pain intensity on NRS (0–10), where 0 indicates no pain and 10 indicates the worst imaginable pain. We use these sequence-level self-reports as the primary labels for supervised learning and evaluation on SMP. For clarity, UNBC reports pain using VAS, whereas SMP uses NRS; both are patient-reported intensity measures on a 0–10 scale, and we refer to them collectively as self-reported pain scores when the distinction is not essential. Fig. 2 summarizes the distribution of self-reported pain levels in SMP and contrasts it with the UNBC distribution. Compared to UNBC, SMP shows reduced label skew across the 0–10 scale, which helps mitigate class imbalance in video-level learning and evaluation. 
+
+E. Additional Clinical Measurements 
+
+As part of the broader clinical study, blood samples were collected at selected visits in conjunction with injection procedures to support future analyses of biochemical markers associated with SMP. These measurements are not used for model training or evaluation in this work. Fig. 2. Distribution of self-reported pain intensity in SMP (orange) compared to UNBC (blue). SMP shows reduced label skew across the 0– 10 scale, likely reflecting differences in cohort and pain construct (chronic clinical self-report vs controlled settings), as well as differences in recording protocol and supervision. 
+
+IV. T HE REMIX-MAE F RAMEWORK 
+
+A. Problem Setting and Overview 
+
+Real-world clinical pain assessment is typically con-strained to RGB-only video, whereas thermal and depth streams can provide complementary physiological and ge-ometric cues [19], [18] but are rarely available in routine workflows. This induces a practical training–deployment modality mismatch : multimodal signals may be available for representation learning, yet deployment must often operate with RGB alone. ReMiX-MAE (Reconstructing Missing-Channel Cross-Modal Masked Autoencoder) addresses this mismatch with a self-supervised masked pretraining frame-work that (i) leverages synchronized RGB/thermal/depth videos when available, (ii) explicitly trains representations to be robust to missing modalities, and (iii) preserves com-patibility with standard 3-channel video backbones and their pretrained initialization. 
+
+Design choices. (1) Patch-wise 5-to-3 channel routing 
+
+routes five atomic channels (R/G/B/depth/thermal) into three input slots at the patch level, enabling early fusion under a fixed 3-channel interface. (2) Modality-identity injection 
+
+adds a token-wise identity bias derived from which atomic modalities contributed to each token, disambiguating mixed-channel tokens. (3) Episode-based missing-modality sim-ulation samples episode types that define modality/channel missingness; the encoder input is gated only by the MAE patch mask, while episode-defined declared-missing meta-data specifies auxiliary channel-drop supervision without removing tokens from the encoder input. Fig. 3 illustrates the upstream pretraining pipeline. Algo-rithm 1 defines R OUTE MIX (routing and identity metadata), and Algorithm 2 summarizes the episode-driven pretraining loop. 
+
+B. Backbone Architecture 
+
+Given a temporally aligned facial clip with T frames, we denote the RGB, depth, and thermal clips as r ∈
+
+RT ×H×W ×3, d ∈ RT ×H×W ×1, and τ ∈ RT ×H×W ×1, re-spectively. We concatenate them along the channel dimension to form a 5-channel clip 
+
+v(5) = concat( r, d, τ ) ∈ RT ×H×W ×5,
+
+Algorithm 1 ROUTE MIX : Patch-wise 5-to-3 routing with canonical slot identities 
+
+Require: 5-channel clip v(5) ∈ RT ×H×W ×5; episode type 
+
+e; patch size p; atomic label set A = {R, G, B, D, τ }.
+
+Ensure: (vmix , C) = ROUTE MIX (v(5) , e, p ). 
+
+> 1:
+
+Initialize mixed clip vmix ∈ RT ×H×W ×3 and routing map C. 
+
+> 2:
+
+for each spatial patch (i, j ) do  
+
+> 3:
+
+Sample a 3-element set Sij ⊂ A conditioned on e. 
+
+> 4:
+
+Canonicalize to ordered slots: (cij, 1, c ij, 2, c ij, 3) ←
+
+sort( Sij ; D ≻ τ ≻ R ≻ G ≻ B). 
+
+> 5:
+
+Temporal consistency: reuse (cij, 1, c ij, 2, c ij, 3) for all frames t at location (i, j ). 
+
+> 6:
+
+Route channels for all t: vmix  
+
+> t
+
+[i : i+p, j : j+p, s ] ←
+
+v(5)  
+
+> t
+
+[i : i+p, j : j+p, c ij,s ] for s ∈ { 1, 2, 3}. 
+
+> 7:
+
+Store Cij ← (cij, 1, c ij, 2, c ij, 3). 
+
+> 8:
+
+end for  
+
+> 9:
+
+return vmix , C.corresponding to {R, G, B, D, τ }. A patch-wise 5-to-3 rout-ing module (Sec. IV-C) selects three channels per patch and produces a mixed three-channel clip vmix ∈ RT ×H×W ×3.We tokenize vmix into spatio-temporal tubelets using a 3D convolutional patch embedding with spatial patch size 
+
+p and temporal tubelet size t, yielding a sequence of N = 
+
+> Tt
+
+· Hp · Wp tokens. Let P = {1, . . . , N } denote the token index set. Following masked autoencoding, we sample a mask set 
+
+M ⊂ P and encode only the visible tokens V = P \ M :
+
+z = fθ
+
+ ˜EV
+
+
+
+,
+
+where ˜E denotes token embeddings augmented with posi-tional encoding and modality-identity injection (Section IV-C) to disambiguate heterogeneous mixed-channel tokens. On top of the shared latent representation z, we attach modality-specific decoder heads for RGB, thermal, and depth, which map z back to the corresponding modality spaces for reconstruction-style supervision. Denoting the decoder for modality m by gϕm , we write: 
+
+ˆv(rgb) = gϕrgb (z), (ˆ μ(m), ˆs(m)) = gϕm (z) for m ∈ { τ, d},
+
+where for RGB, the decoder outputs patchified pixel intensi-ties, while for thermal/depth, the decoder outputs Gaussian parameters (ˆ μ(m), ˆs(m)) with ˆs = log σ2 (log-variance), defining a per-token likelihood for m ∈ { τ, d}. The full pretraining objectives and auxiliary supervision terms are described in Section IV-D. 
+
+C. RouteMix: Patch-wise Routing and Modality Identity In-jection 
+
+To preserve a 3-channel interface while leveraging five atomic modalities, we perform patch-level 5-to-3 routing. Let 
+
+A = {R, G, B, D, τ } denote the atomic channel labels. We fix the channel order of v(5) as [D, τ, R, G, B ], so each label 
+
+c ∈ A uniquely corresponds to its channel index in the 5-channel tensor. For each spatial patch (i, j ), we sample a 3-element set Sij ⊂ A and convert it into an ordered tuple Fig. 3. Overview of ReMiX-MAE (upstream pretraining). Synchronized RGB, thermal, and depth facial videos are routed from five atomic channels to a 3-channel mixed input at the patch level, tokenized into tubelets, and masked for reconstruction. A shared video encoder is trained with modality-specific decoders and episode-driven auxiliary supervision. 
+
+using a fixed deterministic tie-breaker, (cij, 1, c ij, 2, c ij, 3) = sort( Sij ; D ≻ τ ≻ R ≻ G ≻ B). We then form the mixed clip by copying the selected channels into slots ℓ ∈ { 1, 2, 3}:
+
+vmix  
+
+> t
+
+[i : i+p, j : j+p, ℓ ] = v(5)  
+
+> t
+
+[i : i+p, j : j+p, c ij,ℓ ].
+
+The routing tuple is kept fixed across time for each spatial location to ensure temporal consistency. The collection C =
+
+{cij,ℓ } defines the routing map (we refer to this procedure as R OUTE MIX ). Routing yields mixed-channel tokens whose slot prove-nance varies across tokens. To make this provenance explicit to the encoder, we inject a token-wise modality-identity bias. Let (ck, 1, c k, 2, c k, 3) ∈ A 3 denote the ordered routing labels associated with token k ∈ P . We learn an embedding table 
+
+u : A → Rd and aggregate the three slot identities via a shared DeepSets-style encoder: 
+
+sk =
+
+> 3
+
+X
+
+> s=1
+
+ϕ u(ck,s ) ∈ Rd, bk = LN  ρ(sk) ∈ Rd,
+
+where ϕ(·) is a shared MLP, ρ(·) is a linear projection to the token embedding dimension d, and LN denotes LayerNorm. Stacking over tokens defines the identity embedding matrix 
+
+IdEmb( C) ≜ [ b1; b2; . . . ; bN ] ∈ RN ×d.
+
+Finally, we form encoder input embeddings by combining patch embeddings, positional encoding, and the identity bias: 
+
+˜E = PatchEmbed( vmix ) + PosEmbed + IdEmb( C).
+
+D. Multimodal Masked Pretraining with Episode-Based Missing-Modality Simulation 
+
+Let P = {1, . . . , N } denote the token index set. We sample an MAE mask M ⊂ P and define the visible set 
+
+V = P \ M . The encoder processes only the visible tokens 
+
+˜EV . Decoders produce predictions on the full token grid, and reconstruction losses are computed by indexing masked locations (e.g., (·)M), together with auxiliary terms described below. 
+
+1) Core token-level reconstruction: We use modality-specific reconstruction forms. For RGB, we regress patchi-fied pixel values with an ℓ2 loss: 
+
+Lrgb (M) = MSE 
+
+
+
+ˆv(rgb)  
+
+> M
+
+, v (rgb) 
+
+> M
+
+
+
+.Algorithm 2 Episode-driven multimodal masked pretraining for ReMiX-MAE 
+
+Require: Synchronized clips {rt}Tt=1 , {dt}Tt=1 , {τt}Tt=1 ;episode distribution π(e); patch size p; MAE mask ratio 
+
+rmask . 
+
+> 1:
+
+for each iteration do  
+
+> 2:
+
+Form the 5-channel clip: v(5)  
+
+> t
+
+← concat( rt, d t, τ t) for 
+
+t = 1 , . . . , T . 
+
+> 3:
+
+Sample episode: e ∼ π(e). 
+
+> 4:
+
+Routing: (vmix , C) ← ROUTE MIX (v(5) , e, p ) (Alg. 1).  
+
+> 5:
+
+MAE mask (episode-independent): sample M ⊂ P 
+
+with ratio rmask ; let V = P \ M . 
+
+> 6:
+
+Declared-missing metadata: derive an episode-dependent set D = D(C, e ) (does not alter V).  
+
+> 7:
+
+Form embeddings: ˜E ← PatchEmbed( vmix ) + PosEmbed + IdEmb( C). 
+
+> 8:
+
+Encode visible tokens: z ← fθ ( ˜EV ). 
+
+> 9:
+
+Decode and compute core recon loss on M:
+
+Lrecon (M). 
+
+> 10:
+
+Compute auxiliary channel-drop supervision on D:
+
+Lcdrop (D). 
+
+> 11:
+
+Compute total loss: Ltotal ← Lrecon (M) +
+
+λcd Lcdrop (D) + λtemp Ltemp + λframe Lframe . 
+
+> 12:
+
+Update parameters using Ltotal . 
+
+> 13:
+
+end for 
+
+For thermal and depth, the decoder heads predict proba-bilistic outputs parameterized as Gaussians with mean ˆμ and log-variance ˆs = log ˆ σ2. We optimize the Gaussian negative log-likelihood (NLL) on masked tokens: 
+
+Lnll (ˆ μ, ˆs; v) = 12
+
+X
+
+> i∈M
+
+ ˆsi + exp( −ˆsi) ( vi − ˆμi)2 . (1) For depth, we additionally employ a scale-invariant loss ℓsi 
+
+on the predicted mean ˆμ(d) to emphasize relative geometry: 
+
+ri = ˆ μ(d)  
+
+> i
+
+− v(d)  
+
+> i
+
+, ℓsi =
+
+s 1
+
+n
+
+X
+
+> i∈M
+
+r2 
+
+> i
+
+− 1
+
+n2
+
+ X 
+
+> i∈M
+
+ri
+
+2
+
+,
+
+(2) where ri denotes the per-token residual and n = |M| .The total losses for thermal ( τ ) and depth (d) combine a base data term with the uncertainty-aware NLL: 
+
+Lτ (M) = ℓchar 
+
+
+
+ˆμ(τ ) 
+
+> M
+
+, v (τ )
+
+> M
+
+
+
++ λnll Lnll 
+
+
+
+ˆμ(τ ) 
+
+> M
+
+, ˆs(τ ) 
+
+> M
+
+; v(τ )
+
+> M
+
+
+
+,
+
+(3) 
+
+Ld(M) = ℓsi 
+
+
+
+ˆμ(d)  
+
+> M
+
+, v (d) 
+
+> M
+
+
+
++λnll Lnll 
+
+
+
+ˆμ(d)  
+
+> M
+
+, ˆs(d)  
+
+> M
+
+; v(d) 
+
+> M
+
+
+
+, (4) where ℓchar denotes the Charbonnier loss. We combine modality-specific losses as: 
+
+Lrecon (M) = αrgb Lrgb (M) + ατ Lτ (M) + αdLd(M). (5) 
+
+2) Overall objective: We optimize a weighted sum of the core reconstruction loss and auxiliary terms: 
+
+Ltotal = Lrecon (M)+ λcd Lcdrop (D)+ λtemp Ltemp +λframe Lframe .
+
+(6) Here, Lcdrop (D) reuses the modality-specific reconstruction objectives in Eq. (5) but applies them to the episode-declared 
+
+> TABLE I DATASET OVERVIEW . T HIS COUNT REFLECTS FRAMES RETAINED AFTER FACE DETECTION AND QUALITY FILTERING .
+
+Dataset #Subj. #Videos Total #Frames Label SMP (ours) 36 72 (1 min) ∼ 110 ,000 NRS UNBC 25 200 (5s–30s) ∼ 50 ,000 VAS BioVid 86 8600 (5s) ∼ 1,000 ,000 Stimulus 
+
+missing modalities D, enforcing signal completion when the corresponding input channels are explicitly dropped. Ltemp 
+
+and Lframe are optional temporal and frame-level regularizers on reconstructed videos; we provide their exact forms in the supplementary material. 
+
+E. Pretraining Data and Transfer to RGB-Only Clinical Videos 
+
+We pretrain ReMiX-MAE on BP4D+ [40], a large-scale facial behavior dataset that provides synchronized RGB, ther-mal, and depth recordings but is not pain-related. We choose BP4D+ because it offers well-aligned multimodal facial videos at scale, making it suitable for learning cross-modal facial representations without introducing pain-specific su-pervision. Pretraining is fully self-supervised: we use only raw videos and do not use any BP4D+ labels. Downstream pain datasets provide RGB-only videos. We deploy the pretrained model in two RGB-only modes: 
+
+ReMiX-RGB uses the frozen encoder as a feature extractor with routing constrained to RGB channels; ReMiX-Pseudo 
+
+uses the decoders to reconstruct depth/thermal from RGB and then extracts features from a pseudo-multimodal, channel-mixed input. Both modes respect the same deployment constraint (RGB-only input) and enable a controlled study of whether pseudo-multimodal reconstruction provides addi-tional benefit. V. E XPERIMENTS 
+
+We evaluate ReMiX along four axes: clinical performance on SMP, cross-database transfer to UNBC, label efficiency on BioVid against TNT under limited supervision, and mech-anism ablations. We additionally report an exploratory lon-gitudinal analysis enabled by SMP’s paired pre/post design. 
+
+A. Experimental Protocols 1) Datasets and task formulation: We evaluate on three datasets: SMP (ours), UNBC [21], and BioVid [31]. Table I summarizes their statistics and label definitions. On SMP, each recording has a video-level self-report pain score; we cast pain recognition as ordinal classification by discretizing scores into K ∈ { 3, 4, 5} bins (primary: K = 5 ; others for reference). Bin definitions and class distributions are fixed across all experiments and provided in the supplementary material. For feature extraction, each video is segmented into 5-second clips. Within each clip, we extract features from multiple non-overlapping temporal windows and aggregate window-level features to predict clip-level labels, yielding weak supervision at the clip level. Fig. 4. ReMiX feature extraction at RGB-only deployment. 
+
+2) Frozen representations: We compare three frozen fea-ture families under a unified downstream protocol: (i) Base-line(AU) , engineered facial features from OpenFace (17 AU intensities plus PSPI); (ii) Baseline(MAE) , RGB-only self-supervised representations extracted using MARLIN [4] pretrained on YouTube Faces [35] and further trained on un-labeled BP4D+ videos for fair comparison; and (iii) ReMiX ,features extracted using ReMiX-MAE under the two RGB-only deployment modes defined in Sec. IV-E (Fig. 4). All encoders are kept frozen throughout downstream training. 
+
+3) Downstream learning and augmentation: We aggre-gate window-level features within each clip using a Mul-tiple Instance Learning (MIL) module [16], [8] and train a lightweight classifier on top of frozen representations following common representation-evaluation practice [5]. SMP experiments use leave-one-subject-out (LOSO) cross-validation. We report both clip-level metrics and video-level metrics obtained by majority voting over clip predictions; cross-database evaluations reuse the same downstream com-ponents unless otherwise noted. Face-swap augmentation [6] is applied only to training videos within each LOSO fold. Donor identities are sam-pled from an external, non-overlapping face set unrelated to SMP/UNBC/BioVid; the held-out test subject is never augmented, and no evaluation identities are used as donors, preventing identity leakage across folds. Validation and test videos are always kept in their original, non-augmented form. We sweep the augmentation ratio and use 0.75 in all paired and cross-database analyses; full sweep results are provided in the supplementary material. These design choices (LOSO and identity-swap) help reduce subject-specific bias in small-cohort clinical learning.                                                                                                                      
+
+> TABLE II FROZEN -FEATURE COMPARISONS ON SMP UNDER LOSO. SUBJECT -LEVEL AND VIDEO -LEVEL METRICS ARE REPORTED ;BEST RESULTS ARE IN BOLD .Subject-level Video-level
+> KFeature Setting Acc. ( ±CI) Macro-F1 ( ±CI) Top-1 Top-2 3Baseline (AU) 0.351 ±0.032 0.226 ±0.026 0.469 0.719 3Baseline (MAE) 0.318 ±0.050 0.196 ±0.028 0.281 0.672 3Ours (RGB) 0.398 ±0.057 0.248 ±0.040 0.453 0.812
+> 3Ours (Pseudo) 0.394 ±0.057 0.236 ±0.031 0.391 0.719 4Baseline (AU) 0.265 ±0.035 0.138 ±0.021 0.375 0.656 4Baseline (MAE) 0.290 ±0.055 0.137 ±0.019 0.219 0.594 4Ours (RGB) 0.315 ±0.054 0.153 ±0.026 0.312 0.672
+> 4Ours (Pseudo) 0.319 ±0.059 0.156 ±0.027 0.359 0.641 5Baseline (AU) 0.184 ±0.046 0.082 ±0.019 0.250 0.312 5Baseline (MAE) 0.190 ±0.040 0.082 ±0.015 0.203 0.344 5Ours (RGB) 0.237 ±0.047 0.095 ±0.023 0.297 0.469 5Ours (Pseudo) 0.255 ±0.062 0.110 ±0.024 0.297 0.500 Note: Baseline (MAE) uses MARLIN-RGB features; Baseline (AU) uses AU+PSPI. Ours (RGB/Pseudo) correspond to ReMiX-RGB / ReMiX-Pseudo.
+> Fig. 5. Representative subject-wise paired comparison on SMP under LOSO ( K= 5 , augmentation ratio = 0 .75 ). Each point is a held-out subject; the right panel shows per-subject accuracy differences (Ours minus MARLIN).
+
+B. Clinical Performance on SMP under RGB-only Deploy-ment 
+
+Table II reports clinical pain recognition on SMP under LOSO across ordinal discretizations K ∈ { 3, 4, 5}. Under 
+
+RGB-only deployment, ReMiX-RGB consistently improves subject-level Accuracy and Macro-F1 over the RGB-only self-supervised baseline (MARLIN-RGB) for all K, sug-gesting that multimodal masked pretraining enhanced rep-resentation quality under RGB-only deployment for clin-ically grounded pain assessment. ReMiX-Pseudo further incorporates decoder-generated pseudo thermal/depth cues with patch-wise channel routing under the same downstream protocol, providing additional gains over ReMiX-RGB, most notably in the finer-grained settings (K = 4, 5) where adjacent pain levels are harder to separate. To verify that the observed gains are not driven by a small subset of subjects, we report a representative subject-wise paired comparison for K = 5 in Fig. 5; additional comparisons (including K = 3 and the AU/PSPI baseline) are provided in the supplementary material. As a diagnostic, we evaluate TNT [13] under the SMP LOSO protocol. Although it converges on BioVid, transfer to SMP with a conservative adaptation scheme (freezing pretrained modules and tuning only the classifier head) is near chance, underscoring the difficulty of direct temporal TABLE III CROSS -DATABASE EVALUATION ON UNBC (5-CLASS ; SELF -REPORT PAIN SCORE AS GROUND TRUTH ). B EST RESULTS PER METRIC ARE IN BOLD .
+
+Method Acc. Macro-F1 Baseline (AU) 0.217 0.132 Baseline (MAE) 0.172 0.103 
+
+Ours (RGB) 0.280 0.132 
+
+Ours (Pseudo) 0.268 0.146     
+
+> TABLE IV DATA -EFFICIENCY ON BIO VID (M EAN ±CI). B EST RESULTS IN BOLD .
+
+Ratio Method Acc. Macro-F1 25% Baseline (TNT) 1 0.251 ± 0.015 0.199 ± 0.017 Ours (Pseudo) 0.260 ± 0.016 0.201 ± 0.016 
+
+50% Baseline (TNT) 1 0.256 ± 0.014 0.200 ± 0.017 Ours (Pseudo) 0.262 ± 0.015 0.211 ± 0.015  
+
+> 1TNT results are from our re-implementation under the unified protocol in Sec. V-A.
+
+fitting under weak clip/video-level supervision. 
+
+C. Cross-database Evaluation on UNBC 
+
+For source-only transfer, we train on SMP and test on UNBC using five-class self-reported pain scores with the same cutoffs as SMP. No face-swap augmentation is used, and a small subject-disjoint UNBC subset is reserved for early stopping. Table III shows that, although all methods degrade under cross-database shift, ReMiX generalizes more favorably than the baselines: Ours (RGB) attains the highest accuracy and Ours (Pseudo) the best Macro-F1. 
+
+D. Label-efficient Learning under Limited Supervision 
+
+BioVid provides a tightly controlled stimulus-driven benchmark at scale. Although its labels differ in meaning from clinical self-report, it offers a practical testbed for evaluating whether self-supervised pretrained representations can make better use of scarce labeled data than end-to-end supervised temporal training. We compare Ours (Pseudo) to a strong supervised temporal transformer baseline, the Transformer in Transformer (TNT) [13], under reduced-data regimes (25% and 50% of the training split). As shown in Table IV, Ours (Pseudo) achieves consistent gains over TNT at both ratios, supporting self-supervised pretraining as a label-efficient and clinically practical alternative when reliable annotations are limited. 
+
+E. Ablation Studies 
+
+Table V provides empirical justification for two key design choices under RGB-only deployment with RouteMix fixed. Removing modality-identity injection (IdEmb) degrades per-formance, indicating that explicit token-wise modality iden-tity helps align mixed-channel inputs into a more transferable latent space. Disabling Episode reduces performance, indi-cating that simulating structured modality-missing scenarios during pretraining helps the encoder learn cross-modal rep-resentations that remain robust when only RGB is available at deployment.        
+
+> TABLE V MECHANISM ABLATIONS ON SMP UNDER RGB-ONLY DEPLOYMENT
+> (K=5 ), ABLATING IDEMB AND EPISODE WITH ROUTE MIX FIXED .
+
+Method IdEmb Episode Acc. Macro-F1 Baseline(MAE) – – 0.190 ± 0.040 0.082 ± 0.015 Ours (full) ✓ ✓ 0.237 ± 0.047 0.095 ± 0.023 
+
+w/o IdEmb ✗ ✓ 0.211 ± 0.049 0.085 ± 0.033 
+
+w/o Episode ✓ ✗ 0.229 ± 0.052 0.090 ± 0.023   
+
+> TABLE VI EXPLORATORY PAIN -REDUCTION TRACKING ON PAIRED PRE /POST SMP
+> VIDEOS (5-CLASS ESTIMATOR ).
+
+Features (5-class estimator) Acc. F1 Baseline (MARLIN) 0.500 0.400 Ours (ReMiX) 0.667 0.625 
+
+F. Exploratory Longitudinal Pain Reduction Analysis 
+
+SMP includes within-subject paired pre/post recordings at clinically meaningful treatment timepoints, enabling a preliminary test of whether model predictions reflect ther-apeutic change. We define significant reduction as ∆y =
+
+ypre − ypost ≥ 3 and derive predictions from the frozen 5-class estimator using ∆ˆ c = ˆ cpre − ˆcpost ≥ 2, without training an additional model. Table VI shows higher agreement for our features than for the RGB-only baseline. We view this as a feasibility study; explicit joint pre/post modeling is left for future work. VI. C ONCLUSION AND FUTURE WORK 
+
+In this paper, we target clinically grounded pain assess-ment where supervision is weak and facial evidence is subtle and heterogeneous; we introduce the SMP dataset and ReMiX-MAE, which leverages cross-modal self-supervised pretraining to improve RGB-only deployment, yielding stronger performance than two baselines on SMP, better robustness under transfer to UNBC, and competitive label-efficient learning on BioVid under limited supervision. Sev-eral limitations should also be noted. SMP is a relatively small single-site clinical cohort, and broader demographic coverage as well as, where feasible, multi-site validation will be necessary to establish stronger claims about generalizabil-ity. While ReMiX-MAE shows consistent improvements over the evaluated baselines, the absolute performance remains modest, and we do not provide formal hypothesis testing across all settings. In addition, our empirical comparisons focus primarily on frozen-feature protocols under limited clinical supervision; stronger temporal models and broader supervised baselines remain important directions for future study. Finally, the paired pre/post analysis presented here is exploratory and does not yet model treatment trajecto-ries jointly over time. Future work will therefore expand evaluation to more diverse clinical populations and settings, investigate stronger temporal aggregation and selective fine-tuning strategies, incorporate uncertainty-aware prediction, and explore more adaptive routing mechanisms for variable modality availability in practical deployment. TABLE VII CLASS DISTRIBUTIONS FOR THE 3-, 4-, AND 5-CLASS NRS BINNING SCHEMES ON THE CLEANED SMP DATASET (64 VIDEOS ). E ACH ROW SHOWS THE NRS RANGE , NUMBER OF VIDEOS , AND PROPORTION OF THE DATASET FOR THAT CLASS .                                             
+
+> 3-class Class NRS range #Videos Percentage C0 0.0–2.0 12 18.8% C1 3.0–5.0 24 37.5% C2 6.0–10.0 28 43.8% 4-class Class NRS range #Videos Percentage C0 0.0–1.0 57.8% C1 2.0–3.0 15 23.4% C2 4.0–6.0 21 32.8% C3 7.0–10.0 23 35.9% 5-class Class NRS range #Videos Percentage C0 0.0–1.0 57.8% C1 2.0–3.0 15 23.4% C2 4.0–5.0 16 25.0% C3 6.0–7.0 13 20.3% C4 8.0–10.0 15 23.4%
+
+APPENDIX 
+
+In the main paper, we model SMP pain prediction as an ordinal K-class classification problem, where the original 0–10 self-reported numeric rating scale (NRS) scores are grouped into K ∈ { 3, 4, 5} bins. To avoid interrupting the main experimental flow while ensuring reproducibility, we report the exact bin definitions and class distributions here. Let y ∈ { 0, . . . , 10 } denote the self-reported NRS for a visit-level recording after the AU/PSPI-based quality control described in Section . All downstream experiments are conducted on the remaining 64 videos. For each K, we sort videos by y and partition them into approximately equally populated, contiguous NRS intervals. The resulting ranges and class counts are summarized in Table VII. The binning is intentionally heuristic: the goal is to obtain reasonably balanced classes while preserving ordinal structure. In the main paper, we report results for all three granularities and focus discussion on the 5-class setting as a compromise between label resolution and statistical reliability. To better understand the relationship between facial action units (AUs), PSPI scores, and self-reported pain levels in SMP, we conducted a per-frame AU/PSPI analysis. 
+
+A. Pipeline and Per-Video Statistics 
+
+For each video, we extract frame-wise AUs with OpenFace and retain only frames with success=1 and confidence 
+
+≥ 0.9. PSPI is computed using the standard formulation: 
+
+PSPI = AU4+max(AU6 , AU7)+max(AU9 , AU10)+AU43 .
+
+Since OpenFace does not provide AU43 directly, we follow common practice and approximate AU43 with the blink-related signal AU45. We apply a short temporal smoothing window (0.1 s) to the PSPI trajectory. From each smoothed PSPI trajectory, we derive:  
+
+> •
+
+mean and variance of PSPI;  
+
+> •
+
+the proportion of frames above a global “high-pain” thresh-old phigh ; 
+
+> •
+
+intensity statistics such as maximum PSPI and the 95th/99th percentiles. We compare within-video variance of PSPI to between-video variance across the dataset. With 0.1 s smoothing, the average within-video variance is approximately 0.35, whereas the between-video variance is about 2.40 (ratio 
+
+≈ 0.15 ). Using a slightly larger smoothing window (0.2 s) yields similar results, indicating limited sensitivity to the smoothing scale. Overall, most recordings exhibit very small high-pain frame ratios (median close to 0), with pain-related peaks appearing as sparse events rather than sustained seg-ments. 
+
+B. Alignment with Self-Reported NRS Labels 
+
+We examine how these PSPI-derived statistics relate to sequence-level NRS scores. Using 72 videos with numeric pain annotations, we observe:  
+
+> •
+
+a slightly negative correlation between mean PSPI and NRS ( corr ≈ − 0.07 );  
+
+> •
+
+a near-zero correlation between phigh and NRS ( ≈ 0.03 );  
+
+> •
+
+no clear monotonic trend when grouping videos into low (NRS ≤ 3), medium (3–6), and high (NRS > 6) buckets. Qualitative inspection suggests two common mismatch patterns: (i) sustained high PSPI despite low reported pain or negative treatment outcome, often dominated by talking or interaction artifacts that strongly activate AU4/AU7; and (ii) low PSPI despite high NRS, where facial expressions remain subtle or ambiguous. Based on a fixed thresholding rule over PSPI statistics, we flag and exclude 8 recordings with extreme disagreement between PSPI and NRS from downstream experiments (yielding the 64 videos used in the main paper). 
+
+C. Implications 
+
+This analysis yields two practical conclusions. First, PSPI is not a reliable surrogate for self-reported NRS in this clinical setting and is therefore used only for quality control and exploratory analysis rather than supervision. Second, high-PSPI peaks are sparse in time, supporting the modeling choice in the main paper of segmenting each recording into short clips that inherit a single NRS label. This section provides additional details on the upstream multimodal pretraining used to obtain the ReMiX-MAE encoder employed in downstream experiments. 
+
+D. Backbone and Multimodal Decoders 
+
+ReMiX-MAE builds on a 3D Vision Transformer back-bone with tubelet patch embedding. Given a clip of 
+
+T aligned frames from synchronized RGB, depth, and thermal cameras, we form per-frame atomic channels {R, G, B, Depth , Thermal } and apply a 3D convolutional patch embedding to map spatio-temporal tubelets into tokens. Tokens are processed by a ViT-style encoder with fixed sinusoidal position encodings. On top of the shared encoder, we attach three lightweight decoders for RGB, thermal, and depth. Each decoder has its own embedding dimension and depth and receives encoder tokens through a modality-specific linear projection. The RGB decoder outputs 3 reconstruction channels. The thermal and depth decoders output both a mean and a log-variance per pixel, enabling heteroscedastic Gaussian negative log-likelihood (NLL) losses. A Modality Identity Encoder injects modality-aware bias into each token based on which atomic channels occupy its three input slots. It assigns a learnable embedding to each atomic modality, aggregates embeddings of modalities present in a patch via a DeepSets-style MLP, and adds the resulting vector to the corresponding token before the transformer encoder. 
+
+E. Patch-wise 5-to-3 Channel Routing 
+
+Instead of feeding modalities as separate streams, ReMiX-MAE performs early fusion via patch-wise channel routing. For each spatial patch, we sample three distinct channels from the five atomic channels and assign them to three input slots. The same triplet is reused across all frames at that spatial location to preserve temporal consistency. A deterministic priority rule (Depth ≻ Thermal ≻ R ≻ G ≻ B) reorders channels so that slot 0/1/2 have stable semantics. This 5-to-3 routing exposes the encoder to diverse local modality combinations (e.g., RGB+Depth, RGB+Thermal, Depth+Thermal) without increasing the number of input channels beyond three. In rgb only episodes, routing is constrained to select the RGB channels, matching RGB-only deployment; in other episodes, mixed triplets are sampled to encourage multimodal fusion and robustness to locally missing cues. 
+
+F. Episode Types 
+
+Pretraining uses four episode types that share the same backbone/decoders but differ in routing constraints and aux-iliary supervision:  
+
+> •
+
+mae : standard masked autoencoding with stochastic 5-to-3 routing and patch masking.  
+
+> •
+
+rgb only : routing constrained to RGB; auxiliary com-pletion emphasizes thermal/depth targets.  
+
+> •
+
+cross modal : routing constrained to specific RGB/auxiliary combinations (details below).  
+
+> •
+
+channel drop : modalities can be declared missing to simulate heterogeneous sensor failures; auxiliary comple-tion is applied on the declared-missing targets. 
+
+G. Cross-modal Episode Combinations 
+
+In cross modal episodes, we explicitly control the 3-slot input composition by sampling from a fixed set of RGB/auxiliary channel triplets. Each episode uniformly se-lects one triplet: 
+
+{RGD , RGT , RDT , GDT , BDT },
+
+where, for example, RGD denotes (Red, Green, Depth) and 
+
+BDT denotes (Blue, Depth, Thermal). 1 We select these five specific triplets to ensure a balanced coverage of cross-modal interactions while avoiding redundancy. Specifically, each chosen triplet contains at least one auxiliary channel (Depth or Thermal), and both auxiliary modalities appear with equal frequency ( 80% ) to prevent modality bias. This selection explicitly excludes the pure-RGB triplet {RGB }, which is already addressed by the rgb only episode type, thereby forcing the encoder to focus on learning correlations between geometric, physiological, and chromatic cues. 
+
+H. Distinguishing the MAE Mask M from the Declared-missing Set D
+
+We use two independent notions of “missingness” during pretraining. 
+
+Spatial MAE mask M. M ⊂ P is a token-index set sampled by the MAE procedure and controls encoder visibility: tokens in V = P \ M enter the encoder, while tokens in M are removed and reconstructed by the decoder. 
+
+Declared-missing set D. D is specified by the sampled episode type and indicates which modalities are treated as logically unavailable for auxiliary completion supervision (e.g., simulating sensor failure). When a modality is de-clared missing, its input signal is replaced with a learnable “missing” embedding (or zeros) without changing the token sequence length. Therefore, D does not alter which tokens enter the encoder; it only modifies the content of affected channels and the auxiliary loss indexing. Crucially, D is independent of M and need not satisfy 
+
+D ⊆ M . This allows tokens that are spatially visible but contain a declared-missing modality, so the encoder observes an explicit “missing” placeholder and must rely on contextual information, improving robustness under modality collapse or missing-sensor conditions. 
+
+I. Pretraining Objective (Summary) 
+
+The reconstruction loss combines modality-specific terms for RGB, thermal, and depth. For RGB, we use MSE on masked patches. For thermal and depth, we use a het-eroscedastic Gaussian NLL and additional robust terms. Episode-specific declarations and weights determine where and how strongly the model is penalized for failing to reconstruct missing modalities, jointly encouraging cross-modal completion and missing-sensor compensation. 
+
+J. Pretraining Data and Optimization 
+
+The ReMiX-MAE encoder is obtained from self-supervised pretraining on BP4D+, which provides synchro-nized RGB, depth, and thermal facial videos recorded under controlled tasks. We initialize the encoder from a publicly     
+
+> 1Channel indices in our implementation are: 0=R, 1=G, 2=B, 3=Depth, 4=Thermal. TABLE VIII REMIX-MAE ARCHITECTURE USED FOR UPSTREAM MULTIMODAL PRETRAINING ON BP4D+. K EY ENCODER /DECODER HYPERPARAMETERS CORRESPONDING TO THE MODEL USED IN DOWNSTREAM SMP EXPERIMENTS .
+
+Component Configuration Input clip T = 16 frames, 224 × 224 , temporal stride = 2 
+
+Patch / tubelet size 16 × 16 spatial, 2 frames temporal Encoder backbone ViT-style 3D encoder Embedding dim 768 Depth / heads 12 layers, 12 heads MLP ratio 4.0, with qkv bias and LayerNorm Positional encoding Fixed sinusoidal 3D Flash attention Enabled ( encoder use flash attn=true )RGB decoder 3-channel reconstruction; dim 384; 4 layers, 6 heads Thermal decoder mean + log-variance; dim 256; 4 layers, 4 heads Depth decoder mean + log-variance; dim 256; 4 layers, 4 heads Modality identity encoder 5 atomic embeddings (R,G,B,Depth,Thermal); DeepSets-style MLP; additive token bias 
+
+available VideoMAE-style checkpoint trained on large-scale RGB video and continue training on BP4D+ using the mixed-modality, multi-episode objective described above. Pretraining uses AdamW with cosine learning rate decay and linear warmup, mixed-precision training, and a high mask ratio on spatio-temporal tubelets. Episode types are sampled with fixed probabilities: 
+
+p(mae ) = 0 .40 , p(rgb only ) = 0 .40 ,p(cross modal ) = 0 .15 , p(channel drop ) = 0 .05 .
+
+After convergence, we freeze the encoder and reuse the same checkpoint for downstream experiments; only the downstream aggregation/classification modules are trained on clinical data. To assess sensitivity to identity-swap augmentation, we sweep the augmentation ratio ρ from 0 to 1.0 under the same LOSO protocol as the main experiments. For each training video, we pre-generate an augmentation pool of Navail =4 identity-swapped variants by swapping in four different donor identities sampled from an external, non-overlapping face set. An augmentation ratio ρ ∈ { 0, 0.25 , 0.5, 0.75 , 1.0}
+
+determines how many variants are used per original train-ing video in each epoch: we set Nuse = ρ N avail (i.e., 
+
+0/1/2/3/4), and at each epoch we uniformly sample Nuse 
+
+variants from the pool for each training video. Thus, ρ =0.25 /0.5/0.75 /1.0 corresponds to sampling 1/2/3/4 aug-mented videos per original video per epoch, respectively. Figure 6 and Figure 7 report the resulting subject-level test Accuracy and Macro-F1 (mean over LOSO folds) across 
+
+K ∈ { 3, 4, 5} and all feature setups. Overall, moderate augmentation ratios (approximately 0.5–0.75) yield the strongest performance, particularly for ReMiX-based representations. Extreme augmentation ( ρ =1.0) does not provide further benefit and can slightly de-grade performance, consistent with saturation or excessive synthetic variation. These trends motivate the shared aug-mentation ratio of 0.75 used in the main paper.  
+
+> Fig. 6. Subject-level test Accuracy under different augmentation ratios (mean over LOSO folds).
+
+K. Declared-missing Channel-drop Loss 
+
+Episodes define a declared-missing set D that specifies which modality targets are treated as missing for auxiliary completion supervision. In our implementation, D is repre-sented by modality-specific token subsets Dτ , Dd ⊆ P for thermal and depth, respectively. We apply the same token-level loss forms as in the core reconstruction, but evaluated on Dτ and Dd:
+
+Lcdrop (D) = ℓcharb 
+
+
+
+ˆμ(τ ) 
+
+> Dτ
+
+, x (τ )
+
+> Dτ
+
+
+
++Lnll 
+
+
+
+ˆμ(τ ) 
+
+> Dτ
+
+, ˆs(τ ) 
+
+> Dτ
+
+; x(τ )
+
+> Dτ
+
+
+
++ℓsi 
+
+
+
+ˆμ(d)  
+
+> Dd
+
+, x (d 
+
+> D
+
+L. Frame-level Regularization Lframe 
+
+We optionally apply additional regularizers on recon-structed frames and denote their aggregated contribution by Lframe . In our implementation, Lframe includes (when enabled) an SSIM-based term and a temporal smoothness term on reconstructed thermal/depth videos: (i) an SSIM-based loss Lssim (Ipred , I gt ); and (ii) a first-order temporal Fig. 7. Subject-level test Macro-F1 under different augmentation ratios (mean over LOSO folds). 
+
+consistency penalty 
+
+Ltemp = 1
+
+T − 1
+
+> T
+
+X
+
+> t=2
+
+I(t) 
+
+> pred
+
+− I(t−1)  
+
+> pred 1
+
+.
+
+Each component is controlled by a scalar weight in the configuration. To avoid over-smoothing before basic structure is learned, we disable Ltemp during the initial RGB warmup stage and activate it only after warmup. Aggregate improvements on small clinical datasets can be disproportionately influenced by a limited subset of subjects. To assess whether the gains reported in the main paper reflect broad subject-level trends rather than a few outliers, we perform subject-wise paired comparisons under the same LOSO protocol. 
+
+M. Protocol 
+
+For each LOSO fold, we evaluate ReMiX against each baseline on the held-out subject using identical downstream components (MIL aggregation and a shallow classification head) and the same training configuration. We report subject-level test accuracy for each held-out subject and compute paired differences between ReMiX and a given baseline on a per-subject basis. We present results for K ∈ {3, 5},corresponding to coarse and fine-grained clinical pain clas-sification. 
+
+N. Visualization and Interpretation 
+
+Figure 8 provides two complementary views: (1) a scatter plot of per-subject accuracies with the tie line; and (2) sorted per-subject accuracy differences (ReMiX minus baseline). Positive differences indicate improvements, while negative values reveal subject-dependent failure cases. 
+
+O. Summary Statistic 
+
+We summarize the overall tendency of subject-wise im-provements using the mean paired difference (Mean Diff), computed as the average of per-subject accuracy differences (ReMiX minus baseline), giving equal weight to each held-out subject. REFERENCES [1] J. P. Americano, S. M. Pires, L. A. Ferreira, and K. L. Devito. Can infrared thermography replace other methods of assessing orofacial pain intensity? systematic review. BrJP , 7:e20240049, 2024. [2] M. S. Aung, S. Kaltwang, B. Romera-Paredes, B. Martinez, A. Singh, M. Cella, M. Valstar, H. Meng, A. Kemp, M. Shafizadeh, et al. The automatic detection of chronic pain-related expression: requirements, challenges and the multimodal emopain dataset. IEEE transactions on affective computing , 7(4):435–451, 2015. [3] J. Barbosa, A. Amorim, M. Arruda, G. Medeiros, A. Freitas, L. Vieira, D. Melo, and P. Bento. Infrared thermography assessment of patients with temporomandibular disorders. Dentomaxillofacial Radiology ,49(4):20190392, 2020. [4] Z. Cai, S. Ghosh, K. Stefanov, A. Dhall, J. Cai, H. Rezatofighi, R. Haffari, and M. Hayat. Marlin: Masked autoencoder for facial video representation learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 1493–1504, 2023. [5] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton. A simple frame-work for contrastive learning of visual representations. In International conference on machine learning , pages 1597–1607. PmLR, 2020. [6] X. Chen, B. Ni, Y. Liu, N. Liu, Z. Zeng, and H. Wang. Simswap++: Towards faster and high-quality identity swapping. IEEE Trans. Pattern Anal. Mach. Intell. , 46(1):576–592, 2024. [7] K. D. Craig. Observer bias in judging pain in others. PAIN , 18:S14, 1984. [8] T. G. Dietterich, R. H. Lathrop, and T. Lozano-P´ erez. Solving the multiple instance problem with axis-parallel rectangles. Artificial intelligence , 89(1-2):31–71, 1997. [9] S. K. Dobscha, B. J. Morasco, A. E. Kovas, D. M. Peters, K. Hart, and B. H. McFarland. Short-term variability in outpatient pain intensity scores in a national sample of older veterans with chronic pain. Pain Medicine , 16(5):855–865, 2015. [10] P. Ekman and W. V. Friesen. Facial action coding system. Environ-mental Psychology & Nonverbal Behavior , 1978. [11] R. Fernandez-Rojas, C. Joseph, N. Hirachan, B. Seymour, and R. Goecke. The ai4pain grand challenge 2025: Advancing pain assessment with multimodal physiological signals. In Companion Proceedings of the 27th International Conference on Multimodal Interaction , pages 147–152, 2025. [12] J. Fricova, M. Janatova, M. Anders, J. Albrecht, and R. Rokyta. Thermovision: a new diagnostic method for orofacial pain? Journal of Pain Research , pages 3195–3203, 2018. [13] S. Gkikas and M. Tsiknakis. A full transformer-based framework for automatic pain estimation using videos. In 2023 45th Annual International Conference of the IEEE Engineering in Medicine & Biology Society (EMBC) , pages 1–6. IEEE, 2023. [14] D. Huang, X. Feng, H. Zhang, Z. Yu, J. Peng, G. Zhao, and Z. Xia. Spatio-temporal pain estimation network with measuring pseudo heart rate gain. IEEE Transactions on Multimedia , 24:3300–3313, 2021. [15] Y. Huang, L. Qing, S. Xu, L. Wang, and Y. Peng. Hybnet: a hybrid network structure for pain intensity estimation. The Visual Computer ,38(3):871–882, 2022. [16] M. Ilse, J. Tomczak, and M. Welling. Attention-based deep multiple instance learning. In International conference on machine learning ,pages 2127–2136. PMLR, 2018. [17] S. Kaltwang, O. Rudovic, and M. Pantic. Continuous pain intensity estimation from facial expressions. In International Symposium on Visual Computing , pages 368–377. Springer, 2012. [18] S. D. Kreibig. Autonomic nervous system activity in emotion: A review. Biological psychology , 84(3):394–421, 2010. [19] R. W. Levenson, P. Ekman, and W. V. Friesen. Voluntary facial action generates emotion-specific autonomic nervous system activity. 
+
+Psychophysiology , 27(4):363–384, 1990. [20] P. Liu, I. Yazgan, S. Olsen, A. Moser, U. Ciftci, S. Bajwa, C. Tveten-strand, P. Gerhardstein, O. Sadik, and L. Yin. Clinical valid pain database with biomarker and visual information for pain level analysis. In 2018 13th IEEE International Conference on Automatic Face & Gesture Recognition (FG 2018) , pages 525–529. IEEE, 2018. [21] P. Lucey, J. F. Cohn, K. M. Prkachin, P. E. Solomon, and I. Matthews. Painful data: The unbc-mcmaster shoulder pain expression archive database. In 2011 IEEE International Conference on Automatic Face & Gesture Recognition (FG) , pages 57–64, 2011. [22] P. Mende-Siedlecki, J. Qu-Lee, R. Backer, and J. J. Van Bavel. Perceptual contributions to racial bias in pain recognition. Journal of Experimental Psychology: General , 148(5):863, 2019. [23] P. Prajod, T. Huber, and E. Andr´ e. Using explainable ai to identify differences between clinical and experimental pain detection models (a) K = 3 : ReMiX vs. Baseline (AU) (b) K = 3 : ReMiX vs. Baseline (MAE) 
+
+(c) K = 5 : ReMiX vs. Baseline (AU) (d) K = 5 : ReMiX vs. Baseline (MAE) 
+
+Fig. 8. Subject-wise paired comparisons on SMP under LOSO (augmentation ratio = 0 .75 ). Left: subject-level test accuracies with the tie line. Right: sorted per-subject accuracy differences (ReMiX minus baseline). Mean Diff is the average of per-subject accuracy differences (equal weight per subject). based on facial expressions. In International Conference on Multime-dia Modeling , pages 311–322. Springer, 2022. [24] P. Prajod, D. Schiller, D. W. Don, and E. Andr´ e. Faces of experimental pain: Transferability of deep-learned heat pain features to electrical pain. In 2024 12th International Conference on Affective Computing and Intelligent Interaction Workshops and Demos (ACIIW) , pages 31– 38. IEEE, 2024. [25] K. M. Prkachin and P. E. Solomon. The structure, reliability and validity of pain expression: Evidence from patients with shoulder pain. 
+
+Pain , 139(2):267–274, 2008. [26] P. Rodriguez, G. Cucurull, J. Gonz` alez, J. M. Gonfaus, K. Nasrollahi, T. B. Moeslund, and F. X. Roca. Deep pain: Exploiting long short-term memory networks for facial expression classification. IEEE transactions on cybernetics , 52(5):3314–3324, 2017. [27] S. Schneider, D. U. Junghaenel, F. J. Keefe, J. E. Schwartz, A. A. Stone, and J. E. Broderick. Individual differences in the day-to-day variability of pain, fatigue, and well-being in patients with rheumatic disease: associations with psychological variables. Pain® , 153(4):813– 822, 2012. [28] J. Ting, Y.-C. Yang, L.-C. Fu, C.-L. Tsai, and C.-H. Huang. Dis-tance ordering: a deep supervised metric learning for pain intensity estimation. In 2021 20th IEEE International Conference on Machine Learning and Applications (ICMLA) , pages 1083–1088. IEEE, 2021. [29] Z. Tong, Y. Song, J. Wang, and L. Wang. VideoMAE: Masked autoencoders are data-efficient learners for self-supervised video pre-training. In Advances in Neural Information Processing Systems , 2022. [30] S. Trawalter, K. M. Hoffman, and A. Waytz. Racial bias in perceptions of others’ pain. PloS one , 7(11):e48546, 2012. [31] S. Walter, S. Gruss, H. Ehleiter, J. Tan, H. C. Traue, P. Werner, A. Al-Hamadi, S. Crawcour, A. O. Andrade, and G. M. Da Silva. The biovid heat pain database data for the advancement and systematic validation of an automated pain recognition system. In 2013 IEEE international conference on cybernetics (CYBCO) , pages 128–131. IEEE, 2013. [32] P. Werner, A. Al-Hamadi, R. Niese, S. Walter, S. Gruss, and H. C. Traue. Automatic pain recognition from video and biomedical signals. In 2014 22nd international conference on pattern recognition , pages 4582–4587. IEEE, 2014. [33] P. Werner, D. Lopez-Martinez, S. Walter, A. Al-Hamadi, S. Gruss, and R. W. Picard. Automatic recognition methods supporting pain assessment: A survey. IEEE Transactions on Affective Computing ,13(1):530–552, 2019. [34] A. C. d. C. Williams. Facial expression of pain: an evolutionary account. Behavioral and brain sciences , 25(4):439–455, 2002. [35] L. Wolf, T. Hassner, and I. Maoz. Face recognition in unconstrained videos with matched background similarity. In CVPR 2011 , pages 529–534. IEEE, 2011. [36] H. Xu and M. Liu. A deep attention transformer network for pain estimation with facial expression video. In Chinese Conference on Biometric Recognition , pages 112–119. Springer, 2021. [37] R. Yang, Z. Guan, Z. Yu, X. Feng, J. Peng, and G. Zhao. Non-contact pain recognition from video sequences with remote physiological measurements prediction. arXiv preprint arXiv:2105.08822 , 2021. [38] R. Yang, X. Hong, J. Peng, X. Feng, and G. Zhao. Incorporating high-level and low-level cues for pain intensity estimation. In 2018 24th International Conference on Pattern Recognition (ICPR) , pages 3495–3500. IEEE, 2018. [39] X. Zhang, H. Yang, T. Wang, X. Li, and L. Yin. Multimodal channel-mixing: Channel and spatial masked autoencoder on facial action unit detection. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision , pages 6077–6086, 2024. [40] Z. Zhang, J. M. Girard, Y. Wu, X. Zhang, P. Liu, U. Ciftci, S. Canavan, M. Reale, A. Horowitz, H. Yang, et al. Multimodal spontaneous emotion corpus for human behavior analysis. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 3438–3446, 2016. [41] J. Zhou, X. Hong, F. Su, and G. Zhao. Recurrent convolutional neural network regression for continuous pain intensity estimation in video. In Proceedings of the IEEE conference on computer vision and pattern recognition workshops , pages 84–92, 2016.

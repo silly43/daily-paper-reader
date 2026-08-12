@@ -1,0 +1,217 @@
+Title: TaskSense: Focusing on What Matters in World Models
+
+URL Source: https://arxiv.org/pdf/2608.06544v1
+
+Published Time: Mon, 10 Aug 2026 00:09:27 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# TaskSense: Focusing on What Matters in World Models 
+
+# SM Mazharul Islam 1∗, Manfred Huber 1
+
+> 1
+
+The University of Texas at Arlington smmazharul.islam@uta.edu, huber@cse.uta.com 
+
+Abstract 
+
+World models for visual control typically learn compact latent states by reconstructing observations, implicitly encouraging representations to preserve information across the entire vi-sual input. However, task-relevant content often occupies only a small fraction of the observation, while background clutter and distractors consume valuable representational capacity. This mismatch between visual reconstruction and control ob-jectives biases latent representations to model task-irrelevant visual content, diluting learning signals for control-relevant features and severely degrading downstream performance un-der visual distractions. We introduce TaskSense, a task-centric world modeling framework that enforces task relevance before latent encoding through a differentiable stochastic spatial at-tention mechanism conditioned on the previous latent state. To steer attention toward control-relevant regions, we aug-ment training with an auxiliary inverse-dynamics objective. Rather than reconstructing the full observation, the world model reconstructs only the attended regions, encouraging latent representations to preserve task-relevant information while discarding irrelevant visual content. The decoder is fur-ther conditioned on the sampled attention map, enabling con-sistent reconstruction despite stochastic attention. Compared with the DreamerV3 baseline, TaskSense maintains competi-tive performance on the DeepMind Control Suite while con-sistently outperforming DreamerV3 on the Distracting Con-trol Suite, demonstrating substantially improved robustness to visual distractions. Qualitative analysis further confirms that the learned attention, guided by inverse-dynamics super-vision, consistently localizes control-relevant regions while suppressing irrelevant visual content. 
+
+# Introduction 
+
+Learning compact latent dynamics models from raw vi-sual observations (Hafner et al. 2019b) has become a powerful paradigm for model-based reinforcement learning (MBRL) (Sutton 1991). By compressing high-dimensional observations into predictive latent states, world models (Ha and Schmidhuber 2018) enable planning and policy opti-mization entirely within a learned latent space. Many suc-cessful world models use powerful decoders to reconstruct observations, making reconstruction the principal training signal for learning latent dynamics (Micheli, Alonso, and Fleuret 2022; Zhang et al. 2023; Hafner et al. 2023, 2025). 
+
+> ∗
+
+Corresponding author. 
+
+Decision making, however, typically depends on only a small fraction of an observation, whereas common recon-struction objectives reward preserving all visual information. As a result, optimizing to reconstruct entire observations im-plicitly encourages latent representations to preserve infor-mation across the entire visual scene, regardless of whether it is relevant for control. This mismatch is often masked in standardized benchmarks (Tassa et al. 2018; Bellemare et al. 2013), where backgrounds are static and task-relevant objects dominate the scene. However, as observations become clut-tered with distractors or task-relevant objects occupy only a small portion of the image, preserving the entire visual scene becomes increasingly inefficient, leading to substan-tial degradation in downstream performance (Stone et al. 2021; Morihira et al. 2026). At the opposite extreme, relying solely on task supervision such as reward prediction pro-vides a much weaker learning signal and often fails to learn sufficiently rich visual representations (Yarats et al. 2021). Consequently, neither reconstructing every pixel nor learning only from rewards offers an ideal objective for representation learning. One line of work eliminates pixel reconstruction entirely and instead learns representations through contrastive objec-tives (Burchi and Timofte 2025), prototype learning (Deng, Jang, and Ahn 2022), or predictive consistency (Morihira et al. 2026). Although these methods reduce the pressure to encode irrelevant appearance, removing the decoder also sac-rifices the generative world model essential for imagination-based planning. Another line of work improves representation learning through object-centric modeling (Mosbach et al. 2024), fea-ture masking (Seo et al. 2023), or attention mechanisms via masked reconstruction (Sun et al. 2024). While these meth-ods encourage more informative latent representations, most operate after visual features have already been extracted by the encoder. Consequently, they primarily learn how to en-code information rather than determining which information should enter the latent dynamics model in the first place. A closely related direction is Task-Informed Abstraction (TIA) (Fu et al. 2021), which encourages task-relevant rep-resentations by jointly training two world models with co-operative reconstruction while adversarially separating one model from the reward signal. While effective, TIA explicitly learns a separate world model to capture task-irrelevant infor-arXiv:2608.06544v1 [cs.AI] 6 Aug 2026 Figure 1: Comparison of Dreamer and TaskSense. Dashed circles denote predicted quantities. Left: Dreamer encodes the full observation ot into zt and reconstructs the complete observation. Right: TaskSense augments Dreamer (grayed-out components) with a stochastic attention module (black) that predicts an attention map mt from the previous belief state ht−1 (SG). The attention map filters ot to produce oatt  
+
+> t
+
+, which is encoded by the original Dreamer encoder. Reconstruction is applied only to 
+
+oatt  
+
+> t
+
+, and an auxiliary inverse-dynamics objective predicts the previous action at−1. SG denotes stop-gradient. mation, increasing model complexity and training overhead. This raises a fundamental question: rather than learning to separate relevant and irrelevant information after encoding, can a world model directly control which visual information enters its latent dynamics model? We propose TaskSense , a task-centric world modeling framework that addresses this question by enforcing task relevance before latent encoding through latent-conditioned stochastic spatial attention. TaskSense predicts a stochastic attention map from the previous latent belief state and uses it to filter observations before encoding, allowing the model to decide where to focus based on its evolving understand-ing of the task rather than instantaneous visual appearance. By filtering inputs instead of modifying the latent dynamics model, TaskSense prevents task-irrelevant visual information from consuming representational capacity while preserving the reconstruction-based world model needed for imagina-tion and planning. To avoid degenerate solutions such as suppressing all observations, TaskSense combines an aux-iliary inverse-dynamics objective that encourages attention toward control-relevant regions with attention-conditioned reconstruction that preserves attended information without requiring reconstruction of irrelevant content. Our main contributions are: 1. We introduce TaskSense, a reconstruction-based world modeling framework that enforces task relevance before latent encoding through latent-conditioned stochastic spa-tial attention. 2. We develop a self-supervised learning framework that grounds stochastic attention in control-relevant regions by combining inverse-dynamics supervision with recon-struction over filtered observations. 3. We demonstrate that TaskSense matches DreamerV3 on standard DeepMind Control Suite tasks while consis-tently outperforming it under visual distractions. Qual-itative visualizations and ablation studies further verify that inverse-dynamics supervision is essential for learn-ing task-centric attention. 
+
+# Related Work 
+
+## World Models 
+
+Learning latent world models has become a dominant paradigm for MBRL from high-dimensional visual observa-tions. Early work such as World Models (Ha and Schmidhu-ber 2018) and PlaNet (Hafner et al. 2019b) demonstrated that compact latent dynamics models enable planning directly in a learned representation space. PlaNet introduced the recur-rent state-space model (RSSM), which was later adopted and extended by the Dreamer family (Hafner et al. 2019a, 2020, 2023, 2025) to optimize policies and value functions through latent imagination while retaining visual reconstruction as the primary training signal. More recently, transformer-based world models such as IRIS (Micheli, Alonso, and Fleuret 2022) and STORM (Zhang et al. 2023) have further improved long-horizon prediction using autoregressive sequence mod-eling. Despite architectural differences, these methods share a common reliance on visual reconstruction for learning la-tent representations, encouraging latent states to preserve information throughout the observation regardless of its rel-evance for control. Although highly effective in standard visual control benchmarks, this reconstruction-driven objec-tive can also encourage latent representations to encode task-irrelevant visual content, reducing robustness under visual distractors (Stone et al. 2021). TaskSense preserves the gen-erative benefits of reconstruction-based world models while introducing task relevance before latent encoding. 
+
+## Representation Learning 
+
+Beyond contrastive and prototype learning, several works explore alternative objectives for improving latent represen-tations. Masked reconstruction and bisimulation objectives encourage representations that capture visual structure and behavioral equivalence, respectively (Sun et al. 2024; Zhang et al. 2020). Predictive consistency and redundancy reduction improve robustness by encouraging stable latent representa-tions while reducing reliance on data augmentations (Mori-hira et al. 2026). Orthogonal to representation objectives, methods such as MuZero (Schrittwieser et al. 2020) and TD-MPC (Hansen, Wang, and Su 2022) learn latent dynamics optimized for reward and value prediction rather than visual reconstruction. Although these approaches improve robustness and rep-resentation quality, many reduce reliance on pixel recon-struction, sacrificing the generative observation model that enables latent imagination and planning (Yarats et al. 2021). In contrast, TaskSense retains reconstruction as the primary learning signal while reconstructing only task-relevant visual information. 
+
+## Learning Task-Relevant Visual Representations 
+
+Attention mechanisms improve visual representation learn-ing by selectively emphasizing informative regions or fea-tures. Object-centric methods explicitly decompose scenes into object-level representations, enabling reasoning over individual entities rather than holistic image features (Lo-catello et al. 2020; Kipf et al. 2021). Recent work such as SOLD (Mosbach et al. 2024) shows that structured object-centric representations can further improve latent world mod-eling and control. However, these approaches typically in-fer importance from visual observations or learned features rather than task objectives. Task-driven approaches instead incorporate behavioral su-pervision to learn control-relevant representations. Task-Informed Abstraction (TIA) (Fu et al. 2021) learns task-relevant visual abstractions by jointly optimizing recon-struction while separating task-irrelevant information from reward-related features. Auxiliary objectives such as inverse dynamics have also been used to encourage representations that capture controllable aspects of the environment (Shel-hamer et al. 2016; Pathak et al. 2017; Efroni et al. 2021; Lamb et al. 2022). By predicting actions from state transitions, inverse-dynamics objectives preserve information useful for control while ignoring uncontrollable variations (Agrawal, Carreira, and Malik 2015). However, these methods primar-ily regularize representations after visual information has been encoded rather than controlling which observations en-ter the latent model. TaskSense combines task-driven supervision with selec-tive visual processing by using inverse-dynamics supervi-sion to ground stochastic spatial attention in control-relevant regions. Unlike prior attention mechanisms that infer impor-tance from visual features, TaskSense predicts observation-level attention from the latent belief state and applies it before encoding, enabling reconstruction-based world models to se-lectively represent information relevant for control. 
+
+# Method 
+
+TaskSense augments the DreamerV3 (Hafner et al. 2023) world model with a learned stochastic spatial attention mod-ule that controls information flow before latent encoding. The attention module produces an observation mask that filters visual inputs before they are processed by the en-coder, while the decoder reconstructs the filtered observa-tions conditioned on the corresponding attention map. To prevent degenerate attention solutions, we introduce an aux-iliary inverse-dynamics objective that encourages attention to preserve control-relevant visual information. Figure 1 pro-vides an overview of the proposed architecture. Before describing the proposed components, we briefly review the aspects of DreamerV3 relevant to our modifica-tions. DreamerV3 employs a Recurrent State-Space Model (RSSM) (Hafner et al. 2019b), where a GRU (Cho et al. 2014) with block-diagonal recurrent weights (Van Keirs-bilck, Keller, and Yang 2019) maintains a deterministic hid-den state ht, while stochastic latent variables are represented through a learned prior distribution ˆzt and posterior dis-tribution zt. During training, the posterior is inferred from the current observation ot and deterministic state ht, and the decoder reconstructs observations from the latent state 
+
+st = ( ht, z t). TaskSense retains this latent dynamics for-mulation and modifies only the observation interface of the world model. Specifically, TaskSense introduces a learned spatial attention mechanism that filters observations before encoding and adapts the reconstruction objective to account for stochastic attention. 
+
+## Task-Centric Spatial Attention 
+
+Our goal is to learn a spatial attention field that filters task-irrelevant visual information before observations are encoded into the world model. Rather than predicting an attention value for every image pixel, we define attention over a coarse lattice 
+
+Λ = {0, . . . , H ′ − 1} × { 0, . . . , W ′ − 1},
+
+covering an input observation of resolution H × W . Each lattice site corresponds to an s × s image patch, where 
+
+s = HH′ = WW ′ .
+
+This coarse parameterization introduces implicit local con-sistency by assigning a shared attention value to neighboring pixels while substantially reducing the computational over-head of dense pixel-wise attention. Thus, spatial smoothness emerges from the lattice parameterization rather than requir-ing additional architectural constraints. We parameterize the attention field using a lightweight MLP fϕ conditioned on the previous latent belief state 
+
+st−1 = ( ht−1, z t−1). Specifically, the attention logits and activation probabilities are computed as lt = fϕ
+
+ SG( st−1), θt = σ(lt), (1) where lt ∈ RH′×W ′
+
+denotes the lattice logits, σ(·) is the sigmoid function, and θt,i,j represents the probability of at-tending to lattice location (i, j ). Conditioning attention on the previous latent state allows the model to determine where to attend based on its evolving belief about the task rather than instantaneous visual appearance alone. We use SG( st−1) in-stead of st−1 to prevent gradients from propagating through the latent dynamics state into the attention predictor, decou-pling attention prediction from the optimization of the RSSM dynamics. The resulting attention field is modeled as a collection of independent stochastic variables. Unlike normalized atten-tion mechanisms such as softmax attention, which enforce competition among spatial locations, TaskSense allows mul-tiple regions to be attended or ignored simultaneously. This property is important because task-relevant information may appear at multiple spatial locations and is not inherently competitive. We therefore model the attention field using a mean-field Binary Concrete (Relaxed Bernoulli) distribution, 
+
+qϕ(mt|st−1) = Y
+
+> (i,j )∈Λ
+
+qϕ(mt,i,j |st−1). (2) During training, differentiable attention masks are sam-pled using the Binary Concrete reparameterization (Maddi-son, Mnih, and Teh 2016; Jang, Gu, and Poole 2016), 
+
+mt,i,j ∼ BinaryConcrete( θt,i,j , τ ), (3) where τ denotes the temperature parameter. Through-out all experiments, we keep τ = 1 .0 fixed and do not employ temperature annealing. During inference, stochas-tic sampling is replaced by the deterministic mean attention, 
+
+mt,i,j = θt,i,j .To encourage selective attention and limit unnecessary information flow, we regularize the expected attention mass, 
+
+Lsparse = 1
+
+|Λ|
+
+X
+
+> (i,j )∈Λ
+
+θt,i,j , (4) where |Λ| = H′W ′ is the number of lattice cells. Using the mean-field parameters instead of sampled masks avoids Monte Carlo variance in the sparsity gradients while still encouraging compact attention maps. This regularizer alone can admit degenerate solutions with excessive information removal; the auxiliary inverse-dynamics objective introduced later prevents such collapse by requiring attended observa-tions to retain control-relevant information. 
+
+## Attention-Aware Encoding 
+
+We upsample the sampled attention mask mt to the orig-inal observation resolution for modulating the observation through element-wise multiplication, attenuating regions as-signed low attention while retaining information from at-tended regions. Multiplying the observation by the attention map removes information about the attention values themselves. For ex-ample, an attenuated pixel value may correspond either to a genuinely low-intensity pixel or to a high-intensity pixel sup-pressed by a low attention weight. To resolve this ambiguity, we concatenate the upsampled attention map as an additional input channel, 
+
+oatt  
+
+> t
+
+= Concat  ot ⊙ mup  
+
+> t
+
+, m up 
+
+> t
+
+,
+
+Note that, the same sampled attention mask is used for both observation modulation and channel concatenation. The resulting attention-aware observation is passed unchanged to the standard DreamerV3 convolutional encoder. Conse-quently, the only architectural modification to the encoder is the addition of a single attention channel. 
+
+## Auxiliary Inverse Dynamics 
+
+Since the sparsity objective encourages the attention mecha-nism to minimize the amount of retained visual information, a degenerate solution is to predict uniformly small attention values, simultaneously minimizing the sparsity penalty while removing meaningful signal from downstream reconstruc-tion. Although the reinforcement learning objective provides an indirect signal for useful attention, it may be sparse and often delayed, making it insufficient to reliably prevent this collapse. To explicitly ground attention in control-relevant informa-tion, we introduce an auxiliary inverse-dynamics objective. Intuitively, predicting the action executed between two con-secutive observations encourages retaining visual features that are predictive of the agent’s behavior. We therefore pre-dict the action from the temporal difference between consec-utive encoded features, 
+
+ˆat = gψ
+
+ ft − SG( ft−1), (5) where ft = E(oatt  
+
+> t
+
+) denotes the encoder feature extracted from the attention-aware observation and gψ is a lightweight MLP. The previous feature is detached using a stop-gradient op-erator to prevent the inverse-dynamics objective from prop-agating gradients through the previous timestep representa-tion. This ensures that the auxiliary objective encourages the current attention mechanism to retain action-predictive infor-mation without introducing additional dependencies across timesteps. The inverse-dynamics loss is defined as 
+
+Linv = ∥ˆat − at∥22, (6) which prevents collapse to trivial sparse solutions while keeping attention aligned with the downstream control ob-jective. 
+
+## Attention-Conditioned Reconstruction 
+
+The objective of TaskSense is to learn latent representations that preserve information relevant for control. Consequently, reconstructing the complete observation would conflict with this objective by encouraging the latent state to encode visual information intentionally removed by the attention mecha-nism. Instead, we reconstruct only the attention-modulated observation introduced in the previous subsection. Because the reconstruction target depends on the sampled attention mask, the decoder must be aware of which visual re-gions were retained. Otherwise, an imperfect attention sam-ple may cause the decoder to attribute missing information to the latent representation rather than to the stochastic obser-vation filtering process. We therefore condition the decoder on the sampled attention map, 
+
+Lrec = − log pψ
+
+ oatt  
+
+> t
+
+| st, SG( mt) . (7) The attention map is provided through a stop-gradient op-erator so that it serves as a fixed conditioning variable for reconstruction rather than an additional optimization path-way. This prevents the decoder from learning to manipulate the attention representation while allowing reconstruction to train the latent dynamics model using the information se-lected by attention. 
+
+## Training Objective 
+
+TaskSense modifies the world model training objective of the DreamerV3 while leaving the policy optimization pro-cedure unchanged. Specifically, the latent dynamics model is optimized using the attention-conditioned reconstruction objective together with the standard DreamerV3 latent dy-namics losses and two additional objectives: the attention sparsity regularizer and the auxiliary inverse-dynamics loss. The complete world model objective is defined as 
+
+LWM = Ldyn + Lrec + λsparse Lsparse + λinv Linv , (8) where Ldyn denotes the standard DreamerV3 latent dynamics objective, including the RSSM transition and representation losses. Lrec corresponds to the attention-conditioned reconstruction objective described previously, while Lsparse and Linv encourage compact attention maps and preservation of action-predictive visual information, re-spectively. We set λsparse = 0 .1 and λinv = 1 .0 in all exper-iments. The actor-critic optimization remains unchanged and is trained using imagined trajectories generated from the learned latent dynamics model following the standard DreamerV3 procedure. 
+
+# Experiments 
+
+We evaluate TaskSense on standard and distraction-rich vi-sual control benchmarks to assess its effectiveness, analyze the learned attention mechanism, and quantify the contribu-tion of selected design component. Specifically, we seek to answer the following questions: (Q1) Does TaskSense improve robustness to visual distractions while maintaining performance in standard visual con-trol? (Q2) Does the learned stochastic attention consistently identify control-relevant visual regions? (Q3) How important are the individual components of TaskSense?              
+
+> Name Symbol Value Attention lattice size (H′, W ′)8×8
+> Binary Concrete temperature τ1.0
+> Sparsity coefficient λsparse 0.1
+> Inverse dynamics coefficient λinv 1.0
+
+Table 1: TaskSense-specific hyperparameters. All remaining hyperparameters follow the official DreamerV3 implemen-tation. 
+
+## Experimental Setup 
+
+Environments We evaluate TaskSense on the DeepMind Control Suite (DMC) (Tassa et al. 2018) and the Distracting Control Suite (DCS) (Stone et al. 2021). All experiments use RGB observations of resolution 64 × 64 .The DeepMind Control Suite provides standard continuous-control benchmarks with static backgrounds. The Distracting Control Suite augments the same tasks with dynamic natural-image backgrounds from the DAVIS dataset (Pont-Tuset et al. 2017), providing a challenging benchmark for evaluating robustness to visual distractions. Unlike the original benchmark, which plays DAVIS videos sequentially, we independently sample a background frame at every environment step while keeping the camera view-point and agent colors unchanged. This removes temporal consistency in the background and produces a substantially more challenging distraction setting. Experiments are conducted on six representative DMC tasks: Cartpole Swingup , Cheetah Run , Hopper Hop , Walker Stand , Walker Walk , and Walker Run . These tasks span di-verse dynamics and varying levels of control difficulty, cov-ering both locomotion and manipulation behaviors. 
+
+Implementation Details We build TaskSense by extend-ing the official DreamerV3 implementation. Unless other-wise stated, TaskSense and DreamerV3 share identical net-work architectures, optimization procedures, replay buffers, and training schedules. All hyperparameters not specific to TaskSense follow the official DreamerV3 implementa-tion. The only additions are the observation-level stochas-tic attention module, attention-aware reconstruction objec-tive, and auxiliary inverse-dynamics objective described in the method section. The attention predictor and inverse-dynamics head are implemented as 3-layer MLPs with 256 units per hidden layer. Table 1 summarizes the additional TaskSense-specific hyperparameters. 
+
+Training and Evaluation All experiments are repeated with five random seeds. Each agent is trained for 500 k envi-ronment steps, and evaluation is performed every 10 k train-ing steps. At each evaluation point, the agent is evaluated over 10 episodes, with each episode having a maximum length of 1,000 environment steps. The reported performance is the average episode return across evaluation episodes and ran-dom seeds. Following previous DreamerV3 studies (Hafner et al. 2023), we use an action repeat of 2 for all environ-ments. All experiments are conducted on a single NVIDIA RTX A6000 GPU, with each 500 k environment-step training DeepMind Control Suite Distracting Control Suite Task TaskSense DreamerV3 TaskSense DreamerV3 Cartpole Swingup 865 .0 849 .2 140 .3 124 .6
+
+Cheetah Run 754 .9 885 .0 401 .6 267 .3
+
+Hopper Hop 220 .9 265 .8 1.9 0.7
+
+Walker Stand 977 .1 976 .8 972 .2 965 .6
+
+Walker Walk 958 .8 963 .0 893 .8 737 .8
+
+Walker Run 474 .0 723 .9 531 .2 286 .2
+
+Task Mean 708 .4 777 .3 490 .2 397 .03 
+
+Task Median 810 .0 867 .1 466 .4 276 .8
+
+Table 2: Average episode returns. TaskSense matches DreamerV3 on standard DeepMind Control Suite tasks while substantially improving robustness on the distracting benchmark with dynamic natural backgrounds. 
+
+Figure 2: Visualization of the learned stochastic spatial at-tention on the Cheetah Run task. The first row shows the standard DeepMind Control Suite, the second row shows the corresponding distracting environment with dynamic natu-ral backgrounds, and the third row shows TaskSense without the auxiliary inverse-dynamics objective. From left to right, we show the original observation, predicted attention map, and reconstructions using the top 5% and top 10% attended regions. TaskSense consistently focuses on the cheetah’s legs while suppressing irrelevant visual content, whereas remov-ing inverse-dynamics supervision leads to diffuse and less localized attention. run requiring approximately 4.5 hours. 
+
+## Performance on Visual Control Benchmarks 
+
+We first evaluate whether TaskSense improves robustness to visual distractions while maintaining performance in stan-dard visual control. We compare TaskSense with Dream-erV3 on the DeepMind Control Suite (DMC) and Distract-ing Control Suite under identical training budgets. These benchmarks assess complementary properties: DMC evalu-ates whether observation filtering removes task-relevant in-formation, while the distracting benchmark measures robust-ness when observations contain substantial irrelevant visual content. As shown in Table 2, TaskSense matches DreamerV3 on nearly all standard DMC tasks despite reconstructing only attention-filtered observations rather than full images. This demonstrates that selectively encoding task-relevant infor-mation is sufficient for effective latent planning without pre-serving every visual detail. Under distracting natural back-grounds, TaskSense consistently outperforms DreamerV3 across all evaluated tasks. By filtering irrelevant visual con-tent before it enters the latent dynamics model, TaskSense reduces the influence of nuisance information on learned representations and improves control performance. These results support our hypothesis that reconstruction-based world models do not need to preserve every pixel of an observation. Instead, enforcing task relevance before latent encoding enables efficient allocation of representational ca-pacity toward control-relevant information while remaining compatible with reconstruction-based imagination. 
+
+## Qualitative Analysis 
+
+Figure 2 visualizes TaskSense’s stochastic spatial attention on the Cheetah Run task across standard DMC, distract-ing environments with dynamic natural backgrounds, and a model without the inverse-dynamics objective. We show the predicted attention maps and the image regions corre-sponding to the top 5% and 10% attention values. TaskSense consistently focuses on the cheetah’s legs while suppressing the torso, static scene elements, and distracting backgrounds. This behavior across both standard and distracting settings indicates that attention is guided by control relevance rather than visual saliency. The inverse-dynamics objective is es-sential for this behavior: while sparsity encourages compact attention, it does not indicate which information is useful for control. Without inverse dynamics, attention becomes diffuse and less aligned with locomotion dynamics. These results demonstrate that task-conditioned observa-tion filtering enables the world model to preserve control-relevant visual information while suppressing irrelevant vari-ations, providing an effective interface for reconstruction-based world models. Figure 3: Ablation study on the Distracting Control Suite for Walker Walk and Cheetah Run . We compare TaskSense with three variants: removing the inverse-dynamics objective, replacing stochastic attention with deterministic attention, and removing attention-conditioned reconstruction. Each curve shows the mean return over five random seeds, with shaded regions indicating one standard deviation. 
+
+## Ablation Study 
+
+We evaluate the contribution of TaskSense components on distracting Walker Walk and Cheetah Run . We com-pare the full model against three variants: (1) removing inverse-dynamics supervision, (2) replacing stochastic atten-tion with deterministic attention, and (3) removing attention-conditioned reconstruction by reconstructing full observa-tions. Figure 3 reports the corresponding learning curves. Replacing stochastic attention with deterministic attention causes a significant performance drop on both tasks. Stochas-tic attention exposes the model to diverse partial observations during training, producing representations that remain robust under varying visual conditions. Removing the inverse-dynamics objective also substan-tially degrades performance, as attention lacks explicit task-related supervision and becomes less aligned with control-relevant regions. This is consistent with Figure 2, where at-tention without inverse dynamics fails to consistently focus on the agent’s limbs. Removing attention-conditioned reconstruction leads to a smaller but noticeable degradation, particularly on Walker Walk . This suggests that aligning reconstruction with at-tended observations helps prevent the reconstruction objec-tive from encouraging irrelevant visual information. Overall, the ablations show that TaskSense improvements arise from the combination of stochastic attention, task-specific supervision, and attention-aligned reconstruction rather than observation masking alone. 
+
+# Limitations 
+
+Throughout this work, we treat task-relevant and control-relevant visual information as interchangeable, assuming that visual features predictive of the agent’s actions are also those most relevant for solving the downstream control task. Un-der this assumption, inverse dynamics provides effective su-pervision for learning task-centric attention. However, when action-predictive cues differ from long-term reward-relevant information, inverse dynamics may focus attention on sub-optimal features. Developing supervisory signals that better capture long-horizon task relevance remains an important direction for future work. 
+
+# Conclusion 
+
+We introduced TaskSense, a task-centric world modeling framework that enforces task relevance before latent encod-ing through stochastic spatial attention. By filtering obser-vations prior to encoding and reconstructing only attended regions, TaskSense reduces representational capacity spent on task-irrelevant visual content while preserving the benefits of reconstruction-based training. Experimental results show that TaskSense matches DreamerV3 on standard DeepMind Control Suite tasks while consistently improving robustness under visual distractions. Qualitative visualizations demonstrate that the learned atten-tion focuses on control-relevant regions while suppressing distracting backgrounds. Ablation studies further show that both stochastic attention and inverse-dynamics supervision are essential for learning effective task-centric attention. To-gether, these findings suggest that enforcing task relevance at the observation interface is a promising direction for im-proving visual world models and representation learning in model-based reinforcement learning. 
+
+# References 
+
+Agrawal, P.; Carreira, J.; and Malik, J. 2015. Learning to see by moving. In Proceedings of the IEEE international conference on computer vision , 37–45. Bellemare, M. G.; Naddaf, Y.; Veness, J.; and Bowling, M. 2013. The arcade learning environment: An evaluation plat-form for general agents. Journal of artificial intelligence research , 47: 253–279. Burchi, M.; and Timofte, R. 2025. Learning transformer-based world models with contrastive predictive coding. arXiv preprint arXiv:2503.04416 .Cho, K.; Van Merriënboer, B.; Bahdanau, D.; and Bengio, Y. 2014. On the properties of neural machine translation: Encoder–decoder approaches. In Proceedings of SSST-8, eighth workshop on syntax, semantics and structure in sta-tistical translation , 103–111. Deng, F.; Jang, I.; and Ahn, S. 2022. Dreamerpro: Reconstruction-free model-based reinforcement learning with prototypical representations. In International confer-ence on machine learning , 4956–4975. PMLR. Efroni, Y.; Misra, D.; Krishnamurthy, A.; Agarwal, A.; and Langford, J. 2021. Provable rl with exogenous dis-tractors via multistep inverse dynamics. arXiv preprint arXiv:2110.08847 .Fu, X.; Yang, G.; Agrawal, P.; and Jaakkola, T. 2021. Learn-ing task informed abstractions. In International Conference on Machine Learning , 3480–3491. PMLR. Ha, D.; and Schmidhuber, J. 2018. World models. arXiv preprint arXiv:1803.10122 .Hafner, D.; Lillicrap, T.; Ba, J.; and Norouzi, M. 2019a. Dream to control: Learning behaviors by latent imagination. 
+
+arXiv preprint arXiv:1912.01603 .Hafner, D.; Lillicrap, T.; Fischer, I.; Villegas, R.; Ha, D.; Lee, H.; and Davidson, J. 2019b. Learning latent dynamics for planning from pixels. In International conference on machine learning , 2555–2565. PMLR. Hafner, D.; Lillicrap, T.; Norouzi, M.; and Ba, J. 2020. Mastering atari with discrete world models. arXiv preprint arXiv:2010.02193 .Hafner, D.; Pasukonis, J.; Ba, J.; and Lillicrap, T. 2023. Mas-tering diverse domains through world models, 2023. URL https://arxiv. org/abs/2301.04104 .Hafner, D.; Pasukonis, J.; Ba, J.; and Lillicrap, T. 2025. Mas-tering diverse control tasks through world models. Nature ,640(8059): 647–653. Hansen, N.; Wang, X.; and Su, H. 2022. Temporal differ-ence learning for model predictive control. arXiv preprint arXiv:2203.04955 .Jang, E.; Gu, S.; and Poole, B. 2016. Categorical reparameterization with gumbel-softmax. arXiv preprint arXiv:1611.01144 .Kipf, T.; Elsayed, G. F.; Mahendran, A.; Stone, A.; Sabour, S.; Heigold, G.; Jonschkowski, R.; Dosovitskiy, A.; and Greff, K. 2021. Conditional object-centric learning from video. In 
+
+International conference on learning representations .Lamb, A.; Islam, R.; Efroni, Y.; Didolkar, A.; Misra, D.; Fos-ter, D.; Molu, L.; Chari, R.; Krishnamurthy, A.; and Lang-ford, J. 2022. Guaranteed discovery of control-endogenous latent states with multi-step inverse models. arXiv preprint arXiv:2207.08229 .Locatello, F.; Weissenborn, D.; Unterthiner, T.; Mahendran, A.; Heigold, G.; Uszkoreit, J.; Dosovitskiy, A.; and Kipf, T. 2020. Object-centric learning with slot attention. Advances in neural information processing systems , 33: 11525–11538. Maddison, C. J.; Mnih, A.; and Teh, Y. W. 2016. The con-crete distribution: A continuous relaxation of discrete ran-dom variables. arXiv preprint arXiv:1611.00712 .Micheli, V.; Alonso, E.; and Fleuret, F. 2022. Trans-formers are sample-efficient world models. arXiv preprint arXiv:2209.00588 .Morihira, N.; Nahar, A.; Bharadwaj, K.; Kato, Y.; Hayashi, A.; and Harada, T. 2026. R2-Dreamer: Redundancy-reduced world models without decoders or augmentation. arXiv preprint arXiv:2603.18202 .Mosbach, M.; Ewertz, J. N.; Villar-Corrales, A.; and Behnke, S. 2024. Sold: Slot object-centric latent dynamics models for relational manipulation learning from pixels. arXiv preprint arXiv:2410.08822 .Pathak, D.; Agrawal, P.; Efros, A. A.; and Darrell, T. 2017. Curiosity-driven exploration by self-supervised prediction. In International conference on machine learning , 2778– 2787. PMLR. Pont-Tuset, J.; Perazzi, F.; Caelles, S.; Arbeláez, P.; Sorkine-Hornung, A.; and Van Gool, L. 2017. The 2017 DAVIS Chal-lenge on Video Object Segmentation. arXiv:1704.00675 .Schrittwieser, J.; Antonoglou, I.; Hubert, T.; Simonyan, K.; Sifre, L.; Schmitt, S.; Guez, A.; Lockhart, E.; Hassabis, D.; Graepel, T.; et al. 2020. Mastering atari, go, chess and shogi by planning with a learned model. Nature , 588(7839): 604– 609. Seo, Y.; Hafner, D.; Liu, H.; Liu, F.; James, S.; Lee, K.; and Abbeel, P. 2023. Masked world models for visual control. In 
+
+Conference on Robot Learning , 1332–1344. PMLR. Shelhamer, E.; Mahmoudieh, P.; Argus, M.; and Darrell, T. 2016. Loss is its own reward: Self-supervision for reinforce-ment learning. arXiv preprint arXiv:1612.07307 .Stone, A.; Ramirez, O.; Konolige, K.; and Jonschkowski, R. 2021. The Distracting Control Suite–A Challenging Bench-mark for Reinforcement Learning from Pixels. arXiv preprint arXiv:2101.02722 .Sun, R.; Zang, H.; Li, X.; and Islam, R. 2024. Learning la-tent dynamic robust representations for world models. arXiv preprint arXiv:2405.06263 .Sutton, R. S. 1991. Dyna, an integrated architecture for learning, planning, and reacting. ACM Sigart Bulletin , 2(4): 160–163. Tassa, Y.; Doron, Y.; Muldal, A.; Erez, T.; Li, Y.; Casas, D. d. L.; Budden, D.; Abdolmaleki, A.; Merel, J.; Lefrancq, A.; et al. 2018. Deepmind control suite. arXiv preprint arXiv:1801.00690 .Van Keirsbilck, M.; Keller, A.; and Yang, X. 2019. Rethink-ing full connectivity in recurrent neural networks. arXiv preprint arXiv:1905.12340 .Yarats, D.; Zhang, A.; Kostrikov, I.; Amos, B.; Pineau, J.; and Fergus, R. 2021. Improving sample efficiency in model-free reinforcement learning from images. In Proceedings of the aaai conference on artificial intelligence , volume 35, 10674–10681. Zhang, A.; McAllister, R.; Calandra, R.; Gal, Y.; and Levine, S. 2020. Learning invariant representations for re-inforcement learning without reconstruction. arXiv preprint arXiv:2006.10742 .Zhang, W.; Wang, G.; Sun, J.; Yuan, Y.; and Huang, G. 2023. Storm: Efficient stochastic transformer based world models for reinforcement learning. Advances in Neural Information Processing Systems , 36: 27147–27166.

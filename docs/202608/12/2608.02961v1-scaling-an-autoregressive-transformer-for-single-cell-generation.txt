@@ -1,0 +1,506 @@
+Title: Scaling an Autoregressive Transformer for Single-Cell Generation
+
+URL Source: https://arxiv.org/pdf/2608.02961v1
+
+Published Time: Wed, 05 Aug 2026 00:19:20 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# Scaling an Autoregressive Transformer for Single-Cell Generation 
+
+# Aleksandr Sharipov, Yusif Mukhtarov, Igor Molybog 1
+
+> 1
+
+HawAII, University of Hawai’i at Manoa sharipov@hawaii.edu, yusif.mukhtarovv@gmail.com, molybog@hawaii.edu 
+
+Abstract 
+
+We study a self-supervised generation task for single-cell gene expression vectors: given a set of vectors from a cell type, we aim to generate additional gene expression vectors of that cell type. For this task we characterize both the biological fi-delity of the generated gene expression vectors and the scaling behavior of the pretraining loss. The model is a causal trans-former paired with a learned quantized VAE tokenizer, trained with a cross-entropy loss. To evaluate the model, we condi-tion it on held-out gene expression vectors of a cell type and generate vectors of gene expression, comparing the resulting distribution over gene expression vectors to the ground truth distribution of that cell type. We study the scaling proper-ties of the proposed architecture by varying the number of trained parameters and the amount of training data. To our knowledge, we find the first jointly-fit two-exponent scaling law and compute-optimal frontier for a single-cell foundation model. Finally, we discuss how this pretrained model could be finetuned for perturbation response prediction. 
+
+# 1 Introduction 
+
+Generating realistic single-cell gene expression vectors for a cell type is broadly useful: such synthetic gene expression vectors can augment scarce or costly measurements, enable in-silico experimentation, and provide a learned represen-tation for downstream analysis. Generating gene expression vectors for a cell line first requires representing that cell line. Existing methods represent a cell line in one of three ways: first, using the categorical name of the cell line, as in CPA (Lotfollahi et al. 2023), GEARS (Roohani, Huang, and Leskovec 2023), and Lingshu-Cell (Zhang et al. 2026); second, using an example gene expression vector from the cell line, as in scGen (Lotfollahi, Wolf, and Theis 2019), scGPT (Cui et al. 2024), Geneformer (Theodoris et al. 2023), PRiMeFlow (Yan et al. 2026), and scREPA (Wang et al. 2026b); or third, using a sequence of gene expression vectors from the cell line, as in State (Adduri et al. 2025). In this paper, we propose an autoregressive transformer architecture, paired with a quantized VAE for tokenization, that represents a cell line from a sequence of single-cell gene expression vectors of an arbitrary length, and we study both the fidelity of the generated gene expression vectors and how its pretraining loss scales. The model maps each single-cell 
+
+Code available at: https://github.com/haw-ai-i/SATScG 
+
+gene expression vector to a short sequence of discrete codes, treating discrete codes similarly to how a language model treats tokens. Specifically, our contribution is fivefold: first, we formulate a self-supervised learning task of generating synthetic gene expression vectors given a cell line; second, we define downstream metrics to evaluate the biological fi-delity of the generated gene expression vectors; third, we formulate a pretraining loss based on autoregressive cross-entropy prediction over discrete codes; fourth, we show that this pretraining loss correlates with downstream evaluation metrics; and fifth, we study the joint scaling laws of this loss with respect to model size N and pretraining data size 
+
+D. Finally, we discuss how this pretrained cell-line embed-ding model could be finetuned into a system for perturbation response prediction, and report an observation from pretrain-ing bearing on this idea: a held-out loss on the target pertur-bation benchmark, tracked throughout pretraining, traces a checkmark-shaped trajectory rather than falling together with the scaling-law loss (Section 5). In language and vision, loss as a function of model size 
+
+N and training data size D follows a predictable power-law form that can be used to choose a compute-optimal allocation between N and D (Kaplan et al. 2020; Hoffmann et al. 2022). Whether an analogous scaling law holds for single-cell foundation models is the subject of an active debate, as discussed in Section 2. Several recent papers (Kendiukhov 2026; Wang et al. 2026a) report power-law scaling along a single axis, such as model size at a fixed data volume or vice versa; at least three independent groups (DenAdel et al. 2026; Wang et al. 2026a; Dibaeinia et al. 2026) report evidence that single-cell foundation models plateau well short of their largest scales and attribute this to a lack of context diversity 
+
+rather than insufficient capacity; and to our knowledge no prior work has fit a joint, two-exponent L(N, D ) law to a single-cell transformer on an independently-varied N × D
+
+grid. We define the task, metrics, loss, and model in Section 3; show that generation quality tracks the pretraining loss in Section 4.1 and present the fitted scaling law with its di-agnostics and compute-optimal frontier in Section 4.4; and discuss the implications for the single-cell scaling debate and the Stage 2 perturbation-response direction in Section 5. arXiv:2608.02961v1 [cs.LG] 3 Aug 2026 2 Background and Related Work 
+
+## 2.1 Single-cell foundation models 
+
+Single-cell foundation models pretrain on large, heteroge-neous atlases and transfer to downstream tasks such as cell-type annotation, perturbation response, or batch cor-rection. Architecturally, they fall into two broad families. 
+
+Continuous-embedding models, such as scVI (Lopez et al. 2018), scGPT (Cui et al. 2024), and the five architectures sur-veyed in (DenAdel et al. 2026), encode expression directly as continuous vectors. In contrast, discretizing models convert expression profiles into sequences of discrete symbols be-fore applying standard sequence models. For example, Gene-former (Theodoris et al. 2023) ranks genes by expression and feeds the resulting rank order to a BERT-style encoder. Similarly, Cell2Sentence (Levine et al. 2023) and its scaled successor C2S-Scale (Rizvi et al. 2026) represent each cell as a sentence of gene names ordered by expression, which is then modeled by a standard language model. Finally, Tahoe-x1 (Gandhi et al. 2025) bins continuous expression values using a fixed, non-learned quantile codebook. Our model also belongs to this discretizing family; it uses a variational autoencoder with a residual codebook as a tokenizer to learn a discrete representation of individual cell profiles. 
+
+## 2.2 Neural scaling laws 
+
+Kaplan et al. (2020) showed that pretraining loss for trans-formers trained on natural language follows power laws in model size and data size individually. Hoffmann et al. (2022) (Chinchilla) extended this to a joint form and described three ways to estimate it: Approach 1 fits the lower envelope of training curves; Approach 2 fits parabolas to loss at fixed compute, representing isoFLOP profiles; Approach 3 directly fits a parametric two-term loss 
+
+L(N, D ) = E + AN α + BDβ (1) to every (N, D, L ) triple by least squares, and inverts the fitted form analytically to obtain a compute-optimal frontier 
+
+N ∗(C). We use Approach 3, detailed in Appendix D.3, and reuse this fitting procedure as-is; our novelty is the appli-cation to a discrete-tokenization single-cell transformer, not the fitting procedure itself. 
+
+# 3 Task, Metrics, and Model 
+
+This section defines the self-supervised learning task, the metrics that evaluate the generated gene expression vectors, the pretraining loss, and the model architecture; the full spec-ification is deferred to Appendices A–D. 
+
+## 3.1 The task 
+
+We study a self-supervised learning task: given a set of single-cell gene expression vectors from a cell type, generate additional gene expression vectors of that cell type. Here a cell type corresponds to a group of single-cell gene expres-sion vectors sharing a cell-type label; the label is used only to group vectors into a sentence and is never explicitly included in the model’s input. We propose to extract cell type embed-ding vectors from the pre-trained model for downstream use, as discussed in Section 5. 
+
+## 3.2 Metrics 
+
+We evaluate a generated population of gene expression vec-tors against empirical held-out vectors of the same cell type at the level of population averages: each population is sum-marized by its per-gene mean expression vector, and every metric we report is a comparison between two such average vectors. Metrics of this form are the standard measure of biological fidelity in recent single-cell expression prediction work, including the Virtual Cell Challenge (Roohani et al. 2025). We report three quantities, averaged over cell types: the Pearson correlation between the average vector of the generated population and that of the empirical one, the mean absolute error between the same two average vectors, and a cell-type discriminability score that is high when a generated population’s average vector is nearest the empirical average vector of its own cell type among all types in the hold-out set. These metrics are defined in Appendix A.5 (Eqs. 6–8); the baseline we score them against is introduced in Section 4.1. 
+
+## 3.3 The pretraining loss 
+
+Each single-cell gene expression vector is mapped to a se-quence of eight discrete tokens, one per residual quantizer codebook (Section 3.4). The token sub-sequences corre-sponding to cells from a single cell line are arranged in an arbitrary order to form a sequence, also called a sentence. The model is trained to autoregressively predict the next to-ken in the sentence. We use the cross-entropy loss, as detailed in Appendix A.4. 
+
+## 3.4 Model architecture 
+
+Inspired by approaches in large vision models (Bai et al. 2023), the model has two components, trained in sequence and then composed: a residual quantized variational autoen-coder (RQ-VAE) (Lee et al. 2022) that learns a discrete to-kenizer for single-cell gene expression vectors, and a causal transformer that models sequences of these tokens, as de-scribed in Appendix A. 
+
+Tokenizer. The tokenizer takes a single-cell log-normalized expression vector over a fixed 18,080-gene panel and compresses it to a single 256-dimensional latent vec-tor, which a residual vector quantizer (Lee et al. 2022) then encodes coarse-to-fine over eight passes: the first codebook contributes the codeword nearest the latent vector, and each subsequent codebook provides the codeword closest to the residual of the preceding steps. A single-cell expression profile entering as a vector of 18,080 expression values is thus mapped to an ordered tuple of eight integers; see Ap-pendix A.1 for a concrete example. Because this compres-sion is lossy, it establishes an upper bound on the fidelity with which any cell state can be reconstructed, regardless of the downstream predictor’s capacity. The RQ-VAE is trained once and then frozen , serving purely as a tokenizer for all subsequent transformer experiments. 
+
+Transformer and training. The tokenizer maps each single-cell gene expression vector to a block of eight discrete tokens, and a set of vectors sharing a cell type is concate-nated into a sentence of discrete tokens, one block per vector, separated by a learned separator token. Every sentence holds 32 vectors, or 256 tokens plus the 31 separators, and this length is fixed throughout training and evaluation. Details are provided in Appendix A.2. The model builds upon the LLaMA architecture (Touvron et al. 2023), adding a learned positional embedding over the eight tokens encoding a sin-gle vector, shared across all vectors in the sequence, together with a learned bias distinguishing tokens that encode a vector from the separators. 
+
+Context embedding. Beyond next-token prediction, the same transformer yields a fixed-size embedding for a cell-line sentence: we mean-pool its last hidden state over the tokens of the cell-line sequence, producing one vector for the context, as detailed in Appendix A.2. This mirrors the mech-anism REAL (Zhang et al. 2024) uses to extract response embeddings from decoder-only language models, averaging token-level hidden states over the sequence dimension; here the same operation is applied to a cell-line context rather than a dialogue response. For downstream perturbation re-sponse prediction (Section 5), this pooled vector serves as the cell-line context embedding, giving predictors an alternative to the categorical, single-profile, or full-sentence cell-line representations surveyed in Section 1. 
+
+# 4 Results 
+
+## 4.1 Gene expression vector generation quality tracks the pretraining loss 
+
+We first ask whether the cross-entropy loss is predictive of the target evaluation metrics of the task, verifying that lower pre-training loss yields higher gene expression vector generation quality. For this evaluation, we measure generation quality across ten training checkpoints of a 4.43 M-parameter model, during which the validation loss decreases from 3.61 to 3.09 .We score the model against a baseline : the value each metric takes when a second, disjoint set of empirical held-out vec-tors of the same cell type, passed through the same tokenizer as the generated ones, is used in place of the generated vec-tors. It is the score a near-ideal generator would obtain. As detailed in Appendix A.5, the generation quality improves monotonically as the loss falls and tracks it closely. The mean-expression Pearson correlation coefficient rises from 
+
+0.947 to 0.960 , exhibiting a Pearson correlation r = −0.99 
+
+against validation loss across checkpoints. Concurrently, the mean-expression mean absolute error decreases from 0.051 
+
+to 0.041 , with a correlation r = +0 .98 . These trends are il-lustrated in Figure 1, with the per-checkpoint values listed in Table 4. Table 1 reports the lowest-validation-loss checkpoint against the baseline. First, generation is strongly cell-type-specific. Discrim-inability is 0.990 , essentially at the baseline of 0.998 and far above the ≈ 0.5 a random ordering would give: a generated population’s mean vector is almost always closest to the em-pirical mean vector of its own cell type among all 131 types. The generated gene expression vectors are therefore about as cell-type-discriminable as empirical biological replicates. Second, the generated gene expression vectors match em-pirical replicates on this measure. Their mean-expression Pearson ( 0.960 ) and MAE ( 0.041 ) sit just under the baseline Metric Model Baseline Mean-expression Pearson ( ↑) 0.960 0.964 Mean-expression MAE ( ↓) 0.041 0.038 Cell-type discriminability ( ↑) 0.990 0.998 Table 1: Same-cell-type generation quality for the 4.43 Mmodel at the checkpoint with the lowest pretraining valida-tion loss (per-checkpoint values in Table 4), scored against held-out empirical vectors and averaged over 131 cell types. Metrics are defined in Eqs. 6–8. (0.964 , 0.038 ), meaning the generated population matches empirical vectors almost as closely as two empirical subsets of the same cell type match each other. This baseline falls short of a perfect score of 1.0 for correlation or 0.0 for er-ror because of the lossy tokenization noted in Section 3.4 and because the metric compares two finite, distinct biolog-ical samples. This is a within-run, single-model-size probe rather than a downstream scaling result, as discussed in Ap-pendix F, but it shows that reductions in the pretraining loss translate into measurable, cell-type-specific generation im-provements. Generation this faithful also points to a practical use: the model can serve as a generator of synthetic single-cell gene expression vectors, for example to augment scarce measurements or to produce in-silico populations of a given cell type. 
+
+## 4.2 The single-cell scaling debate 
+
+Having seen that generation quality tracks the pretraining loss, we now turn to how that loss scales with model size 
+
+N and data size D. Whether single-cell foundation models scale predictably is actively contested. At least six single-cell papers posted in the H2 of 2025 and H1 of 2026 directly ad-dress model- or data-scaling for single-cell foundation mod-els; Table 2 summarizes how each relates to our design. None reports an independently-varied N × D grid fit with a joint two-exponent law of the form introduced by Hoffmann et al. (2022), and a compute-optimal frontier: prior work either sweeps a single axis, co-varies N and D, or reports only a one-exponent N -only power law. This design difference changes the conclusion. Three stud-ies in this literature, which we refer to throughout as the 
+
+diversity-over-scale cluster (DenAdel et al. 2026; Wang et al. 2026a; Dibaeinia et al. 2026), report no clear data-scaling law, or saturation well below the scales they test, and read this as evidence that scale is not the primary lever. Under the two-term parametric loss of Hoffmann et al. (2022) in Eq. 1, however, increasing D at fixed or uncontrolled N is 
+
+expected to plateau once the data term B/D β falls below the capacity term A/N α, since the model then lacks the capac-ity to exploit more data. That is a capacity bottleneck, rather than proof that a data-scaling law does not exist, and distin-guishing the two requires sweeping N and D independently, which none of these studies do. Our grid does, and on it the loss does scale: both exponents come out clearly positive, the fitted law predicts runs held out of it, and inverting it gives a compute-optimal frontier (Section 4.4). Appendix C treats Figure 1: Evaluation of single-cell gene expression vector generation quality metrics. Each panel plots a generation-quality metric for the 4.43 M model against its validation loss across ten training checkpoints (loss falls left to right, so training progresses rightward). The dashed horizontal line marks the baseline (Table 1). The model tracks close to it, improving as the loss decreases.                                            
+
+> Work Nrange (# sizes) Joint
+> N×D?Parametric fit? Perturbation-task scaling? Geneformer scaling (Chen et al. 2026) 38M–316M (5), fixed DNo No Not studied C2S-Scale (Rizvi et al. 2026) 410M–27B (4), fixed DNo No 2 of 4 sizes only Tahoe-x1 (Gandhi et al. 2025) 70M–3B (3), Dconfounded with
+> N
+> No No Frozen embeddings + sepa-rate model Masked-recon. transform-ers (Kendiukhov 2026) 533–100.5M (6), fixed D=200 kNo (single-axis) Power law ( N-only) Not studied X-Cell (Wang et al. 2026a) 83M–3.1B (5), fixed DNo Power law ( N-only) Yes, training loss only DenAdel et al. (2026) 5 architectures, Nminimally var-ied No No Not studied
+> Ours 1.3M–83.9M (5, fixed ratio) Yes Chinchilla Approach 3 Pretraining loss
+
+Table 2: Scaling-oriented single-cell papers most relevant to this work. Confounded means model size co-varies with another factor, such as data, architecture family, or an extra input token, rather than being swept on an otherwise-fixed setup. the three studies and this argument in detail, and Section 5 returns to it in light of our results. 
+
+## 4.3 A controlled grid varies model size and data independently 
+
+We therefore construct an explicit grid that varies N and D
+
+independently on an otherwise fixed architecture family and data composition, as detailed in Appendix D. Two controls make the axes clean. On the model axis, a naive sweep over parameter count alone confounds size with shape, since many width/depth pairs give the same parameter count; we instead hold the shape of the network fixed across sizes, scaling width and depth together in fixed proportion, and verify each parameter count by instantiating the model. Five configurations span a factor of ≈ 64 × in parameter count, from 1.31 M to 83 .9M. On the data axis, D is the number of single-cell gene expression vectors the model is trained on, representing the single-cell analogue of counting training tokens, sampled from a fixed ≈ 200 M-vector sub-set of the Arc Institute scBaseCount atlas while holding its composition, representing the relative mix of tissues, studies, and cell types, fixed. This sampling strategy ensures that D
+
+isolates the effect of data quantity rather than diversity, as described in Appendix B. This gives us 22 distinct (N, D )
+
+points, with D running from 38 .1M to 362 M gene expression vectors, and up to 1.01 B on the held-out runs of Section 4.5. Runs do not cycle repeatedly through the corpus, so the held-out loss we fit coincides with the training loss. Within each cell type, 20% of cells are reserved as a validation split that no run ever trains on, and L(N, D ) is the pretrain-ing cross-entropy measured on that split. Because D counts cells processed against a training pool of ≈ 160 M cells, a run makes at most a single pass over that pool at most grid points, with repetition only at the largest budgets, leaving little opportunity to memorize. On a representative run the validation and training losses end at 3.09 and 3.10 , a negli-gible generalization gap. Appendix B gives the split and the sampling scheme, and Appendix E.2 shows the full training and validation curves. This is deliberately a small-scale setup: the largest model in the grid has at most 83 .9M parameters, two orders of magnitude below the billion-parameter models in Table 2, and all experiments ran on a single NVIDIA H100 GPU. Reproducing the scaling law therefore does not require large-scale infrastructure, and should be within reach of teams with modest compute budgets. 
+
+## 4.4 A two-exponent scaling law for the pretraining loss 
+
+We fit a controlled scaling law over the 22 (N, D ) points of our grid, fitting Eq. 1 as described in Appendix D. On the self-supervised pretraining loss, this yields a two-term power law of the standard Chinchilla form, with both exponents clearly positive: 
+
+L(N, D ) = 2 .90 |{z} 
+
+> E
+
++ 2.05 × 10 4
+
+N 0.81 + 4.28 × 10 3
+
+D0.57 , (2) i.e. α ≈ 0.81 (returns to model size) and β ≈ 0.57 (returns to data), with an irreducible-loss floor of E ≈ 2.90 nats. The fit explains the grid well: R2 = 0 .977 on the loss and 
+
+0.976 on the log-loss, with a log-loss RMSE of 0.0046 and a mean absolute error of 0.008 nats. The residuals, shown in Figure 3 and detailed in Appendix E.1, are small, roughly symmetric about zero, and show no systematic trend with N
+
+or D; the largest single residual is under 0.02 in log space, representing an error of less than 2%. Because α > β , returns to model capacity fall off faster than returns to data over this regime, and inverting the law gives a compute-optimal allocation, Eq. 9, that tilts toward data: D∗ ∝ Cα/ (α+β) ≈ C0.59 against N ∗ ∝ C0.41 , so at these scales each additional unit of compute is better spent on more cells than on more parameters. Recovering a data exponent this clearly positive is what the ≈ 200 M-cell corpus of Appendix B buys, since a grid that varies D over a narrow range, or only at fixed N , leaves the data term of Eq. 1 too flat to constrain β (Section 4.2). 
+
+## 4.5 The fitted law predicts held-out runs within 0.5% 
+
+A parametric fit with five free parameters on 22 points can, in principle, absorb structure that would not generalize. To guard against this, we held four runs, one at each of the four smaller model sizes, completely out of the fit and evaluated the ability of the fitted law to predict their losses, repre-senting the labeled points in Figure 2. Three of the four fall outside the data budgets the fit sees at their model size, so predicting them tests extrapolation along D; the fourth tests interpolation. The fitted law predicts all four held-out losses within 0.5% of the measured values. For N = 1 .31 M at 
+
+D = 19 .7M, the predicted loss of 3.4245 is within +0 .33% 
+
+of the 3.4357 measured. For N = 4 .43 M at D = 113 M, the predicted loss of 3.0971 is within −0.22% of the 3.0902 
+
+measured. For N = 10 .5M at D = 389 M, the predicted loss of 2.9997 is within +0 .06% of the 3.0014 measured. Finally, for N = 20 .5M at D = 1 .01 B, which is the largest data budget in the study sitting on the compute-optimal frontier, the predicted loss of 2.9596 is within −0.41% of the 2.9475 
+
+measured. That the law predicts held-out (N, D ) points this closely, across every model size, gives us more confidence in reading the compute-optimal frontier of Eq. 2 than the in-sample R2 alone would warrant. Every run in the grid ends where its data budget runs out, not where the model starts to memorize: the validation loss tracks the training loss throughout and is still at its minimum at the last mea-sured step. We can therefore read the fitted β as a return to data. This comes from the proportional pool sampling of Appendix B rather than from the size of the corpus, since uniform pool weighting on the same data oversamples the rare cell types and turns the validation loss upward part-way through a run (Appendix E.2). 
+
+# 5 Discussion 
+
+A scaling law exists for this architecture: on the pretrain-ing objective. Our fit shows that the self-supervised pre-training loss of an RQ-VAE-tokenized single-cell transformer follows a joint two-exponent law over the range we test, and predicts held-out points well enough, as shown in Section 4.5, to determine a compute-optimal allocation. This yields a pos-itive scaling result for a discrete, learned-tokenization archi-tecture, a family not previously fit with a joint N × D law, as summarized in Table 2. This also helps explain the no-data-scaling plateaus reported elsewhere. Those studies mostly add data at a fixed or uncontrolled model size, and under the fitted law, this is precisely when additional data ceases to reduce the loss. Once the data term B/D β falls below the capacity term A/N α, the model lacks the capacity to lever-age more data. The loss consequently flattens even though more data is available. This behavior can be misconstrued as a limit to data scaling, whereas it represents a model-size bottleneck, supporting the argument in Section 4.2. A fixed-
+
+N slice through our fitted surface exhibits the same plateau, even though scaling N and D together consistently reduces the loss. 
+
+Scope: this is a statement about the pretraining objec-tive. The diversity-over-scale papers (DenAdel et al. 2026; Wang et al. 2026a; Dibaeinia et al. 2026) make their strongest claims about downstream biological signal, such as differen-tially expressed gene recovery or perturbation discrimina-tion, rather than the pretraining loss. Our result does not contradict theirs: a well-determined scaling law for the pre-training loss can hold at the same time as a weak downstream trend, if what limits the downstream tasks is the diversity of the available data rather than model size or the amount of pre-training. What our joint grid adds is a controlled demonstra-tion that, for the self-supervised objective, the apparent lack of data scaling in single-axis studies arises from a model-size bottleneck rather than being an inherent property of single-cell transformers. The two-term law appears clearly once N
+
+and D are varied together over a sufficiently wide range. As a first step toward addressing downstream tasks, Sec-tion 4.1 demonstrates that same-cell-type generation quality tracks the pretraining loss, producing synthetic gene expres-sion vectors that are comparable to empirical replicates on a gene-expression-profile measure. 
+
+Stage 2: an idea for perturbation-conditioned generation, and an observation from pretraining. The pretraining Figure 2: Fitted scaling surface for the self-supervised pretraining loss. Iso-loss contours of Eq. 2 are shown in the 
+
+(model size , training FLOPs ) plane with C ≈ 6N D ; filled circles are the 22 empirical grid points, colored by measured loss; the solid ascending line is the compute-optimal frontier N ∗(C) of Eq. 9. The four labeled points, with measured and predicted losses in the legend, are runs held out of the fit, one at each model size below 83 .9M; we discuss them in Section 4.5. objective studied above (Stage 1) builds a general-purpose cell-line representation. The way we envision turning it into a perturbation-response predictor is a second stage that fine-tunes this pretrained model on a perturbation-conditioned objective: a block of control-vector tokens, a token identify-ing the perturbation, and a block of perturbed-vector tokens, with the model scored on predicting the perturbed vector’s tokens from the control cell-line context and the perturba-tion identity. This pretrain-then-finetune (Stage 1 → Stage 2) framework is the direction we are pursuing to apply the ar-chitecture to perturbation response; we do not report Stage 2 results here. What we do report is an observation from Stage 1 pretraining bearing on this idea. While monitoring Stage 1 pretraining, we track a held-out loss on control single-cell gene expression vectors drawn from the same perturbation benchmark a Stage 2 finetune would target, scored in the or-dinary (unconditioned) pretraining format. This loss does not fall together with the scBaseCount loss the scaling law is fit to: it drops sharply over the first few hundred steps and then rises for the remainder of the run, tracing a checkmark-shaped trajectory (Appendix E.3), even as the scBaseCount valida-tion loss keeps falling over the same steps. A natural reading is that the two losses diverge due to a composition mis-match: scBaseCount’s cross-tissue, cross-study composition increasingly dominates the representation as pretraining pro-ceeds, at the expense of fit to the narrower, cell-line-specific slice the perturbation benchmark occupies. This raises an open question for the Stage 1 → Stage 2 framework, namely whether and how the point in Stage 1 pretraining at which a representation is handed off matters for how well it finetunes for perturbation response, which we leave to future work. 
+
+# 6 Conclusion 
+
+We presented an RQ-VAE-tokenized, LLaMA-architecture transformer for single-cell gene expression modeling, pre-trained self-supervised on the scBaseCount atlas to synthe-size expression vectors given a cell-line context, and eval-uated two primary properties. First, its generation quality: conditioned on held-out vectors of a cell type, it generates cell-type-specific gene expression vectors that match the bio-logical fidelity of empirical replicates on a gene-expression-profile measure, and this quality tracks the pretraining loss. Second, how that loss scales: on a controlled grid that varies model size N and data budget D independently, spanning 
+
+1.3–83 .9M parameters and data budgets of 38 .1M– 362 Mvectors on a ≈ 200 M-vector corpus, we fit the Chinchilla Approach-3 parametric loss and obtain, to our knowledge, the first jointly-fit two-exponent scaling law and compute-optimal frontier for a single-cell transformer, with α ≈ 0.81 
+
+and β ≈ 0.57 , R2 ≈ 0.98 , and out-of-sample predictions that track measured losses closely. This locates the no-data-scaling plateaus reported elsewhere as a downstream, not an upstream, phenomenon. Applying the pretrained model to perturbation response, through the Stage 2 perturbation-conditioned generation the architecture is designed for, is the natural direction this result opens up. 
+
+# Acknowledgments 
+
+We thank Rong Wei, Alexander Avdoshkin, Ziyi Zhuang, and Ziyu Chen for their contributions to this work, and Leonid Klarov for providing the compute infrastructure that sup-ported the GPU experiments reported here. This work was supported by the National Science Foun-dation NRT-AI 2244574 and through allocation number CIS240027 from the Advanced Cyberinfrastructure Coordi-nation Ecosystem: Services & Support (ACCESS) program, which is supported by National Science Foundation grants # 2138259, # 2138286, # 2138307, # 2137603, and # 2138296. The technical support and advanced computing resources from University of Hawaii Information Technology Services - Research Cyberinfrastructure, funded in part by the Na-tional Science Foundation CC* awards # 2201428 and # 2232862 are gratefully acknowledged. 
+
+# References 
+
+Adduri, A. K.; Gautam, D.; Bevilacqua, B.; Imran, A.; Shah, R.; Naghipourfar, M.; Teyssier, N.; Ilango, R.; Na-garaj, S.; Dong, M.; Ricci-Tam, C.; Carpenter, C.; Sub-ramanyam, V.; Winters, A.; Tirukkovular, S.; Sullivan, J.; Plosky, B. S.; Eraslan, B.; Youngblut, N. D.; Leskovec, J.; Gilbert, L. A.; Konermann, S.; Hsu, P. D.; Dobin, A.; Burke, D. P.; Goodarzi, H.; and Roohani, Y. H. 2025. Predicting cel-lular responses to perturbation across diverse contexts with State. bioRxiv 2025.06.26.661135. Bai, Y.; Geng, X.; Mangalam, K.; Bar, A.; Yuille, A.; Darrell, T.; Malik, J.; and Efros, A. A. 2023. Sequential modeling enables scalable learning for large vision models. arXiv:2312.00785. Chen, H.; Venkatesh, M. S.; Ortega, J. G.; Mahesh, S. V.; Nandi, T. N.; Madduri, R. K.; Pelka, K.; and Theodoris, C. V. 2026. Scaling and quantization of large-scale founda-tion model enables resource-efficient predictions in network biology. Nature Computational Science .Cui, H.; Wang, C.; Maan, H.; Pang, K.; Luo, F.; Duan, N.; and Wang, B. 2024. scGPT: toward building a foundation model for single-cell multi-omics using generative AI. Na-ture Methods , 21: 1470–1480. DenAdel, A.; Hughes, M.; Thoutam, A.; Gupta, A.; Navia, A. W.; Fusi, N.; Raghavan, S.; Winter, P. S.; Amini, A. P.; and Crawford, L. 2026. Evaluating the role of pretraining dataset size and diversity on single-cell foundation model performance. Nature Methods .Dibaeinia, P.; Babu, S.; Knudson, M.; Sheikh, A. E.; Wen, Y.; Liu, H.; Perera, J.; and Khan, A. A. 2026. Virtual cells need context, not just scale. bioRxiv 2026.02.04.703804. Gandhi, S.; Javadi, F.; Svensson, V.; Khan, U.; Jones, M. G.; Yu, J.; Merico, D.; Goodarzi, H.; and Alidoust, N. 2025. Tahoe-x1: scaling perturbation-trained single-cell foundation models to 3 billion parameters. bioRxiv 2025.10.23.683759. Hoffmann, J.; Borgeaud, S.; Mensch, A.; Buchatskaya, E.; Cai, T.; Rutherford, E.; de Las Casas, D.; Hendricks, L. A.; Welbl, J.; Clark, A.; Hennigan, T.; Noland, E.; Millican, K.; van den Driessche, G.; Damoc, B.; Guy, A.; Osindero, S.; Simonyan, K.; Elsen, E.; Rae, J. W.; Vinyals, O.; and Sifre, L. 2022. Training compute-optimal large language models. arXiv:2203.15556. Kaplan, J.; McCandlish, S.; Henighan, T.; Brown, T. B.; Chess, B.; Child, R.; Gray, S.; Radford, A.; Wu, J.; and Amodei, D. 2020. Scaling laws for neural language models. arXiv:2001.08361. Kendiukhov, I. 2026. Scaling laws for masked-reconstruction transformers on single-cell transcriptomics. arXiv:2602.15253. Lee, D.; Kim, C.; Kim, S.; Cho, M.; and Han, W.-S. 2022. Autoregressive image generation using residual quantization. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Levine, D.; Rizvi, S. A.; Lévy, S.; Pallikkavaliyaveetil, N.; Chen, X.; Zhang, D.; Ghadermarzi, S.; Wu, R.; Zheng, Z.; Vrkic, I.; Zhong, A.; Raskin, D.; Yu, M.; Zhang, Y.; Li, M. M.; Jain, V.; Pisco, A. O.; Sachs, K.; Chen, R.; and van Dijk, D. 2023. Cell2Sentence: Teaching large language models the language of biology. bioRxiv 2023.11.08.566117. Lopez, R.; Regier, J.; Cole, M. B.; Jordan, M. I.; and Yosef, N. 2018. Deep generative modeling for single-cell transcrip-tomics. Nature Methods , 15: 1053–1058. Lotfollahi, M.; Susmelj, A. K.; Donno, C. D.; Roohani, Y.; and Theis, F. J. 2023. Predicting cellular responses to com-plex perturbations in high-throughput screens. Molecular Systems Biology , 19(6): e11517. Lotfollahi, M.; Wolf, F. A.; and Theis, F. J. 2019. scGen predicts single-cell perturbation responses. Nature Methods ,16(8): 715–721. Rae, J. W.; Borgeaud, S.; Cai, T.; Millican, K.; Hoffmann, J.; Song, F.; Aslanides, J.; Henderson, S.; Ring, R.; Young, S.; et al. 2021. Scaling language models: Methods, analysis & insights from training Gopher. arXiv:2112.11446. Rizvi, S. A.; Levine, D.; Patel, A.; Zhang, S.; Wang, E.; Perry, C. J.; Vrkic, I.; Constante, N. M.; Fu, Z.; He, S.; Zhang, D.; Tang, C.; Lyu, Z.; Darji, R.; Li, C.; Sun, E.; Jeong, D.; Zhao, L.; Kwan, J.; Braun, D.; Hafler, B.; Chung, H.; Dhodapkar, R. M.; Jaeger, P.; Perozzi, B.; Ishizuka, J.; Azizi, S.; and van Dijk, D. 2026. Scaling large language models for next-generation single-cell analysis. bioRxiv 2025.04.14.648850. Roohani, Y.; Huang, K.; and Leskovec, J. 2023. Predicting transcriptional outcomes of novel multigene perturbations with GEARS. Nature Biotechnology , 41(7): 927–935. Roohani, Y. H.; Hua, T. J.; Tung, P.-Y.; Bounds, L. R.; Yu, F. B.; Dobin, A.; Teyssier, N.; Adduri, A.; Woodrow, A.; Plosky, B. S.; Mehta, R.; Hsu, B.; Sullivan, J.; Ricci-Tam, C.; Li, N.; Kazaks, J.; Gilbert, L. A.; Konermann, S.; Hsu, P. D.; Goodarzi, H.; and Burke, D. P. 2025. Virtual Cell Challenge: Toward a Turing test for the virtual cell. Cell ,188(13): 3370–3374. Theodoris, C. V.; Xiao, L.; Chopra, A.; Chaffin, M. D.; Sayed, Z. R.; Hill, M. C.; Mantineo, A.; Brydon, E. M.; Zeng, Z.; Liu, X.; and Ellinor, P. T. 2023. Transfer learning enables predictions in network biology. Nature , 618: 616–624. Touvron, H.; Lavril, T.; Izacard, G.; Martinet, X.; Lachaux, M.-A.; Lacroix, T.; Rozière, B.; Goyal, N.; Hambro, E.; Azhar, F.; Rodriguez, A.; Joulin, A.; Grave, E.; and Lample, G. 2023. LLaMA: Open and efficient foundation language models. arXiv:2302.13971. Wang, C.; Karimzadeh, M.; Ravindra, N. G.; Bounds, L. R.; Alerasool, N.; Huang, A. C.; Ma, S.; Gulbranson, D. R.; Cui, H.; Lee, Y.; ..., A. A.; MacKrell, E. J.; Wilken, M. S.; Chen, J.; Herken, B. W.; Weber, J. A.; Onesto, M. M.; Gonzalez-Teran, B.; Leung, N. F.; Shi, S. Y.; Smith, B. J.; Lam, S. K.; Barner, A.; Wright, P.; Rumsey, E. M.; Kim, S.; Sit, R. V.; Litterman, A. J.; Chu, C.; and Wang, B. 2026a. X-Cell: scaling causal perturbation prediction across diverse cellular contexts via diffusion language models. bioRxiv 2026.03.18.712807. Wang, Y.; Chen, X.; Li, X.; and Wong, K.-C. 2026b. scREPA: Predicting single-cell perturbation responses with cycle-consistent representation alignment. Computational Biology and Chemistry , 120: 108712. Yan, Z.; Wu, Y.; Ji, M. X.; Agrahar, C.; Wershof, E.; Nassar, M.; Sadria, M.; Eksi, R.; Trifonov, V.; Ibarra, I.; Felgueira, T.; Osiński, B.; and Stark, R. 2026. PRiMeFlow: Capturing complex expression heterogeneity in perturbation response modelling. arXiv:2604.13986. Zhang, H.; Yuan, G.-H.; Yuan, C.; Xu, T.; Bian, T.; Cheng, H.; Huang, W.; Zhao, D.; and Rong, Y. 2026. Lingshu-Cell: A Generative Cellular World Model for Transcriptome Modeling Toward Virtual Cells. arXiv:2603.25240. Zhang, H.; Zhao, X.; Molybog, I.; and Zhang, J. 2024. REAL: Response Embedding-based Alignment for LLMs. arXiv:2409.17169. 
+
+# A Method 
+
+Our model has two components, trained in sequence and then composed: (i) a RQ-VAE that learns a discrete tokenizer for single-cell expression profiles, and (ii) a causal transformer that models sequences of these tokens. 
+
+## A.1 RQ-VAE tokenizer 
+
+Each cell is represented as a vector x ∈ R18 ,080 of log-normalized expression over a fixed gene panel (Section B). An MLP encoder fθ maps x to a latent ze = fθ (x) ∈ R256 
+
+(one hidden layer of width 1,024 with a ReLU nonlinearity in our default configuration); ze is quantized by a residual vector-quantizer (Lee et al. 2022) with 8 residual codebooks of 256 entries each (initialized via k-means on the first batch), giving each cell a sequence of 8 discrete tokens t1, . . . , t 8 ∈{0, . . . , 255 }; an MLP decoder gθ reconstructs ˆx = gθ (zq )
+
+from the quantized latent zq . At step k, codebook C(k) ∈
+
+R256 ×256 selects C(k) 
+
+> tk
+
+; the residual sequence is defined by 
+
+r(1) = ze and r(k+1) = r(k) − C(k) 
+
+> tk
+
+. The training objective is 
+
+LRQ-VAE = ∥ˆx − x∥22
+
+| {z }
+
+> reconstruction
+
++ λc
+
+> 8
+
+X
+
+> k=1
+
+∥r(k) − sg[ C(k) 
+
+> tk
+
+]∥22, (3) the sum of an MSE reconstruction loss and a commitment loss at each residual codebook k (stop-gradient sg[ ·], com-mitment weight λc = 0 .25 ), summed (not averaged) across codebooks. We train with AdamW, a linear warmup (1,000 steps, or 10% of total steps for short runs) followed by co-sine decay to a minimum learning rate of 10 −6, and batch size 1,024. The RQ-VAE is trained on the scBaseCount atlas; the resulting checkpoint is then frozen and used purely as a tokenizer for all transformer experiments in Section D. 
+
+Worked example: from expression to eight codes. It is worth making the expression-to-token map concrete, since it is the step that turns a continuous cell into a short string of symbols. A single cell enters as its log-normalized expression vector and leaves as an ordered tuple of eight integers, 
+
+x ∈ R18 ,080 fθ
+
+−−→ ze ∈ R256 
+
+> ResidualVQ
+
+−−−−−−−→ (t1, . . . , t 8) ∈ { 0, . . . , 255 }8
+
+> gθ
+
+−−→ ˆx ∈ R18 ,080 .
+
+The encoder fθ compresses the 18 ,080 -dimensional pro-file to a single 256 -dimensional vector ze, and the residual quantizer then encodes ze coarse-to-fine over eight passes. Using the residual sequence defined above, the token selected from each codebook is 
+
+tk = arg min 
+
+> j∈{ 0,..., 255 }
+
+r(k) − C(k) 
+
+> j2
+
+, k = 1 , . . . , 8, (4) so t1 names the codeword closest to ze itself, t2 names the codeword that best explains what codebook 1 left over, and so on down to t8; the quantized latent handed to the decoder is the running sum zq = P8 
+
+> k=1
+
+C(k) 
+
+> tk
+
+. Concretely, a T cell whose profile is dominated by markers such as CD3D and 
+
+IL7R might encode as 
+
+ze 7 −→ (t1, . . . , t 8)= (46 , 201 , 46 , 133 , 8, 224 , 79 , 150) ,
+
+with illustrative values, so the entire cell is now represented by the eight-symbol string 46 201 46 133 8 224 79 150 ,which is the block of tokens that this cell contributes to a cell sentence (Section A.2). Although the eight codebooks are distinct, their indices share the single range {0, . . . , 255 }, so the transformer reuses one 256 -row embedding table across all codebooks: the codes drawn from codebooks 1 and 3 above are both written 46 and map to the same embed-ding row, and only the within-cell position embedding (Sec-tion A.2) distinguishes them. 
+
+## A.2 Cell-sentence transformer 
+
+We reuse the LLaMA decoder-only architec-ture (Touvron et al. 2023) (via HuggingFace’s 
+
+LlamaConfig /LlamaForCausalLM ), trained from scratch rather than from pretrained language-model weights, as the backbone for modeling sequences of RQ-VAE tokens. The vocabulary is the union of the 256 RQ-VAE codes (shared across all 8 residual codebooks) and a single separator token [SEP] .
+
+Sequence construction. A pretraining example is a se-quence of 32 cells of the same cell type, sampled from the same cell-type pool (cells are grouped by their cell_type 
+
+annotation when the pretraining tokens are prepared, and only cell types with at least 1,000 cells are kept), each con-tributing its 8 RQ-VAE tokens, with [SEP] inserted between (but not after) consecutive cells, giving 32 × 8 + 31 = 287 
+
+tokens. Note the cell-type label is used only to decide which cells may share a sequence; it is not fed to the model as a token. The model is trained with standard next-token cross-entropy; loss on [SEP] positions is masked out of the target so the model is only ever scored on predicting RQ-VAE code positions. 
+
+Cell-aware position encoding. On top of the backbone’s own position encoding, we add two signals that mark the block structure of a cell sentence: (a) a learned positional embedding over the 8 within-cell token positions only, shared across all cells in the sequence, so that a token’s role within its cell is encoded independently of where that cell falls in the sentence, and (b) one of two learned bias vectors added to every token’s embedding depending on whether it belongs to a cell ( intra ) or is a separator or other special token ( inter ). 
+
+Cell-line context embedding. Beyond the per-cell pool-ing used above, the same last hidden states support a coarser, sequence-level embedding representing an entire cell-line context. Let h1, . . . , h T ∈ Rd denote the transformer’s last hidden states at the T non-separator token positions of a context-cell sequence, excluding [SEP] positions, consis-tent with how separator positions are already excluded from the pretraining loss target (Section A.3). The cell-line em-bedding is the mean of these hidden states, 
+
+e = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+ht, (5) the same average-token-pooling mechanism REAL (Zhang et al. 2024) uses to obtain sequence-level response embed-dings from decoder-only language models, applied here to a cell-line context rather than a dialogue response. Because ev-ery context cell contributes a fixed 8 tokens, e is equivalently the average of the per-cell pooled vectors defined above, taken over every cell in the sequence, so the two poolings agree wherever both are computed on the same sequence. This pooling rule is defined identically regardless of how many cells the context holds, giving a fixed-d-dimensional cell-line embedding at any context length (Section 3.4). 
+
+## A.3 Pretraining 
+
+All experiments in this paper train the model self-supervised by next-token prediction on control-only cell sentences drawn from scBaseCount (Section B). This pretraining ob-jective — and its scaling with model and data size (Section 4) — is the sole training procedure we study. 
+
+## A.4 Evaluation metric 
+
+The quantity we fit is the self-supervised pretraining loss: next-token cross-entropy over held-out scBaseCount cell sen-tences, measuring how well the model predicts the RQ-VAE code positions of unseen cells. This is the loss L(N, D ) in Eq. 1 and the target of every fit in Section 4. Because the se-quence includes [SEP] positions whose targets are masked out, the loss is averaged only over predicted code positions, so it is comparable across the different model and data sizes of the grid. 
+
+## A.5 Same-cell-type generation and its evaluation 
+
+Beyond the pretraining loss, we ask whether the pre-trained model generates realistic gene expression vectors and whether generation quality improves as that loss falls. Using the pretraining (same-cell-type) format, we prompt the model with a set of held-out vectors of a given cell type and autoregressively sample new vectors of that type — each of the eight code positions in turn, restricted to the RQ-VAE codes — then decode the generated tokens to expression with the frozen RQ-VAE. For each of 131 cell types we compare the generated population against a disjoint set of held-out 
+
+empirical vectors of the same type, using their original (log-normalized) expression as the reference. Because a generated vector can only be produced by decoding its RQ-VAE tokens back to expression, any tokenizer reconstruction error falls entirely on the generated side of the comparison; our base-line (defined below) measures exactly that error, so the gap between the model and the baseline isolates the transformer’s own contribution. We summarize each comparison with three quantities, averaged over cell types: (i) the Pearson correla-tion between the per-gene mean expression of generated and empirical vectors (Eq. 6; profile agreement — whether the relative pattern across genes matches); (ii) the mean abso-lute error of that per-gene mean (Eq. 7; magnitude error — whether the absolute expression levels match); and (iii) a cell-type discriminability score in [0 , 1] (Eq. 8) — 1 when each generated population’s mean vector is nearest the em-pirical mean vector of its own cell type among all types, and 
+
+≈ 0.5 under random guessing — which measures whether generation is cell-type-specific rather than mode-collapsed across types. Formally, write C = 131 for the number of cell types and 
+
+G = 18 ,080 for the number of genes. For cell type c let 
+
+¯xc ∈ RG be the per-gene mean expression of the generated vectors of that type and ¯yc ∈ RG that of the disjoint set of empirical hold-out vectors, with ¯xc,g , ¯yc,g their g-th entries and ⟨¯xc⟩ = 1
+
+> G
+
+P 
+
+> g
+
+¯xc,g the average across genes. Writing 
+
+uc,g = ¯ xc,g − ⟨ ¯xc⟩ and vc,g = ¯ yc,g − ⟨ ¯yc⟩ for the gene-centered deviations, the three metrics are 
+
+Pearson = 1
+
+C
+
+> C
+
+X
+
+> c=1
+
+P 
+
+> g
+
+uc,g vc,g 
+
+qP 
+
+> g
+
+u2
+
+> c,g
+
+qP 
+
+> g
+
+v2
+
+> c,g
+
+, (6) 
+
+MAE = 1
+
+C
+
+> C
+
+X
+
+> c=1
+
+1
+
+G
+
+> G
+
+X
+
+> g=1
+
+¯xc,g − ¯yc,g , (7) 
+
+Disc = 1
+
+C
+
+> C
+
+X
+
+> c=1
+
+
+
+1 − ρ(c)
+
+C
+
+
+
+, (8) 
+
+ρ(c) =  c′ : ∥¯xc − ¯yc′ ∥1 < ∥¯xc − ¯yc∥1 ,
+
+where ρ(c) ∈ { 0, . . . , C −1} is the rank of the true cell type’s empirical mean vector when the C empirical mean vectors are ordered by increasing ℓ1 distance to ¯xc (rank 0 = nearest). Discriminability is therefore 1 when every generated mean vector is closest to its own type’s empirical mean vector and averages ≈ 0.5 under random ordering. To show how good a prediction can look on each metric, we compare it against a baseline , which replaces the generated vectors with a second, disjoint set of empirical held-out vectors of the same type, passed through the same RQ-VAE the generated vectors use. It is the best score attainable by any generator whose outputs must go through the tokenizer, and it still falls short of a perfect score for two reasons: it compares two 
+
+different finite samples of empirical vectors (sampling and biological variation), and the baseline vectors carry the same RQ-VAE reconstruction error as the generated ones. 
+
+# B Data 
+
+Gene panel. All data is aligned to the fixed 18,080-gene panel used as the interface for the tokenizer (Section 3.4); any external dataset used in this work is subset and reordered to this panel before further processing. All expression matrices are normalized to 20,000 total counts per cell and log1p-transformed. 
+
+Pretraining corpus (scBaseCount). Pretraining uses the Arc Institute’s scBaseCount atlas, downloaded from the pub-lic arc-institute-virtual-cell-atlas bucket (human). The full atlas holds on the order of half a bil-lion cells; we work with a fixed subset of ≈ 200 million cells (23,846 source h5ad files after gene alignment and filtering). Cells are grouped by their cell-type annotation (keeping only cell types with at least 1,000 cells), and within each cell type 
+
+20% of cells are held out for validation. This single corpus, at fixed composition, is the only data source in the scaling grid. The data axis D is the pretraining data budget , which is the number of cells the model is trained on, sampled from the corpus (with repetition at the largest budgets). This is the single-cell analogue of counting training tokens in language-model scaling laws, and the quantity that enters the compute proxy C ≈ 6N D (Section D); each optimizer step consumes 
+
+256 × 32 ≈ 33 k cells, so a run’s D determines its step bud-get. Varying D over a wide range at each model size, on this fixed corpus, is what lets us fit the two-term law of Eq. 1 cleanly. 
+
+Sampling the corpus. Each pretraining sentence is built by first choosing a cell-type pool and then drawing that sen-tence’s 32 cells from it (Section A.2). We choose a pool with probability proportional to the number of cells it holds, so that every cell in the corpus is equally likely to be trained on regardless of which cell type it belongs to, and the corpus’s natural, long-tailed composition over cell types is preserved in expectation, yielding the fixed composition that the scaling grid holds constant while D varies. The obvious alternative, weighting every cell type equally, instead rebalances train-ing toward the rare types. Because a rare type’s pool is small (a type is kept only if it holds at least 1,000 cells, while the common types contribute orders of magnitude more), its few cells are revisited many times over a run, and the model memorizes them: the training loss keeps falling while the validation loss stops tracking it and turns upward part-way through training. Appendix E.2 shows this failure directly. Every run reported in this paper uses proportional sampling. 
+
+# C The Single-Cell Scaling Debate in Detail 
+
+This appendix expands on the comparison summarized in Table 2 and Section 4.2, describing the three studies of the 
+
+diversity-over-scale cluster and the structural argument that separates a capacity bottleneck from a missing data-scaling law. Three of these results converge on a similar conclusion from different angles. DenAdel et al. (2026) pretrain 400 models across 6,400 experiments on a 22.2M-cell corpus and report that single-cell foundation models plateau in perfor-mance with pretraining datasets that are only a fraction of the size of current training corpora, with no clear data-scaling law. Wang et al. (2026a)’s own appendix reports that bio-logical signal, specifically the differentially expressed gene Pearson correlation, for their largest model family saturates around 1.6B parameters, well below their 3.1B ceiling, and attributes this to dataset diversity, with approximately 10,700 unique perturbation-context sets, rather than model capacity. Dibaeinia et al. (2026) is explicitly a position paper arguing against scaling as the primary lever, and provides controlled evidence on a fixed architecture without varying model size that at matched cell counts, perturbations observed across more training contexts are recovered significantly better than those seen in few contexts, while raw cell count correlates only weakly with recovery. We highlight one structural point that, to our knowledge, none of these three papers can make from their own data: un-der the two-term parametric loss of Hoffmann et al. (2022) in Eq. 1, increasing D at fixed or uncontrolled N is expected 
+
+to plateau once the data term B/D β shrinks below the ca-pacity term A/N α; the model lacks the capacity to exploit more data. That is a capacity bottleneck, rather than proof that a data-scaling law does not exist. Distinguishing the two requires a joint grid in which N and D are both swept in-dependently, a design lacking in both the data sweep over fixed or uncontrolled model size by DenAdel et al. (2026) and the diversity sweep at a fixed model size in Wang et al.’s appendix. While these studies conclude that data scaling is absent or saturates early, our work demonstrates that a joint scaling law holds and fits the empirical data well once model capacity and data budget are varied independently, distin-guishing capacity limits from data limits. 
+
+# D Experimental Design: A Controlled N × D
+
+# Scaling Grid 
+
+This appendix specifies the grid whose design and motivation are given in Section 4.3. 
+
+## D.1 Controlling for model shape 
+
+A naive sweep over parameter count alone confounds size with shape (depth vs. width), since many (dmodel , n layer ) pairs give the same parameter count. We instead fix the shape of the network across sizes: a constant width/depth ratio 
+
+dmodel /n layer = 128 , a constant head dimension of 64 , and an MLP expansion ratio fixed at dffn = 2 dmodel , so that moving along the N axis scales width and depth together in fixed proportion. We verify the exact parameter count by instantiating each model rather than relying on a closed-form Label dmodel nhead nlayer dffn Actual params 1.31M 256 4 2 512 1,311,744 4.43M 384 6 3 768 4,425,984 10.5M 512 8 4 1024 10,489,856 20.5M 640 10 5 1280 20,486,400 83.9M 1024 16 8 2048 83,902,464 Table 3: Transformer configurations on the N axis of the grid, at fixed shape (width/depth ratio = 128 , head dimension 
+
+= 64 , dffn = 2 dmodel ). estimate. Table 3 gives the five configurations used on the N
+
+axis of the grid; they span a factor of ≈ 64 × in parameter count. 
+
+## D.2 Grid and per-point hyperparameter tuning 
+
+The five model sizes of Table 3 are crossed with data bud-gets D from 38 .1M to 362 M cells. Rather than a full dense crossing, we place points to give broad, independent varia-tion in both axes (each model size is trained at several D,and each D regime is covered by more than one model size), yielding 22 distinct (N, D ) points for the fit, which is more than enough to identify the five parameters of Eq. 1 while keeping total compute small. The experiments reported here were run on a single server with one NVIDIA H100 NVL GPU (approximately 96 GB of memory), 40 AMD EPYC CPUs, and 314 GiB of system RAM. Each run uses batch size 256 , dropout 0.1, warmup ratio 0.1, and cosine decay to a minimum learning rate of one-tenth of the run’s peak rate (a 10 × decay, following (Rae et al. 2021)); a run’s step bud-get is set directly by its D (Section B). Because the optimal learning rate shifts with model size, we do not reuse a single global rate: for each model size we run a short learning-rate search (a handful of candidate rates) and keep the rate with the best loss, which we then reuse across all data sizes for that model. 
+
+## D.3 Parametric fit (Chinchilla Approach 3) 
+
+For each (N, D ) point we record the self-supervised pretrain-ing loss L(N, D ) and fit Eq. 1 by nonlinear least squares on the log-residuals log ˆL(N, D ; θ) − log L(N, D ), with a Hu-ber loss ( δ = 10 −3) in place of a standard quadratic to limit the influence of outlier points. Because Eq. 1 is non-convex in θ = (log A, log B, log E, α, β ), we repeat the fit from a 5 × 5 × 5 × 6 × 6 = 4 ,500 -point grid of initializations (α0, β 0 ∈ { 0, 0.5, 1, 1.5, 2}, log E0 ∈ {− 1, −0.5, 0, 0.5, 1},
+
+log A0, log B0 ∈ { 0, 5, 10 , 15 , 20 , 25 }) and keep the lowest-cost solution. We report the fitted (A, B, E, α, β ), the log-loss RMSE and R2, and a residual plot (Appendix E.1) as fit diagnostics. As a stronger check than in-sample diagnostics alone, we additionally hold four (N, D ) points out of the fit entirely and compare their measured losses to what the fitted law predicts (Section 4). 
+
+## D.4 Compute-optimal frontier 
+
+Approximating training compute as C ≈ 6N D (with D
+
+counted in pretraining cells processed , the training-token 
+
+Figure 3: Distribution of log-residuals log ˆL − log L of the Approach-3 fit over the 22 grid points. Residuals are small (≲ 2% ) and roughly centered on zero, with no systematic structure. analogue of Section B) and substituting D = C/ 6N into Eq. 1, the loss-minimizing model size at fixed compute has the closed form 
+
+N ∗(C) = 
+
+ αA βB 
+
+ 1 
+
+> α+β
+
+ C
+
+6
+
+ βα+β
+
+, (9) equivalently the locus where the marginal returns to N and 
+
+D balance ( αA/N α = βB/D β ), which we plot against iso-loss contours of the fitted surface (Figure 2) as our primary scaling-law figure. 
+
+# E Supplementary diagnostics 
+
+## E.1 Fit residual diagnostics 
+
+Figure 3 shows the distribution of log-residuals log ˆL−log L
+
+of the Approach-3 fit (Section D.3) over the 22 grid points. The residuals are small ( ≲ 2% ), roughly centered on zero, and show no systematic structure, representing the in-sample diagnostic supporting the fit quality reported in Section 4. 
+
+## E.2 Proportional vs. uniform pool sampling 
+
+Figure 4 contrasts two pretraining runs that differ in how the cell-type pool behind each sentence is chosen (Section B), and motivates our use of proportional sampling throughout. Under proportional sampling (left), where a pool is drawn with probability proportional to its cell count, the valida-tion loss tracks the training loss for the whole run: the two end at 3.09 and 3.10 respectively, a negligible generalization gap, and the validation loss is still at its minimum at the last measured step; the run is data-limited, not overfitting. Under uniform sampling (right), where every cell type is equally likely regardless of how many cells it holds, the curves sep-arate after ≈ 2,500 steps. The training loss continues down Figure 4: Training and validation loss for two pretraining runs differing in how the cell-type pool behind each sentence is sampled. Left: proportional to the pool’s cell count, where validation tracks training for the whole run and is still at its minimum at the last step. Right: uniform over cell types, where training keeps falling, but validation flattens at ≈ 3.54 
+
+around step 4,700 and then rises, the signature of memoriz-ing the oversampled rare types. The runs differ only in the pool weighting. Training loss is shown raw (light curves) and EWMA-smoothed (solid). Absolute losses are not com-parable across panels, as each run trains and validates under its own sampling scheme, so the overfitting evidence is the within-run divergence; see the caveat above. to ≈ 3.09 , showing that uniform sampling is not failing to 
+
+optimize , fitting its own training distribution about as far as the proportional run fits its own, while the validation loss flattens near 3.54 at ≈ 4,700 steps and then rises to 3.61 by the end of the budget. A training loss that keeps falling while the validation loss turns upward is the standard signature of overfitting, and it is what uniform weighting should produce on a corpus whose cell types are long-tailed: equal weight per type oversamples the rare types, so the few cells they hold recur many times within a run and are memorized rather than generalized from. The two runs are a controlled ablation of the pool weight-ing: they share the same corpus, model, step budget, and seed, and differ only in whether the cell-type pool is drawn proportionally to its cell count or uniformly. One caveat on how the figure should be read. Absolute losses are not comparable across the two panels, because the pool weighting is a property of the sentence sampler and that sampler serves both splits: each run draws its validation sentences under the same weighting as its training sentences, so the uniform run is scored on a rebalanced, intrinsically harder validation distribution. Each panel therefore reports a loss on its own run’s distribution, and the evidence for over-fitting is the within-run divergence between the two curves, where training and validation do share a distribution, rather than the gap between the panels. 
+
+## E.3 Held-out perturbation-benchmark loss during pretraining 
+
+Alongside the scBaseCount validation split the fit uses, ev-ery pretraining run also scores next-token loss on a held-out pool of control (“non-targeting”) cells drawn from the perturbation-response benchmark a Stage 2 finetune would target (Section 5), using the same unconditioned, same-cell-
+
+Figure 5: Two losses from the same pretraining run, repre-sentative of the pattern seen at every model and data size in the grid. Left: the scBaseCount validation loss the scaling law is fit to, which decreases smoothly throughout train-ing. Right: held-out next-token loss on control cells from the perturbation-response benchmark, which instead falls sharply early in training and then rises for the remainder of the run — a checkmark shape. Raw per-step values shown faint, EWMA-smoothed on top. type sentence format as pretraining — the perturbation iden-tity is never shown to the model at this stage. This gives a second, narrower generalization probe alongside the primary scBaseCount loss, tracked throughout every run, and is the basis for the observation discussed in Section 5. Figure 5 plots both losses side by side over one represen-tative pretraining run; we observe the same pattern at every model and data size in the grid (Section D). The scBaseC-ount validation loss (left) decreases smoothly throughout training and is still falling at the end of the run, consistent with the proportional-sampling behavior of Appendix E.2. The held-out perturbation-benchmark loss (right), scored on the same run at the same steps, instead falls sharply early in training, reaches a minimum well before the run ends, and then rises for the remainder of training, finishing above where it started. The two losses are on the same scale (next-token cross-entropy under the same tokenizer) but diverge in direction: continued pretraining keeps improving the fit to the broad scBaseCount distribution while making the fit to this narrower, perturbation-benchmark-specific distribution worse. 
+
+## E.4 Per-checkpoint generation quality 
+
+Table 4 gives the concrete per-checkpoint values plotted in Figure 1: generation quality for the 4.43 M model as its pre-training validation loss falls over training. 
+
+# F Limitations 
+
+Our conclusions are bounded by the extent of the grid and by the objective we fit. The parameter axis spans 1.3–83 .9M, well below the largest models in Table 2, so we cannot rule out a change in the exponents at much larger scale; the data axis, from 38 .1M to 362 M vectors, is comparable to or larger than the corpora used in several of those studies. The law is fit to the self-supervised pretraining loss on held-out context sequences, so we make no claim about how downstream, task-specific losses scale, and it is fit for a single architec-Step Val. loss Pearson MAE Disc. 1,470 3.610 0.9467 0.0515 0.9419 2,940 3.309 0.9549 0.0466 0.9679 4,410 3.231 0.9554 0.0455 0.9752 5,880 3.193 0.9575 0.0441 0.9804 7,350 3.167 0.9584 0.0437 0.9761 8,820 3.142 0.9595 0.0422 0.9867 10,290 3.122 0.9597 0.0423 0.9832 11,760 3.106 0.9599 0.0415 0.9869 13,230 3.095 0.9604 0.0412 0.9914 14,700 3.090 0.9605 0.0412 0.9896 Baseline 0.9637 0.0382 0.9978 
+
+Table 4: Per-checkpoint generation quality for the 4.43 Mmodel as its pretraining validation loss falls over training, representing the concrete values plotted in Figure 1. Pear-son, MAE, and Disc. are the mean-expression Pearson cor-relation, the mean-expression mean absolute error, and the cell-type discriminability score. Lower loss yields higher Pearson and discriminability and lower MAE. The baseline is repeated from Table 1 as a reference bound. ture family, a causal transformer over a discrete, learned RQ-VAE tokenization, so transfer to continuous-embedding models is untested. Our compute proxy C ≈ 6N D counts 
+
+D in expression vectors rather than tokens, which offsets our FLOP counts from token-based ones by a roughly constant factor. Finally, the tokenizer is lossy by construction, plac-ing an upper bound on reconstruction fidelity independent of transformer capacity, and Approach 3 fits are sensitive to the initialization grid, which we mitigate with a wide multi-start grid, detailed in Section D.3, and with the out-of-sample held-out points of Section 4.5.
