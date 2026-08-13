@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-12</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-13</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 58 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 13 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>42</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>16</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>6</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-12 21:51:08 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-13 21:52:23 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读42篇，聚焦世界模型前沿，其中《量子结构化世界模型》与《PhyLatent》并列满分，主攻预测性潜在动力学。</p>
-<p>最值得关注：两篇10分论文均为世界模型方向——前者引入量子结构，后者面向JEPA学习动力学表征，是当下模型预测能力提升的关键思路。</p>
-<p>建议优先追踪JEPA相关世界模型研究，次选医学影像中的对比学习与跨模态表征，后续可关注此类方法在视频预测与临床评估中的落地。</p>
+<p>今日共读13篇论文，精读7篇、速读6篇，重点聚焦世界模型评估与图自监督学习。</p>
+<p>最值得关注的是《VIScore》——为潜在世界模型规划质量提供诊断方法（10.0分），以及《NodeJEPA》——图级节点预测的机构化自监督新范式（9.0分）。</p>
+<p>建议普通读者先浏览这两篇精读文章的摘要与图表，再按兴趣深入方法细节。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">42 篇</strong>
+    <strong class="dpr-home-dashboard-count">7 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Quantum-Structured World Models (QSWMs) for Predictive Latent Dynamics">Quantum-Structured World Models (QSWMs) for Predictive Latent Dynamics</span></li><li><span class="dpr-home-dashboard-paper-title" title="PhyLatent: Learning Dynamics-Relevant Representations for JEPA World Models">PhyLatent: Learning Dynamics-Relevant Representations for JEPA World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="LUCID: Latent-Skill Unified Control via Imagined Dynamics for Long-Horizon Humanoid Loco-Manipulation">LUCID: Latent-Skill Unified Control via Imagined Dynamics for Long-Horizon Humanoid Loco-Manipulation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="VIScore: Diagnosing Planning-Relevant Quality in Latent World Models">VIScore: Diagnosing Planning-Relevant Quality in Latent World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="NodeJEPA: Structure-Conditioned Latent Prediction for Node-Level Graph Self-Supervised Learning">NodeJEPA: Structure-Conditioned Latent Prediction for Node-Level Graph Self-Supervised Learning</span></li><li><span class="dpr-home-dashboard-paper-title" title="Foresight Without Seeing: Latent Futures for World Action Models">Foresight Without Seeing: Latent Futures for World Action Models</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>36</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>6</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>4</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">16 篇</strong>
+    <strong class="dpr-home-dashboard-count">6 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ReMiX-MAE: Learning Missing-Channel Cross-Modal Representations from RGB-Only Clinical Facial Videos for Sympathetic-Mediated Pain Assessment">ReMiX-MAE: Learning Missing-Channel Cross-Modal Representations from RGB-Only Clinical Facial Videos for Sympathetic-Mediated Pain Assessment</span></li><li><span class="dpr-home-dashboard-paper-title" title="Recurrent Contrastive Learning for Imbalanced Medical Image Classification">Recurrent Contrastive Learning for Imbalanced Medical Image Classification</span></li><li><span class="dpr-home-dashboard-paper-title" title="Enhancing VLM Reward Models Through Structure-Aware Fine-Tuning">Enhancing VLM Reward Models Through Structure-Aware Fine-Tuning</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Model Discovery Agent: LLM-assisted Bayesian experiment design for data-efficient discovery of mechanistic world models">Model Discovery Agent: LLM-assisted Bayesian experiment design for data-efficient discovery of mechanistic world models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Motion Artifact-Aware Self-Supervised Representation Learning for 3D Brain MRI Motion Artifact Reduction">Motion Artifact-Aware Self-Supervised Representation Learning for 3D Brain MRI Motion Artifact Reduction</span></li><li><span class="dpr-home-dashboard-paper-title" title="Predicting Functions, Not Features: KANs with Function-Space Joint-Embedding Predictive Learning for Medical Image Segmentation">Predicting Functions, Not Features: KANs with Function-Space Joint-Embedding Predictive Learning for Medical Image Segmentation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>12</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>5</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>5</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
 </section>
 </div>
 

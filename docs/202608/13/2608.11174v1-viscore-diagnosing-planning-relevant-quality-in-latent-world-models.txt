@@ -1,0 +1,610 @@
+Title: VIScore: Diagnosing Planning-Relevant Quality in Latent World Models
+
+URL Source: https://arxiv.org/pdf/2608.11174v1
+
+Published Time: Wed, 12 Aug 2026 01:27:58 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# VIS CORE : DIAGNOSING PLANNING -R ELEVANT 
+
+# QUALITY IN LATENT WORLD MODELS 
+
+Haiyu Wu 1 Randall Balestriero 2 Morgan Levine 11Altos Labs 
+
+> 2
+
+Brown University 
+
+ Project Page § Code 
+
+# ABSTRACT 
+
+Regulating the latent space to an isotropic Gaussian distribution provides a stable and information-maximized landscape for world model planning. However, the latent space property and successful planning remain disconnected. We first study this by comparing SIGReg and VISReg, two regularization loss functions with the same distribution target but different properties. Compared with SIGReg, VISReg has more flexibility in controlling the weights of center, scale, and shape regu-larization, and a larger batch size brings a finer distribution approximation. We find that the former, despite being beneficial in self-supervised learning (SSL), does not help the planning, whereas the latter improves the planning success on out-of-domain (OOD) datasets. This motivates a deep understanding of the fac-tors that correlate with the success rate. Unlike the previous metrics focusing on the encoded latent only, we propose the Veracity-Influence-Sobriety score (VIS-core), a metric that quantifies the reachability and capacity of a predictor given the encoded feature, and the hallucination of the searching-based planner. Com-pared with straightness, physical-state probing, and empowerment, we show that, with the measurement covering encoder, predictor, and planner, VIScore explains the success rate better than the others, as reflected by a strong Spearman corre-lation. Specifically, VIScore consistently achieves a Spearman correlation over 0.75 on both seen and unseen models and datasets on the cross-task success rate pool. Moreover, VIScore is the only metric that has a calibration error below the constant fit across all testing scenarios, showcasing the importance of these three aspects in planning success. We hope this metric can help future studies on world model design and diagnosis. 
+
+# 1 INTRODUCTION 
+
+The data efficiency and lightweight training characteristics make Joint-Embedding Predictive Ar-chitecture (JEPA) an attractive approach for world-model training (Maes et al., 2026; Wang et al., 2026; Wu et al., 2026; Assran et al., 2025). A recent example, LeWorldModel (LeWM) creates a simple yet effective training paradigm — consisting of an image encoder, an action encoder, and a predictor — to achieve a competitive performance on various datasets. Although LeWM has a few latent quality analyses, they are disconnected from the predictor and planner, which are essential to planning success. This paper is meant to bridge the latent quality and success rate. We study the first question through a controlled regularization intervention. LeWM relies on SI-GReg (Balestriero & LeCun, 2025) to prevent collapse during training. We replace SIGReg with VISReg (Wu et al., 2026), which targets the same isotropic Gaussian distribution but separates cen-ter, scale, and shape constraints. In SSL, this separation yields a stronger corrective gradient near collapse and allows the components to be reweighted on long-tailed or low-rank data. With the same architecture and planning protocol, VIS-WorldModel (VIS-WM) achieves a competitive success rate on PushT (Zhou et al., 2025), Reacher (Tassa et al., 2018), OGBench-Cube (Park et al., 2025), and Two-Room (Sobal et al., 2025); yet, its reweighting flexibility does not yield a stronger planning result, whereas a more accurate distribution matching improves OOD planning. This indicates the 1arXiv:2608.11174v1 [cs.RO] 11 Aug 2026 theory of the ideal latent distribution for unseen tasks proposed in LeJEPA (Balestriero & LeCun, 2025) transfers to world model planning, but it does not explain why the planning succeeds or fails. VIScore (ours) Physical-state probe Empower-ment Straight-ness −0.5 0.0 0.5 1.0          
+
+> Across datasets
+> CEM, pooled ρ↑
+> 0.91
+> 0.61 0.49 −0.08
+> MPPI iCEM predictive sampling gradient descent
+> Across planners
+> pooled ρ↑
+> 0.81 0.87 0.51 0.86
+
+Figure 1: Spearman correlation between success rate and existing di-agnostics with different datasets and planners. Continuing the analysis, we focus on the exist-ing metrics for measur-ing the latent feature of world models: Straight-ness characterizes trajec-tory geometry (Wang et al., 2026); physical-state prob-ing evaluates the neces-sary physical information in the current latent (Maes et al., 2026); and empow-erment measures action-conditioned capacity (Klyubin et al., 2005). None of them analyzes the predictor, planner, and success tolerance, which are the components executing the planning process and condition deciding the planning success. In light of the above, we propose the Veracity–Influence–Sobriety score (VIScore). Veracity mea-sures whether open-loop rollout error remains within the task’s own success tolerance. Influence 
+
+reformulates latent empowerment as a sufficiency condition that saturates once action-conditioned capacity exceeds the level needed by the task. Sobriety measures whether the planner overly discov-ers improvements over an expert plan ( e.g. , action labels), thereby probing planner exploitation of predictor error. These three factors diagnose complementary failure modes: unreachable imagined dynamics, insufficient action-conditioned capacity, and exploitable hallucination. Their product re-quires all three conditions to hold simultaneously. To evaluate the efficacy, we use success rate as an external validation criterion. We report the Spear-man correlation and calibration error (Zadrozny & Elkan, 2002) between success rate and existing metric scores (including VIScore) on the held-out checkpoint pool, held-out training method pool, and held-out dataset pool. VIScore consistently has the best Spearman correlation ( i.e. , ≥ 0.75 
+
+) in cross-task evaluation and is the only metric that achieves a lower calibration error than the simple constant predictor. Moreover, we extend the same experiment to other sampling-based plan-ners (Rubinstein, 1999; Pinneri et al., 2020; Williams et al., 2017; Howell et al., 2022) and VIScore consistently achieves the most stable and competitive results, indicating a good application range in world-model training diagnosis and evaluation. The contributions of this paper are summarized as: • We use a controlled SIGReg–VISReg study to show that self-supervised advantages do not au-tomatically transfer to latent planning: component flexibility brings no planning gain, while the realized accuracy of distribution matching affects OOD performance. • We introduce three interpretable diagnostic axes of planning-relevant latent world-model quality—veracity, influence, and sobriety—and combine them into the VIScore. This is the first metric measuring the quality of components that directly relate to planning success: encoder, predictor, and planner. • We validate the diagnostics against planning success and show the efficacy of VIScore in differ-entiating models with different levels of success rates. This provides strong evidence of VIScore being useful as a diagnostic tool in world model method development. 
+
+# 2 RELATED WORK 
+
+Training stability in latent world models. Latent world models stabilize representation and dy-namics learning in different ways. DINO-WM (Zhou et al., 2025) predicts over frozen pretrained features, whereas PLDM (Sobal et al., 2025), GCBC (Ghosh et al., 2019), and GCIQL (Kostrikov et al., 2021) couple representation learning to goal-reaching, behavioral cloning, or value objectives. LeWorldModel (Maes et al., 2026) instead trains its encoder and predictor jointly from pixels and uses SIGReg (Balestriero & LeCun, 2025) to avoid representational collapse. VISReg (Wu et al., 2026) targets the same isotropic Gaussian prior while separating center, scale, and shape constraints, 2making the SIGReg–VISReg substitution a controlled test of which self-supervised properties re-main consequential once the representation is used for planning. 
+
+Diagnostics for latent planning. World models are commonly evaluated with prediction losses or representation-level summaries, although lower prediction error need not yield better control (Lam-bert et al., 2020). Physical-state probes and spectral statistics measure encoded information (Maes et al., 2026; Garrido et al., 2023; Agrawal et al., 2022; Thilak et al., 2024); straightness measures latent trajectory geometry (Wang et al., 2026); and empowerment measures action-conditioned ca-pacity (Klyubin et al., 2005; Mohamed & Rezende, 2015; Zhao et al., 2021; Song et al., 2025). These quantities do not jointly test the predictor and the planner that consume the representation. VIScore complements them with three planning-specific diagnostics—task-scaled rollout fidelity, sufficient action influence, and resistance to search exploitation—and is validated by how strongly and consistently it is associated with planning success. 
+
+# 3 VISR EG -SIGR EG EFFECT ANALYSIS 
+
+3.1 PRELIMINARY : VISR EG 
+
+End-to-end latent world models require an explicit mechanism to prevent collapse. LeWorldModel uses SIGReg (Maes et al., 2026; Balestriero & LeCun, 2025), an Epps–Pulley sketching statis-tic (Epps & Pulley, 1983) that matches random one-dimensional projections of the embedding to a standard Gaussian. VISReg (Wu et al., 2026) targets the same prior but factorizes the constraint into independently weighted center, scale, and shape terms. We define centered embeddings and scale-normalized embeddings as ˆZ ∈ RN ×D and eZ = ˆZ/(sg( σ) + ϵ), so each loss component is: 
+
+Lcenter = 1
+
+D ∥μ∥22; Lscale = 1
+
+D
+
+X
+
+> j
+
+(1 − σj (ˆZ)) 2; Lshape = 1
+
+KB 
+
+> K
+
+X
+
+> k=1
+
+sort( eZwk) − qN
+
+> 22
+
+(1) where qN denotes standard-Gaussian quantiles. The regularizer and training objective are 
+
+Lreg = λcenter Lcenter + λscale Lscale + λshape Lshape , (2) 
+
+LVISReg = (1 − λ)Lpred + λLreg . (3) The factorization is useful in SSL for two reasons (Appendix B): the scale term retains a corrective gradient near collapse, and the three components can be reweighted and be helpful when the data are long-tailed or effectively low-rank. Table 1 summarizes the latter observation. Planning, however, depends on the joint encoder–predictor–planner system. Therefore, we use VISReg as a controlled intervention to understand what feature of regularization loss affects the planning success. 3.2 EXPERIMENTAL SETTINGS 
+
+Table 1: SIGReg and VISReg linear-probe accuracy (%) on ImageNet-LT and Galaxy10. ∗Center/scale/shape weights 
+
+{0.5, 0.5, 2}; full baselines are in Appendix B.                      
+
+> ImageNet-LT Galaxy10 Method Overall Many Medium Few Acc. SIGReg 32 .00 51 .86 22 .88 7.92 80 .50
+> VISReg 32 .11 51 .55 23 .19 8.52 80 .51
+> VISReg ∗35 .14 54 .49 26 .87 9.40 80 .76
+
+We replace SIGReg with VISReg in the LeWorldModel implementa-tion and analyze the results on four tasks: short-horizon, long-horizon, OOD planning, and the reweighting ablation. 
+
+Datasets. We use four offline pixel-control benchmarks: PushT (Zhou et al., 2025), Reacher (Tassa et al., 2018), OGBench-Cube (Park et al., 2025), and Two-Room (Sobal et al., 2025). Observations are rendered at 224 × 224 . Unless noted otherwise, each sample contains four frames separated by five environment steps, with the first three serving as context; Appendix A.1 gives the task-specific exceptions and action-block construction. 
+
+Training. Adopting the LeWM architecture (Maes et al., 2026), the VIS-WorldModel (VIS-WM) contains a ViT-Tiny encoder (Dosovitskiy et al., 2021) and an autoregressive, action-conditioned 3Table 2: Short-term planning success rate on PushT, Reacher, OGBench-Cube, and Two-Room. The majority of the results are borrowed from SD-JEPA (Thil et al., 2026), and the FICReg (Seo et al.) is copied from the original paper. We report the LeWM-eval-seed result and three additional seeds. 
+
+∗ means the results are reproduced. Method PushT Reacher OGBench-Cube Two-Room 
+
+Reinforcement Learning 
+
+GCIVL (Kostrikov et al., 2021) 33 — — 100 
+
+GCIQL (Kostrikov et al., 2021) 20 — — 100 
+
+GCBC (Ghosh et al., 2019) 75 — — 100 
+
+Pre-training 
+
+DINO-WM (Zhou et al., 2025) 74 79 86 100 PLDM (Sobal et al., 2025) 78 78 65 97 
+
+End-to-end training 
+
+Temporal (Wang et al., 2026) 91 — — —LeWM (Maes et al., 2026) 96 86 74 87 
+
+FICReg (Seo et al.) 94 81 72 87 
+
+SD-JEPA (Thil et al., 2026) 97 88 72 90 
+
+VIS-WM 98 ±2.0 79 ±6.1 77 ±1.2 97 ±1.2
+
+LeWM ∗ (3 eval seeds) 91 ±3.6 82 ±5.0 — 90 ±3.1
+
+VIS-WM (3 eval seeds) 92 ±3.9 82 ±3.8 70 ±1.7 92 ±3.7
+
+Table 3: Long-horizon planning success rate on PushT. We borrow the results from (Zhang et al., 2026) and reproduce the LeWM results to ensure the comparison is meaningful in case there is any misalignment between our evaluation and (Zhang et al., 2026)’s. VIS-WM beats five out of six methods on this task. ∗ means the results are reproduced. Method d=25 d=50 d=75 
+
+Hierarchical design 
+
+HIQL (Park et al., 2023) 55 30 20 HILP (Park et al., 2024) 25 13 0DINO-WM (hierarchy) (Zhang et al., 2026) 89 78 61 
+
+Non-hierarchical design 
+
+GCIQL (Kostrikov et al., 2021) 40 25 7.5 DINO-WM (Zhou et al., 2025) 84 55 17 LeWM ∗ (Maes et al., 2026) 96 ±1.6 57 ±5.7 19 ±0.9
+
+VIS-WM 98 ±2.0 62 ±5.3 21 ±5.8
+
+LeWM ∗ (Maes et al., 2026) (3 eval seeds) 91 ±2.8 44 ±4.1 21 ±1.1
+
+VIS-WM (3 eval seeds) 92 ±3.9 48 ±6.3 20 ±6.3
+
+Transformer predictor, totaling approximately 15 M trainable parameters. We train for 10 epochs with AdamW (Loshchilov & Hutter, 2017), linear warmup followed by cosine decay, batch size 
+
+128 , learning rate 10 −4, and VISReg weight λ = 4 .5. The SIGReg baseline follows the default LeWorldModel configuration. Each configuration uses three training seeds. Note that we do not sweep the hyperparameters for VISReg as it is off from the target of this paper. 
+
+Planning evaluation. For each episode, the goal is taken d environment steps ahead on an expert tra-jectory. MPC (Camacho & Bordons, 2007) repeatedly optimizes action sequences with CEM (Ru-binstein, 1999) until an interaction budget T = 2 d is exhausted. The default offset is d = 25 ;longer-horizon experiments use d ∈ { 50 , 75 } with the budget scaled accordingly. We report both the conventional single evaluation seed and three fresh seeds. The latter is the primary estimate because a single seed fixes both the goal set and a noisy 50 -episode success estimate. 3.3 RESULTS 
+
+Short-horizon planning. Table 2 shows that VIS-WM is competitive with the strongest E2E la-tent world models under the conventional protocol, achieving the strongest success rate on PushT, OGBench-Cube, and Two-Room (98/77/97). However, the results with three fresh evaluation seeds 4t = 0 T (train) L Z + I Small T Square     
+
+> t=T/2
+> t=T
+
+Figure 2: OOD PushObj shapes used in Table 4. Replaying the same actions yields different trajec-tories because object geometry changes the dynamics. Table 4: Success on six unseen PushObj shapes. Top: each objective at its best batch size; bottom: matched-batch controls and the VIS-WM batch-size ladder.                                         
+
+> d=25 d=50 d=75
+> each objective at its own best batch size
+> LeWM (SIGReg, B=128 )79 .1±0.961 .8±1.144 .3±1.2
+> VIS-WM (VISReg, B=512 )82 .0±0.762 .0±1.145 .6±1.1
+> matched-batch control and batch ladder
+> VIS-WM, B=128 77 .4±1.059 .7±1.341 .8±1.3
+> VIS-WM, B=256 82 .0±0.762 .2±1.244 .3±1.2
+> VIS-WM, B=512 82 .0±0.762 .0±1.145 .6±1.1
+> Random policy 10 .17.33.0
+
+(1025 /3014 /5976 ) indicate the overconfidence of using a single evaluation seed. Under the new evaluation protocol, VIS-WM has a similar success rate to LeWM. This suggests that the commu-nity should use multiple evaluation seeds to indicate the statistical significance of the improvement. 
+
+Long-horizon planning. A general pattern observed from Table 3 is that increasing the goal offset significantly reduces the success rate. With the single-seed evaluation, VIS-WM outperforms five out of six methods on long-horizon planning, including two dedicated hierarchical designs. With three fresh seeds, the success rate of both LeWM and VIS-WM does not change much for long-horizon tasks, showcasing that the difficulty of long-horizon planning is a fundamental problem rather than seed selection. Table 5: VISReg component-weight ablation on DMC. This suggests that the beneficial flexibil-ity of VISReg loss in SSL does not help in world model training. 
+
+λcenter λscale λshape Success rate 1.0 1.0 1.0 78 2.0 0.5 0.5 78 0.5 2.0 0.5 74 0.5 0.5 2.0 12 1.5 1.5 0.0 24 
+
+OOD generalization to unseen shapes. Being able to plan on OOD datasets is a mandatory task to evaluate. We construct PushObj datasets with six different object shapes, including L, Z, plus, I, small t, and square, by replaying the original expert actions from matched initial states. The resulting datasets iso-late object geometry while allowing the changed shapes to in-duce different dynamics. Models are trained only on the orig-inal T shape and evaluated on the six variants. Since some shapes may stay stale after the initial movements (see Z and plus in Figure 2), we report the random policy as the reference to indicate the learned planning ability, as shown in Table 4. At a matched batch size, SIGReg transfers better than VISReg. Increasing the VISReg batch size closes and then reverses this gap, consistent with the batch-dependent approximation floor analyzed in Appendix B.2. This result implies the theory of an idea distribution for unknown downstream tasks proposed in (Balestriero & 5LeCun, 2025). VISReg achieves a higher OOD performance when the distribution is closer to the target distribution. 
+
+Loss-component flexibility. Reweighting the loss components of VISReg has been reported to be helpful for training on low-quality datasets in SSL (Wu et al., 2026). Table 5 ablates the reweighting effect on Reacher because the success rate is not saturated on this dataset. The result shows that such flexibility does not benefit the planning. The analysis in this section suggests that we should use a regularization loss that can more effectively approach the target distribution, but it does not explain why the planning succeeds or fails. 
+
+# 4 VIS CORE : D IAGNOSING PLANNING -R ELEVANT MODEL QUALITY 
+
+Predictor-based planning is achieved by a vision encoder, action encoder, predictor, and planner, but the existing diagnostics only focus on one or two components: straightness measures the geometry produced by the vision encoder; physical-state probing measures the physical information contained in the latent produced by the vision encoder; empowerment is calculated based on the output of both the vision encoder and predictor. This makes these metrics off from becoming a stable diagnostic when model fails to plan. This section describes the proposed metric, VIScore, which measures the quality of vision encoder, predictor, and planner, so that insights can be provided for diagnosis. 4.1 DEFINITION 
+
+Predictor-based planning requires three conditions: i) the predictor should roll the latent state for-ward accurately enough for the task; ii) different actions should produce sufficiently distinguishable futures; iii) the planner should not produce a large fraction of candidates that have a lower cost than action labels. We refer to these conditions as veracity , influence , and sobriety , respectively. Let dtol denote the latent distance corresponding to the task’s success tolerance, σroll the RMS termi-nal error of an H-step open-loop rollout, ˆS the covariance of action-induced terminal displacements, and ˆEH the predictor residual covariance at the same horizon. VIScore combines the three bounded diagnostics as VIScore = erf 
+
+ dtol  
+
+> 2√2σroll
+
+| {z }
+
+> veracity
+
+· min 
+
+ memp  
+
+> τ
+
+, 1
+
+| {z }
+
+> influence
+
+· (1 − ˆp)
+
+| {z }
+
+> sobriety
+
+∈ [0 , 1] , (4) where memp = 12 log det( I + ˆE−1 
+
+> H
+
+ˆS) is latent empowerment and τ is a shared sufficiency threshold. 
+
+Veracity is the probability that an H-step open-loop rollout error stays inside the ball where the task credits as success. The same absolute latent error is harmless for coarse navigation and fatal for manipulation, so the factor is a ratio , dtol /σ roll , and only that ratio enters: rescaling the latent mul-tiplies numerator and denominator alike, which is what makes veracity comparable across models of different latent dimension and scale. The error function converts the ratio into [0 , 1) by reading it as the mass an isotropic Gaussian error of scale σroll places inside the tolerance ball in one dimen-sion. We do not claim the rollout error is Gaussian; erf is used as a bounded monotone map, and because every within-task correlation we report is a rank statistic, three alternative monotone maps give rank-identical results. More details are in Appendix B.1. 
+
+Influence counts, in nats, how many H-step futures the actions can steer to that remain distinguish-able above the predictor’s own noise floor. It is latent empowerment (Klyubin et al., 2005)—the channel capacity from action perturbations to the future state, used elsewhere as an intrinsic control objective (Mohamed & Rezende, 2015; Zhao et al., 2021; Song et al., 2025)—with the local linear-Gaussian estimator of Appendix B.1. Figure 3 shows that capacity is a requirement to be met, not a quantity to be maximized, so influence clips it at a single shared τ , selected once on the develop-ment pool by run-level two-fold cross-validation against cross-task calibration error. A shared cap is a genuine trade-off rather than a free improvement: it is what lets one numerical scale mean the same thing on two tasks, and it is paid for in PushT’s within-task rank, where 86% of checkpoints sit above τ =82 and are therefore no longer separated by this factor. Appendix B.1 reports the sweep, under which no choice in [55 , 129] changes any conclusion in this paper. 650 100 150 200           
+
+> memp (nats)
+> 20 40 60 80 100
+> success rate (%)
+> <= + 0.82
+> = + 0.31
+> PushT
+> 0100 200
+> memp (nats)
+> <= + 0.95
+> = + 0.38
+> Reacher
+> 050 100
+> memp (nats)
+> <= + 0.82
+> = + 0.44
+> Two-Room
+
+Figure 3: Raw empowerment versus planning success. Solid lines mark task-specific knees; the dashed line marks the shared influence cap τ =82 .
+
+Sobriety. Low average rollout error does not rule out a localized error that can be amplified by planning. To test this failure mode, we use each expert action a∗ 
+
+> m
+
+to define a goal that the action actually reached, and run a small search inside the learned predictor for a lower imagined cost. We allow the potential of the planner to search a few more optimal actions, so we measure the fraction of expert anchors on which search improves over the recorded action, 
+
+ˆp = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+1J(a∗
+
+> m
+
+) > J (asearch  
+
+> m
+
+) . (5) Here M =64 anchors are drawn from expert trajectories; at anchor m the goal is that anchor’s own 
+
+achieved future zt+H , so the planning cost is J(a) = ∥rollout( zt, a )H −zt+H ∥22; a∗ 
+
+> k
+
+is the action the expert actually executed there; and asearch  
+
+> k
+
+is the best action a small search finds inside the learned predictor under that same cost. The indicator therefore fires exactly when the model believes some unexecuted action would have reached the expert’s own destination more closely than the action that demonstrably reached it. VIScore is the product of these three components, meaning that a good model should satisfy all of them together. We want to clarify a potential misunderstanding of what VIScore is. It is a score measuring the reachability, capacity, and exploitable hallucination of the model. Despite the high correlation with success rate shown in the following subsection, a high or low VIScore does not always guarantee a successful or failed planning because there are so many other factors ( e.g. ,environment factors, complexity of the task) can affect this. Hence, VIScore should be treated as a diagnostic rather than a regression of model performance. 4.2 EXPERIMENTAL SETTINGS 
+
+Checkpoint pools. We score every training epoch of the runs of Section 3 and partition them by training run, so that no checkpoint in a test pool comes from a run used to choose any constant. The development pool ( n=57 /50 /30 on PushT/Reacher/Two-Room) spans training progress and is where τ , the tolerance-mapping procedure and the monotone calibration maps are chosen. The held-out checkpoints pool ( n=27 /44 /32 ) draws only on non-development runs and is labelled under two fresh evaluation seed sets ( 8191 /65537 /2027 and 5501 /60601 /90210 ), three seeds per checkpoint. Because epoch checkpoints of one run are not independent samples, every interval we report is a cluster bootstrap that resamples training runs with replacement and carries all of a run’s checkpoints with it. More details can be found in Appendix B.3. 
+
+Baselines. We compare against straightness (Wang et al., 2026), the physical-state probe (Maes et al., 2026), and raw uncapped empowerment (Klyubin et al., 2005), each computed on the same checkpoints and the same probe data as VIScore. 
+
+Validation criteria. We use success rate only to evaluate the diagnostics. Within-task Spearman correlation tests whether a metric ranks checkpoints consistently on one task. Pooled Spearman correlation additionally tests whether the metric scale remains comparable across tasks. Leave-one-task-out calibration fits an isotonic regression (Barlow et al., 1972) from metric value to success 7Table 6: Spearman correlation with success, within task and pooled, and calibration error, under a 
+
+run-level split: no test checkpoint comes from a run used to fit any constant. Cube values are given in parentheses where the pool contains them and are always excluded from the pooled and calibration columns, because their spread does not exceed the standard error of one label; The calibration errors of held-out methods and datasets are calculated based on the curve fits in the development pool. Intervals quoted in the text are bootstrapped over training runs.                                                                                                              
+
+> Metric PushT ↑Reacher ↑Two-Room ↑Cube ↑Pooled ↑Calib. err. ↓
+> development pool
+> Straightness +0 .51 +0 .13 −0.67 (+0 .01) +0 .33 40 .4
+> Physical-state probe ( R2)+0 .41 +0 .74 +0 .57 (−0.05) +0 .77 14 .5
+> Empowerment memp +0 .82 +0 .86 +0 .71 (−0.18) +0 .40 23 .1
+> VIScore +0 .80 +0 .83 +0 .71 (−0.29) + 0.88 10 .2
+> Ref.: LOTO constant predictor 24.4 held-out checkpoints (runs disjoint from development)
+> Straightness +0 .38 −0.81 −0.74 —−0.08 19 .8
+> Physical-state probe ( R2)+0 .38 +0 .65 +0 .71 —+0 .61 27 .6
+> Empowerment memp +0 .73 +0 .82 +0 .86 —+0 .49 15 .6
+> VIScore +0 .84 +0 .72 +0 .83 —+0.91 7.0
+> Ref.: LOTO constant predictor 18.2 held-out world-modeling methods
+> Straightness ————+0 .22 17 .4
+> Physical-state probe ( R2)————+0 .32 16 .1
+> Empowerment memp ————+0 .12 12 .0
+> VIScore ————+0.75 8.3
+> Ref.: constant predictor 11.3 held-out dataset
+> Straightness ————+0 .66 31 .2
+> Physical-state probe ( R2)————+0 .75 45 .4
+> Empowerment memp ————+0 .87 9.2
+> VIScore ————+0.87 11 .5
+> Ref.: constant predictor 41.7
+
+rate on the other tasks and measures its absolute error on the held-out task. The constant reference follows the same protocol with the score replaced by the median success of the other tasks. Note that Cube is excluded in pooled and calibration error, and these criteria do not mean to define VIScore or turn it into a deterministic success predictor. 
+
+Transfer settings. After fixing all definitions on the development pool, we test two additional shifts. First, we evaluate checkpoints from four held-out world-modeling methods (Rakhimov et al., 2026; Li et al., 2026; Zhou et al., 2025; Sun et al., 2026) and from an unseen MAZE (Fu et al., 2020) task. Second, we replace CEM (Rubinstein, 1999) with MPPI (Williams et al., 2017), iCEM (Pinneri et al., 2020), predictive sampling (Howell et al., 2022), and gradient descent through the predictor with a population of initializations and with a single one. These experiments test the generalization of the metrics on different environments and methods. We only report pooled correlation and calibration error due to the limited number of checkpoints. 4.3 RESULTS 
+
+VIScore is strongly associated with planning success. Table 6 evaluates checkpoints from the original training family. Within each task, VIScore and raw empowerment are comparable on the development pool ( +0 .80 / + 0 .83 / + 0 .71 against +0 .82 / + 0 .86 / + 0 .71 on PushT/Reacher/Two-Room), and both exceed the physical-state probe and straightness, which changes sign across tasks. The separation appears across tasks. Empowerment’s pooled correlation collapses to +0 .40 while VIScore reaches +0 .88 , and its calibration error is 23 .1 points against VIScore’s 10 .2. This suggests that a given number of nats does not mean the same planning quality on two tasks, whereas a capacity converted into a sufficiency condition and multiplied by veracity and sobriety does. VIScore is also the only metric whose calibration interval lies entirely below the constant-predictor. 8The held-out pool is the central test, because its 33 training runs share nothing with the 14 runs on which every constant was chosen. Every checkpoint here carries the same three evaluation seeds, so the arms are paired with the planner comparison of Appendix B.6. The relationship transfers intact: VIScore reaches +0 .84 / + 0 .72 / + 0 .83 within task, +0 .91 pooled, and 7.0 points of calibration error against the reference 18 .2. Both cross-task measures are in fact better here than on the devel-opment pool where the constants were fitted, which is the opposite of what leakage would produce. Empowerment is a genuinely strong within-task competitor— +0 .82 on Reacher and +0 .86 on Two-Room, and statistically indistinguishable from VIScore on five of the six within-task cells of the two pools—which indicates that the baseline is not artificially weak; what it cannot do is carry one scale across tasks, where it falls to +0 .49 pooled and 15 .6 points, above the constant reference. 
+
+The application range extends to unseen methods and an unseen task. The pools above vary the checkpoint; this experiment varies the two things a practitioner would actually change—the world-modeling method and the environment—and asks how far the diagnostic still applies. On 23 
+
+checkpoints from four held-out methods, each labelled under nine evaluation seeds with our own planner and protocol, VIScore attains the strongest association of the four diagnostics ( +0 .75 ) and is the only one that beats the frozen development calibration map’s reference ( 8.3 against 11 .3). No baseline manages both: raw empowerment is nearly unrelated to success here ( +0 .12 ) yet calibrates to 12 .0 points, above the reference, and the physical-state probe reaches only +0 .32 at 16 .1 points. On 20 checkpoints from the unseen MAZE task, VIScore again ranks best, and its frozen calibration error of 11 .5 points is far below the constant reference ( 41 .7)—though here raw empowerment is better calibrated still, at 9.2, because MAZE operates well below the influence cap ( 20 .3 against 
+
+82 nats) so an uncapped capacity retains informative scale. The application range therefore covers method and task shifts for ordering , while one universal numerical map from score to success is supported for the method shift and a new task family. Further discussions are in Appendix B.4. 
+
+The three factors are complementary. No single factor is best on every pool: the strongest one changes with the checkpoint regime, and each fails somewhere the other two do not. Because the identity of the binding factor is what a diagnosis has to report, the factors are meant to be read individually; Appendix B.5 scores each alone on all five pools. 
+
+VIScore fits into any searching-based planner. The above results are done with CEM planner, which is limited. We tested four more popular searching-based planners and the results support that VIScore works well for searching-based planners. Details are in Appendix B.6. 
+
+Scope. Although VIScore has a stronger correlation with success rate than the other methods, it is a diagnostic rather than the predictor of success rate. A model achieving a high VIScore does not mean the model can successfully plan to the target. For example, the models trained on OGBench-Cube can achieve a good VIScore but it has an opposite correlation to success rate. The reason is that the success of gripping in OGBench-Cube directly decide whether the planning can be successful, and such a discrete outcome is not measured in VIScore. In addition, VIScore does not fit into amortized planners because their planning do not include a predictor at all. Reachability, capacity, and exploitable hallucination of the predictor-based world model are what measured by VIScore. 
+
+# 5 DISCUSSION AND CONCLUSION 
+
+This paper tries to bridge latent space properties and the success rate of the predictor-based world model. First, we analyze the effect of the regularization loss used in the world model training. This reveals that a more accurate distribution regularization brings a better OOD performance. Second, we propose VIScore, a metric that measures the reachability, capacity, and exploitable hallucination of world model planning. We used success rate as the external signal to evaluate this metric from various aspects. The results support that VIScore covers important factors for planning success. During the analysis, we find a few leftover problems that should be noticed to the community: 1) single-seed evaluation brings a huge bias on success rate, so multi-seed evaluation is needed; 2) OOD and long-horizon evaluations should be mandatory because the current benchmark is originated from the same environment as training; 3) the diagnostic toolkit for IDM/amortized planning remains empty; 4) multi-task planning remains untouched; 5) existing methods saturate on the commonly used datasets in short-horizon, so more complex training sets are needed; 6) training without using action labels is still difficult. 9REFERENCES 
+
+Kumar Krishna Agrawal, Arnab Kumar Mondal, Arna Ghosh, and Blake Richards. α-req: Assessing representation quality in self-supervised learning by measuring eigenspectrum decay. In NeurIPS ,2022. Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Am-mar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985 , 2025. Randall Balestriero and Yann LeCun. Lejepa: Provable and scalable self-supervised learning with-out the heuristics. arXiv preprint arXiv:2511.08544 , 2025. Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regularization for self-supervised learning. ICLR , 2022. Richard E. Barlow, David J. Bartholomew, J. M. Bremner, and H. D. Brunk. Statistical Inference under Order Restrictions: The Theory and Application of Isotonic Regression . Wiley, 1972. Nicolas Bonneel, Julien Rabin, Gabriel Peyré, and Hanspeter Pfister. Sliced and radon wasserstein barycenters of measures. Journal of Mathematical Imaging and Vision , 51(1):22–45, 2015. Eduardo F Camacho and Carlos Bordons. Model Predictive Control . Springer, 2nd edition, 2007. Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In ICCV , 2021. Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszko-reit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR , 2021. Thomas W Epps and Lawrence B Pulley. A test for normality based on the empirical characteristic function. Biometrika , 70(3):723–726, 1983. Justin Fu, Aviral Kumar, Ofir Nachum, George Tucker, and Sergey Levine. D4rl: Datasets for deep data-driven reinforcement learning. arXiv preprint arXiv:2004.07219 , 2020. Quentin Garrido, Randall Balestriero, Laurent Najman, and Yann LeCun. Rankme: Assessing the downstream performance of pretrained self-supervised representations by their rank. In ICML ,2023. Dibya Ghosh, Abhishek Gupta, Ashwin Reddy, Justin Fu, Coline Devin, Benjamin Eysenbach, and Sergey Levine. Learning to reach goals via iterated supervised learning. 2019. Taylor Howell, Nimrod Gileadi, Saran Tunyasuvunakool, Kevin Zakka, Tom Erez, and Yuval Tassa. Predictive sampling: Real-time behaviour synthesis with mujoco. arXiv preprint arXiv:2212.00541 , 2022. Alexander S Klyubin, Daniel Polani, and Chrystopher L Nehaniv. Empowerment: A universal agent-centric measure of control. In IEEE Congress on Evolutionary Computation , volume 1, pp. 128–135, 2005. Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning. arXiv preprint arXiv:2110.06169 , 2021. Nathan Lambert, Brandon Amos, Omry Yadan, and Roberto Calandra. Objective mismatch in model-based reinforcement learning. In Learning for Dynamics and Control (L4DC) , 2020. Henry Leung. Galaxy10 DECaLS Dataset. https://astronn.readthedocs.io/en/latest/ galaxy10.html , 2025. Accessed: 2026-01-11. Wenyuan Li, Guang Li, Keisuke Maeda, Takahiro Ogawa, and Miki Haseyama. Predictive but not plannable: Rc-aux for latent world models. arXiv preprint arXiv:2605.07278 , 2026. 10 Ziwei Liu, Zhongqi Miao, Xiaohang Zhan, Jiayun Wang, Boqing Gong, and Stella X. Yu. Large-scale long-tailed recognition in an open world. In CVPR , 2019. Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101 , 2017. Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. Leworld-model: Stable end-to-end joint-embedding predictive architecture from pixels. 2026. Shakir Mohamed and Danilo Jimenez Rezende. Variational information maximisation for intrinsi-cally motivated reinforcement learning. In NeurIPS , 2015. Seohong Park, Dibya Ghosh, Benjamin Eysenbach, and Sergey Levine. Hiql: Offline goal-conditioned rl with latent states as actions. In Advances in Neural Information Processing Sys-tems , volume 36, pp. 34866–34891, 2023. Seohong Park, Tobias Kreiman, and Sergey Levine. Foundation policies with hilbert representations. 
+
+arXiv preprint arXiv:2402.15567 , 2024. Seohong Park, Kevin Frans, Benjamin Eysenbach, and Sergey Levine. Ogbench: Benchmarking offline goal-conditioned rl. In ICLR , 2025. Cristina Pinneri, Shambhuraj Sawant, Sebastian Blaes, Jan Achterhold, Joerg Stueckler, Michal Rolinek, and Georg Martius. Sample-efficient cross-entropy method for real-time planning. In 
+
+Conference on Robot Learning (CoRL) , 2020. Ruslan Rakhimov, George Bredis, Yuriy Maksyuta, and Daniil Gavrilov. Qantara: Bridge-flow training for multi-paradigm jepa control. In ICML 2026 Workshop on Decision-Making from Offline Datasets to Online Adaptation: Black-Box Optimization to Reinforcement Learning , 2026. URL https://arxiv.org/abs/2607.04978 .Reuven Y Rubinstein. The cross-entropy method for combinatorial and continuous optimization. 
+
+Methodology and Computing in Applied Probability , 1(2):127–190, 1999. Sungwon Seo, Jean Seong Bjorn Choe, and Jong-Kook Kim. Ficreg: Forward-inverse consistency regularization for latent world models. In Decision-Making from Offline Datasets to Online Adap-tation: Black-Box Optimization to Reinforcement Learning .Vlad Sobal, Wancong Zhang, Kyunghyun Cho, Randall Balestriero, Tim G. J. Rudner, and Yann LeCun. Stress-testing offline reward-free reinforcement learning: A case for planning with latent dynamics models. In 7th Robot Learning Workshop: Towards Robots with Human-Level Abilities ,2025. Jinyeop Song, Jeff Gore, and Max Kleiman-Weiner. Estimating the empowerment of language model agents. NeurIPS , 2025. Junhan Sun, Hao Zhao, and Guofeng Zhang. Intact: Isomorphic intent-to-action learning for search-free world models. arXiv preprint arXiv:2607.26056 , 2026. Yuval Tassa, Yotam Doron, Alistair Muldal, Tom Erez, Yazhe Li, Diego de Las Casas, David Bud-den, Abbas Abdolmaleki, Josh Merel, Andrew Lefrancq, et al. Deepmind control suite. arXiv preprint arXiv:1801.00690 , 2018. Lucas Thil, Jesse Read, Rim Kaddah, and Guillaume Doquet. Subspace-decomposed jepas: Dis-entangling progression and content in latent world models. arXiv preprint arXiv:2605.31111 ,2026. Vimal Thilak, Chen Huang, Omid Saremi, Laurent Dinh, Hanlin Goh, Preetum Nakkiran, Joshua M Susskind, and Etai Littwin. Lidar: Sensing linear probing performance in joint embedding ssl architectures. In ICLR , 2024. Ying Wang, Oumayma Bounou, Gaoyue Zhou, Randall Balestriero, Tim G. J. Rudner, Yann LeCun, and Mengye Ren. Temporal straightening for latent planning. ICML , 2026. 11 Grady Williams, Nolan Wagener, Brian Goldfain, Paul Drews, James M. Rehg, Byron Boots, and Evangelos A. Theodorou. Information theoretic MPC for model-based reinforcement learning. In 
+
+IEEE International Conference on Robotics and Automation (ICRA) , pp. 1714–1721, 2017. Haiyu Wu, Randall Balestriero, and Morgan Levine. Visreg: Variance-invariance-sketching regular-ization for jepa training. arXiv preprint arXiv:2606.02572 , 2026. Bianca Zadrozny and Charles Elkan. Transforming classifier scores into accurate multiclass proba-bility estimates. In Proceedings of the Eighth ACM SIGKDD International Conference on Knowl-edge Discovery and Data Mining , pp. 694–699, 2002. Jure Zbontar, Li Jing, Ishan Misra, Yann LeCun, and Stéphane Deny. Barlow twins: Self-supervised learning via redundancy reduction. In ICML , pp. 12310–12320. PMLR, 2021. Wancong Zhang, Basile Terver, Artem Zholus, Soham Chitnis, Harsh Sutaria, Mido Assran, Randall Balestriero, Amir Bar, Adrien Bardes, Yann LeCun, et al. Hierarchical planning with latent world models. arXiv preprint arXiv:2604.03208 , 2026. Ruihan Zhao, Kevin Lu, Pieter Abbeel, and Stas Tiomkin. Efficient empowerment estimation for unsupervised stabilization. In ICLR , 2021. arXiv:2007.07356. Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. Dino-wm: World models on pre-trained visual features enable zero-shot planning. In ICML , 2025. 12 A APPENDIX 
+
+The appendix follows the experimental flow of the main paper. We first provide the training details and the SSL observations that motivate the regularization intervention. We then derive the three VIScore factors and describe the validation protocol. The final sections report the method, task, factor, and planner transfer experiments. A.1 TRAINING AND EVALUATION DETAILS 
+
+The predictor is causal and the training loss averages one-step-ahead prediction at three shifted positions. Frameskip concatenates, rather than repeats, the five raw actions between retained frames. A PushT action block is therefore 10 -dimensional, and a four-frame sample spans 20 environment steps. Two-Room uses one context frame and a two-frame window. We reserve 10% of each dataset for validation-loss logging only and do not use early stopping. CEM uses 300 candidates, top-30 
+
+elites, a five-block planning horizon, and 30 iterations on PushT versus 10 on the other tasks. 
+
+# B VISR EG IN THE SELF -S UPERVISED SETTING 
+
+B.0.1 COLLAPSE PREVENTION 10 4 10 2 10 0  
+
+> Feature scale (r) 10 5
+> 10 2
+> 10 1
+> 10 4
+> Gradient magnitude  ‖∇ L‖
+> Collapse region
+> Barlow Twins VISReg (Ours) SWD VICReg SIGReg
+
+Figure 4: Embedding collapse prevention. We simulate the gradient ||∇ L|| of popular regular-ization methods under different collapse stages by changing the feature norm (r). We ob-serve that when the model is collapsed, Barlow Twins Zbontar et al. (2021) and VISReg provide a strong gradient to fix the collapse, whereas SI-GReg Balestriero & LeCun (2025) fails to do so. The Epps–Pulley gradient used by SIGReg van-ishes as the embedding collapses. VISReg re-tains a corrective signal from two terms. The scale-loss gradient approaches a nonzero con-stant near collapse, while the scale-normalized sorted-quantile shape term continues to penal-ize a degenerate distribution. The stop-gradient in the normalization prevents the shape term from changing variance in place of the scale term. B.0.2 LONG -TAILED AND LOW -RANK DATA 
+
+We evaluate whether VISReg’s independently weighted components help on ImageNet-LT (Liu et al., 2019) and Galaxy10 (Leung, 2025). We train ViT-S/8 from scratch for 
+
+400 epochs and compare with SWD (Bon-neel et al., 2015), DINO (Caron et al., 2021), VICReg (Bardes et al., 2022), and SIGReg. Reweighting the shape term improves VISReg in both data regimes. This observation moti-vates the loss-component transfer experiment in Section 3; the main paper then shows that the same flexibility does not improve planning. Table 7: Linear probe accuracy on ImageNet-LT. The backbone, ViT-S/8, is trained for 400 epochs from scratch. Our VISReg method outperforms all methods at all levels. DINO fails to learn mean-ingful embeddings. The accuracy values are reported in percentage. ∗ uses {0.5, 0.5, 2} for center, scale, and shape loss. Method Overall Many Medium Few SWD 31.85 51.54 22.70 8.36 SIGReg 32.00 51.86 22.88 7.92 VICReg 33.08 52.29 24.63 8.54 VISReg 32.11 51.55 23.19 8.52 VISReg ∗ 35.14 54.49 26.87 9.40 
+
+13 Table 8: In-domain linear probe accuracy on Galaxy10. The model is trained from scratch to test the performance of methods on the low-rank task. SIGReg, SWD, and VISReg successfully prevent the training from collapsing while obtaining a good linear probe accuracy, whereas DINO struggles to learn meaningful features. ∗ uses {0.5, 0.5, 2} for center, scale, and shape loss. VICReg SWD SIGReg VISReg VISReg ∗
+
+Acc. 79.93 80.60 80.50 80.51 80.76 
+
+B.1 VIS CORE ESTIMATION 
+
+Task tolerance. dtol maps the physical success criterion into the checkpoint’s latent space. PushT uses a 20 -pixel positional tolerance and a π/ 9 orientation tolerance; Reacher uses a maximum joint error of 0.05 radians; Two-Room uses a 16 -pixel agent-position tolerance; and Cube uses a 0.04 -meter block-position tolerance. These values are taken from the task definitions rather than tuned to success labels. Appendix B.3 describes how probe pairs are selected to estimate the corresponding latent distance. 
+
+Veracity. We roll the predictor open-loop for H = 5 action blocks using the dataset actions and pool the terminal errors across probe windows. With latent covariance Σz ,
+
+NMSE H = E∥rollout( zt, a t:t+H )H − zt+H ∥22
+
+tr Σ z
+
+, σroll = pNMSE H tr Σ z . (6) Veracity is erf(( dtol /2) /(√2σroll )) . The error function is used as a bounded monotone map of task-scaled rollout accuracy; the score does not assume that the residual is exactly Gaussian. Because veracity depends on the ratio dtol /σ roll through a strictly increasing function, and Spearman cor-relation depends only on ranks, the veracity row of every table is invariant to that choice: the raw ratio and the Rayleigh form 1 − exp( −(dtol /σ roll )2/2) , which is the two-dimensional analogue of the error function, give bit-identical within-task correlations. The invariance does not extend to the product, because a product mixes factor values and not only their ranks: substituting either alter-native moves VIScore’s pooled correlation on the development pool between +0 .849 and +0 .873 
+
+against the +0 .864 we report. We therefore fix the map rather than treat it as free. The half-tolerance is a fixed strictness choice rather than a fitted constant, and it prevents ceiling saturation: evaluated at the full tolerance, 10 .4% of pool checkpoints have veracity numerically equal to 1, against 0% at half. An invertible rescaling of the latent changes dtol and σroll equally and therefore leaves their ratio unchanged. B.1.1 INFLUENCE FROM LATENT EMPOWERMENT 
+
+Local channel model. Around an expert action block a∗, we approximate the H-step dynamics by 
+
+zt+H (a∗ + δ) = zt+H (a∗) + Gδ + ε, ε ∼ N (0 , ˆEH ), (7) which gives the Gaussian-channel mutual information 
+
+I(δ; zt+H ) = 12 log det 
+
+
+
+I + ˆE−1 
+
+> H
+
+GΣaG⊤
+
+. (8) 
+
+Estimator. We estimate the action-induced covariance without forming G. At K = 32 expert anchors, we draw M = 64 perturbations from the empirical action-block covariance and compute 
+
+ˆS = Cov[ zt+H (a∗ + δ) − zt+H (a∗)] , (9) 
+
+memp = 12 log det 
+
+
+
+I + ˆE−1 
+
+> H
+
+ˆS
+
+
+
+= 12
+
+X
+
+> i
+
+log(1 + λi), (10) where λi are the eigenvalues of ˆE−1/2 
+
+> H
+
+ˆS ˆE−1/2 
+
+> H
+
+. Under any invertible linear reparameterization 
+
+z 7 → Az , the two covariance matrices transform congruently, so the eigenvalues and memp remain unchanged. 14 Horizon-consistent noise floor. The displacement covariance ˆS is measured after H rollout steps, whereas the teacher-forced residual covariance ˆE is a one-step quantity. We preserve the directional structure of ˆE and match its trace to the observed H-step rollout error, 
+
+ˆEH = σ2roll 
+
+tr ˆE
+
+ˆE. (11) The rescaling is required for dimensional consistency: ˆS and ˆE must be compared at the same horizon, and using the raw one-step ˆE would place the noise floor far below the error the rollout actually accumulates, inflating every signal-to-noise ratio λi and therefore memp . Matching the trace corrects the scale of the floor while leaving its directions untouched. This makes an explicit assumption that we do not verify: that the directions in which the predictor errs are approximately stable between one step and H steps, so that only the magnitude needs correcting. If error directions rotate with the horizon, ˆEH misallocates the floor across eigendirections and memp is biased in a way our experiments cannot detect. We record this as a limitation of the estimator rather than a validated choice. 
+
+Sufficiency cap. Figure 3 shows that raw empowerment becomes weakly associated with success after a task-dependent knee, at 129 , 65 and 59 nats on PushT, Reacher and Two-Room: the corre-lation with success falls from +0 .82 / + 0 .95 / + 0 .82 below each knee to +0 .31 / + 0 .38 / + 0 .44 
+
+above it. We therefore define influence as min( memp /τ, 1) and choose τ = 82 by run-level two-fold cross-validation on the development tasks, minimizing cross-task calibration error on one fold and evaluating on the other. The role of clipping is to align the scale across tasks, not to improve every within-task correlation, and it is paid for: 86% of PushT development checkpoints sit above 
+
+τ , so this factor no longer separates them. The choice is not delicate. Sweeping the cap over the development pool gives calibration errors of 8.1/8.5/8.8/8.9 points at τ = 55 /82 /110 /129 while the worst within-task correlation stays at +0 .69 / + 0 .69 / + 0 .70 / + 0 .70 , so no value in [55 , 129] 
+
+would change a conclusion in this paper. We keep τ = 82 because it was selected before the pools reported here were assembled; re-selecting it now would fit the constant to those pools. 
+
+Sobriety. At each of K = 64 expert anchors, the goal is the future reached by the recorded action 
+
+a∗. A mini-CEM with 128 candidates per iteration, four iterations, and top-16 elites searches for a lower imagined terminal cost, 
+
+ˆp = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+1[J(a∗
+
+> k
+
+) > J (acem  
+
+> k
+
+)] , sobriety = 1 − ˆp. (12) Only the sign of the improvement enters the factor, which is what makes the probe cheap: the whole probe is 64 × 512 rollouts per checkpoint. 
+
+Computational cost. Batched computation of veracity, influence, and sobriety takes approxi-mately 7 seconds per checkpoint on one H100. A single 50 -episode planning evaluation takes at least 20 × longer in wall-clock time and uses two orders of magnitude more predictor rollout steps. Averaging success over additional evaluation seeds increases the evaluation cost but does not change the diagnostic cost. B.2 BATCH -S IZE DEPENDENCE OF VISR EG 
+
+VISReg has a finite-sample loss floor even when projected embeddings follow the target Gaussian. For batch size B, the sorted-quantile shape term satisfies 
+
+E Lmin shape ≍ log BB , (13) and the scale-term floor is O(B−1). Consequently, increasing B changes the residual gradient pressure of VISReg at a fixed loss weight. In contrast, the normalized Epps–Pulley statistic used by SIGReg has a batch-invariant expectation under the Gaussian null; only its sampling variance decreases. Batch size therefore acts as a hidden regularization-strength parameter for VISReg, ex-plaining why the larger-batch model more closely approaches the target distribution in the OOD experiment. 15 B.3 CHECKPOINT POOLS AND VALIDATION PROTOCOL 
+
+The split is at run level, and what that costs. We score every training epoch of the runs of Section 3, excluding the cls -reconstruction ablation arm. Each training run is then assigned entirely to the development fold or to the test side; no run contributes checkpoints to both. Development is where every constant is chosen— τ , the dtol recipe, the calibration maps—so this guarantees that no constant was tuned on a sibling epoch of a test checkpoint, which a split at epoch or evaluation-seed level would not. The assignment is not arbitrary, because a naive one destroys the development pool. Moving every run that carries fresh-seed labels to the test side leaves development with 117 checkpoints from 12 
+
+runs and drops its own label resolvability to 2.2/1.6/1.9, i.e. below the threshold we require of any pool we correlate against. We therefore take a stratified half: runs are ordered by their fresh-seed contribution and moved to the test side, round-robin over (task, objective) so that neither side is single-task or single-objective, and the transfer stops before development would fall under a spread-over-standard-error of 2.2 on any task or below 20 checkpoints on any task. The resulting folds are 
+
+14 development runs against 38 test runs, with an objective mix of 11 VISReg and 3 SIGReg on the development side and 27 against 6 on the test side. The cost is borne almost entirely by development, which falls from 472 checkpoints to 137 while keeping resolvability 2.2/3.4/2.4 on the three tasks; the test pools lose little ( 4 cells from 2 runs are discarded from the held-out fold because their runs stayed in development). Development’s own calibration error rises from 8.5 to 10 .2 points under the split, which we report as the honest number: it is the price of the guarantee, not a degradation of the metric. The test pool moves the other way— held-out calibration improves to 7.0 points and its pooled correlation to +0 .91 —so the run-level guarantee is obtained without weakening any conclusion. 
+
+Bootstrap unit. Epoch checkpoints of one training run are not independent samples: they share an initialization, a data order and a success level, and development draws 137 checkpoints from only 14 
+
+runs. Resampling checkpoints would therefore understate every interval. All intervals in this paper are cluster bootstraps over training runs ( 2000 resamples): a run is drawn with replacement and all of its checkpoints enter the resample together. For VIScore this gives pooled +0 .88 [+0 .78 , +0 .93] 
+
+and calibration 10 .2 [7 .4, 16 .3] on development, and +0 .91 [+0 .84 , +0 .93] and 7.0 [5 .3, 10 .8] on held-out. The corresponding intervals for raw empowerment are [18 .7, 28 .2] and [12 .2, 19 .5] for calibration and +0 .49 [+0 .33 , +0 .70] for held-out pooled, so VIScore’s calibration interval lies en-tirely below the constant reference on both pools while empowerment’s does on neither. 
+
+Cube needs a factor VIScore does not measure. Cube is the one task whose success is decided by something none of the three factors represents. An episode succeeds only if the gripper enters a closed mode on the block, a discrete transition, whereas veracity, influence and sobriety are all continuous measurements of a continuous latent. The factor values say as much: Cube’s median 
+
+memp is 236 nats against a cap of 82 , so influence is numerically equal to 1 on every Cube checkpoint in both pools and one third of the product carries no information at all. A diagnostic for this task would need a mode-conditioned factor—whether the predictor represents the transition, and whether search can fabricate it—which we do not have. We therefore report Cube’s within-task column in parentheses and exclude it from Pooled , Calib. and Ref. , and we read its entries as a missing axis rather than as a failure of the axes we do measure. 
+
+Estimating dtol . Among probe pairs one to five frames apart, we retain those whose task-scored physical displacement lies within 20% of the success tolerance. When the criterion ignores some state coordinates, we further retain the quartile with the least movement in those coordinates. The median latent distance of the retained pairs defines dtol . Direct measurement avoids the large ex-trapolation required by a local latent-to-state slope when task-relevant coordinates move little. B.4 TRANSFER TO HELD -O UT METHODS AND AN UNSEEN TASK 
+
+The main checkpoint pools vary training stage and training run within the original model family. We next change the world-modeling method and the task while keeping all metric definitions fixed. The method-shift pool contains checkpoints from Qantara, RC-aux, INTACT and a DINO-WM variant 16 Table 9: Factor ablation. Each cell reports pooled Spearman correlation / calibration error in success points. The first three pools use leave-one-task-out calibration; held-out methods and the unseen task use the frozen development mapping.                                                           
+
+> Pool ( n/ runs) VIS =V·I·SVveracity Iinfluence Ssobriety Ref.
+> development ( 137 /14 )+0 .88 /10 .2+0 .80 /12 .4 +0 .54 /21 .9 + 0.89 /9.324.4
+> held-out ckpt ( 103 /33 )+0.91 /7.0+0 .81 /12 .7 +0 .65 /14 .0+0 .89 /7.318.2
+> held-out method ( 23 /23 )+0.75 /8.3+0 .62 /10 .4 +0 .09 /12 .2+0 .68 /8.911.3
+> held-out dataset ( 20 /2)+0 .87 /11 .5+0 .85 /31 .9 + 0.87 /9.4 + 0.88 /8.341.7
+
+with a frozen DINOv2 CLS representation, all re-evaluated with our planner and evaluation seeds. The task-shift pool contains two independent MAZE-medium (Fu et al., 2020) runs. The frozen mapping is fit on the three supported development tasks only. Cube contributes no checkpoint to the development pool, so it cannot enter the fit even in principle, and its unresolvable labels would in any case not constrain a monotone map (Appendix B.3). The method-shift pool is 12 Qantara checkpoints ( 3 seeds × 4 tasks), 9 INTACT ( 3 seeds × 3 tasks, their released full configuration at epoch 5), 3 RC-aux and 3 DINO-CLS-WM, one checkpoint per run. Excluding Cube leaves 7/8/8 on PushT/Reacher/Two-Room, the 23 reported in Table 6, and every one of them is labelled under the same nine evaluation seeds. The method shift tests whether the three factors only describe VIS-WM and LeWM checkpoints. VIScore gives the strongest association and the lowest calibration error in this pool; raw empower-ment is uninformative here ( +0 .12 ) and calibrates worse than a constant. The unseen task is passed on both axes: VIScore preserves checkpoint ordering ( +0 .87 , and +0 .92 / + 0 .77 within the two independent runs, so the ordering replicates across trainings), and its frozen calibration error of 11 .5
+
+points is well below the 41 .7-point constant reference, which is the bar the protocol sets. Raw em-powerment happens to be lower still at 9.2, for a reason specific to this task family rather than to the score: MAZE checkpoints operate at a median memp of 20 .3 nats against τ =82 , so influence is far from saturation and an uncapped capacity retains informative scale where the cap discards it. This is the trade-off the cap was chosen for, paid on a task family where it happens not to bind. B.5 FACTOR ABLATION 
+
+The product in Eq. 4 encodes the hypothesis that all three conditions matter. Table 9 tests whether one factor alone is sufficient. We use the same association and calibration protocol as in the corre-sponding full-score experiment and do not select a different factor for each pool. The conclusion is that no individual factor dominates every shift. Sobriety is strongest where en-coded information and rollout capacity vary little but a localized predictor error can still be amplified by search—it leads on development ( +0 .89 , 9.3 points) and MAZE ( +0 .88 , 8.3), and is the best-calibrated factor on the held-out checkpoints ( 7.3). Influence becomes competitive where the pool spans collapsed, undertrained and healthy representations, because capacity has not yet saturated (+0 .87 on MAZE, whose median capacity is 20 .3 nats against the 82 -nat cap), and it goes silent where capacity has saturated. Veracity binds when the task’s precision requirement is tight. Because the identity of the binding factor is exactly what a diagnosis has to report, the factors are meant to be read individually; the product is the summary that never falls below +0 .75 on any pool, and on the held-out checkpoints it is the best column on both cross-task measures ( +0 .91 , 7.0 points). It is fixed in advance rather than selected after observing each pool: the fixed product is less locally optimal than post-hoc factor selection, but its components retain a consistent diagnostic interpretation. B.6 TRANSFER ACROSS PLANNER FAMILIES 
+
+Sobriety explicitly contains a search procedure, raising the question of whether VIScore is specific to CEM. We keep the checkpoint, goals, episode count, and planning cost fixed and replace only the optimizer. The six planners are CEM, MPPI (Williams et al., 2017), iCEM (Pinneri et al., 2020), predictive sampling (Howell et al., 2022), multi-start AdamW through the predictor, and single-start AdamW. They span sampling- and gradient-based search with budgets from 100 to 9000 model 17 evaluations. Because every arm must be evaluated on the same checkpoints for the comparison to be paired, this experiment uses a fixed 36 -checkpoint subset drawn from the training runs of the pools in Section 4: all 25 of its runs appear there, 20 of the 36 checkpoints are themselves cells of the development or held-out pool, and the remaining 16 are other epochs of those same runs, spanning a wider quality range than any single pool does. The set is therefore a subset of the main paper’s runs rather than of its reported checkpoints. Veracity and influence remain unchanged across planners. Sobriety is recomputed using an as-signment fixed before observing the results: sampling planners use a mini-CEM probe, multi-start gradient descent uses a mini multi-start AdamW probe, and single-start gradient descent uses a single-start probe. Each probe uses a small fraction of the corresponding deployed budget. No planner-specific probe is selected according to correlation. VIScore has positive within-task association in all 18 planner–task cells, from +0 .29 to +0 .91 with a median of +0 .67 , showing that the checkpoint relationship is not an artifact of CEM. It also does not decay as the planner weakens: the rank correlation between a planner’s per-task success deficit against CEM and its within-task ρ is +0 .07 over those 18 cells, and predictive sampling reaches 
+
+43 .3 on PushT against CEM’s 84 .7 while VIS-score still ranks that task’s checkpoints at +0 .76 . A planner that finds much worse plans therefore still finds better plans with a better model. Cross-task comparability behaves differently. Pooled association and calibration remain strong for CEM ( +0 .81 , 9.4 points), MPPI ( +0 .81 , 17 .4), iCEM ( +0 .87 , 6.9) and multi-start gradient descent (+0 .86 , 10 .7), and weaken for predictive sampling ( +0 .51 , 26 .4) and single-start gradient descent (+0 .12 , 16 .2). The two failures are not a search-family effect—one is a sampler and one is a gradi-ent method—and by the previous paragraph they are not caused by the planners simply being weak. What the two share is that their weakness is task-selective : predictive sampling loses 41 .3 success points on PushT but only 4.3 and 3.3 on Reacher and Two-Room, while single-start gradient de-scent loses 29 .3 on Two-Room and 17 .0 on PushT but 3.7 on Reacher. A pooled correlation and a cross-task calibration map both require the tasks’ success levels to stay mutually comparable, and a planner that fails on one task and not another moves that task’s labels without moving its scores. MPPI is the counter-case that prevents us from stating this as a rule: its per-task deficits span 20 
+
+points and its pooled correlation is nonetheless +0 .81 , so a task-selective deficit is a warning sign rather than a sufficient condition. The experiment therefore supports transfer across search fam-ilies while showing that cross-task numerical comparability additionally depends on comparable optimizer effectiveness across tasks. 18 Table 10: Metric–success association under six planners on the same 36 checkpoints. Veracity, influence, and the representation baselines are planner-independent; sobriety is recomputed with the fixed family- and budget-matched probe. † indicates label variation below its binomial standard error. 
+
+Metric PushT ↑ Reacher ↑ Two-Room ↑ Pooled ↑ Calib. err. ↓
+
+CEM (300 samples; 30 /10 /10 iterations); mini-CEM probe 
+
+Straightness +0 .20 +0 .00 −0.35 +0 .11 33 .1
+
+Physical-state probe ( R2) +0 .52 +0 .74 +0 .16 +0 .57 22 .6
+
+Empowerment memp +0 .61 +0 .56 +0 .63 +0 .37 18 .9
+
+veracity +0 .70 +0 .59 +0 .58 +0 .73 16 .3
+
+influence +0 .65 +0 .82 +0 .55 +0 .53 18 .4
+
+sobriety +0 .67 +0 .49 +0 .50 +0 .83 9.2
+
+VIScore +0 .68 +0 .54 +0 .58 +0 .81 9.4
+
+MPPI (300 samples, 10 iterations, softmax τ =0 .5); mini-CEM probe 
+
+Straightness −0.04 −0.31 −0.50 −0.31 32 .4
+
+Physical-state probe ( R2) +0 .25 +0 .43 +0 .30 +0 .71 20 .1
+
+Empowerment memp +0 .57 +0 .73 +0 .49 +0 .14 21 .6
+
+veracity +0 .77 +0 .67 +0 .52 +0 .83 12 .7
+
+influence +0 .54 +0 .81 +0 .52 +0 .37 21 .2
+
+sobriety +0 .78 +0 .68 +0 .56 +0 .79 17 .5
+
+VIScore +0 .77 +0 .73 +0 .52 +0 .81 17 .4
+
+iCEM (300 samples, 10 iterations, colored noise β=2 ); mini-CEM probe 
+
+Straightness +0 .54 −0.16 −0.38 −0.08 31 .8
+
+Physical-state probe ( R2) +0 .77 +0 .70 +0 .33 +0 .68 19 .3
+
+Empowerment memp +0 .57 +0 .63 +0 .72 +0 .32 15 .3
+
+veracity +0 .51 +0 .69 +0 .65 +0 .82 13 .7
+
+influence +0 .68 +0 .85 +0 .59 +0 .53 15 .0
+
+sobriety +0 .61 +0 .54 +0 .61 +0 .85 7.6
+
+VIScore +0 .54 +0 .69 +0 .65 +0 .87 6.9
+
+predictive sampling (300 samples, 1 iteration); mini-CEM probe 
+
+Straightness −0.04 −0.13 −0.49 −0.67 34 .3
+
+Physical-state probe ( R2) +0 .25 +0 .68 +0 .39 +0 .48 35 .9
+
+Empowerment memp +0 .63 +0 .64 +0 .74 +0 .16 26 .1
+
+veracity +0 .75 +0 .61 +0 .65 +0 .64 25 .1
+
+influence +0 .66 +0 .85 +0 .74 +0 .32 25 .3
+
+sobriety +0 .77 +0 .72 +0 .64 +0 .41 27 .0
+
+VIScore +0 .76 +0 .59 +0 .65 +0 .51 26 .4
+
+gradient (AdamW, 100 initialisations, 30 steps); mini-AdamW probe 
+
+Straightness +0 .23 −0.18 −0.77 −0.09 36 .8
+
+Physical-state probe ( R2) +0 .51 +0 .71 +0 .08 +0 .65 22 .8
+
+Empowerment memp +0 .82 +0 .76 +0 .79 +0 .36 22 .0
+
+veracity +0 .87 +0 .77 +0 .79 +0 .84 12 .4
+
+influence +0 .66 +0 .84 +0 .80 +0 .56 21 .2
+
+sobriety +0 .94 +0 .74 +0 .70 +0 .78 14 .4
+
+VIScore +0 .91 +0 .81 +0 .69 +0 .86 10 .7
+
+single-start gradient (AdamW, 1 initialisation, 100 steps); single-start mini-AdamW probe 
+
+Straightness +0 .42 −0.34 −0.16 † +0 .53 21 .4
+
+Physical-state probe ( R2) +0 .47 +0 .82 −0.18 † −0.10 24 .6
+
+Empowerment memp +0 .56 +0 .90 +0 .35 † +0 .82 11 .2
+
+veracity +0 .50 +0 .94 +0 .31 † +0 .26 15 .7
+
+influence +0 .66 +0 .84 +0 .24 † +0 .72 12 .0
+
+sobriety +0 .30 +0 .66 +0 .24 † −0.06 18 .7
+
+VIScore +0 .40 +0 .90 +0 .29 † +0 .12 16 .2
+
+19
