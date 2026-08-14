@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-13</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-14</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 13 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 12 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>6</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-13 21:52:23 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-14 21:46:21 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共读13篇论文，精读7篇、速读6篇，重点聚焦世界模型评估与图自监督学习。</p>
-<p>最值得关注的是《VIScore》——为潜在世界模型规划质量提供诊断方法（10.0分），以及《NodeJEPA》——图级节点预测的机构化自监督新范式（9.0分）。</p>
-<p>建议普通读者先浏览这两篇精读文章的摘要与图表，再按兴趣深入方法细节。</p>
+<p>今日精读7篇、速读5篇，聚焦世界动作模型与视觉表征方向。</p>
+<p>最值得关注：SG-WAM用文本与空间语义引导世界模型，以及基于动作条件预测一致性诊断JEPA模型。</p>
+<p>建议普通读者从“世界模型如何利用语言和空间信息”入手，再结合一致性诊断理解其可靠性。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -76,9 +76,9 @@
     <strong class="dpr-home-dashboard-count">7 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="VIScore: Diagnosing Planning-Relevant Quality in Latent World Models">VIScore: Diagnosing Planning-Relevant Quality in Latent World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="NodeJEPA: Structure-Conditioned Latent Prediction for Node-Level Graph Self-Supervised Learning">NodeJEPA: Structure-Conditioned Latent Prediction for Node-Level Graph Self-Supervised Learning</span></li><li><span class="dpr-home-dashboard-paper-title" title="Foresight Without Seeing: Latent Futures for World Action Models">Foresight Without Seeing: Latent Futures for World Action Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="SG-WAM: Text-Grounded and Spatial-aware Semantic Guidance for World-Action Models">SG-WAM: Text-Grounded and Spatial-aware Semantic Guidance for World-Action Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Diagnosing JEPA World Models with Action-Conditioned Predictive Consistency">Diagnosing JEPA World Models with Action-Conditioned Predictive Consistency</span></li><li><span class="dpr-home-dashboard-paper-title" title="S2-HWM: Sparse Event-Structured Hierarchical World Model for Long-Horizon Surgical Robot Manipulation">S2-HWM: Sparse Event-Structured Hierarchical World Model for Long-Horizon Surgical Robot Manipulation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>4</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>6</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">6 篇</strong>
+    <strong class="dpr-home-dashboard-count">5 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Model Discovery Agent: LLM-assisted Bayesian experiment design for data-efficient discovery of mechanistic world models">Model Discovery Agent: LLM-assisted Bayesian experiment design for data-efficient discovery of mechanistic world models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Motion Artifact-Aware Self-Supervised Representation Learning for 3D Brain MRI Motion Artifact Reduction">Motion Artifact-Aware Self-Supervised Representation Learning for 3D Brain MRI Motion Artifact Reduction</span></li><li><span class="dpr-home-dashboard-paper-title" title="Predicting Functions, Not Features: KANs with Function-Space Joint-Embedding Predictive Learning for Medical Image Segmentation">Predicting Functions, Not Features: KANs with Function-Space Joint-Embedding Predictive Learning for Medical Image Segmentation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks">Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks</span></li><li><span class="dpr-home-dashboard-paper-title" title="Scaling Representation Diversity: Modulated Attention and Reconstructive Regularization for Visual Grounding">Scaling Representation Diversity: Modulated Attention and Reconstructive Regularization for Visual Grounding</span></li><li><span class="dpr-home-dashboard-paper-title" title="PseudoMapLabeler: Confidence-Aware Pseudo-Label Generation for Semi-Supervised Online Mapping">PseudoMapLabeler: Confidence-Aware Pseudo-Label Generation for Semi-Supervised Online Mapping</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>5</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>5</strong></span></div>
 </section>
 </div>
 

@@ -1,0 +1,226 @@
+Title: A Unifying Perspective on Causal World Models: From Observations to Representations to Structure
+
+URL Source: https://arxiv.org/pdf/2608.13456v1
+
+Published Time: Fri, 14 Aug 2026 01:22:16 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# A Unifying Perspective on Causal World Models: From Observations to Representations to Structure 
+
+Avinash Kori 1 Fabrizio Russo 11 Department of Computing, Imperial College London, London, UK, {a.kori21,fabrizio}@imperial.ac.uk 
+
+# Abstract 
+
+World Models (WM) are increasingly seen as a foundation for intelligent agents that can predict, plan, and act beyond their training distribution. In this paper, we study WMs from a causal perspect-ive across multiple levels of abstraction, ranging from perceptual observations to building a con-ceptual representation of the structure governing the environment dynamics. We argue that useful WMs must go beyond generative capabilities alone: they should also capture entity properties, entity-to-entity interactions, and entity-to-environment inter-actions that determine and explain the dynamics of a system. We provide a formal definition of Causal WMs (CWMs) grounded in the tasks they are inten-ded to support, connecting world modelling with existing work in causal representation learning, object-centric learning, causal discovery, structural causal models, and model-based decision-making. Finally, we relate CWMs to the literature on identi-fiability, clarifying when the components of a WM can be recovered from data and up to which equi-valence. With this, we ground WMs in representa-tions and structures that support causal reasoning and informed decision-making. 
+
+# 1 INTRODUCTION 
+
+World models have become one of the central aspirations of modern Artificial Intelligence. They are invoked to describe agents that imagine, plan, and learn to act safely outside their training distribution [Ha and Schmidhuber, 2018, LeCun, 2022, Matsuo et al., 2022, Taniguchi et al., 2023]. The chal-lenge is to build such models from observations, trajectories, interventions, and domain knowledge, while avoiding two unhelpful extremes: treating WMs as an unstructured black box with no explicit variables or mechanisms, or assuming in advance that the right variables and mechanisms have already been specified, so that they can be directly used for causal intervention. Recent work occupies different points along this spectrum. Predictive world models such as Dreamer learn compact latent states from sensory streams and use imagined rol-louts for control across diverse tasks, but the learned states need not have an explicit causal or semantic interpreta-tion [Hafner et al., 2025]. Hierarchical variants such as ResDreamer move closer to task-level reasoning by em-phasising decision-relevant signals over photorealistic re-construction, while still treating the internal representation largely as a learned latent substrate [Xu et al., 2026]. Joint-embedding approaches such as LeJEPA address a different part of the problem by connecting predictive representation learning with formal identifiability guarantees, but they do not by themselves specify the causal variables, mechanisms, or intervention targets needed for acting in the world [Klindt et al., 2026]. Causal dynamics methods illustrate the com-plementary structural route: once state variables are given, sparse causal dependencies can improve generalisation and yield reusable state abstractions for downstream tasks [Wang et al., 2022, 2024]. Recent work on robust and general agents makes the motivation especially direct: agents need WMs that support causal reasoning about actions, mediation, and distribution shifts, not merely next-state prediction [Richens and Everitt, 2024]. However, even in this literature, WMs are often still operationalised primarily as transition mod-els [Richens et al., 2025, Ceriscioli and Mohan, 2025]. 
+
+Yet the phrase World Model often names an ambition more than a well-specified object. Recurrent latent dynam-ics models, next-observation predictors, simulators, joint-embedding predictors, learned state abstractions, as well as the implicit knowledge stored in a large generative model have all been referred to as WMs [Guan et al., 2023, Ding et al., 2025]. The difficulty is that this common label con-flates distinct modelling commitments. A predictor specifies what is likely to happen next; a representation compresses observations by mapping unstructured observations into usable structured variables representing relevant aspects of the world; and a causal model specifies mechanisms enabling interventional analysis. What remains underspe-cified is how to connect these pieces towards building ro-arXiv:2608.13456v1 [cs.AI] 13 Aug 2026 Figure 1: Conceptual overview of a Causal Ladder of CWM: illustrated as a four-level progression from perception to intervention and imagination. Rungs 1, 2 and 3 follow Pearl’s causal hierarchy [Pearl and Mackenzie, 2018, Bareinboim et al., 2022]. At the base, Rung 1 represents raw sensory perception, where raw observations xt are processed by an inference model to infer entity-level features vt.In Rung 1–2, these features are lifted into the structured relational state rt, whose diagonal blocks retain entity attributes and whose off-diagonal blocks encode interactions. The graph Gr represents causal mechanisms over this state; Gx is used only when observations have themselves been decomposed into explicit variables. At Rung 2, agents can manipulate entities to maximise their utility. At the top, Rung 3 represents counterfactual and generative reasoning, enabling agents to analyse different possible scenarios. 
+
+bust WMs with known properties and guarantees: which variables should be represented, whether they are identi-fiable from data, which relations among them are causal, when an action-conditioned prediction can be ascribed an interventional-effect interpretation, and when additional in-formation or domain knowledge is required. The problem we focus on is therefore how to turn obser-vations into a CWM by combining three strands of work: causal representation learning [Schölkopf et al., 2021, Ben-gio et al., 2013], addressing when latent variables can be recovered from unstructured observations; causal discov-ery [Zanga et al., 2022], studying when cause-effect rela-tionships over the structured variables (represented by Gr;see Figure 1) can be recovered; and model-based decision-making [Ge et al., 2026], covering when actions and util-ities can be used for controlled behaviour. When observa-tions are explicitly decomposed into variables, Gx denotes a graph over those observed or encoded variables. We do not assume Gx = Gr: their correspondence requires an ex-plicit conditional-independence-preserving representation map. Faithfulness relates each distribution to its own graph and, together with the Markov and sufficiency assumptions, yields the usual Markov-equivalence limit for observational discovery over Gr [Spirtes et al., 2000, Verma and Pearl, 1990]. Figure 1 summarises this view: a CWM is not a single monolithic predictor, but a sequence of modelling commit-ments that moves from perception to representation (Rung 1), from representation to causal structure (Rung 1-2), and from structure to intervention (Rung 2), utility, and counter-factual reasoning (Rung 3). We give particular attention to the state-abstraction pipeline at time t
+
+xtϕ
+
+−−→ vt = ( vit)i∈Ot
+
+> ψOt
+
+−−→ rt, (1) where ϕ maps the observed random variable xt to entity-indexed latent random variables vt, with vit for each entity i
+
+in the current entity set Ot, and ψOt assembles the complete structured relational state rt. Its diagonal blocks retain entity attributes and its off-diagonal blocks encode interactions. The first map ϕ raises a representation-learning question :under what assumptions can raw observations identify the entities and attributes that should enter the state representa-tion? The second map ψOt raises a structure-learning ques-tion : which attributes and inter-entity relations should be represented as variables, and how can samples from those variables support causal discovery? These steps are coupled to, but distinct from, transition learning, policy or action modelling, utility specification, and the structural assump-tions needed to use action-conditioned transitions to predict the effects of interventions [Bareinboim et al., 2022, Wang et al., 2022]. Additionally, an action model endows CWMs with the capability to evaluate goal oriented actions at and predict their effects on the structured relational state rt+1 ,as well as a decoder ˆf : ROt+1 → X translating rt+1 to the next observation xt+1 .Concretely, this work makes two contributions. First, we formalise a CWM as a Markov decision process that links observations, latent states, actions, transition distributions, and utility (Section 2). Second, we argue that guarantees for CWMs should be understood component-wise, each impos-ing different assumptions and admitting different admissible equivalences, so that the right notion of identifiability for CWMs is the one that preserves the downstream reasoning task and the corresponding notion of control (Section 3). 
+
+# 2 CAUSAL WORLD MODELS 
+
+Causal mechanisms govern the dynamics of the world, mo-tivating a formal framework that can capture such mechan-isms for a given environment. Our view of WMs integrates this property by introducing a structured formalisation that progresses from observations to latent representations (cap-turing entity-level abstractions) , extends it to their interac-tions , modelling this as a causal discovery task. To ground the discussion, we use a classic example, introducing addi-tional context as needed. 
+
+Example 1. Let’s consider a robot learning to act in a tabletop environment containing a red block, a blue block, and a goal region. The robot receives images xt ∈ X and executes actions at ∈ A , such as pushing the red block left or moving the gripper towards the goal. This is a single modelling problem, but it can be analysed at different levels of abstraction that link the raw pixels to choosing the op-timal policy. Here, xt denotes the raw observation available to the robot, such as an image of the scene. The tuple vt
+
+captures entities such as the red block, blue block, gripper, and goal region; each vit encodes attributes such as posi-tion, colour, shape, velocity, and contact state. The diagonal block ri,i t is exactly vit, while an off-diagonal block such as 
+
+ri,j t can encode the red block leaning on the blue block. 
+
+We now formalise the notion of relational variables: 
+
+Definition 1 (Relational Variables) . Let VO = Q 
+
+> i∈O
+
+Vi be the entity-indexed latent state space for an entity set O, and let vt = ( vit)i∈O ∈ V O . For each ordered pair i, j ∈ O, let 
+
+Mij be a possibly empty component index set; for i = j,
+
+Mii indexes all coordinates or attribute blocks of vit. Define 
+
+ri,j m,t := 
+
+(
+
+vim,t , i = j, gi,j m (vit, vjt ), i̸ = j. 
+
+The corresponding pair-specific node set is 
+
+Vi,j r = {ri,j m : m ∈ Mij }.
+
+Thus ri,i t ≡ vit. With 
+
+Ir (O) = {a = ( i, j, m ) : i, j ∈ O, m ∈ Mij },
+
+write ra,t ≡ ri,j m,t . The structured relational state is rt =(ra,t )a∈I r (O) ∈ R O , and ψO in Eq. 1 denotes the assembly of these diagonal and off-diagonal blocks. Directed relations may occupy distinct (i, j ) and (j, i ) blocks; symmetry is imposed only for relation types declared symmetric. 
+
+Definition 2 (Formal state description) . At time t, the state is st = ( xt, rt) ∈ X × R Ot , where Ot is the current entity set and rt = ( ra,t )a∈I r (Ot) is the structured relational state from Definition 1. 
+
+Relational variables provide the state description on which a CWM operates. They turn entity-level latent representations into variables whose mechanisms can be learned, intervened on, and evaluated against task goals. We can therefore define a CWM as the decision model that couples this relational variable to observations, actions, transitions, and utility. 
+
+Definition 3 (Causal World Models (CWM)) . A CWM is a tuple W =  X , A, {R O }O , P, U, where X ⊆ S 
+
+> i
+
+Rdi
+
+is the observation space, A is the action space, RO is the relational latent-state space for entity set O, and U : A × S → R is a utility function over actions and states. For time 
+
+t, let xt, xt+1 ∈ X , at ∈ A , rt ∈ R Ot , and rt+1 ∈ R Ot+1 .Under the Markovian state assumption, the observed one-step decision distribution is obtained by marginalising the latent relational variables, 
+
+P(xt, xt+1 , at) = 
+
+Z
+
+> rt,rt+1
+
+P(xt, xt+1 , rt, rt+1 , at),
+
+The action-conditioned observation-level transition then factorises as 
+
+Pxx ′ (a) = P(xt+1 = x′ | xt = x, at = a)=
+
+Z
+
+> rt,rt+1
+
+P(xt+1 | rt+1 )P(rt+1 | rt, at = a)P(rt | xt).
+
+Remark 1. A CWM can be read as a Markov decision process over the formal state st in Definition 2. The utility 
+
+U evaluates a considered action and state with respect to the agent’s goal; in particular, one selects actions satisfying 
+
+U(a, st) ≥ U (a′, st) for alternatives a′. The factorisation in Definition 3 has the following components: 1. P(xt+1 | rt+1 ) → Prediction model, generates next observation given rt+1 , following the structure in Gx,2. P(rt+1 | rt) → Transition model, with P(at | rt) as the action model and P(rt+1 | rt, at) as the action-conditioned transition. For discrete actions, P(rt+1 |
+
+rt) = P 
+
+> a∈A
+
+P(rt+1 | rt, a )P(a | rt). Under con-sistency and positivity, when actions are randomised or, more generally, there is no unmeasured action– outcome confounding given rt [Hernan and Robins, 2020], this conditional identifies the controlled trans-ition P(rt+1 | rt; do( at = a)) , where do( at = a)
+
+denotes externally setting the action to a [Pearl, 2009]; otherwise it is only a predictive conditional, 3. P(rt | xt) → Inference model, first infers the entity-centric representation vt and then assembles the struc-tured relational state rt, where P(rt | xt) = R 
+
+> vt
+
+P(rt |
+
+vt)P(vt | xt), while following the structure Gr .
+
+The definition is deliberately abstract: it does not prescribe a particular estimator, but identifies the probabilistic compon-ents that will later be associated with the literature on rep-resentation learning, causal discovery, and causal decision-making. The remark separates a CWM into components xt rt
+
+at
+
+rt+1 xt+1 
+
+Uϵx                 
+
+> Figure 2: Causal influence diagram for the CWM factorisation .Circles denote random variables: grey circles are observations and blue circles are relational variables. The orange rectangle is the decision node, and the green diamond is the utility node. Solid arrows denote the dependencies in Definition 3: xt7→rtis infer-ence, (rt,at)7→rt+1 is transition, rt+1 7→xt+1 is prediction. Dashed arrows indicate possible latent confounders.
+
+that must be learned or specified: an inference model from observations to relational variables, a transition or inter-vention model over relational variables, an action model, a prediction model back to observations, and a utility function. Figure 2 instantiates Definition 3 as a causal influence dia-gram, a graphical model that combines causal structure with decision and utility nodes [Everitt et al., 2021]. In our set-ting, the observation xt is encoded into relational variables 
+
+rt, the action at selects or modifies the transition mechanism leading to rt+1 , and the next observation xt+1 is decoded from the updated relational state. The utility U evaluates the outcome relative to the agent’s goal, such as moving the red block into the goal region without undesired collisions. The diagram makes explicit that a WM should not only predict the next observation, but also support goal-oriented reasoning about which actions are useful for a task. With this interpretation in place, we can state the causal sufficiency assumption behind Definition 3, as shown in Figure 2. A WM can support causal reasoning only if the variables that jointly drive prediction and utility are avail-able to the model, either as recorded components of the observation or as latent factors inferred from it. If a relevant common cause is missing from both levels, it may act as an unobserved confounder, possibly distorting causal infer-ences. This is the standard causal sufficiency assumption in causal discovery [Spirtes et al., 2000], which we make here to focus on the identifiability of the latent structure rather than the additional challenges of learning with unobserved confounders . Under this assumption, the CWM definition organises the modelling problem component-wise. If xt has already been decomposed into the causal variables of in-terest, the task may be causal discovery over Gx together with action-conditioned transition learning. For unstructured observations such as raw pixels, we do not posit a pixel-level causal DAG; instead, causal representation learning recovers 
+
+vt and the structured state rt, and causal discovery targets the causal graph Gr .
+
+# 3 CWM IDENTIFIABILITY 
+
+Identifiability asks which aspects of a CWM are uniquely determined by a data regime. Exact recovery is one pos-sible target, but latent-variable models more commonly ad-mit transformations that leave the observable distribution unchanged [Khemakhem et al., 2020, Kivva et al., 2022, Von Kügelgen et al., 2021]. Causal graphs and interven-tional quantities introduce different observational ambigu-ities [Verma and Pearl, 1990, Pearl, 2009, Bareinboim et al., 2022]; hence identifiability must be stated for a particular component and downstream use. Intuitively, the question is whether two candidate CWMs compatible with the same evidence can still disagree on a subset of their compon-ents; the definitions below distinguish exact agreement from disagreements declared admissible. 
+
+Definition 4 (Strong identifiability) . Let W be a class of candidate WMs, and let PD(W ) denote the observable dis-tribution induced by W ∈ W under a data regime D.The class W is strongly identifiable from D if, for any 
+
+W1, W 2 ∈ W, PD(W1) = PD(W2) ⇒ W1 = W2.
+
+Strong identifiability is rarely the right target for CWMs. En-tity permutations and invertible latent reparameterisations, including rescaling, can leave the learnt mechanisms un-changed. For example, two CWMs may place the red and blue blocks in opposite slots; after applying the same per-mutation to both relational indices and the entities affected by each action, they may induce identical predictions and de-cisions despite having unequal parameterisations. Requiring 
+
+W1 = W2 would distinguish such semantically equivalent models: equivalence expresses this admissible variability. 
+
+Definition 5 (Identifiability up to equivalence) . Let ∼ be an equivalence relation over W, where W1 ∼ W2 means that the two models differ only by transformations that preserve the relevant world-model semantics. The class W is identifi-able up to ∼ from D if PD(W1) = PD(W2) ⇒ W1 ∼ W2.
+
+For the CWM (Def. 3), Table 1 makes the equivalence ∼ of Definition 5 concrete across its representation, distributions, structure and utility, combining known recovery results with bespoke interface conditions. It distinguishes representation equivalences for vt, {vit}, viB,t , and ri,j t from compatibil-ity conditions on the CWM interfaces. These equivalences jointly induce a representation alignment T , with ˜r = T (r)
+
+and, on formal states (Def. 2), T (x, r) = ( x, T (r)) . We write d
+
+= for equality in distribution. The representation conditions form a hierarchy of semantic commitments. The coordinates of vt need not have fixed names, whereas {vit} must preserve entity correspondence. Since Kori et al. [2024] identify each whole entity vector 
+
+vit, interpreting viB,t as a named attribute block addition-ally requires the transformation to preserve that partition. For ri,j t , the same entity correspondence must act on both indices and retain the diagonal aliases. The compositional CWM Component Admissible Equivalence or Compatibility Condition 
+
+vt: Latent state Invertible affine equivalence ˜vt = Hvt + c; under stronger mixture assumptions this reduces to permutation, coordinate-wise scaling, and translation [Kivva et al., 2022]. 
+
+{vit}i∈Ot : Entity blocks Permutation of entity/slot indices: ˜vit = vπ(i) 
+
+> t
+
+[Locatello et al., 2020]. 
+
+viB,t : Entity-attribute block Within-entity affine identifiability [Kori et al., 2024]; for a declared attribute partition, the block-preserving specialisation is ˜viB,t = HB vπ(i) 
+
+> B,t
+
++ ciB .
+
+ri,j t , i̸ = j: Inter-entity rela-tional block Under our alignment of compositional blocks, following [Kori et al., 2025], require entity permutation with element-wise affine compatibility: ˜ri,j t = Dij rπ(i),π (j) 
+
+> t
+
++ cij .Diagonal blocks inherit the equivalence of vit.
+
+ψO : Relational assembly map Equivariance under a common permutation of entity labels in both indices; order invariance is required only for relation types declared symmetric. 
+
+p ˆf♯ (xt+1 | rt+1 ): Prediction model Weak injectivity of the decoder push-forward [Kivva et al., 2022] and local inverse consistency. With EO := ψO ◦ ϕ, require EO ≈ ˆf −1 on the relevant support: 
+
+EO ( ˆf (r)) ≈ r and ˆf (EO (x)) ≈ x on the data manifold. 
+
+P(rt+1 | rt): Transition model Equivariance in distribution under state alignment: ˜rt+1 | T (r) d
+
+= T (rt+1 ) | r.
+
+Gr: Relational-variable causal graph Markov equivalence class (MEC) over the relational-variable DAG: same skeleton and same v-structures after admissible variable alignment [Verma and Pearl, 1990]. 
+
+P(rt+1 | rt, at): Action-conditioned transition Actions and their affected components correspond under T , and ˜rt+1 | T (r), a d
+
+=
+
+T (rt+1 ) | r, a . Causal interpretation additionally requires consistency, positivity, and either randomised actions or no unmeasured action–outcome confounding given 
+
+rt [Hernan and Robins, 2020]; cf. Remark 1. 
+
+U: Utility model Utility preservation under transformation T : ˜U(a, T (s)) = U(a, s).Table 1: Component-wise equivalences and compatibility conditions for causal world-model identifiability. construction of Kori et al. [2025] motivates combining such blocks, without establishing their causal identifiability. Compatibility concerns whether the aligned representation can be used coherently by the rest of the CWM. Equivari-ance of ψO makes entity relabelling yield the same as-sembled relational state, while local inverse consistency of EO = ψO ◦ ϕ and ˆf prevents the encoder–decoder inter-face from discarding relevant state information. The pass-ive and action-conditioned dynamics and U must respect the same T so that aligned states produce aligned rollouts and values. The causal graph Gr has a different status: its MEC is itself a graph equivalence [Verma and Pearl, 1990], not an interface condition, and need not preserve action ef-fects. Matched actions must affect components carried to one another by T : entity-directed actions follow the entity permutation, whereas relation-directed actions follow both relational indices. Action-conditioned transitions support causal planning only under the stated identification con-ditions (cf. Remark 1). Thus, equivalences specify what may change within individual components; compatibility conditions ensure that these changes propagate coherently through the CWM, yielding an admissible equivalence of the full model. Component-wise guarantees compose into a policy guarantee only when these interfaces are compatible. In particular, if the encoder and decoder satisfy the stated local inverse-consistency condition, the action-conditioned transition commutes with T in distribution, and actions, their affected components, and utilities are preserved un-der the same alignment, then corresponding policies induce aligned trajectory distributions and the same expected cu-mulative utility, for the same horizon and discount. Their utility-maximising policies therefore correspond under T ,as in policy-preserving MDP abstractions [Li et al., 2006]. If transition effects, intervention targets, or utilities fail to commute with the same alignment, the per-component equi-valences do not compose into a control guarantee. In sum-mary, the relevant target is the weakest component-wise equivalence whose compatible interfaces preserve the in-tended prediction, intervention, or decision objective. This separates what can be identified from data from what must be supplied as structural assumptions or expert knowledge. 
+
+# 4 CONCLUSION 
+
+This paper argues that CWMs should be understood as struc-tured decision models rather than as monolithic predictors. We formalised a CWM as a model linking observations, representations and structure, and used this formalisation to connect representation learning, causal discovery, and model-based decision-making. The central contribution is a component-wise view, where each part of the model may be identifiable only up to admissible equivalence that en-ables the downstream reasoning. This decomposition clari-fies what can be learned from data, what must be supplied by interventions or domain knowledge, and when predictive models can support causal reasoning. Future work should turn this perspective into a rigorous formalisation, followed by practical algorithms and empirical testing, while extend-ing it to partial observability and latent confounding. Acknowledgements 
+
+Russo was funded by the ERC under the ERC-POC pro-gramme (grant number 101189053). 
+
+References 
+
+Elias Bareinboim, Juan D. Correa, Duligur Ibeling, and Thomas Icard. On Pearl’s Hierarchy and the Founda-tions of Causal Inference , page 507–556. Association for Computing Machinery, 1 edition, 2022. Yoshua Bengio, Li Yao, Guillaume Alain, and Pascal Vin-cent. Generalized denoising auto-encoders as generative models. Advances in neural information processing sys-tems , 26, 2013. Matteo Ceriscioli and Karthika Mohan. Agents robust to distribution shifts learn causal world models even under mediation. In Proc. of NeurIPS , 2025. Jingtao Ding, Yunke Zhang, Yu Shang, Yuheng Zhang, Ze-fang Zong, Jie Feng, Yuan Yuan, Hongyuan Su, Nian Li, Nicholas Sukiennik, et al. Understanding world or pre-dicting future? a comprehensive survey of world models. 
+
+ACM Computing Surveys , 58(3):1–38, 2025. Tom Everitt, Ryan Carey, Eric D. Langlois, Pedro A. Ortega, and Shane Legg. Agent incentives: A causal perspective. In Proc. of AAAI , volume 35, pages 11487–11495, 2021. Lin Ge, Hengrui Cai, Runzhe Wan, Yang Xu, and Rui Song. A review of causal decision making. Journal of Artificial Intelligence Research , 85, 2026. Lin Guan, Karthik Valmeekam, Sarath Sreedharan, and Subbarao Kambhampati. Leveraging pre-trained large language models to construct and utilize world models for model-based task planning. In Proc. of NeurIPS ,volume 36, pages 79081–79094, 2023. David Ha and Jürgen Schmidhuber. World models. 
+
+arXiv:1803.10122 , 2(3), 2018. Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse control tasks through world models. Nature , 640:647–653, 2025. Miguel A. Hernan and James M. Robins. Causal Inference: What If . Chapman & Hall/CRC, 2020. Ilyes Khemakhem, Ricardo Monti, Diederik Kingma, and Aapo Hyvarinen. Ice-beem: Identifiable conditional energy-based deep models based on nonlinear ica. Ad-vances in Neural Information Processing Systems , 33: 12768–12778, 2020. Bohdan Kivva, Goutham Rajendran, Pradeep Ravikumar, and Bryon Aragam. Identifiability of deep generative models without auxiliary information. In Proc. of Neur-IPS , volume 35, pages 15687–15701, 2022. David Klindt, Yann LeCun, and Randall Balestriero. When does LeJEPA learn a world model? arXiv:2605.26379 ,2026. Avinash Kori, Francesco Locatello, Francesca Toni, Ben Glocker, and Fabio De Sousa Ribeiro. Identifiable object centric representations via probabilistic slot attention. In 
+
+Proc. of NeurIPS , 2024. Avinash Kori, Ben Glocker, Bernhard Schölkopf, and Francesco Locatello. Unifying causal and object-centric representation learning allows causal composition. In 
+
+Proc. of ICLR Workshop on Deep Generative Model in Machine Learning: Theory, Principle and Efficacy , 2025. Yann LeCun. A path towards autonomous machine intelli-gence version 0.9. 2, 2022-06-27. Open Review , 2022. Lihong Li, Thomas J. Walsh, and Michael L. Littman. To-wards a unified theory of state abstraction for MDPs. In 
+
+Proc. of the International Symposium on Artificial Intelli-gence and Mathematics , 2006. Francesco Locatello, Dirk Weissenborn, Thomas Un-terthiner, Aravindh Mahendran, Georg Heigold, Jakob Uszkoreit, Alexey Dosovitskiy, and Thomas Kipf. Object-centric learning with slot attention. In Proc. of NeurIPS ,volume 33, pages 11525–11538, 2020. Yutaka Matsuo, Yann LeCun, Maneesh Sahani, Doina Pre-cup, David Silver, Masashi Sugiyama, Eiji Uchibe, and Jun Morimoto. Deep learning, reinforcement learning, and world models. Neural Networks , 152:267–275, 2022. Judea Pearl. Causality . Cambridge University Press, 2 edition, 2009. doi: 10.1017/CBO9780511803161. Judea Pearl and Dana Mackenzie. The Book of Why: The New Science of Cause and Effect . Basic Books, Inc., USA, 1st edition, 2018. Jonathan Richens and Tom Everitt. Robust agents learn causal world models. In Proc. of ICLR , 2024. Jonathan Richens, Tom Everitt, and David Abel. General agents need world models. In Proc. of ICML , 2025. Bernhard Schölkopf, Francesco Locatello, Stefan Bauer, Nan Rosemary Ke, Nal Kalchbrenner, Anirudh Goyal, and Yoshua Bengio. Toward causal representation learn-ing. Proc. IEEE , 109(5):612–634, 2021. Peter Spirtes, Clark Glymour, and Richard Scheines. Caus-ation, Prediction, and Search, Second Edition . Adaptive computation and machine learning. MIT Press, 2000. Tadahiro Taniguchi, Shingo Murata, Masahiro Suzuki, Di-mitri Ognibene, Pablo Lanillos, Emre Ugur, Lorenzo Ja-mone, Tomoaki Nakamura, Alejandra Ciria, Bruno Lara, et al. World models and predictive coding for cognit-ive and developmental robotics: frontiers and challenges. 
+
+Advanced Robotics , 37:780–806, 2023. Thomas Verma and Judea Pearl. Equivalence and synthesis of causal models. In Proc. of UAI , page 255–270, 1990. Julius Von Kügelgen, Yash Sharma, Luigi Gresele, Wie-land Brendel, Bernhard Schölkopf, Michel Besserve, and Francesco Locatello. Self-supervised learning with data augmentations provably isolates content from style. Ad-vances in neural information processing systems , 34: 16451–16467, 2021. Zizhao Wang, Xuesu Xiao, Zifan Xu, Yuke Zhu, and Peter Stone. Causal dynamics learning for task-independent state abstraction. In Proc. of ICML , volume 162, pages 23151–23180, 2022. Zizhao Wang, Caroline Wang, Xuesu Xiao, Yuke Zhu, and Peter Stone. Building minimal and reusable causal state abstractions for reinforcement learning. In Proc. of AAAI ,2024. Yuanfei Xu, Lin Liu, Wengang Zhou, Mingxiao Feng, and Houqiang Li. Self-supervised hierarchical visual reason-ing with world model. arXiv:2605.17537 , 2026. Alessio Zanga, Elif Ozkirimli, and Fabio Stella. A survey on causal discovery: Theory and practice. Int. J. Approx. Reason. , 151:101–129, 2022.

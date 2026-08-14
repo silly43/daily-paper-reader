@@ -1,0 +1,1024 @@
+Title: Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks
+
+URL Source: https://arxiv.org/pdf/2608.05996v1
+
+Published Time: Fri, 07 Aug 2026 01:13:59 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+# Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks 
+
+Patrick Krauss 1,2,3,4 , Achim Schilling 1,2,3,4 , Andreas Maier 1, Thomas Kinfe 2, and Claus Metzner 11Cognitive Computational Neuroscience Group, Pattern Recognition Lab, Friedrich-Alexander-University Erlangen-N¨ urnberg (FAU), Germany 
+
+> 2
+
+Neuromodulation and Neuroprosthetics, University Hospital Mannheim, University Heidelberg, Germany 
+
+> 3
+
+Neuroscience Lab, University Hospital Erlangen, Germany 
+
+> 4
+
+BG Clinic Ludwigshafen, Germany 
+
+August 7, 2026 
+
+Abstract 
+
+Deep Belief Networks (DBNs) learn hierarchical generative models without class supervision. Here, we ask whether this purely unsupervised process nevertheless organizes internal represen-tations according to the unknown data classes. We analyze successive layers of DBNs trained on MNIST, Fashion-MNIST, and KMNIST using the Generalized Discrimination Value (GDV), supervised probes applied only after training, a reconstruction-based measure of abstraction distance, effective dimensionality, and free sample generation. Remarkably, class-specific clus-tering generally increases with depth across datasets and network widths, although no label information is available during DBN training. Control experiments show that this effect de-pends on the learned feature structure and cannot be explained by random transformations, weight marginals, dimensionality reduction, or sigmoid saturation. The first hidden layers also frequently make class identity more accessible to linear and nonlinear probes. With greater depth, representations become increasingly compact and prototype-like as neurons acquire cor-related feature directions. At the same time, GDV and probe accuracy reveal complementary aspects of class structure: improved average clustering can coexist with reduced accessibility for a few difficult class pairs. These findings demonstrate that layer-wise generative learning can spontaneously uncover and progressively amplify class-related structure in unlabeled data. 
+
+1arXiv:2608.05996v1 [q-bio.NC] 6 Aug 2026 1 Introduction 
+
+The modern resurgence of deep learning is closely connected to the introduction of efficient training procedures for Deep Belief Networks (DBNs). Hinton, Osindero, and Teh showed that a deep gen-erative model could be constructed greedily, one Restricted Boltzmann Machine (RBM) at a time, and subsequently fine-tuned for a supervised task [1]. This layer-wise pretraining strategy provided a practical route into parameter regimes that were difficult to reach by direct optimization of deep networks and helped establish unsupervised representation learning as a central idea in the emerging field [2]. The broader foundational importance of energy-based neural networks and learning algo-rithms associated with John Hopfield and Geoffrey Hinton was recognized by the 2024 Nobel Prize in Physics [3]. DBNs therefore occupy an important historical position: they connected probabilis-tic generative modeling, statistical mechanics, and the trainability of deep neural architectures at a formative stage of modern machine learning. Despite this historical role, DBNs subsequently receded from the center of deep-learning research. Improved parameter initialization and activation functions alleviated vanishing-gradient problems [4], while residual connections enabled very deep discriminative networks to be trained directly by backpropagation [5]. At the same time, increasing data availability, specialized hardware, and end-to-end optimization shifted attention toward architectures tailored to particular application domains. Transformer networks now provide the dominant framework for many sequence and language tasks [6], and diffusion models have become a powerful approach to high-quality sample generation [7]. In this landscape, greedy layer-wise pretraining is usually no longer required merely to make a deep classifier trainable. As a consequence, DBNs are often treated primarily as a historical stepping stone, and comparatively little attention is paid to the internal representational changes produced by their unsupervised training itself. Yet several properties make DBNs unusually useful model systems for questions at the interface of machine learning, computational neuroscience, and statistical physics. First, their learning is unsu-pervised: no class labels or task-specific output errors are required. Second, the network is trained locally and layer by layer, allowing the contribution of each newly learned transformation to be exam-ined separately. Third, every RBM defines an explicit probability distribution and energy function, linking neuronal activations to a tractable energy-based description [8, 9]. Fourth, the learned hier-archy can be used both as an encoder and as a generative model. These features do not make DBNs literal models of biological neural circuits: symmetric weights, equilibrium sampling, and the separa-tion into positive and negative learning phases remain substantial abstractions. Nevertheless, local correlation-based updates, stochastic neuronal states, recurrent associative dynamics, and learning without externally supplied labels make them attractive conceptual systems for investigating how structured internal representations can emerge from environmental statistics alone. Our group has pursued a related program of analyzing information processing inside neural net-works without restricting the analysis to final task performance. We introduced the Generalized Discrimination Value (GDV) as a non-invasive measure of how strongly labeled data classes separate within an arbitrary representation, permitting comparisons across layers and architectures with-out modifying the analyzed network [10]. In recurrent and Boltzmann-type networks, we further studied spontaneous information flux and identified efficiently measurable correlational signatures of state-to-state information transmission [11]. We investigated how noise can release recurrent net-works from restricted attractor subsets through recurrence resonance [12], how neuronal nonlinearity and dynamical regimes determine whether reservoir representations become linearly decodable [13], and how biologically motivated structural regularities such as Dale-type output polarity, reciprocity, and modularity affect recurrent dynamics and computation [14]. Across these studies, a recurring theme is that useful information processing cannot be inferred from architecture or output accuracy alone: it requires direct measurement of representational geometry, dimensionality, accessibility, and dynamics. Here, we return to DBNs from this representational perspective and ask what their greedy, completely 2unsupervised learning procedure does to data as they pass through the hierarchy. In particular, we distinguish three properties that are often implicitly conflated: preservation of a specific input, sepa-ration and extractability of class-related information, and the ability to generate plausible samples in a free-running mode. We quantify layer-wise class separation using the GDV and assess class acces-sibility with linear, finite Gaussian-kernel, and RBF support-vector-machine probes. In parallel, we measure deterministic abstraction distance, operationalized by the conventional reconstruction mean squared error, and the effective dimensionality of each representation, and decompose dimensionality loss into variance heterogeneity and correlation-induced neuronal redundancy. Free generation and data-grounded reconstruction provide complementary visual tests of the learned generative models. All labels are withheld during DBN training and are introduced only after training for evaluation. We perform these analyses across MNIST, Fashion-MNIST, and KMNIST, multiple hidden-layer widths, independently initialized networks, and a set of controls targeting initialization, contrastive-divergence depth, weight structure, nonlinearity, stochastic sampling, and label assignment. This design allows us to test whether progressively improved GDV reflects a robust unsupervised reor-ganization rather than a peculiarity of one data set or training run. Our results reveal a depth-dependent trade-off: early layers discard pixel-level detail while making class information more ac-cessible, whereas deeper layers increasingly compress the representation into correlated, partially redundant feature directions and eventually reduce supervised readout accuracy. Free generative behavior follows a distinct trajectory, demonstrating that abstraction distance, discriminative ac-cessibility, and generative quality are related but non-equivalent properties of an unsupervised deep model. 
+
+# 2 Methods 
+
+2.1 Datasets 
+
+Experiments were performed on three established image-classification benchmarks with identical tech-nical formats but different visual statistics. Each dataset contains 60,000 training images and 10,000 test images, represented as 28 × 28 grayscale arrays and assigned to ten classes. MNIST comprises handwritten Arabic digits from 0 to 9 [15]. Fashion-MNIST was designed as a drop-in replacement for MNIST and contains images of ten clothing categories, including garments, footwear, and bags [16]. Kuzushiji-MNIST (KMNIST) contains ten classes of cursively written Japanese Kuzushiji char-acters and provides a visually more complex handwritten-symbol task while retaining the MNIST data format [17]. We used the official training and test partitions throughout. Pixel intensities were converted to floating-point values in [0 , 1] and images were flattened to 784-dimensional input vectors; no data augmentation was applied. DBNs were trained exclusively on the image vectors. Dataset labels were withheld from all RBM and DBN training procedures and were used only after training to construct class-balanced GDV subsets and to fit or evaluate the supervised probe models described below. Unless specified otherwise, quantitative test-set measures were evaluated on the complete official test partition. 
+
+2.2 Generalized Discrimination Value (GDV) 
+
+The Generalized Discrimination Value (GDV) was used to quantify the separability of labeled data classes in the representations generated by successive DBN layers [10]. The GDV maps a set of labeled points to a single scalar by comparing the typical distances between points belonging to the same class with those between points belonging to different classes. By construction, it is invariant under global translations, component-wise linear rescaling, and permutations of the representation coordinates (i.e., neuron indices). Its normalization and class-wise averaging further make values comparable across representations with different dimensionalities, different numbers of samples per 3class, and different numbers of classes, properties referred to as dimensionality, class-size, and class-number invariance, respectively. Class labels were used exclusively for this post-hoc evaluation and were not available to the DBN during training. Consider N representation vectors xn = ( xn, 1, . . . , x n,D ) in a D-dimensional space, with labels as-signing each point to one of L classes Cl. To make the measure invariant under translation and component-wise scaling, each dimension was standardized according to 
+
+sn,d = 12
+
+xn,d − μd
+
+σd
+
+, (1) where μd and σd denote the mean and standard deviation of dimension d over all evaluated samples. Dimensions with zero variance were set to zero after standardization. For a class Cl containing Nl points, the mean intra-class distance was defined as ¯d(Cl) = 2
+
+Nl(Nl − 1) 
+
+> Nl−1
+
+X
+
+> i=1
+> Nl
+
+X
+
+> j=i+1
+
+s(l) 
+
+> i
+
+− s(l) 
+
+> j2
+
+. (2) Likewise, the mean inter-class distance between classes Cl and Cm was ¯d(Cl, C m) = 1
+
+NlNmNlX
+
+> i=1
+> Nm
+
+X
+
+> j=1
+
+s(l) 
+
+> i
+
+− s(m) 
+
+> j2
+
+. (3) The GDV was then calculated as GDV = 1
+
+√D
+
+"
+
+1
+
+L
+
+> L
+
+X
+
+> l=1
+
+¯d(Cl) − 2
+
+L(L − 1) 
+
+> L−1
+
+X
+
+> l=1
+> L
+
+X
+
+> m=l+1
+
+¯d(Cl, C m)
+
+#
+
+. (4) The factor 1 /√D reduces the dependence on representation dimensionality. Values near zero indicate strongly overlapping classes, whereas increasingly negative values indicate progressively stronger class separation. For all comparisons within a data set, the GDV was computed on the same fixed, class-balanced evaluation subset comprising 200 samples per class. Thus, variation across trained networks reflects differences in their learned representations rather than differences in the samples used for GDV estimation. 
+
+2.3 Abstraction distance and prototypical shift 
+
+To quantify how strongly a reconstruction departs from a specific input at a given network depth, we measured its mean squared difference from the original image. Mathematically, this is the con-ventional mean squared reconstruction error. Conceptually, however, we refer to this quantity as the 
+
+abstraction distance in the present study: an increasing value can reflect not only loss of recoverable information, but also the removal of idiosyncratic detail as the reconstruction moves toward a more class-typical form. We use the term prototypical shift for this underlying transformation toward prototype-like structure. Abstraction distance denotes the magnitude of the input–reconstruction difference, whereas prototypical shift denotes its directed interpretation; the latter therefore requires visual or class-conditional evidence and cannot be inferred from the scalar distance alone. For an input vector xn ∈ [0 , 1] D0 and a DBN truncated after hidden layer l, the deterministic forward repre-sentation was computed by successively applying the hidden-unit activation probabilities of the first 
+
+l RBMs. This representation was then propagated back to the visible layer in reverse order using the corresponding visible-unit activation probabilities, yielding the reconstruction ˆ x(l) 
+
+> n
+
+. No stochastic binary states were sampled during this evaluation. The abstraction distance at depth l, operationalized as reconstruction MSE, was defined in the original input space as 
+
+D(l)abs = 1
+
+N D 0
+
+> N
+
+X
+
+> n=1
+> D0
+
+X
+
+> d=1
+
+
+
+xn,d − ˆx(l)
+
+> n,d
+
+2
+
+. (5) 4It was evaluated over the complete test set. A smaller value indicates that more input-level detail can be recovered through the first l layers, whereas a larger value indicates a stronger transformation away from the individual input. This transformation is interpreted as a prototypical shift only where the reconstructed images demonstrably become more class-typical; otherwise, the same increase may reflect indiscriminate information loss or distortion. For the untransformed input representation (l = 0), reconstruction is the identity operation and the abstraction distance was therefore defined as zero. This quantity is an evaluation measure and is distinct from the layer-local contrastive-divergence objective used to train the individual RBMs. 
+
+2.4 Effective dimensionality 
+
+The effective dimensionality of each layer representation was quantified by the participation ratio of its covariance spectrum. Let h(l) 
+
+> n
+
+∈ RDl denote the deterministic activation-probability vector produced by layer l for test sample n, and let 
+
+C(l) = 1
+
+N − 1
+
+> N
+
+X
+
+> n=1
+
+ h(l) 
+
+> n
+
+− ¯h(l)   h(l) 
+
+> n
+
+− ¯h(l)⊤ (6) be the sample covariance matrix. From its non-negative eigenvalues λ1, . . . , λ Dl , the effective dimen-sionality was calculated as 
+
+D(l)eff =
+
+PDl 
+
+> i=1
+
+λi
+
+2
+
+PDl 
+
+> i=1
+
+λ2
+
+> i
+
+. (7) This measure estimates how many mutually orthogonal variance directions contribute substantially to the representation. It approaches one when nearly all variance is concentrated along a single direction and approaches the algebraic rank when variance is distributed uniformly across all active directions. If the representation has zero total variance, Deff was defined as zero. The measure is invariant under a common rescaling of all activations and was evaluated on the complete test set without using class labels. 
+
+2.5 Decomposition of effective dimensionality 
+
+To distinguish a loss of dimensionality caused by unequal single-neuron variances from a loss caused by statistical dependencies between neurons, we derived several complementary quantities from the same layer-wise covariance matrix C(l). All quantities were evaluated on the deterministic activation-probability representations of the complete test set. For compactness, the layer superscript is omitted below. Let D be the number of units in the representation, Cij the entries of C, and λ1, . . . , λ D its eigenvalues. We define the total covariance energy as 
+
+Q = tr( C2) = 
+
+> D
+
+X
+
+> i=1
+
+λ2 
+
+> i
+
+=
+
+> D
+
+X
+
+> i=1
+> D
+
+X
+
+> j=1
+
+C2 
+
+> ij
+
+. (8) First, a variance-only effective dimension was calculated after discarding all off-diagonal covariances while retaining the observed variance of every unit: 
+
+Dvar =
+
+PDi=1 Cii 
+
+2
+
+PDi=1 C2
+
+> ii
+
+. (9) This is the participation ratio of the diagonal matrix diag( C). It becomes small when the total activity variance is concentrated in only a few neurons, but it is unaffected by correlations among different neurons. Comparing Dvar with the actual Deff therefore separates variance heterogeneity from covariance-induced redundancy. 5The corresponding off-diagonal covariance fraction was defined as 
+
+Rcov =
+
+P 
+
+> i̸=j
+
+C2
+
+> ij
+
+P 
+
+> i,j
+
+C2
+
+> ij
+
+= 1 −
+
+P 
+
+> i
+
+C2
+
+> ii
+
+Q = 1 − Deff 
+
+Dvar 
+
+. (10) It measures the fraction of squared covariance-matrix energy contributed by dependencies between distinct neurons. A value of zero indicates a diagonal covariance matrix, whereas values approaching one indicate that off-diagonal covariances dominate the second-order structure. The final identity follows because Deff = (tr C)2/Q and Dvar = (tr C)2/ P 
+
+> i
+
+C2
+
+> ii
+
+.As a more directly interpretable measure of pairwise dependence, Pearson correlations were computed for all pairs of non-constant units. For the set A = {i : Cii > 10 −12 } of M = |A| variable units, 
+
+rij = Cij 
+
+pCii Cjj 
+
+, |r| = 2
+
+M (M − 1) 
+
+X
+
+> i<j i,j ∈A
+
+|rij |. (11) The absolute value treats positive and negative coupling equally because either reduces statistical independence. Unlike Rcov , which weights covariance contributions by their magnitude, |r| assigns equal weight to every valid neuron pair. To quantify the concentration of population activity along its single dominant direction, we measured the fraction of variance explained by the first principal component, 
+
+FPC1 = λmax 
+
+P 
+
+> i
+
+λi
+
+. (12) An increase in FPC1 indicates that a growing share of the representation varies along one common activity mode and thus provides a spectral complement to the participation ratio. Finally, two scale-dependent activity measures were included. The total activity variance was the trace of the covariance matrix, 
+
+Vtot = tr( C) = X
+
+> i
+
+Cii = X
+
+> i
+
+λi, (13) which quantifies the overall spread of the representation across test examples. The mean single-neuron activity standard deviation was 
+
+σunit = 1
+
+D
+
+> D
+
+X
+
+> i=1
+
+pCii . (14) These two quantities test whether dimensionality collapse is accompanied by a general contraction of the population representation or by progressively weaker variation of individual units. In contrast to Deff , Dvar , Rcov , |r|, and FPC1 , they are not invariant under a common rescaling of all activations. For any quantity whose denominator vanished, the value was defined as zero. 
+
+2.6 Weight-space redundancy 
+
+To test whether functional redundancy among neuronal activities originated from redundancy among the learned features, we compared the incoming weight vectors of neurons within each RBM layer. Let w(l) 
+
+> i
+
+denote the incoming weight vector of neuron i in layer l. Pairwise directional similarity was quantified by the cosine 
+
+s(l) 
+
+> ij
+
+= w(l)⊤ 
+
+> i
+
+w(l)
+
+> j
+
+∥w(l) 
+
+> i
+
+∥2 ∥w(l) 
+
+> j
+
+∥2
+
+. (15) We report both the mean absolute cosine over all neuron pairs and the mean, over neurons, of the largest absolute cosine to any other neuron in the same layer. The first quantity measures global 6alignment of the weight population, whereas the second is sensitive to near-duplicate feature partners even when they constitute only a small fraction of all possible pairs. Absolute values treat parallel and antiparallel feature directions as directionally redundant. The dimensionality of the complete weight population was calculated after normalizing every weight vector to unit length. Let fW(l) be the matrix containing these normalized vectors as columns and let σk be its singular values. The normalized weight-matrix dimension was defined as 
+
+D(l) 
+
+> W
+
+= (P 
+
+> k
+
+σ2
+
+> k
+
+)2
+
+P 
+
+> k
+
+σ4
+
+> k
+
+. (16) This is the participation ratio of the eigenvalue spectrum of fW(l)⊤ fW(l) and estimates the number of substantially occupied weight directions independently of differences in neuronal weight norms. Finally, we related structural and functional similarity across all neuron pairs within each layer. Signed weight cosines s(l) 
+
+> ij
+
+were compared with the corresponding signed Pearson activity correlations 
+
+r(l) 
+
+> ij
+
+using a Pearson correlation across pairs. In parallel, the absolute values |s(l) 
+
+> ij
+
+| and |r(l) 
+
+> ij
+
+| were com-pared using a Spearman rank correlation. The signed statistic tests whether parallel and antiparallel weight directions predict activity coupling of the corresponding sign, whereas the absolute statis-tic tests whether greater directional similarity generally predicts stronger functional dependence. Activity correlations were evaluated over all 10,000 MNIST test images. 
+
+2.7 Layer-wise classification probes 
+
+To quantify how readily class information could be extracted from each frozen representation, three supervised probe models were trained independently for the input and every hidden layer. Class labels were used only for fitting and evaluating the probes and were never supplied to the DBN or used to modify its representations. For every probe, feature standardization was fitted exclusively on the corresponding training representation and then applied unchanged to the test representation. Unless stated otherwise, probes used all 60,000 MNIST training examples and were evaluated on the complete, disjoint set of 10,000 test examples. No test result was used for hyperparameter selection. Probe accuracies were averaged across the same five independently initialized DBNs used in the main analyses. 
+
+Linear logistic probe. The linear probe consisted of a multinomial logistic classifier acting directly on the standardized layer representation z(l),
+
+p(y = c | z(l)) = exp  w⊤ 
+
+> c
+
+z(l) + bc
+
+P9 
+
+> k=0
+
+exp  w⊤ 
+
+> k
+
+z(l) + bk
+
+. (17) The weights were optimized by stochastic gradient descent with an L2 penalty, regularization param-eter α = 10 −4, a maximum of 100 epochs, tolerance 10 −3, shuffling, and averaged SGD coefficients. No layer-specific hyperparameter tuning was performed. This probe tests whether class information is accessible through linear decision boundaries in the frozen representation. 
+
+Gaussian-kernel probe. The Gaussian probe provided a controlled nonlinear readout while keep-ing the nonlinear feature map independent of class labels. After training-set standardization, 200 centers u(l) 
+
+> j
+
+were fitted separately in every layer by MiniBatchKMeans without labels (batch size 2,048, maximum 100 iterations, and three initializations). Each standardized representation was then mapped to radial features 
+
+ϕ(l) 
+
+> j
+
+(z) = exp 
+
+"
+
+−∥z − u(l) 
+
+> j
+
+∥22
+
+2 ( σ(l))2
+
+#
+
+, j = 1 , . . . , 200 . (18) 7One shared bandwidth was used within each layer. Its squared value was defined as the median squared distance from a fixed random sample of up to 10,000 training representations to their nearest center,  σ(l)2 = median n min  
+
+> j
+
+∥z(l) 
+
+> n
+
+− u(l) 
+
+> j
+
+∥22. (19) Only the final L2-regularized logistic classifier operating on the 200 Gaussian features used labels; it employed the same optimization parameters as the linear probe. The model therefore tests a fixed-capacity, locally nonlinear notion of class accessibility without label-supervised adjustment of centers or bandwidths. 
+
+RBF support-vector machine. As a stronger nonlinear reference, an exact support-vector clas-sifier with Gaussian radial-basis kernel 
+
+K(z, z′) = exp −γ(l)∥z − z′∥22
+
+ (20) was trained on the same fixed, class-stratified subset of 10,000 training examples from the respective dataset for every layer and every DBN. The input dimensionality of the representation is denoted by 
+
+dl. We used C = 10 and γ(l) = 4 /d l. These values had been selected in a preliminary MNIST training-only validation using a common parameter grid, C ∈ { 1, 10 } and γd l ∈ { 0.25 , 1, 4}, evaluated jointly at H1, H5, and H10 on an 8,000/2,000 training-validation split. They were subsequently frozen for all five main-study seeds and all three datasets. Because the RBF-SVM used 10,000 rather than 60,000 training examples, its absolute accuracy should not be interpreted as a capacity-matched comparison with the other probes; its layer-wise trend is the primary quantity of interest. 
+
+2.8 H1 weight-permutation control 
+
+To test whether changes in class accessibility from the input to the first hidden layer depended on learned feature structure rather than merely on the marginal distribution of weight values, we constructed a structurally destroyed H1 control for MNIST, Fashion-MNIST, and KMNIST. For every trained DBN and every H1 unit j, the 784 entries of its incoming weight vector were independently permuted across visible coordinates, fWij = Wπj (i),j , (21) where πj was an independent random permutation for unit j. This operation preserved exactly the multiset, mean, variance, and Euclidean norm of the incoming weights of each neuron, as well as its hidden bias, while destroying the learned association between individual pixel positions and weight values. Permutation seeds were deterministically coupled to the corresponding DBN seeds. Whole hidden units were not permuted, since such a permutation would only reorder representation coordinates and leave probe performance unchanged. For each dataset, deterministic activation probabilities were computed for the intact and permuted H1 representations of the same five 10-by-100 CD-1 models used in Fig. 1. Linear, Gaussian-kernel, and RBF-SVM probes were then refitted from scratch on the permuted representations using exactly the protocols described above. The comparison comprised the original input, intact learned H1, and permuted H1. Thus, any performance difference between intact and permuted H1 cannot be attributed to neuron count, per-neuron weight distributions, weight norms, or biases, but requires the learned assignment of weights to input coordinates. Because permutation may also alter activation distributions and saturation, this control establishes the necessity of learned weight structure but does not by itself identify which aspect of that structure causes the performance change. To separate the effects of the learned linear projection and the sigmoid nonlinearity, we performed an additional exploratory MNIST analysis on the seed-1234 model. For the intact and permuted H1 weights, probes were evaluated both on the preactivations a = xW + b and on the activation probabilities σ(a). We further constructed a continuous series of weight matrices, 
+
+Wα = αW + (1 − α)fW , α ∈ { 0, 0.25 , 0.5, 0.75 , 1}, (22) 8and rescaled every column of Wα to the Euclidean norm of the corresponding learned weight vector. This interpolation varied the retained learned pixel structure while holding every neuron’s weight norm fixed. For each α, the linear and RBF-SVM probes were fitted using the protocols above. As simple activation-distribution diagnostics, we calculated the mean standard deviation of the H1 preactivation across neurons and the fraction of sigmoid activations below 0.01 or above 0.99. The latter was defined as the saturation fraction. Because this mechanism analysis used a single pretrained DBN, it is interpreted as a targeted exploratory control rather than a multi-seed estimate. 
+
+2.9 Pairwise generalized discrimination value 
+
+To resolve the global GDV into individual class relations, a pairwise GDV was calculated for each of the 45 unordered MNIST digit pairs. Within a given layer, standardization was performed once over the complete fixed, class-balanced evaluation subset using the same transformation as for the global GDV, 
+
+z(l) 
+
+> n,d
+
+= h(l) 
+
+> n,d
+
+− μ(l)
+
+> d
+
+2σ(l)
+
+> d
+
+. (23) Dimensions with zero variance were set to zero. For class a with Na samples, the mean within-class distance was 
+
+d(l)intra ,a = 2
+
+Na(Na − 1) √Dl
+
+X 
+
+> i<j yi=yj=a
+
+z(l) 
+
+> i
+
+− z(l) 
+
+> j2
+
+, (24) and the mean distance between classes a and b was 
+
+d(l)inter ,ab = 1
+
+NaNb
+
+√Dl
+
+X 
+
+> i:yi=aj:yj=b
+
+z(l) 
+
+> i
+
+− z(l) 
+
+> j2
+
+. (25) The pairwise GDV was then defined as 
+
+G(l) 
+
+> ab
+
+= 12
+
+
+
+d(l)intra ,a + d(l)intra ,b 
+
+
+
+− d(l)inter ,ab , a̸ = b. (26) As for the global GDV, more negative values indicate better geometric separation, whereas an increase toward zero indicates pairwise deterioration. The matrix is symmetric and its diagonal is undefined. Pairwise matrices were evaluated using 200 fixed test examples per digit and the same evaluation subset for every DBN, then averaged across five DBN seeds. With equally sized classes, the mean of the 45 pairwise values equals the corresponding global GDV. To relate geometric changes to classification errors, the RBF-SVM confusion matrix M(l) was con-verted into a symmetric confusion rate for each pair, 
+
+C(l) 
+
+> ab
+
+= M (l) 
+
+> ab
+
++ M (l)
+
+> ba
+
+N test  
+
+> a
+
++ N test 
+
+> b
+
+. (27) Changes were defined relative to H2 as ∆ Gab = G(10)  
+
+> ab
+
+− G(2)  
+
+> ab
+
+and ∆ Cab = C(10)  
+
+> ab
+
+− C(2)  
+
+> ab
+
+. Thus, positive values denote deterioration in both cases. In Fig. 4, a pair was outlined only when both ∆ Gab > 0and the seed-averaged ∆ Cab > 0. 
+
+# 3 Results 
+
+3.1 Layer-wise evolution of class separation, abstraction distance and effective dimensionality 
+
+Our first goal is to train deep belief networks (DBNs) on different image datasets in a completely unsupervised manner, without using any class labels. Training is performed using the standard 9contrastive-divergence method with one Gibbs step (CD-1). The DBNs are trained greedily, layer by layer, with one restricted Boltzmann machine (RBM) being trained after another. No subsequent fine-tuning of the complete network is applied. To facilitate comparison, we use three datasets that share the same format but differ in their visual content and complexity: MNIST, containing handwritten digits; Fashion-MNIST, containing images of clothing items; and KMNIST, containing handwritten Japanese Kuzushiji characters. Each dataset consists of grayscale images with 28 ×28 = 784 pixels and contains 60 ,000 training images and 10 ,000 test images. Accordingly, our DBNs have 784 input units in the visible layer, followed by ten stacked hidden layers, each containing the same number NH of neurons. We compare three hidden-layer sizes: 
+
+NH ∈ { 100 , 50 , 30 }.After training, we present a fixed, class-balanced subset of test images to the visible layer of each DBN and propagate the resulting activity upward through the network hierarchy. For every input image, we record the activation probabilities of all neuronal units in all hidden layers. Based on these input-driven activation probabilities, we then calculate three aggregate quantities for each layer. These quantities characterize the emergence of cluster-like class separation, the abstraction distance between inputs and their reconstructions, and the effective degree of data compression achieved through dimensionality reduction. 
+
+First, we investigate class separation. In each layer of the DBN, the test dataset is represented as a point cloud in a high-dimensional space. We investigate the extent to which the ten different classes form distinct subclusters within this point cloud. Two-dimensional visualizations of these representations are shown in Fig. 2(a–e). To quantify the degree of class-specific clustering, we compute the Generalized Discrimination Value (GDV), defined as a normalized difference between the mean Euclidean intra-class distance and the mean inter-class distance. A detailed description of its invariant and robust properties is provided in the Methods section and in several of our previous publications [10]. According to the definition of the GDV, more negative values indicate stronger class separation. For approximately Gaussian class distributions, values close to −1 correspond to extremely well-separated class-specific clusters. For the DBN with NH = 100 neurons per hidden layer, the GDV decreases almost monotonically across successive layers for all three investigated datasets, as shown by the solid orange lines in Fig. 1(A–C). The relative improvement in the GDV between the input layer and the highest hidden layer is greater for the simpler MNIST and Fashion-MNIST datasets than for the more complex KMNIST dataset. The decrease in the GDV becomes even more pronounced when the hidden-layer width NH is reduced, as indicated by the orange dashed and dotted lines. These results indicate that, across successive layers of the DBN, the different input classes form progressively better-separated clusters, even though no class labels were provided during unsupervised training. For the MNIST dataset, we additionally investigated a substantially deeper DBN comprising 30 stacked hidden layers (Fig. 1(J)). In the narrow network with NH = 30 neurons per hidden layer, shown by the dotted curve, the GDV reaches a minimum at hidden layer 8, subsequently increases until approximately layer 12, and then remains nearly constant. In the medium-width network with NH = 50, shown by the dashed curve, the GDV decreases until about layer 12 and thereafter fluctuates around an approximately constant level. In the wide network with NH = 100, shown by the solid curve, the GDV continues to decrease over a much larger number of layers and reaches a low plateau only at around layer 24. The minimum observed in the narrow network suggests a qualitative change in the evolution of the internal data representation near layer 8. Beyond this point, the previous trend toward improved class separation is reversed, and the class-specific subclusters begin to overlap more strongly. Af-10 ter approximately layer 12, all subsequent layers appear to produce essentially the same collapsed representation of the data. 
+
+Second, we investigate abstraction distance. For this purpose, we present a test pattern x to the input layer of the DBN, propagate the continuous activation probabilities upward to a specific hidden layer n, and then propagate them downward again to the input layer. This procedure yields a reconstructed input pattern ˆ x. Repeating the process for all test patterns, we compute the mean squared input–reconstruction difference shown in Fig. 1(D–F). We refer to this general quantity as the abstraction distance, while retaining reconstruction MSE as its mathematical operationalization. By definition, the abstraction distance is zero at the input layer. We find that the abstraction distance increases monotonically across successive DBN layers. This increase becomes more pronounced as the width of the hidden layers decreases and is largest for the more complex KMNIST dataset. The scalar increase alone does not determine whether the transformation is beneficial: it may reflect a prototypical shift, destructive information loss, or a mixture of both. These results indicate that higher layers of a DBN produce reconstructions at progressively greater abstraction distance from the original input pattern. Inspection of individual examples in Fig. 6 shows that the early increase is mainly associated with the omission or alteration of small, often idiosyncratic details. In this regime, the transformation can be described as a prototypical shift toward simplified, class-typical forms. In the higher layers, however, the shift increasingly includes distortions that may remove class-discriminative details or change the apparent class. Abstraction and degradation therefore become progressively intertwined. 
+
+Finally, we investigate the effective dimensionality. Although a hidden layer contains a prescribed number NH of neurons, it is not guaranteed that all of them learn distinct and useful features. Some neurons may become effectively frozen and exhibit only negligible activity variance, whereas others may acquire highly redundant feature representations. In either case, the effective dimensionality of the representation is smaller than the nominal layer width NH.We quantify this dimensionality reduction separately for each layer using the participation ratio of the covariance spectrum, computed from the continuous neuronal activation probabilities. The resulting effective dimension, described in detail in the Methods section, approaches one when nearly all variance is concentrated along a single direction. Conversely, it approaches the algebraic rank of the covariance matrix when the variance is distributed approximately uniformly across all active directions. We find that the effective dimensionality decreases monotonically across successive DBN layers, with a more pronounced reduction in networks with narrower hidden layers (Fig. 1(G–I)). In some cases, the effective dimension approaches one in the final layers of the stack. Relative to the effective di-mensionality of the input representation, this corresponds to an approximately 30-fold dimensionality collapse for the narrow network in the MNIST experiment. These results indicate that DBNs can produce an extreme reduction in effective dimensionality. This reduction is not imposed directly by the prescribed layer width, but instead emerges from the layerwise contrastive-divergence training procedure. 
+
+3.2 Control experiments for unsupervised class separation 
+
+In our previous investigation of the GDV, we found that even transformations without any task-specific learning can cause small changes in class separation [10]. In particular, random linear transformations slightly broaden the distribution of possible GDV changes and, on average, tend to weakly reduce rather than improve class separation. Adding a sigmoid nonlinearity produces another small shift. A more pronounced artificial decrease in the GDV can occur when the inputs 11 to sigmoidal neurons are scaled so strongly that the neurons are driven into saturation. By contrast, changes in the number of representation dimensions do not systematically change the GDV because of its dimensionality normalization. These observations motivate additional controls to distinguish class-specific representational changes induced by learning from generic GDV shifts caused by linear transformations, nonlinearities, or neuronal saturation. We therefore performed a series of control experiments to determine which components of the DBN are responsible for this effect. We first compared the standard CD-1 network with an otherwise matched DBN trained using two Gibbs steps per update (CD-2). Both networks produced almost identical layer-wise GDV curves (Fig. 2(f)). The progressive class separation is therefore not a peculiarity of the one-step approxi-mation used for contrastive-divergence training. Next, we propagated the MNIST images through a network with the same architecture but randomly initialized, untrained weights. This random network produced only a small initial decrease in GDV, from approximately −0.06 in the input to −0.09 in the first hidden layers. In the subsequent layers, the absolute activity variance rapidly vanished and the GDV approached zero. Thus, repeated random affine transformations followed by sigmoid nonlinearities do not reproduce the strong and sustained decrease observed in the trained network. To separate the contribution of the learned weight values from that of their learned arrangement, we independently permuted the entries of every incoming weight vector in the trained DBN. This operation preserved the complete weight distribution, mean, norm, and bias of every neuron, but destroyed the association between individual input coordinates and their corresponding weights. The resulting GDV remained close to approximately −0.1 across most layers and reached only about 
+
+−0.13 in H10, compared with approximately −0.33 for the intact network (Fig. 2(f)). Consequently, the marginal weight statistics alone are insufficient. Most of the observed class separation depends on the specific feature structure learned by contrastive divergence. As an additional negative control, we retained the trained representations but randomly permuted the digit labels used for calculating the GDV. The GDV then remained close to zero in every layer. Hence, the falling GDV does not reflect arbitrary subdivisions of the point cloud or an unspecific tendency to form ten clusters. It specifically describes the increasing geometric separation of the actual MNIST digit classes, although these labels were not available during DBN training. We then investigated whether the decrease in GDV was produced mainly by the sigmoid activation function (Fig. 2(g)). For every layer, we compared the GDV immediately before and after application of the local sigmoid. In most layers, the pre-activation GDV was slightly more negative than the corresponding post-sigmoid value. The sigmoid therefore generally reduced some of the separation already generated by the weighted affine transformation instead of creating it. This result is partic-ularly important because many units operated partly in the saturated regime. Saturation can affect the precise GDV value, but it cannot explain the progressive decrease across the trained DBN. In a complementary control, we propagated the input cumulatively through all trained weights and biases while omitting every sigmoid nonlinearity. Along this purely affine path, the GDV initially decreased but reached a plateau near −0.18, substantially above the value obtained with the complete DBN. The learned linear transformations therefore contain class-relevant structure, but the full layer-wise improvement requires their repeated interaction with the nonlinear representations supplied to the subsequent RBMs. Neither the affine transformations nor the sigmoid nonlinearities alone account for the complete effect. Finally, the preceding analyses used deterministic activation probabilities, which describe the con-ditional mean representation of each hidden layer. We therefore repeated the GDV analysis with Bernoulli states sampled from these probabilities. Direct sampling strongly weakened the separation, and recursively feeding each sampled state into the next RBM weakened it further. Nevertheless, the first hidden layer still showed a more negative GDV than the input. These results demonstrate that stochastic sampling adds substantial representational noise but does not generate the decrease observed for the activation probabilities. They also clarify that the strong layer-wise GDV effect 12 characterizes the probability-coded representation of the DBN and is only partially preserved in individual binary state realizations. Taken together, the controls show that the unsupervised increase in class separation is a genuine consequence of learning. It is robust to the number of Gibbs steps used for contrastive divergence, disappears for random labels, is much weaker in untrained or structurally shuffled networks, and can-not be explained by dimensionality changes or sigmoid saturation. The learned affine weight structure produces an important part of the effect, while the successive nonlinear representations enable its continued accumulation across layers. Stochastic binary sampling counteracts this organization by adding noise. Because the controls in Fig. 2(f,g) were performed as preliminary experiments for one MNIST seed, their quantitative magnitudes should not yet be interpreted as population estimates; their mutually consistent qualitative pattern, however, rules out the principal trivial explanations for the falling GDV. 
+
+3.3 Origin of the dimensional collapse 
+
+Our next goal is to determine what causes the pronounced decline in effective dimensionality observed across successive DBN layers in Fig. 1(G–I). A low effective dimension can arise for at least two fundamentally different reasons. First, most neurons could become nearly constant, leaving only a small number of variable units. Second, many neurons could remain responsive but vary in a coordinated manner, so that their population activity occupies only a few common directions. To distinguish these possibilities, we decomposed the covariance structure of the layer-wise MNIST representations using the six complementary measures shown in Fig. 3. We first compared the actual effective dimension with a variance-only control in which all covariances between different neurons were set to zero while the variance of every individual neuron was retained (Fig. 3(A)). From H1 to H10, the actual effective dimension decreases from approximately 20.7 to 4.9. The variance-only dimension also decreases, showing that the distribution of activity variance across neurons becomes less uniform. However, it remains as high as approximately 46 in H10. Moreover, all 100 neurons remain variable according to the numerical activity criterion used in the analysis. Unequal single-neuron variances and inactive units therefore contribute to the decline, but cannot explain why the population behaves as an effectively five-dimensional system. The discrepancy between the two dimensions is quantified directly by the covariance-induced redun-dancy shown in Fig. 3(B). This quantity measures the fraction of squared covariance-matrix energy contained in off-diagonal entries. It is already approximately 0.79 in H1, increases to about 0.91 in the intermediate layers, and remains close to 0.9 in the upper layers. Thus, the dominant part of the covariance structure is generated by dependencies between different neurons rather than by their individual variances. The pixel representation in layer 0 also has a large off-diagonal fraction because neighboring and anatomically related pixels are naturally dependent. For the present question, the important observation is the consistently high redundancy within the hidden-layer representations. To obtain a more intuitive measure of these dependencies, we calculated the mean absolute Pearson correlation between the activity patterns of all neuron pairs (Fig. 3(C)). For each neuron, its activity pattern is the sequence of responses elicited by the 10,000 MNIST test images. The mean absolute correlation increases almost monotonically from approximately 0.15 in H1 to 0.38 in H10. Positive and negative correlations both contribute because either form of coupling reduces the independence of the neuronal responses. Hence, neurons in deeper layers respond to different input images in an increasingly coordinated manner. The same change can be viewed from the eigenspectrum of the covariance matrix. Figure 3(D) shows the fraction of total activity variance explained by the first principal component. This fraction increases from approximately 13% in H1 to 33% in H10. Consequently, a single shared population mode accounts for about one third of all activity variance in the highest hidden layer. The progressive dominance of this first principal component confirms that the representation becomes concentrated 13 along a small number of common activity directions. In parallel with this reorganization, the overall size of the activity point cloud decreases (Fig. 3(E)). The total activity variance falls from approximately 18.1 in H1 to 5.2 in H10. The hidden-layer representations therefore become increasingly compact as network depth increases. However, a uni-form contraction of all activity directions would leave the participation ratio, and thus the effective dimension, unchanged. The decline in total variance accompanies the dimensional collapse but is not by itself its cause. Finally, we measured the average activity variation of individual neurons (Fig. 3(F)). The mean single-neuron standard deviation initially increases from approximately 0.19 in the input representation to 0.42 in H1 and subsequently decreases to approximately 0.19 in H10. Individual neuronal responses therefore become weaker in the higher layers, consistent with the contraction observed in panel E. Nevertheless, the neurons do not generally become constant, and their remaining variance would still support a variance-only dimension of approximately 46. Reduced single-neuron variation is therefore again insufficient to account for the observed effective dimension of approximately five. The preceding activity measures establish functional redundancy, but they do not determine whether this redundancy is already present in the features learned by the individual neurons. We therefore directly compared the incoming weight vectors of all neuron pairs within each RBM layer. Because all neurons in a given layer receive input from the same preceding representation, their weight vectors can be compared without an alignment or neuron-permutation problem. We first calculated the absolute cosine similarity between the incoming weight vectors (Fig. 3(G)). The mean similarity across all neuron pairs initially decreases slightly from approximately 0.15 in H1 to 0.13 in H2, but subsequently rises almost monotonically to 0.35 in H10. An even clearer result is obtained by identifying the most similar partner of each neuron. The mean nearest-neighbour similarity increases from approximately 0.51 in H1 to 0.94 in H10. Thus, a typical neuron in the highest layer has at least one other neuron with an almost parallel or antiparallel incoming weight vector. This result directly demonstrates the emergence of near-duplicate feature directions in the deeper RBMs. To characterize the complete set of learned weight directions, we next calculated the participation-ratio dimension of each weight matrix after normalizing every neuronal weight vector to unit length (Fig. 3(H)). This normalization ensures that the result reflects directional diversity rather than differences in weight norm. The effective weight dimension is approximately 22.9 in H1, briefly increases to 24.5 in H2, and then collapses almost monotonically to 5.3 in H10. Remarkably, this final value is close to the effective dimension of approximately 4.9 measured for the H10 activity representation. The learned features and the resulting neuronal activities therefore collapse onto similarly small subspaces. Finally, we tested whether similar weight vectors actually predict similar neuronal responses (Fig. 3(I)). Across all neuron pairs, the Pearson correlation between signed weight cosine similarity and signed activity correlation increases from approximately 0.64 in H1 to 0.91 in H10. Parallel weight vectors therefore tend to produce positively correlated responses, whereas antiparallel directions tend to produce negatively correlated responses. Consistently, the Spearman association between absolute weight similarity and absolute activity correlation increases from approximately 0.19 to 0.74. Weight direction thus becomes an increasingly strong predictor of functional coupling in the upper DBN layers. Taken together, the nine measures identify learned feature redundancy as the main origin of the dimensional collapse. With increasing layer depth, the representation contracts and the distribution of variance across neurons becomes less uniform, but these scale-related changes explain only part of the effect. The decisive change is that many still-variable neurons learn increasingly aligned incoming weight directions and consequently produce statistically dependent responses. The weight matrix itself collapses to nearly the same effective dimension as the evoked population activity. Deeper DBN layers therefore do not primarily reduce dimensionality by switching neurons off. Instead, the 14 local unsupervised learning process repeatedly produces overlapping feature directions, so that many nominally distinct neurons carry closely related information. 
+
+3.4 GDV and actual class accessibility 
+
+The GDV is particularly useful for quantifying class-specific clustering in high-dimensional point clouds when the individual class distributions form approximately compact, spherical clusters. It summarizes the geometry of the complete representation by averaging the distances between points from the same class and comparing them with the distances between points from different classes. This provides a parameter-free and non-invasive measure of overall class separation, but it does not construct a decision boundary. Consequently, two representations with similar GDV values need not be equally useful to a particular classifier. Even compact class clusters may be arranged or overlap in such a way that they cannot all be separated equally well by linear decision surfaces, while a more flexible nonlinear classifier may exploit additional geometric structure. Conversely, a favorable average over all inter-class distances can coexist with a small number of local class overlaps that dominate the actual classification errors. It is therefore important to assess not only the geometric clustering measured by the GDV, but also how much class information can actually be extracted from each frozen DBN layer. For this purpose, we trained three supervised probe models independently on the input representation and on every hidden-layer representation (Fig. 4(A)). The DBN itself remained unchanged, and class labels were used only to fit and evaluate the probes. We used a linear logistic probe, a finite Gaussian-kernel probe with 200 unlabeled cluster centers, and an exact nonlinear RBF support-vector machine. These models provide complementary readouts with different decision-boundary flexibility. The linear probe already achieves a test accuracy of approximately 91.4% on the original MNIST pixels. Its accuracy increases to 92.6% in H1 and reaches a maximum of approximately 93.3% in H2. Thus, the first two unsupervised DBN layers make digit identity more accessible even to a linear readout. Beyond H2, however, the accuracy decreases continuously and reaches only approximately 80.1% in H10. The early layers therefore improve linear accessibility, whereas the deeper layers progressively remove information required for reliable linear classification. The two nonlinear probes show the same qualitative pattern. The Gaussian-kernel probe improves from approximately 85.5% on the input to 92.2% in H1 and H2, but subsequently declines to 71.3% in H10. The exact RBF-SVM increases from approximately 90.6% on the input to 96.1% in H1, fol-lowed by a gradual decline to 81.3% in H10. The absolute accuracies of the three probes should not be compared as a capacity-matched ranking because their training-set sizes and nonlinear parameter-izations differ. Their common layer-wise trend is nevertheless robust: class accessibility improves in the first DBN layer, remains high or reaches its maximum in H2, and then deteriorates substantially across the higher layers. This behavior differs fundamentally from the GDV curve. Across the same representations, the mean GDV decreases from approximately −0.061 in the input to −0.324 in H10 and therefore indicates progressively stronger overall class clustering. The agreement between three substantially different probe models makes it unlikely that their common decrease merely reflects an unsuitable decision-boundary family. Instead, GDV and probe accuracy quantify related but non-identical properties. The GDV describes the average geometry of labeled point clouds, whereas probe accuracy addi-tionally depends on the local arrangement of decision boundaries, the preservation of discriminative details, and the particular class pairs that remain ambiguous. To determine whether this discrepancy is concentrated in specific digit pairs, we decomposed the global GDV into all 45 pairwise contributions (Fig. 4(B–F)). Each matrix element compares the mean within-class spread of two digits with the mean distance between those two classes. The matrices therefore reveal which class pairs contribute to the increasingly negative global GDV and whether a favorable global average conceals local deterioration. 15 From the input through H1, H2, H5, and H10, most matrix elements become progressively more negative, producing the visually dominant blue structure in the higher-layer matrices. A direct comparison between H2 and H10 confirms that 42 of the 45 digit pairs improve according to their pairwise GDV (Fig. 4(G)). This widespread improvement explains why the global GDV continues to decrease even while every probe loses accuracy. The geometric reorganization is real, but it primarily increases the average separation of the majority of class pairs. Three pairs form a notable exception: 4–9, 5–8, and 3–5 show an increase in pairwise GDV from H2 to H10 and therefore become geometrically less separated. Importantly, these are also the three pairs for which the symmetric RBF-SVM confusion increases, as indicated by the black outlines in Fig. 4(G). The decline in probe accuracy is thus concentrated in a small number of difficult and visually similar digit pairs. Improvements among the other 42 pairs dominate the average distance-based GDV, whereas classification accuracy is strongly affected by the few local overlaps that generate actual errors. Taken together, these results show that a decreasing global GDV must not be interpreted as equiv-alent to monotonically increasing class extractability. The first one or two DBN layers improve both geometric separation and supervised readout, demonstrating a genuine gain in accessible class structure without label-guided representation learning. In higher layers, however, the two properties diverge: most class pairs become more widely separated on average, while information needed to distinguish a few critical pairs is progressively lost. The global GDV faithfully reports the dominant geometric trend, but the probe models and pairwise decomposition reveal whether this trend remains useful for classification. Class separation and class accessibility are therefore complementary rather than interchangeable properties of the internal DBN representations. 
+
+3.5 Origin of enhanced class accessibility 
+
+Looking back at Fig. 4(A), the accuracy of all three probes eventually decreases across most of the MNIST DBN layers. Before this decline begins, however, the first hidden layer produces a clear increase in accuracy relative to the original input representation. This early improvement is particularly interesting because H1 contains only 100 neurons instead of 784 input pixels and was trained without class labels. We therefore investigated the H1 effect more closely, extended the analysis to Fashion-MNIST and KMNIST, and perturbed the learned weight structure to determine the origin of the enhanced class accessibility. For each dataset, we compared three representations: the original input pixels, the intact learned H1 activation probabilities, and a structurally perturbed H1 control (Fig. 5). The same linear, Gaussian-kernel, and RBF-SVM probes used in Fig. 4(A) were fitted independently to every representation. All results were averaged across the five DBN seeds used in the preceding analyses. For MNIST, the intact H1 representation improves the accuracy of every probe (Fig. 5(A)). Linear accuracy increases from approximately 91.4% on the input pixels to 92.6% in H1. The Gaussian-kernel probe improves more strongly, from 85.5% to 92.2%, and the RBF-SVM rises from 90.6% to 96.1%. Thus, the first unsupervised RBM does not merely preserve digit identity during the compression from 784 to 100 variables. It transforms the input into a representation from which digit identity can be recovered more accurately by both linear and nonlinear readouts. The KMNIST results show an even stronger H1 effect (Fig. 5(C)). Linear-probe accuracy increases from approximately 65.5% to 71.7%, Gaussian-probe accuracy from 65.0% to 70.8%, and RBF-SVM accuracy from 70.5% to 84.1%. The largest benefit of the learned H1 representation therefore occurs for the visually more complex Kuzushiji characters. This observation suggests that the first RBM can extract regularities that are difficult to access directly from the raw pixel representation. The effect is not universal for every dataset and readout. For Fashion-MNIST, the Gaussian probe improves slightly from approximately 77.9% to 79.1%, whereas linear accuracy decreases from 83.1% to 81.2% and RBF-SVM accuracy from 83.0% to 82.2% (Fig. 5(B)). The first RBM therefore creates 16 a useful nonlinear reorganization of the Fashion-MNIST representation, but the accompanying com-pression also discards information used by the linear and RBF-SVM probes. Unsupervised H1 feature learning can enhance class accessibility, but whether this produces a net accuracy gain depends on the structure of the dataset and on the readout. To test whether the H1 results depend on learned feature structure rather than simply on the marginal distribution or magnitude of the trained weights, we independently permuted the 784 incoming weights of every H1 neuron across pixel coordinates. This operation preserved the exact weight multiset, mean, variance, and norm of each neuron, as well as its hidden bias. It destroyed only the learned assignment of particular weight values to particular image locations. Because the permutation was performed independently for every neuron, spatial stroke-like features and other coordinated pixel patterns were eliminated while the basic per-neuron weight statistics remained unchanged. Weight permutation causes a pronounced accuracy loss for every dataset and every probe. For MNIST, the linear, Gaussian, and RBF-SVM accuracies fall to approximately 63.5%, 44.6%, and 64.7%, respectively. The corresponding values are 64.8%, 54.9%, and 68.3% for Fashion-MNIST, and 47.6%, 40.4%, and 51.3% for KMNIST. All permuted representations perform substantially worse than both the intact H1 representation and the original input. Moreover, the effect is highly consistent across the five independently trained DBNs, as shown by the individual seed markers in Fig. 5. These perturbation results rule out the possibility that the H1 accessibility is produced merely by the number of hidden neurons, the distribution of trained weight values, their norms, or the hidden biases. Instead, it depends critically on the learned correspondence between image coordinates and neuronal weights. For MNIST and KMNIST, this learned spatial feature structure is the source of the accuracy enhancement over the input representation. For Fashion-MNIST, it still preserves far more class information than a structureless weight arrangement, although the resulting representation does not outperform the input for every probe. We next separated the learned affine projection from the sigmoid nonlinearity in the seed-1234 MNIST model (Fig. 5(D)). For the RBF-SVM, the intact H1 preactivation already increased accuracy from 90.55% on the input to 96.57%; applying the sigmoid yielded a similar value of 96.01%. Hence, the learned linear filters alone make the classes substantially more accessible to this nonlinear readout. For the linear probe, by contrast, the intact preactivation reached 90.50%, slightly below the input value of 91.33%, whereas the sigmoid representation reached 92.57%. The modest linear H1 advantage therefore emerges specifically from applying the nonlinearity to the learned projection. The corresponding permuted preactivations remained surprisingly informative: they achieved 88.16% with the linear probe and 93.61% with the RBF-SVM. The severe loss occurred only after applying the sigmoid, which reduced the accuracies to 63.27% and 64.23%, respectively. Thus, permutation does not simply erase digit information at the affine-projection stage. Instead, it changes the pro-jection such that the same sigmoid compression becomes destructive. This finding refines the initial permutation control: the learned spatial weight arrangement is necessary for a useful nonlinear H1 representation , but an unstructured 100-dimensional linear projection can still retain considerable class information. Interpolating continuously between permuted and intact weights produced a systematic dose response (Fig. 5(E)). Probe accuracy increased with the retained fraction α of learned weight structure, with the strongest dependence observed after the sigmoid. Because each interpolated weight vector was renormalized to its original norm, this trend cannot be explained by increasing weight magnitude. Preactivation scale and sigmoid saturation nevertheless changed with α (Fig. 5(F)). Saturation was highest for fully permuted weights and therefore plausibly contributes to their poor nonlinear repre-sentation. However, it was non-monotonic, whereas probe accuracy increased largely monotonically; in particular, performance remained high between α = 0 .75 and 1 despite increasing saturation. Ac-tivation scaling and saturation are consequently contributing factors but do not explain the complete structure-dependent accuracy curve. 17 Taken together, Fig. 5 shows that the first RBM can transform raw pixels into compact, class-accessible features without receiving any labels. The learned filters and the sigmoid play distinct but interacting roles: learned affine features already improve nonlinear class accessibility, while the small linear-probe gain over the input requires nonlinear compression of those learned features. The weight structure determines whether that compression is useful or destructive. Particular stroke detectors were not isolated individually, but the interpolation experiment goes beyond their mere necessity and demonstrates a graded dependence of H1 accessibility on the amount of retained learned spatial structure. 
+
+3.6 Layer-wise dreaming and reconstruction ability 
+
+The preceding analyses characterized each hidden layer through aggregate geometric measures and supervised readouts. We finally asked how the same layer-wise transformation appears in image space when the network is used in its generative direction. Figure 6 contrasts two conceptually different operations: free dreaming, in which no input image constrains the latent state, and data-grounded reconstruction, in which a particular test image is propagated upward to a selected layer and immediately back to the visible units. The first operation tests whether an RBM at a given depth can initiate plausible samples through the lower generative pathway; the second tests how much information about an individual input survives a round trip through that depth. The data-grounded examples in Fig. 6(f–j,p–t,z–ad) provide a visual counterpart to the abstraction distance, operationalized by reconstruction MSE in Fig. 1(D–F). Reconstructions through H1 re-main close to the supplied images, although thin strokes, textures, and other idiosyncratic details are already smoothed or weakened. With increasing depth, the outputs become less faithful copies and more strongly resemble simplified, class-typical forms. This progression is most immediately visible for MNIST, where many identities remain recognizable through H3 and H5 but H10 occa-sionally produces ambiguous or apparently changed digits. Fashion-MNIST reconstructions preserve the coarse clothing category comparatively well while progressively homogenizing silhouettes and textures. KMNIST characters undergo stronger blurring and stroke reorganization, consistent with their larger abstraction distance. Across all three datasets, every additional upward and downward transformation discards information that is not recoverable from the selected higher-layer state. Importantly, the rising abstraction distance does not imply that all class-relevant structure is lost at the same rate as pixel-level detail. As shown by the probe analyses, H1 can improve class accessibility even while its abstraction distance already exceeds zero. The first layer therefore removes some image-specific variation while retaining, and in favorable cases enhancing, features useful for distinguishing classes. At greater depth, however, abstraction distance continues to rise while probe accuracy falls and effective dimensionality collapses. The increasingly prototypical reconstructions are thus not merely denoised versions of the input; they reflect a progressively compressed representation in which both handwriting-specific detail and, eventually, distinctions required for difficult class decisions are lost. Free dreams show a different and dataset-dependent depth progression (Fig. 6(a–e,k–o,u–y)). For MNIST, samples generated through H1 are predominantly unstructured, while H2 is strongly concen-trated on a narrow set of one-like forms. H3, H5, and H10 produce a broader range of recognizable digit-like shapes. Fashion-MNIST exhibits an analogous but particularly clear release from mode concentration: H1 generates almost exclusively pullover-like images, whereas H2 and the subsequent depths cover several coarse garment types, including trousers, tops, and shoes. KMNIST dreams are already more heterogeneous at shallow depth and remain visually more ambiguous throughout, but deeper paths increasingly produce structured character-like stroke configurations. Thus, greater depth generally allows a wider repertoire of recognizable samples to emerge, although the trajectory is neither strictly monotonic nor equally successful for all datasets. These free-dreaming panels are also not stochastic versions of the reconstructions shown below them. Each dream was generated by equilibrating the RBM terminating at the indicated layer without 18 clamping a data example and subsequently propagating its state through the directed lower pathway. The panels consequently probe the generative model associated with different truncation depths rather than a single Gibbs chain equilibrated jointly across all ten layers. Their non-monotonic and dataset-dependent changes—including the shallow mode concentration followed by more varied samples at greater depth—also demonstrate that free-sample quality cannot be inferred directly from abstraction distance, GDV, or probe accuracy. Taken together, the layer-wise results suggest a coherent but multi-faceted transformation with DBN depth. Early layers trade a modest amount of pixel-level fidelity for a compact feature representation in which class identity can become more accessible. Intermediate layers further suppress input-specific variation and increasingly map images toward class-related, prototype-like structures. In the highest layers, effective dimensionality is strongly reduced, reconstructions lose substantial individual and sometimes class-specific information, and probe accuracy declines, even though the average GDV continues to indicate stronger global class clustering. At the same time, unconstrained latent states can generate more recognizable digit-like patterns through the learned lower hierarchy. Abstraction distance, class accessibility, geometric class separation, dimensional compression, and free generative quality therefore evolve in related but non-equivalent ways; no single one of these quantities provides a complete measure of what the deeper DBN layers have learned. 
+
+# 4 Discussion 
+
+4.1 Summary 
+
+The central result of this study is that deep belief networks spontaneously organize their internal representations according to class structure that is never provided during training. Across MNIST, Fashion-MNIST, and KMNIST, the GDV generally decreased with layer depth, showing that exam-ples from the same unknown class became more compact relative to examples from different classes. This behavior was observed across different network widths and was supported by controls excluding untrained transformations, random labels, weight marginals, and sigmoid saturation as sufficient explanations. The progressive class organization therefore reflects statistical structure discovered by the layer-wise generative learning process itself. The first hidden layers were particularly useful: they frequently made class identity more accessible to both linear and nonlinear probes while reducing 784 input pixels to only 100 latent variables. Thus, the unsupervised RBM did more than preserve information under compression; for MNIST and KMNIST, it reorganized the data into features from which class identity could be extracted more accurately. The learned spatial arrangement of the input weights was essential for this gain. Remark-ably, the principal layer-wise curves and probe results also showed very little variation across inde-pendently initialized DBNs with different random seeds. The learned representations were therefore not only class-organizing but highly reproducible at the level of the measured population properties, an observation to which we return in the following section. With increasing depth, the DBNs continued to concentrate the data into compact, class-related structures. Reconstructions became more prototypical, and the effective dimensionality decreased because many responsive neurons acquired similar feature directions and correlated activity patterns. This redundancy can be understood as a consistent convergence onto a comparatively small set of dominant regularities in the data. It also explains how nominally wide layers can implement a much more compact internal code than their neuron count alone would suggest. Different measures illuminate complementary aspects of this hierarchy. In the higher MNIST layers, the global GDV continued to improve because most class pairs became geometrically better separated, whereas probe accuracy declined because a few difficult pairs lost discriminative detail. Likewise, recognizable free samples emerged along deeper generative paths even though generative quality did not simply track abstraction distance or probe performance. Taken together, the DBN hierarchy 19 performs a progressive unsupervised abstraction: early layers expose class-relevant regularities, and deeper layers consolidate them into increasingly compact and prototype-like representations. This ability to reveal latent class structure without labels is the most striking property of the networks examined here. 20 4.2 Interpretation 
+
+A broader interpretation of these results is that learning systems can exhibit reproducible macro-scopic organization despite enormous freedom in their individual parameters and initial conditions. A previous study of supervised multilayer perceptrons showed that independently initialized net-works trained on the same task converge toward task-specific regions of matched weight space [18]. The present work reveals a complementary phenomenon: without labels or a discriminative objec-tive, independently trained DBNs develop similar layer-wise profiles and progressively recover class structure latent in the input distribution. In terms of Marr’s levels of analysis [19], the image distribution provides computational constraints, the particular weights form an implementation, and the successive feature transformations constitute an intermediate algorithmic organization. Different random seeds produce different microscopic weight realizations, yet GDV, abstraction distance, effective dimensionality, and probe accuracy show remarkably little variation across runs. The input statistics, architecture, and learning rule therefore appear to constrain the algorithmic level much more strongly than the variability of individual parameters would suggest. Such reproducible solution regions may be described as algorithmic or Platonic attractors . We use this term descriptively: an attractor denotes a preferred region of parameter or representation space that independently initialized learning systems tend to approach under common constraints, rather than necessarily a single isolated optimum or dynamical fixed point. This view is related to conver-gent learning [20] and to the Platonic Representation Hypothesis, according to which constrained learning systems may discover privileged representations of underlying structure rather than con-struct arbitrary internal codes [21]. Two observations are particularly suggestive of such preferred structure. First, the weak seed-to-seed dispersion implies that each DBN depth is associated with a reproducible macroscopic solution. Second, convergence also occurs within individual layers: many neurons in the higher RBMs learn nearly parallel or antiparallel weight vectors and consequently produce strongly correlated responses. Thus, the same feature directions are rediscovered by different neurons within the same system. The progressive dimensional collapse can accordingly be interpreted as many microscopic degrees of freedom becoming organized around a small set of statistically privileged collective features. Because every RBM is trained on the representation produced below it, the hierarchy may be viewed as a cascade of constrained solution spaces, progressing from relatively local regularities toward fewer and more global feature directions. The unsupervised emergence of class separation is central to this interpretation: digit, garment, and character labels are never supplied, yet their recurring statistical structure is partially recovered by modeling the data distribution itself. At the same time, the differences among GDV, probe accuracy, abstraction distance, and free generation argue against one universal scalar optimum. The attractors are better conceived as structured regions or manifolds expressing characteristic compromises among several constraints. Although the present results do not establish their uniqueness or architecture independence, they show that stochastic learning repeatedly produces collective organization and that the space of viable internal representations is substantially more structured than its vast number of possible neural configurations might suggest. 
+
+4.3 Relation to other work 
+
+The present results build on the original view of restricted Boltzmann machines and DBNs as gen-erative models that can be trained layer by layer with contrastive divergence [9, 1]. In much of the subsequent literature, however, unsupervised pretraining was chiefly evaluated by how well it initialized a supervised network. Greedy layer-wise training was shown to facilitate the optimization of deep architectures [2], and later analyses suggested that it guides learning toward regions of pa-rameter space with favorable generalization properties [22]. More broadly, representation learning seeks transformations that expose useful explanatory factors and make downstream tasks easier [23]. 21 Our study adopts a complementary perspective: it leaves the unsupervised hierarchy frozen and directly follows how class geometry, class accessibility, abstraction distance, dimensionality, and free generation evolve from one layer to the next. The reduction of representational dimensionality is related to earlier work on deep autoencoders, which demonstrated that nonlinear multilayer networks can learn compact codes that preserve im-portant structure in high-dimensional data [24]. Low intrinsic dimensionality has also been observed in supervised deep networks, where the dimensionality of hidden representations can be far smaller than the number of units and often decreases toward the output [25]. The present findings extend this picture to greedily trained, fully unsupervised DBNs. Moreover, the neuron-level analyses iden-tify a concrete origin of the decrease: higher layers do not simply contain increasing numbers of inactive units; rather, many responsive neurons acquire aligned or anti-aligned weight vectors and correlated activation profiles, so that a nominally wide layer becomes dominated by comparatively few collective feature directions. The increasingly compact class geometry may appear reminiscent of neural collapse , the terminal-phase organization found in supervised classifiers, in which within-class variability contracts and class means approach a highly symmetric configuration [26]. The analogy is informative but limited. Neural collapse is driven by labeled discriminative training near the output of a classifier, whereas the present effect develops throughout a hierarchy trained only to model its input distribution. We also do not observe or claim the specific simplex geometry associated with neural collapse. Most importantly, GDV and probe accuracy can move in different directions in the higher layers. The DBN phenomenon is therefore better described as unsupervised class-related organization and compression than as neural collapse in its original sense. Our weak seed-to-seed variation and the repeated learning of similar features also connect to work on convergent representations. Independently trained neural networks can recover corresponding fea-tures or representational subspaces [20], and centered kernel alignment can reveal reproducible layer correspondences across different initializations [27]. The broader Platonic Representation Hypothesis proposes that sufficiently constrained learning systems may converge toward common representations of underlying reality [21]. The present results add two observations at a smaller and more mecha-nistic scale: independently initialized DBNs follow highly reproducible layer-wise trajectories, and multiple neurons within a single unsupervised layer repeatedly discover the same dominant feature directions. At the same time, the emergence of label-related structure should not be interpreted as unrestricted recovery of uniquely defined semantic factors. In the general case, unsupervised disentanglement is not identifiable without inductive biases concerning the model or the data [28]. Here, the image distribution, RBM architecture, binary stochastic units, contrastive-divergence rule, and layer-wise training procedure provide precisely such constraints; class labels enter only after training as an external diagnostic. Our conclusion is consequently narrower but directly supported by the experi-ments: under these conditions, generative learning reproducibly reorganizes several image datasets in a direction that exposes part of their latent class structure. Taken together, previous studies have established the generative capability of DBNs, the optimization benefits of unsupervised pretraining, dimensional compression in deep representations, and conver-gence among independently trained networks. The distinctive contribution of the present work is to examine these themes jointly along an entirely unsupervised DBN hierarchy. This comparison reveals that geometric class separation, probe accessibility, abstraction distance, effective dimensionality, and free-sample quality are related but non-equivalent properties. Their layer-wise dissociation provides a more differentiated account of what unsupervised depth contributes than any one reconstruction or classification score alone. 22 4.4 Outlook 
+
+An immediate question is whether the decline of probe accuracy in the higher DBN layers reflects an actual loss of class information or only a loss of information that is accessible to the probe families considered here. This distinction is particularly relevant for H10: its two-dimensional MDS projection still exhibits substantial class-related organization, although all three probes perform worse than in the earlier layers. MDS cannot resolve this issue because it is a low-dimensional visualization that may emphasize broad cluster structure while obscuring difficult local boundaries. A natural next step is therefore to fit regularized multilayer perceptrons of systematically increasing capacity to every frozen layer. Equal training sets, nested hyperparameter selection, learning curves, and an untouched common test set would be essential. If increasingly expressive probes consistently recovered more test-set information from H10 than from H1 or even the input, this would demonstrate that deep DBN representations contain useful but nonlinearly encoded class structure. Conversely, high training accuracy without a corresponding test advantage would indicate memorization rather than generally accessible information, while saturation below the early-layer performance would strengthen the case for genuine information loss. A second direction follows directly from the redundancy observed in Fig. 3. If several neurons within one layer learn nearly the same feature, the nominal layer width considerably overstates the number of distinct features required by the data. This suggests replacing fixed-width DBNs by an adaptive procedure that alternates learning with consolidation. Neurons could first be grouped using both weight-vector similarity and activation correlation; redundant members could then be merged or removed, followed by a short unsupervised retraining phase before the next RBM is added. Weight similarity alone would not be sufficient, because opposite weight directions, different biases, or similar filters operating in different activation regimes need not be functionally interchangeable. The deci-sive criterion should instead be whether removal preserves the modeled distribution, reconstruction behavior, and representational geometry on held-out data. An even more attractive variant would determine layer width online. Inspired by the match-based recruitment principle of Adaptive Resonance Theory [29], a new neuron or feature channel could be introduced only when the existing feature set fails to represent a sufficiently novel input pattern, whereas repeated solutions would be consolidated rather than stored as additional copies. This would not be ART in the strict sense, since the units would remain features of an RBM rather than explicit recognition categories. Nevertheless, an analogous novelty or vigilance criterion could turn layer width from a manually chosen hyperparameter into an emergent property of the input distribution and learning stage. Comparing such networks with conventionally trained DBNs across a dense range of fixed widths would reveal whether each hierarchy level possesses a reproducible minimal feature basis and whether adaptive compression can retain the favorable GDV trajectory without unnecessary multiplicity. The exploratory variants considered during development of this study also suggest that preventing redundancy requires more than keeping individual neurons active. Global lateral inhibition, ran-dom sparse connectivity, restricted topography, and a common target activity did not by themselves guarantee diverse feature learning, whereas weight normalization provided only partial stabilization. Future mechanisms should therefore act directly on functional overlap, for example through local competition among similarly responding neurons, anti-Hebbian lateral plasticity, diversity penalties, or novelty-triggered recruitment and pruning. Such interventions should remain label-free during training and be evaluated jointly by effective dimensionality, weight and activity redundancy, ab-straction distance, reconstruction characteristics, GDV, and probe performance. The aim would not be to maximize dimensionality, but to preserve the smallest diverse representation that retains the useful structure of the data. Finally, the relation between local RBM learning and the global generative model remains open. Bottom-anchored negative phases, in which locally generated states are decoded through the lower stack and encoded again, could test whether enforcing lower-stack consistency changes the balance 23 between class organization and reconstruction. Joint fine-tuning or a fully coupled deep Boltzmann formulation would provide stronger but less local alternatives. These models should be assessed not only by pixel-wise abstraction distance (reconstruction MSE), but also by approximate likelihood or free-energy-based criteria and by quantitative measures of the fidelity, class coverage, and diversity of freely generated samples. Extending the present analysis to more heterogeneous natural data would then show whether unsupervised class organization, feature convergence, and adaptive dimen-sional compression are general properties of hierarchical generative learning or are favored by the comparatively regular image datasets studied here. 
+
+# 5 Additional Information 
+
+5.1 Author contributions 
+
+CM conceived the study, implemented the methods, evaluated the data, and wrote the paper. AS discussed the results and acquired funding. AM and TK discussed the results and provided resources. PK conceived the study, discussed the results, acquired funding and wrote the paper. 
+
+5.2 Funding 
+
+This work was funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Founda-tion): grants KR 5148/3-1 (project number 510395418), KR 5148/5-1 (project number 542747151), KR 5148/10-1 (project number 563909707) and GRK 2839 (project number 468527017) to PK, and grants SCHI 1482/3-1 (project number 451810794) and SCHI 1482/6-1 (project number 563909707) to AS. 
+
+5.3 Competing interests statement 
+
+The authors declare no competing interests. 
+
+5.4 Data availability statement 
+
+The complete data and analysis programs will be made available upon reasonable request. 
+
+5.5 Third party rights 
+
+All material used in the paper are the intellectual property of the authors. 24 References 
+
+[1] Geoffrey E. Hinton, Simon Osindero, and Yee-Whye Teh. A fast learning algorithm for deep belief nets. Neural Computation , 18(7):1527–1554, 2006. [2] Yoshua Bengio, Pascal Lamblin, Dan Popovici, and Hugo Larochelle. Greedy layer-wise training of deep networks. In Advances in Neural Information Processing Systems 19 , pages 153–160, 2007. [3] The Royal Swedish Academy of Sciences. The nobel prize in physics 2024: Press release. No-belPrize.org, 2024. Accessed 28 July 2026. [4] Xavier Glorot and Yoshua Bengio. Understanding the difficulty of training deep feedforward neu-ral networks. In Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics , volume 9, pages 249–256, 2010. [5] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recogni-tion , pages 770–778, 2016. [6] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems , volume 30, 2017. [7] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Ad-vances in Neural Information Processing Systems , volume 33, pages 6840–6851, 2020. [8] David H. Ackley, Geoffrey E. Hinton, and Terrence J. Sejnowski. A learning algorithm for boltzmann machines. Cognitive Science , 9(1):147–169, 1985. [9] Geoffrey E. Hinton. Training products of experts by minimizing contrastive divergence. Neural Computation , 14(8):1771–1800, 2002. [10] Achim Schilling, Andreas Maier, Richard Gerum, Claus Metzner, and Patrick Krauss. Quanti-fying the separability of data classes in neural networks. Neural Networks , 139:278–293, 2021. [11] Claus Metzner, Marius E Yamakou, Dennis Voelkl, Achim Schilling, and Patrick Krauss. Quan-tifying and maximizing the information flux in recurrent neural networks. Neural Computation ,36(3):351–384, 2024. [12] Claus Metzner, Achim Schilling, Andreas Maier, and Patrick Krauss. Recurrence resonance-noise-enhanced dynamics in recurrent neural networks. Frontiers in Complex Systems ,2:1479417, 2024. [13] Claus Metzner, Achim Schilling, Andreas Maier, and Patrick Krauss. Nonlinear neural dynamics and classification accuracy in reservoir computing. Neural Computation , 37(8):1469–1504, 2025. [14] Claus Metzner, Achim Schilling, Andreas Maier, and Patrick Krauss. Organizational regularities in recurrent neural networks. Frontiers in Complex Systems , 3:1636222, 2026. [15] Yann LeCun, L´ eon Bottou, Yoshua Bengio, and Patrick Haffner. Gradient-based learning applied to document recognition. Proceedings of the IEEE , 86(11):2278–2324, 1998. [16] Han Xiao, Kashif Rasul, and Roland Vollgraf. Fashion-MNIST: A novel image dataset for benchmarking machine learning algorithms. arXiv preprint arXiv:1708.07747 , 2017. [17] Tarin Clanuwat, Mikel Bober-Irizar, Asanobu Kitamoto, Alex Lamb, Kazuaki Yamamoto, and David Ha. Deep learning for classical japanese literature. arXiv preprint arXiv:1812.01718 ,2018. 25 [18] Patrick Krauss, Achim Schilling, Andreas Maier, Thomas Kinfe, and Claus Metzner. Convergent evolution in algorithmic space. Manuscript, 2026. [19] David Marr. Vision: A Computational Investigation into the Human Representation and Pro-cessing of Visual Information . W. H. Freeman, San Francisco, 1982. [20] Yixuan Li, Jason Yosinski, Jeff Clune, Hod Lipson, and John Hopcroft. Convergent learning: Do different neural networks learn the same representations? In Proceedings of the 1st International Workshop on Feature Extraction: Modern Questions and Challenges at NIPS 2015 , volume 44 of Proceedings of Machine Learning Research , pages 196–212, 2015. [21] Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. Position: The platonic representation hypothesis. In Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pages 20617–20642, 2024. [22] Dumitru Erhan, Yoshua Bengio, Aaron Courville, Pierre-Antoine Manzagol, Pascal Vincent, and Samy Bengio. Why does unsupervised pre-training help deep learning? Journal of Machine Learning Research , 11(19):625–660, 2010. [23] Yoshua Bengio, Aaron Courville, and Pascal Vincent. Representation learning: A review and new perspectives. IEEE Transactions on Pattern Analysis and Machine Intelligence , 35(8):1798– 1828, 2013. [24] Geoffrey E. Hinton and Ruslan R. Salakhutdinov. Reducing the dimensionality of data with neural networks. Science , 313(5786):504–507, 2006. [25] Alessio Ansuini, Alessandro Laio, Jakob H. Macke, and Davide Zoccolan. Intrinsic dimension of data representations in deep neural networks. In Advances in Neural Information Processing Systems , volume 32, 2019. [26] Vardan Papyan, X. Y. Han, and David L. Donoho. Prevalence of neural collapse during the terminal phase of deep learning training. Proceedings of the National Academy of Sciences ,117(40):24652–24663, 2020. [27] Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton. Similarity of neu-ral network representations revisited. In Proceedings of the 36th International Conference on Machine Learning , volume 97 of Proceedings of Machine Learning Research , pages 3519–3529, 2019. [28] Francesco Locatello, Stefan Bauer, Mario Lucic, Gunnar Raetsch, Sylvain Gelly, Bernhard Sch¨ olkopf, and Olivier Bachem. Challenging common assumptions in the unsupervised learning of disentangled representations. In Proceedings of the 36th International Conference on Machine Learning , volume 97 of Proceedings of Machine Learning Research , pages 4114–4124, 2019. [29] Gail A. Carpenter and Stephen Grossberg. A massively parallel architecture for a self-organizing neural pattern recognition machine. Computer Vision, Graphics, and Image Pro-cessing , 37(1):54–115, 1987. 26 0 1 2 3 4 5 6 7 8 9 10 0.5  
+
+> 0.4
+> 0.3
+> 0.2
+> 0.1
+> GDV
+> A
+
+MNIST            
+
+> 100 neurons 50 neurons 30 neurons
+> 012345678910 0.45
+> 0.40
+> 0.35
+> 0.30
+> 0.25
+> 0.20
+> 0.15
+> B
+
+Fashion-MNIST            
+
+> 012345678910 0.20
+> 0.15
+> 0.10
+> 0.05
+> C
+
+KMNIST                                                                             
+
+> 012345678910 0.00 0.02 0.04 0.06
+> D
+> 012345678910 0.00 0.01 0.02 0.03 0.04 0.05 0.06
+> E
+> 012345678910 0.00 0.02 0.04 0.06 0.08 0.10
+> F
+> 012345678910
+> Layer
+> 010 20 30 40
+> Effective dimension
+> G
+> 012345678910
+> Layer
+> 02468
+> H
+> 012345678910
+> Layer
+> 010 20 30 40
+> I
+> 0246810 12 14 16 18 20 22 24 26 28 30 Layer 0.5
+> 0.4
+> 0.3
+> 0.2
+> 0.1
+> GDV
+> J
+
+MNIST: deep DBNs   
+
+> 100 neurons 50 neurons 30 neurons
+> Abstraction distance
+
+Figure 1: Layer-wise evolution of representation measures across three image-classification tasks. Deep belief networks with 100, 50, or 30 neurons per hidden layer were trained using CD-1 on MNIST, Fashion-MNIST, and KMNIST. Solid lines with circles, dashed lines with squares, and dotted lines with triangles denote widths of 100, 50, and 30 neurons, respectively. 
+
+(A–I) The generalized discrimination value (GDV; orange), abstraction distance operationalized as reconstruction MSE (blue), and effective dimension (olive) are shown as functions of layer depth for ten-layer DBNs. (J) MNIST GDV for matched, exceptionally deep DBNs comprising 30 hidden layers. The ten lower RBMs are identical to those used in panels A, D, and G; layers H11–H30 were subsequently trained with the same greedy CD-1 procedure and hyperparameters while the lower layers remained frozen. Thin curves represent five individual random seeds, shaded regions indicate the corresponding minimum–maximum ranges, and thick curves show the means across seeds. GDV was evaluated using the same fixed, class-balanced subset for all models. 27 MDS dimension 1 MDS dimension 2                            
+
+> (a) Input (GDV=-0.061; RBF-ACC=90.55%)
+> MDS dimension 1 MDS dimension 2
+> (b) H1 (GDV=-0.128; RBF-ACC=96.01%)
+> MDS dimension 1 MDS dimension 2
+> (c) H2 (GDV=-0.166; RBF-ACC=95.54%)
+> MDS dimension 1 MDS dimension 2
+> (d) H5 (GDV=-0.267; RBF-ACC=91.92%)
+> MDS dimension 1 MDS dimension 2
+> (e) H10 (GDV=-0.330; RBF-ACC=80.48%)
+> MNIST digit 0123456789012345678910 Layer 0.3
+> 0.2
+> 0.1
+> 0.0 GDV
+> (f) Training and structural controls
+> Trained, CD-1 Trained, CD-2 Untrained Weight-shuffled Permuted labels
+> 012345678910 Layer 0.3
+> 0.2
+> 0.1
+> 0.0
+> (g) Representation controls
+> Activation probabilities Local pre-activation Cumulative affine path Direct Bernoulli samples Recursive Bernoulli samples
+
+Figure 2: Layer-wise transformation of MNIST representations and control analyses. (a–e) Metric two-dimensional multidimensional-scaling (MDS) embeddings of the input and the deterministic activation-probability representations in hidden layers H1, H2, H5, and H10 of a DBN trained with CD-1 (seed 1234). The same class-balanced subset of 100 test examples per MNIST digit was used in every panel; colors denote digit labels. Distances were computed after the same component-wise standardization used for the GDV. Panel titles report the GDV and the test accuracy of an RBF-SVM trained on the respective full representation. MDS serves only as a visualization and was not involved in DBN training or quantitative GDV estimation. (f ) Layer-wise GDV for the trained CD-1 reference, a matched CD-2 run, an untrained network, a network with independently shuffled incoming weight vectors, and the trained representations evaluated after permutation of the labels. (g) Comparison of deterministic activation probabilities with local pre-activations, the cumulative affine control path, and direct or recursively propagated Bernoulli samples. All GDV curves show the same MNIST seed-1234 preliminary experiments. 28 0 1 2 3 4 5 6 7 8 9 10 050 100 150 200 250 300 350                                                                                      
+
+> Dimension
+> AEffective dimension
+> Actual Variance-only
+> 012345678910 0.78 0.80 0.82 0.84 0.86 0.88 0.90 0.92
+> Off-diagonal fraction
+> BCovariance-induced redundancy
+> 012345678910 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40
+> Mean | r|
+> CPairwise activity correlation
+> 012345678910
+> Layer
+> 0.10 0.15 0.20 0.25 0.30
+> PC1 variance fraction
+> D Dominance of first principal component
+> 012345678910
+> Layer
+> 10 20 30 40 50
+> Total variance
+> ETotal activity variance
+> 012345678910
+> Layer
+> 0.20 0.25 0.30 0.35 0.40
+> Mean neuron SD
+> FSingle-neuron activity variation
+> 12345678910
+> Layer
+> 0.2 0.4 0.6 0.8
+> Weight cosine similarity
+> GWeight-direction similarity
+> Mean pairwise |cos| Mean nearest |cos|
+> 12345678910
+> Layer
+> 510 15 20 25
+> Effective dimension
+> HNormalized weight-matrix dimension
+> 12345678910
+> Layer
+> 0.0 0.2 0.4 0.6 0.8
+> Across-pair association
+> IWeights predict activity coupling
+> Absolute Spearman Signed Pearson
+
+Figure 3: Redundancy of learned weight directions drives the layer-wise collapse of effec-tive dimensionality. Five MNIST DBNs with 100 neurons per hidden layer were trained using CD-1. Thin curves show individual random seeds, shaded regions indicate the corresponding minimum– maximum ranges, and thick curves show means across seeds; layer 0 denotes the input representation and is included only in the activity-based panels A–F. (A) Actual effective dimensionality (olive) and the variance-only dimension obtained after discarding all off-diagonal covariances (turquoise). Their large separation shows that unequal single-neuron variances alone cannot account for the observed dimensionality collapse. (B) Covariance-induced redundancy, defined as 1 − Deff /D var , equivalently the fraction of squared covariance-matrix energy contained in off-diagonal entries. (C) Mean absolute Pearson correlation between pairs of non-constant neuronal activities. (D) Fraction of total variance explained by the first principal component. (E) Total activity variance, given by the trace of the covariance matrix. (F) Mean single-neuron activity standard deviation. (G) Mean absolute cosine similarity across all incoming weight-vector pairs and mean similarity of each neuron to its most similar same-layer partner. (H) Participation-ratio dimension of the weight matrix after normaliz-ing every neuronal weight vector to unit length. (I) Across-pair association between weight-vector similarity and activity correlation, shown as the Spearman correlation between their absolute values and the Pearson correlation between their signed values. Together, the measures show that deeper representations become dominated by a small number of shared activity directions because many neurons learn increasingly similar weight directions and consequently produce correlated, function-ally redundant responses. 29 0 1 2 3 4 5 6 7 8 9 10 Layer 0.35                                                                     
+
+> 0.30
+> 0.25
+> 0.20
+> 0.15
+> 0.10
+> 0.05
+> GDV
+> A
+> GDV Linear probe Gaussian probe RBF-SVM 65 70 75 80 85 90 95 Probe test accuracy (%)
+> 0123456789
+> Digit
+> 0123456789
+> Digit
+> BInput
+> 0123456789
+> Digit
+> CH1
+> 0123456789
+> Digit
+> DH2
+> 0123456789
+> Digit
+> EH5
+> 0123456789
+> Digit
+> FH10
+> 0.6
+> 0.4
+> 0.2
+> Pairwise GDV (blue = better separation)
+> 0123456789
+> Digit
+> 0123456789
+> Digit
+> GChange from H2 to H10: GH10
+> ab GH2
+> ab
+> 0.40
+> 0.35
+> 0.30
+> 0.25
+> 0.20
+> 0.15
+> 0.10
+> 0.05
+> 0.00
+> Change in pairwise GDV (red = deterioration)
+> Black outline GDV and RBF confusion both deteriorate: 4-9: delta G = +0.032 5-8: delta G = +0.031 3-5: delta G = +0.012
+
+Figure 4: Global GDV improvement coexists with declining class readout and the collapse of a few critical digit pairs. Five MNIST DBNs with 100 neurons per hidden layer were trained using CD-1; layer 0 denotes the input representation. (A) Layer-wise GDV and test accuracy of three probes fitted independently to each frozen representation. Thin curves show individual DBN seeds, shaded regions indicate minimum–maximum ranges, and thick curves show means. Linear logistic and 200-center Gaussian-kernel probes were trained on all 60,000 training examples. Gaussian centers were obtained without labels by MiniBatchKMeans, with a shared layer-specific bandwidth set to the median training distance to the nearest center; only the logistic output used labels. The exact RBF-SVM used the same fixed, stratified subset of 10,000 training examples for every DBN, with 
+
+C = 10 and γ = 4 /d fixed from the preliminary training-only validation. Probe levels should therefore be compared cautiously across methods, whereas their layer-wise trends are directly interpretable. 
+
+(B–F) Mean pairwise-GDV matrices for the input, H1, H2, H5, and H10, evaluated on the same fixed class-balanced test subset and averaged across five DBN seeds. Only the upper triangle is shown because the matrices are symmetric; all panels use a common color scale, with more negative values indicating better separation. (G) Change in pairwise GDV from H2 to H10. Blue cells denote improved and red cells deteriorated pairwise separation. Black outlines identify pairs for which both pairwise GDV and symmetric RBF-SVM confusion deteriorated: 4–9, 5–8, and 3–5. Thus, the global GDV improves because most digit pairs become geometrically better separated, while the decline in classification accuracy is concentrated in a small number of difficult, visually similar pairs. 30 Input Learned H1 Permuted H1 020 40 60 80 100 Test accuracy (%)  
+
+> 91.4 92.6 63.5 85.5 92.2 44.6 90.5 96.1 64.7
+
+A MNIST   
+
+> Linear probe Gaussian probe RBF-SVM
+
+Input Learned H1 Permuted H1 020 40 60 80 100    
+
+> 83.1 81.2 64.8 77.9 79.1 54.9 83.0 82.2 68.3
+
+B Fashion-MNIST 
+
+Input Learned H1 Permuted H1 020 40 60 80 100 
+
+> 65.5 71.7 47.6 65.0 70.8 40.4 70.5 84.1 51.3
+
+C KMNIST  
+
+> Input Intact pre Intact sigmoid Permuted pre Permuted sigmoid
+
+020 40 60 80 100 Test accuracy (%)     
+
+> 91.3 90.5 92.6 88.2 63.3 90.5 96.6 96.0 93.6 64.2
+
+D MNIST: structure and nonlinearity  
+
+> Linear RBF-SVM
+
+0.00 0.25 0.50 0.75 1.00 Retained learned structure 
+
+40 50 60 70 80 90 100 Test accuracy (%) 
+
+E Weight-structure dose response 
+
+> Linear, pre RBF-SVM, pre Linear, sigmoid RBF-SVM, sigmoid
+
+0.00 0.25 0.50 0.75 1.00 Retained learned structure 
+
+56789
+
+> Preactivation mean neuron SD
+
+F Scale and saturation 
+
+> Preactivation mean SD Sigmoid saturation
+
+66 68 70 72 74 
+
+> Saturated activations (%)
+
+Figure 5: Learned H1 weight structure determines whether nonlinear compression en-hances or destroys class accessibility. Linear logistic, 200-center Gaussian-kernel, and exact RBF-SVM probes were evaluated on the input, intact H1 activation probabilities, and an H1 con-trol in which every neuron’s incoming weights were independently permuted across pixels. (A–C) 
+
+MNIST, Fashion-MNIST, and KMNIST results across five DBN seeds. Bars show means, open symbols individual seeds, and whiskers minimum–maximum ranges. Permutation preserved each neuron’s weight multiset, norm, and bias but caused a pronounced accuracy loss for every dataset and probe. (D–F) Exploratory mechanism analysis for MNIST seed 1234 using linear and RBF-SVM probes. (D) Endpoint comparison of the input and the preactivation (pre) and sigmoid represen-tations generated by intact or permuted weights. Permuted preactivations retain considerable class information, whereas their sigmoid transformation is strongly destructive. (E) Dose response ob-tained from Wα = αW + (1 − α)fW , after restoring every column to its learned norm. Accessibility increases systematically with retained learned structure, particularly after the sigmoid. (F) Mean neuronal preactivation standard deviation and the percentage of sigmoid activations below 0.01 or above 0.99. Scale and saturation contribute to, but do not fully explain, the structure-dependent accuracy trend. 31 0 1 2 3 4                                                                                                                                                                                                                                                                                                        
+
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> 01234
+> 56789
+> 01234
+> 56789
+> 01234
+> (a) (f)
+
+H1 (b) (g) 
+
+H2 (c) (h) 
+
+H3 (d) (i) 
+
+H5 (e) (j) 
+
+H10 
+
+> MNIST
+> Free dreams Reconstructions
+> (k) (p) (l) (q) (m) (r) (n) (s) (o) (t)
+> Fashion-MNIST
+> Free dreams Reconstructions
+> (u) (z) (v) (aa) (w) (ab) (x) (ac) (y) (ad)
+> KMNIST
+> Free dreams Reconstructions
+
+Figure 6: Free generation and data-grounded reconstruction change qualitatively across DBN depth and datasets. Ten-layer DBNs with 100 neurons per hidden layer were trained using CD-1 on MNIST, Fashion-MNIST, and KMNIST (seed 1234). Columns show generation or reconstruction through H1, H2, H3, H5, and H10. (a–e,k–o,u–y) For MNIST, Fashion-MNIST, and KMNIST, respectively, 25 independent free-running chains were initialized from Bernoulli(0 .5) states in the lower part of the RBM terminating at the indicated layer and evolved for 2,000 alter-nating Gibbs steps. The resulting states were propagated stochastically through the directed lower DBN; final visible-unit probabilities are shown. No data sample was used to initialize or clamp the chains. (f–j,p–t,z–ad) Twenty-five fixed test images per dataset, with labels cycling through 0–9, were propagated deterministically to the indicated layer and immediately back to the visible layer, without equilibration or sampling. Small numbers denote the true input classes. Free dreams be-come generally more varied and data-like with depth, but show pronounced dataset-specific mode concentration and ambiguity. Reconstructions retain coarse class identity over much of the hierarchy while progressively losing individual detail and becoming more prototypical. 32
