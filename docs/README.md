@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-14</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-15</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 12 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-14 21:46:21 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-15 20:48:10 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读7篇、速读5篇，聚焦世界动作模型与视觉表征方向。</p>
-<p>最值得关注：SG-WAM用文本与空间语义引导世界模型，以及基于动作条件预测一致性诊断JEPA模型。</p>
-<p>建议普通读者从“世界模型如何利用语言和空间信息”入手，再结合一致性诊断理解其可靠性。</p>
+<p>今日精读3篇论文，重点聚焦JEPA世界模型与具身策略训练，另有1篇自动编码器速读。</p>
+<p>最值得关注的是《Is Forward Prediction Enough?》与《World Tokens》，均获9.0高分，分别探讨物理状态接地与训练时世界建模对具身智能的增益。</p>
+<p>建议普通读者优先了解JEPA框架在机器人策略学习中的适用边界，或从World Tokens的效率对比入手。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">7 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="SG-WAM: Text-Grounded and Spatial-aware Semantic Guidance for World-Action Models">SG-WAM: Text-Grounded and Spatial-aware Semantic Guidance for World-Action Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Diagnosing JEPA World Models with Action-Conditioned Predictive Consistency">Diagnosing JEPA World Models with Action-Conditioned Predictive Consistency</span></li><li><span class="dpr-home-dashboard-paper-title" title="S2-HWM: Sparse Event-Structured Hierarchical World Model for Long-Horizon Surgical Robot Manipulation">S2-HWM: Sparse Event-Structured Hierarchical World Model for Long-Horizon Surgical Robot Manipulation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Is Forward Prediction Enough? Physical State Grounding for JEPA World Models">Is Forward Prediction Enough? Physical State Grounding for JEPA World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="World Tokens: Enhancing Embodied Policies with Training-Time World Modeling">World Tokens: Enhancing Embodied Policies with Training-Time World Modeling</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>6</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>2</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">5 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks">Convergent Evolution in Neural Representation Space: Emergent Order in Deep Belief Networks</span></li><li><span class="dpr-home-dashboard-paper-title" title="Scaling Representation Diversity: Modulated Attention and Reconstructive Regularization for Visual Grounding">Scaling Representation Diversity: Modulated Attention and Reconstructive Regularization for Visual Grounding</span></li><li><span class="dpr-home-dashboard-paper-title" title="PseudoMapLabeler: Confidence-Aware Pseudo-Label Generation for Semi-Supervised Online Mapping">PseudoMapLabeler: Confidence-Aware Pseudo-Label Generation for Semi-Supervised Online Mapping</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="NAE: Normalizing AutoEncoder">NAE: Normalizing AutoEncoder</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>5</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
 </section>
 </div>
 

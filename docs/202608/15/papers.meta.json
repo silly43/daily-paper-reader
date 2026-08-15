@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-15",
+  "date": "2026-08-15",
+  "generated_at": "2026-08-15T20:48:12",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/15/2608.06799v1-is-forward-prediction-enough-physical-state-grounding-for-jepa-world-models",
+      "section": "deep",
+      "title_en": "Is Forward Prediction Enough? Physical State Grounding for JEPA World Models",
+      "authors": "Haodong Yan, Jiaguan Zhu, Mingyuan Jia, Ruiqing Yin, Junjie He, Zhide Zhong, Junfeng Li, Jinxuan Lu, Hengtao Li, Tianran Zhang, Jiayi Chen, Wenxuan Song, Wen Chen, Yuxiang Gao, Haoang Li",
+      "date": "2026-08-07",
+      "pdf": "https://arxiv.org/pdf/2608.06799v1",
+      "score": "9.0",
+      "evidence": "JEPA世界模型，动作条件下的预测性潜在动力学，为规划而进行的物理状态基础化",
+      "tldr": "JEPA世界模型的前向预测目标不保证潜在表征可识别机器人物理状态，限制下游规划与策略。提出PSG-JEPA，通过个体潜在表征回归本体感受状态、潜在对回归多步关节角变化两项物理接地目标，仅在训练时约束表征空间。在潜在可识别性、冻结潜在规划及仿真与真实机器人策略学习三个层面超越SOTA基线，且推理架构零额外开销。",
+      "tags": "query:world-models",
+      "abstract_en": "Learning structured and control-relevant latent representations remains a key challenge for world models. Recent JEPA-based world models learn action-conditioned predictive latent dynamics from observation sequences. However, their forward-prediction objectives do not explicitly enforce reliable identifiability of robot-centric physical state from individual latents or state changes from latent pairs, which can limit downstream planning and policy performance. We propose PSG-JEPA, a physically grounded JEPA world model that shapes its latent space with two complementary grounding objectives beyond forward prediction: grounding individual latents in robot proprioceptive state, and grounding latent pairs in multi-horizon joint-angle changes. Both objectives are applied only during training, leaving the inference architecture and computational cost unchanged. To comprehensively evaluate PSG-JEPA, we conduct experiments at three levels: (1) latent identifiability via probing, (2) goal-conditioned planning on frozen latents, and (3) policy learning in simulation and on a real robot. Experiments demonstrate that our PSG-JEPA consistently outperforms state-of-the-art latent world-model baselines at all three levels.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/15/2608.09730v1-world-tokens-enhancing-embodied-policies-with-training-time-world-modeling",
+      "section": "deep",
+      "title_en": "World Tokens: Enhancing Embodied Policies with Training-Time World Modeling",
+      "authors": "Qu Tang, Benhui Zhuang, Bo Yuan, Xue Yu, Longteng Guo, Junlan Feng",
+      "date": "2026-08-10",
+      "pdf": "https://arxiv.org/pdf/2608.09730v1",
+      "score": "9.0",
+      "evidence": "提出世界令牌与世界适配器，在训练阶段进行世界建模以增强具身策略",
+      "tldr": "针对VLA模型缺乏显式物理场景演化建模、而现有世界动作模型推理开销大的问题，提出World Tokens：通过World Adapter将VLM特征浓缩为固定世界令牌，同时用于未来视频去噪与动作预测，让世界建模梯度直接优化策略表示，部署时仅保留轻量分支。在LIBERO、SIMPLER及真实机器人上均取得领先结果，且推理延迟与VLA持平，实现了训练时世界建模、部署时零额外成本。",
+      "tags": "query:world-models",
+      "abstract_en": "Vision-language-action (VLA) models are a widely adopted paradigm for embodied policies. They excel at efficient closed-loop control but do not explicitly model how physical scenes evolve as a task unfolds. Recently emerging world-action models (WAMs) leverage pretrained video world models to capture spatiotemporal evolution, yet retaining future generation or a large video backbone in the control loop substantially increases inference cost. We introduce World Tokens, an embodied policy architecture built around a World Adapter that bridges visual-language understanding, world-dynamics modeling, and action generation. It uses world modeling during training to enhance the action policy while preserving efficient deployment. Specifically, the World Adapter transforms VLM features into a fixed set of world tokens, which condition a jointly fine-tuned future-video denoiser and simultaneously serve as the action expert's sole visual-language context. This shared conditioning allows gradients from future-video denoising to directly shape the representation used for action prediction, while exclusive routing prevents the policy from bypassing that representation. At deployment, the world-model branch is removed, leaving only the VLM, World Adapter, and action expert, with no online video-model inference. With a 2B backbone and no embodied action pretraining, World Tokens is highly competitive on LIBERO, attains the best reported averages on SIMPLER, substantially improves real-world R1 Pro success over a matched action-only baseline, and generates each action chunk at VLA-level latency.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/15/2608.12084v1-nae-normalizing-autoencoder",
+      "section": "quick",
+      "title_en": "NAE: Normalizing AutoEncoder",
+      "authors": "Muhammad Abdur Rafae, Niels Landwehr",
+      "date": "2026-08-12",
+      "pdf": "https://arxiv.org/pdf/2608.12084v1",
+      "score": "6.0",
+      "evidence": "流自编码器用于表示学习，与自监督表示学习方法对应",
+      "tldr": "归一化流与近似逆的结合构成了流自编码器（Flow Autoencoder），统一了全维与瓶颈两种设置，然而现有方法采用的训练损失经理论分析证明是次优的。本文从训练动力学角度出发，严格证明编码器与解码器的替代损失必须与重建损失联合对齐优化，并据此提出归一化自编码器（NAE），通过设计条件损失使得替代损失梯度与重建损失梯度保持一致，从而直接改进了当前的标准做法。在分子生成、表格数据以及图像生成等广泛基准上，NAE均取得了最优性能。这项工作的核心贡献在于揭示了损失对齐在流自编码器中的关键作用，并确立了NAE作为一种强大且通用的生成框架。",
+      "tags": "query:ssl",
+      "abstract_en": "We consider the setting of Normalizing flows with approximate inverses, an established paradigm spanning both full-dimensional ($d=D$) and bottleneck ($d<D$) settings, and group these models under the term flow autoencoders. We present a theoretical investigation into their training dynamics and prove that the proposed loss used by existing approaches is suboptimal; specifically, both encoder and decoder surrogates must be optimized in alignment with reconstruction loss. Guided by these insights, we propose Normalizing Autoencoder (NAE), which employs a novel conditional loss that aligns the surrogate loss gradient with that of reconstruction loss, directly improving upon the current standard. Extensive experiments across molecule generation, tabular data, and image benchmarks demonstrate that NAE achieves state of the art performance. Our work highlights the importance of loss alignment in flow autoencoders and establishes NAE as a powerful generative framework.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
