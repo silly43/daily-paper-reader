@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-15</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-16</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 4 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-15 20:48:10 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-16 20:18:45 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读3篇论文，重点聚焦JEPA世界模型与具身策略训练，另有1篇自动编码器速读。</p>
-<p>最值得关注的是《Is Forward Prediction Enough?》与《World Tokens》，均获9.0高分，分别探讨物理状态接地与训练时世界建模对具身智能的增益。</p>
-<p>建议普通读者优先了解JEPA框架在机器人策略学习中的适用边界，或从World Tokens的效率对比入手。</p>
+<p>今日精读1篇、速读3篇，重点覆盖流式世界模型与语义分割、医学多模态预训练方向。</p>
+<p>最值得关注满分论文《Distilling Physical Priors into Streaming World Models》，其将物理先验蒸馏进流式世界模型，思路极具启发性；三篇7分工作分别涉及开放世界分割、医学表格预训练及半监督分割标签筛选。</p>
+<p>建议优先精读该满分论文，并顺带浏览三篇速读文章中的语义分割类工作以拓展方法论。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Is Forward Prediction Enough? Physical State Grounding for JEPA World Models">Is Forward Prediction Enough? Physical State Grounding for JEPA World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="World Tokens: Enhancing Embodied Policies with Training-Time World Modeling">World Tokens: Enhancing Embodied Policies with Training-Time World Modeling</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Distilling Physical Priors into Streaming World Models">Distilling Physical Priors into Streaming World Models</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="NAE: Normalizing AutoEncoder">NAE: Normalizing AutoEncoder</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Open-World Semantic Segmentation with Sensitivity Modeling">Open-World Semantic Segmentation with Sensitivity Modeling</span></li><li><span class="dpr-home-dashboard-paper-title" title="Unlocking the Power of Medical Tabular Data via Semantic-Aware Multimodal Pre-training">Unlocking the Power of Medical Tabular Data via Semantic-Aware Multimodal Pre-training</span></li><li><span class="dpr-home-dashboard-paper-title" title="CW-BASS v2: Saturation-Aware Pseudo-Label Selection for Semi-Supervised Segmentation under Foundation-Model Teachers">CW-BASS v2: Saturation-Aware Pseudo-Label Selection for Semi-Supervised Segmentation under Foundation-Model Teachers</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>3</strong></span></div>
 </section>
 </div>
 

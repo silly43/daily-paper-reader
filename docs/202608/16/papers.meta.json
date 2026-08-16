@@ -1,0 +1,69 @@
+{
+  "label": "2026-08-16",
+  "date": "2026-08-16",
+  "generated_at": "2026-08-16T20:18:48",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202608/16/2608.07981v1-distilling-physical-priors-into-streaming-world-models",
+      "section": "deep",
+      "title_en": "Distilling Physical Priors into Streaming World Models",
+      "authors": "Liangliang Zhao, Junying Wang, Danni Yang, Yifan Chang, Bin Fu, Yu Qiao, Bowen Zhou, Yihao Liu",
+      "date": "2026-08-08",
+      "pdf": "https://arxiv.org/pdf/2608.07981v1",
+      "score": "10.0",
+      "evidence": "流式世界模型在线预测未来视觉状态，并蒸馏物理先验",
+      "tldr": "流式世界模型在线预测未来视觉状态，但经常违反物理约束。现有方法将双向DiT蒸馏为因果生成器，物理先验不足且易丢失。PhyS通过构建物理交互视频数据集、物理感知微调14B教师并蒸馏为1.3B因果DiT，再用在线强化学习和时间信用路由优化，显著提升物理一致性。在PhysicsIQ及多项物理基准上取得大幅改进。",
+      "tags": "query:world-models",
+      "abstract_en": "Streaming world models predict future visual states online while maintaining physically coherent dynamics over long horizons. However, their rollouts often violate basic physical constraints. A common approach distills pretrained bidirectional DiTs into few-step causal generators. However, this paradigm suffers from two fundamental limitations: generic bidirectional teachers acquire limited physical priors from visually oriented pretraining, and the limited priors suffer further loss during bidirectional-to-causal distillation. We present PhyS, a three-stage framework for distilling physical priors into streaming world models. To acquire physical priors from real-world interactions, we construct PhyS-120K, a dataset of 120K real-world physical-interaction videos spanning rigid-body dynamics, soft-body deformation, fluid phenomena, and phase transitions. Each video is annotated with structured descriptions of object properties and causal state transitions. Physics-aware supervised fine-tuning injects the physical priors into a bidirectional 14B DiT teacher, which we then distill into a lightweight 1.3B causal DiT for few-step autoregressive streaming generation. Finally, we use online reinforcement learning to incentivize the distilled model to generate physically plausible rollouts and further propose Temporal Credit Routing (TCR) to address temporal credit assignment. TCR evaluates physical consistency over overlapping temporal windows and routes the resulting group-relative advantages to temporally aligned denoising actions. On PhysicsIQ, PhyS improves the Wan2.1-14B teacher by 18.2\\% and the Self Forcing, Rolling Forcing, and Causal Forcing by 23.7\\%, 14.8\\%, and 31.4\\%, respectively. Results also improve the physics-aware video benchmarks VideoPhy, VideoPhy2, and PhyGenBench. The dataset, code, and more sample videos are available on our Project Page.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/16/2608.08308v1-open-world-semantic-segmentation-with-sensitivity-modeling",
+      "section": "quick",
+      "title_en": "Open-World Semantic Segmentation with Sensitivity Modeling",
+      "authors": "Anastasios Romanos Varvarigos, Nikos Giakoumoglou, Tania Stathaki",
+      "date": "2026-08-08",
+      "pdf": "https://arxiv.org/pdf/2608.08308v1",
+      "score": "7.0",
+      "evidence": "使用对比特征学习来区分未知区域，用于开放世界语义分割",
+      "tldr": "开放世界语义分割要求模型在识别已知类的同时检测并分组未知或异常内容，而传统封闭世界模型常对新颖内容产生过度自信的错误分类。本文在双解码器基线基础上引入第三个敏感性解码器，通过高斯原型、对比学习和激活不稳定性分析，提供类别级、全局特征和局部激活三种互补的OOD信号。在Cityscapes和BDD-Anomaly上的实验表明，该方法在保持有竞争力封闭集精度的同时，异常分割AUROC提升2.4%，FPR@95TPR降低2.5个百分点。敏感性建模为开放世界语义分割提供了新的有效思路。",
+      "tags": "query:ssl",
+      "abstract_en": "Modern vision systems must operate in \"open-world\" settings, where models must recognize known categories and detect unseen or anomalous content. Conventional semantic segmentation models operate under a \"closed-world\" assumption, often producing overconfident misclassifications on novel content. We address open-world semantic segmentation, the joint task of segmenting known classes while detecting and grouping novel or anomalous content without additional supervision, by extending a dual-decoder baseline with a third, complementary decoder within a unified encoder-decoder design. The first decoder performs closed-set segmentation using Gaussian prototypes for known categories. The second uses contrastive feature learning to isolate unknown regions in embedding space. The third, our key contribution, is a sensitivity decoder that captures fine-grained texture irregularities and activation instabilities indicative of semantic uncertainty, which neither semantic prototypes nor contrastive norms can reliably detect. The three decoders provide genuinely complementary signals: class-level OOD distance in logit space, global feature energy in embedding space, and local activation instability across encoder scales. Experiments on Cityscapes and BDD-Anomaly show that our method improves anomaly segmentation and novel-class discovery while maintaining competitive closed-set accuracy, with gains of +2.4% AUROC and a 2.5 pp. reduction in FPR@95TPR on BDD-Anomaly over the baseline.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/16/2608.10522v1-unlocking-the-power-of-medical-tabular-data-via-semantic-aware-multimodal-pre-training",
+      "section": "quick",
+      "title_en": "Unlocking the Power of Medical Tabular Data via Semantic-Aware Multimodal Pre-training",
+      "authors": "Yingsheng Liu, Haiming Li, Jingmin Zhu, Jiajun Sun, Victoria Mar, Monika Janda, H. Peter Soyer, Zongyuan Ge, Zhen Yu",
+      "date": "2026-08-11",
+      "pdf": "https://arxiv.org/pdf/2608.10522v1",
+      "score": "7.0",
+      "evidence": "提出面向表格数据的语义感知多模态预训练，使用无标签自适应掩码，属于自监督表示学习方法",
+      "tldr": "医疗表格数据蕴含密集定量表型，但现有多模态预训练将其视为扁平向量，且回归目标不稳定，未充分利用其潜力。本文提出语义感知框架，通过重要性感知自适应掩码构建无标签课程，优先学习关键特征；并设计软标签离散化模块，以分布匹配替代数值回归，保留序数关系。在皮肤科和眼科大规模数据集上达到新SOTA，展现强鲁棒性与跨域泛化能力。",
+      "tags": "query:ssl",
+      "abstract_en": "While vision-language models dominate medical representation learning, unstructured text lacks the dense, quantitative diagnostic phenotypes inherent in structured clinical tables. However, existing multimodal pre-training methods underutilize this potential due to semantic-agnostic designs that treat tabular inputs as flat vectors and employ unstable continuous regression objectives. To overcome this, we propose a novel semantic-aware framework explicitly modeling the intrinsic two-dimensional structure of tabular data. First, addressing the inter-feature hierarchy of varying diagnostic importance, we introduce Importance-Aware Adaptive Masking to construct a label-free curriculum prioritizing salient features. Second, addressing the intra-feature continuity-discreteness duality, we propose a Soft-Label Discretized Module that replaces unstable numerical regression with stable distribution matching, thereby mathematically preserving ordinal relationships. Extensive experiments across large-scale dermatology (SLICE-3D, HOP) and ophthalmology (EyePACS) datasets establish a new state-of-the-art (SOTA), demonstrating exceptional robustness and cross-domain generalizability.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/16/2608.12773v1-cw-bass-v2-saturation-aware-pseudo-label-selection-for-semi-supervised-segmentation-under-foundation-model-teachers",
+      "section": "quick",
+      "title_en": "CW-BASS v2: Saturation-Aware Pseudo-Label Selection for Semi-Supervised Segmentation under Foundation-Model Teachers",
+      "authors": "Ebenezer Tarubinga",
+      "date": "2026-08-13",
+      "pdf": "https://arxiv.org/pdf/2608.12773v1",
+      "score": "7.0",
+      "evidence": "利用DINOv2自监督基础模型教师进行半监督分割",
+      "tldr": "半监督分割的伪标签选择传统上针对弱教师设计，但基础模型教师（如DINOv2）导致置信度饱和，固定过滤规则反而有害。CW-BASS v2利用保留集校准估计教师高置信集的实际正确率，依据可靠性阈值自适应切换严格过滤与置信度下限，从而避免确认偏差。在Pascal VOC、Cityscapes上恢复UniMatch V2性能，在ADE20K上提升1.5 mIoU，且无需针对mIoU调参，为饱和教师场景提供了可证明的选择机制。",
+      "tags": "query:ssl",
+      "abstract_en": "Semi-supervised semantic segmentation has long turned on one question, which pseudo-labels to trust, and a generation of selection rules, dynamic thresholds, per-class curricula, soft confidence weights, answered it for the noisy, under-confident ResNet teachers of their day. Self-supervised foundation encoders change the regime: with a DINOv2 teacher, confidence saturates, so the filtering that helped a weak teacher can hurt a strong one. We propose CW-BASS v2, a saturation-aware pseudo-label selection method that reads the teacher's confidence regime rather than committing to one rule. It pairs held-out calibration, an unbiased per-class noise estimate, with a self-adaptive confidence floor that provably bounds retention away from 1, and combines them in a one-pass gate: measure the reliability of the teacher's confident set, pi_kept = Pr[correct | c >= tau], on a held-out slice, and filter strictly when it meets the confidence demanded (pi_kept >= tau), falling back to the adaptive floor otherwise. The boundary is the pre-existing operating threshold, not a value tuned to mIoU, and across six DINOv2 teachers it makes the correct strict-vs-floor call blind. CW-BASS v2 thus recovers the UniMatch V2 operating point on the saturated benchmarks by selecting strict (Pascal VOC 1/8 87.4 against its reported 87.9; Cityscapes within 0.5), and improves on it where the confident set is unreliable (pi_kept ~ 89%, ADE20K), where the floor edges ahead (+1.5 mIoU, single seed). The gate is principled because the failure it avoids is measured, not assumed: on a reliable, saturated teacher the confidence distribution's dynamic range collapses (98% of Pascal pixels >= 0.95), so an adaptive cutoff floods the retention mask and self-training decays into confirmation bias.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
