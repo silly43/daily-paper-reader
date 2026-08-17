@@ -1,0 +1,607 @@
+Title: Integrated Information in the Active Inference Framework
+
+URL Source: https://arxiv.org/pdf/2608.14165v1
+
+Published Time: Mon, 17 Aug 2026 00:48:47 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# Integrated Information in the Active Inference Framework 
+
+## Carlotta Langer 1,2 , Jesse van Oostrum 3, and Nihat Ay 3,4,5 1Max Planck Institute of Molecular Cell Biology and Genetics, Dresden, Germany 
+
+> 2
+
+## Center for Systems Biology Dresden, Dresden, Germany 
+
+> 3
+
+## Hamburg University of Technology, Hamburg, Germany 
+
+> 4
+
+## Santa Fe Institute, Santa Fe, USA 
+
+> 5
+
+## Leipzig University, Leipzig, Germany November 2024 
+
+Abstract 
+
+The active inference framework provides a principled approach to modeling sentient be-havior. In this framework perception and action selection are treated in a unified way. The resulting agents form an internal generative model of the relevant dynamics of the world in order to infer their future observations, their internal states and to select actions. We combine this modeling framework with the Integrated Information Theory of consciousness and are therefore able to analyze the active inference agents from the perspective of inte-grated information. The Integrated Information Theory aims at quantifying the level of consciousness of a system by assessing its capability to integrate information. Here, we de-fine a measure of integrated information for the generative model by making an additional structural assumption. Experiments with simulated agents reveal a correlation between inte-grated information measures and the free energy of the active inference agents that increases with the size of the generative model. 
+
+# 1 Introduction 
+
+The active inference framework aims to model perception and action selection by minimizing “free energy” of a generative model. This internal model describes the environmental dynamics that are relevant for the agent and is used for perception and action selection. In the sketch on the left of Figure 1 this is illustrated by a cat’s mental image of the moving mouse toy. Hence, this theory relies on the agent forming an internal model of the dynamics of the environment. 1arXiv:2608.14165v1 [cs.IT] 14 Aug 2026 On the other hand, the Integrated Information Theory does not consider the relationship of the processes in the brain, or controller, to the environment. Instead, it focuses solely on the connections in the brain, as sketched in Figure 1 on the right. This theory aims at quantifying consciousness by assessing the amount of information integration in the brain. In this case the interaction of the agent with the environment, as well as its actuator or sensory signals are not of interest. It has been suggested that these two influential neuro-scientific theories might be compatible and that a minimization of free energy could lead to a maximization of integrated information, as discussed in [11, 20]. In [6] the authors sketch similarities and differences of these theories that lead to diverging predictions regarding human and animal consciousness, which are being tested in an ongoing adversarial collaboration. Here, we slightly adapt the generative model of active inference agents in order to calculate various integrated information measures to quantify the information flow inside the generative model. We then train simulated agents via learning rules that have been suggested in the active inference literature and observe that minimizing the free energy is correlated to some of the integrated information measures. 
+
+Figure 1: Sketches illustrating the generative model in the active inference framework that aims at describing world dynamics on the left. The sketch on the right illustrates the integrated information theory in which the structure of the connections in the brain are of interest. In the following Section 1.1 we first give a brief introduction to related work. Then we define the methods of the theories of active inference and integrated information in more detail in Sections 2.1 and 2.2 and combine both theories in one approach in Section 2.3. Afterwards, we introduce our experiment in Section 3 and discuss the results in Section 4. The experiments were programmed in python 3 and the code and data of our experiments are available at [16]. 21.1 Related Work 
+
+In this work, we connect the active inference framework with the integrated information theory of consciousness. Both theories apply to systems that are modeled via stochastic processes and make use of information-theoretic quantities such as suprisal, entropy or KL-divergence. Information theory is based on Shannon’s mathematical theory of communication and provides a framework to analyze the properties of a communication channel, [25]. Since both theories, active inference and IIT, can be applied to similar systems and phrased in the common language provided by information theory, we are able to combine them and analyze their relationship. The active inference framework emerged from the free energy principle (FEP), which was orig-inally introduced by Friston [10] as a unifying account of perception, action, and learning in biological systems. The core idea of the FEP is that any self-organizing system that maintains its integrity over time [13] must minimize an upper bound on the surprisal of its sensory states, namely variational free energy. Active inference extends this principle by treating action as an inferential process: actions are selected so as to fulfill predictions of an internal generative model, thereby closing the perception–action loop. A key motivation of active inference lies in embodied and enactive theories of cognition, where cognition is understood as arising from the ongoing interaction between an agent and its en-vironment [5]. Rather than passively representing the world, the agent actively samples its environment in ways that are consistent with its prior beliefs and preferences. Perception corre-sponds to Bayesian inference over hidden states of the world, while action selection corresponds to inference over policies that are expected to minimize future free energy. This formulation allows perception, learning, and action to be expressed within a single probabilistic framework [24]. Active inference has been developed in both continuous and discrete state-space settings. In particular, discrete-state formulations based on partially observable Markov decision processes (POMDPs) have become widely used due to their conceptual clarity and computational tractabil-ity. In this setting, the generative model is specified by conditional probability distributions encoding state transitions, observation likelihoods, and prior preferences over outcomes. Policy selection is then implemented by minimizing expected free energy, which balances epistemic value (information gain) and pragmatic value (goal fulfillment), as discussed in [7] and [32]. These dis-crete formulations provide a natural setting for simulations and learning experiments, and form the basis for the agents studied in the present work. The Integrated Information Theory (IIT) of consciousness was introduced mainly by Giulio 3Tononi and his coworkers and it aims at assessing the amount and quality of consciousness of a system. This theory went through various phases of development. It started as a measure of brain complexity [31] and developed into an involved theory of consciousness through IIT 1.0 [30, 28], IIT 2.0 [29], IIT 3.0 [23] and, most recently, IIT 4.0 [2]. The main idea, namely mea-suring how much a system differs from one that is not capable of integrating information, stays consistent throughout the different versions of the theory. The approach of the theory is to start from phenomenology translated into axioms about consciousness and then deduce postulates and a mathematical formalism from these axioms. Hence, the calculation of the measures changes significantly, from the mathematical perspective, while the axiomatic definition remains in large parts unchanged. In this work, we calculate one measure that can be seen in the context of IIT 2.0, [17], one measure for IIT 3.0 and two measures in the context of IIT 4.0. The IIT measures focus solely on the internal states of the agents, meaning the states of the “brain” or “controller”. Nevertheless, some experiments with embodied agents and integrated information have been conducted. The authors of [3] and [1] analyze the integrated information in evolving and adapting simulated agents. Furthermore, in [8] the authors conclude that the integrated information increases with the fitness of simulated agents. In [18] we analyze the relationship between the integrated information and the interaction of the agent with the envi-ronment in acting, simulated agents and in [19] we observe this relationship in learning agents. It has been suggested that these two influential neuro-scientific theories, integrated information and active inference, might be compatible and that a minimization of free energy could lead to a maximization of integrated information, see [11]. Furthermore, the authors of [20] analyze the integrated information value of animats and observe that integrated information fluctuates with the surprisal of the system. Here, we analyze simple artificial agents that learn to interact with their environment using the active inference framework and we compare the various integrated information measures with the free energy. We observe that a smaller value of the free energy is indeed, weakly in some cases, correlated to a higher integrated information value and that this correlation strengthens with the size of the generative model. 
+
+# 2 Methodology 
+
+In this paper we consider an active inference agent acting in a discrete-time setting with a finite-time horizon. This means that we consider a sequence of T time steps and at every time step τ
+
+the agent receives an observation oτ , and performs an action aτ . We use τ for arbitrary time steps and the letter t to denote the current time step. We use the subscript τ :τ ′ to denote a sequence 4of random variables and outcomes, e.g. oτ :τ ′ = ( oτ , . . . , o τ ′ ). We denote random variables with capital letters and it’s outcomes with small letters, e.g. X and x respectively. We denote a probability distribution of a random variable X by p(X) and its entries by p(x), shorthand for 
+
+p(X = x). 
+
+## 2.1 Active Inference 
+
+The agent models the dynamics of the environment using an internal generative model. This model uses a variable Sτ , called an internal state, to represent the state of the environment at the time step τ . The model is given by the following probability distribution: 
+
+p(O1: T , S 1: T |a1: T −1, θ ),
+
+where θ is used to parametrize the model according to the graph in Figure 2. We will sometimes suppress the dependence on θ for ease of notation. Algebraically, the distribution factorizes as follows: 
+
+p(O1: T , S 1: T |a1: T −1) = p(S1)p(O1 | S1)
+
+> T
+
+Y 
+
+> τ=2
+
+p(Sτ | Sτ −1, a τ −1)p(Oτ | Sτ ).S1 S2 S3 ST
+
+O1 O2 O3 OT
+
+a1 a2 aT −1
+
+Figure 2: Graphical representation of the generative model Suppose the agent has received observations o1: t−1 and performed actions a1: t−1, it can compute its belief about the next observation Ot on the basis of the generative model. This belief is given by a distribution q which is the approximate posterior distribution of the generative model. That is, 
+
+q(Ot|o1: t−1, a 1: t−1) ≈ p(Ot|o1: t−1, a 1: t−1, θ ).
+
+In order to quantify how well the agent performs active inference we use the variational free energy (VFE) as a measure for this. The VFE for observation ot is given by 
+
+− log q(ot|o1: t−1, a 1: t−1) (1) 5where we have now substituted the actually observed value ot into the belief q(Ot|o1: t−1, a 1: t−1)distribution over possible observations. For more details on how the agent performs action selection, perception, and learns the generative model, we refer the reader to Appendix A. 
+
+## 2.2 Integrated Information Theory 
+
+Multiple measures have been proposed to calculate the integrated information. In this work we make use of and compare four of these measures. Although their calculation differs significantly between versions, the core ideas behind the measures remain the same. The integrated informa-tion measures aim to assess the difference between a system in which information is integrated compared to one that is cut into parts. In [29] Tononi summarizes this idea in the following way: “In short, integrated information captures the information generated by causal interactions in the whole, over and above the information generated by the parts.”. The versions of the theory differ mainly in the definition of the applied “difference” and the right “partial system”. The first measure that we consider was proposed by us in [17] as ground truth integrated infor-mation and it can be seen in the context of Integrated Information 2.0. There we minimize the KL-divergence between the full system ˜ p and a split system that consists of all those distributions that describe a system without integrated information. Let Xt = ( X1 
+
+> t
+
+, ..., X nt ) a random variable corresponding to the system that we want to analyze. Let additionally Wt be a random variable encoding environmental influences on Xt+1 and let ( Xt, W t)t∈N be a Markov process with the transition probability p(xt+1 , w t+1 |xt, w t) = nQ
+
+> i=1
+
+p(xit+1 |xt, w t)p(wt+1 |wt). Then we define the split system as the system in which there is no influence from any Xit on Xjt+1 if i̸ = j. This results in the following set 
+
+MT =
+
+(
+
+p prob. distr. | p(xt+1 , w t+1 |xt, w t) = 
+
+> n
+
+Y
+
+> i=1
+
+p(xit+1 |xit)
+
+)
+
+and the measure is a sum of conditional mutual information terms: ΦT (X) = inf 
+
+> p∈M T
+
+DKL (˜ p ∥ p) = 
+
+> n
+
+X
+
+> i=1
+
+I(Xit+1 ; XI\it |Xit , W t).
+
+The integrated information measure in IIT 3.0 and 4.0, denoted by Φ 3.0 and Φ 4.0, respectively, follow the same core idea, namely calculating the difference between the full system and a partial one. However, the definition of a partial system and the calculation of the difference is much more involved in this case, hence we will only give a rough overview over the calculation here. The calculation in the case of IIT 3.0 takes the past and future steps of the system X into consideration and depends on the current state of the system, xt. Here, we do not consider outside 6influences. A partial system in this case is defined as the unidirectional bipartition that makes the least difference to the causal structure and it is called a “minimum information partition” 
+
+pMIP . The calculation of this partition is quite involved and uses the Wasserstein-distance, also known as earth-movers distance. Those subsets of a system that have a maximally irreducible causal role within the system are called “concepts”, where C denotes the set of concepts of a system. Now, Φ 3.0 is defined as the extended Wasserstein-distance distances between the full collection of concepts of a system and their minimum information partitions: Φ3.0(X|xt) = DEW (C ∥ C MIP ),
+
+which leads to a sum over the concepts in C of weighted Wasserstein-distances. Note that the distances are not calculated on the distributions underlying the concepts directly, but on the integrated information associated to these concepts, called φMax values. More details regarding the exact calculation of Φ 3.0 can be found in [23, 15] and the mathematical structure is discussed in more detail in [14]. There are many differences between the IIT 3.0 and 4.0 framework, detailed in the supporting information of [2]. The perhaps most notable change is the introduction of a new difference measure, called the “intrinsic difference” [4], which is consistent with IIT’s postulates. Let p and 
+
+q be two probability distributions on the state space X , then the intrinsic difference is given by 
+
+DID (p ∥ q) = max 
+
+> x∈X
+
+
+
+p(x) log 
+
+ p(x)
+
+q(x)
+
+ 
+
+.
+
+The subsets of a system that have a causal impact on themselves are now called “distinctions” instead of concepts and “relations” specify how the overlapping nodes of different distinctions are connected. The distinctions and relations each have their own way to be quantified via partitioning and the intrinsic difference, leading to φd and φr . Let D be the set of distinctions of a system and R(D) be the corresponding relations, then “big phi” is calculated as: Φ4.0(X|xt) = X
+
+> i∈D∪R(D)
+
+φi.
+
+Additionally, we compute a quantity called “system phi”, denoted by ϕs
+
+> 4.0
+
+, which quantifies the integrated information in a system in itself as one unit. This is defined using the intrinsic difference between the full system and the minimum information partition. More details about the computation of these measures can be found in [4, 2, 21]. Implementations of the IIT 3.0 and 4.0 measures can be found at [22]. 72.3 Calculating Integrated Information in an Active Inference Agent 
+
+In this section, we describe the additional structure that we impose on the generative model of the active inference agent to calculate different integrated information measures. The core idea of the integrated information measures is to calculate the difference that integrating information among the parts of the system makes for the system internally, as discussed in the previous section. Hence, we need to differentiate between different internal parts of the main object of active inference: the generative model. There we now divide the random variable corresponding to the internal node St into a vector of random variables 
+
+St = ( S1 
+
+> t
+
+, ..., S nt ),
+
+such that the variables Sit , S jt are independent given St−1, with i, j ∈ { 1, . . . , n }, i ̸ = j. The connections in the case of n = 2 are depicted in Figure 3. The variable St describes the system that we analyze in the integrated information sense, hence this variable is taking the role of Xt
+
+in the previous section. In the case of Φ T the external influences are given by the actions at.
+
+s2 
+
+> t
+
+s2 
+
+> t+1
+
+s2
+
+> t+2
+
+s1 
+
+> t
+
+s1 
+
+> t+1
+
+s1
+
+> t+2
+
+ot ot+1 ot+2 
+
+S21 S22 S23 S2
+
+> T
+
+S11 S12 S13 S1
+
+> T
+
+O1 O2 O3 OT
+
+a1 a2 aT −1
+
+Figure 3: Modified internal generative model in case of n = 2. Our structural assumption is that the variables Sit , S jt are conditionally independent at time t
+
+given the full previous state St−1, with i, j ∈ { 1, . . . , n }, i ̸ = j, that is, 
+
+p(st | st−1, a t−1) = Y
+
+> i
+
+p(sit | st−1, a t−1).
+
+Thus, each component Sit may depend on the entire previous state St−1.Splitting the state space up into distinct parts is common in the active inference literature, where these parts are called state factors (See Appendix A in [12]). Often an even more restrictive assumption is made that different state factors are completely independent such that the forward model is given by 
+
+p(st | st−1, a t−1) = Y
+
+> i
+
+p(sit | sit−1, a t−1).
+
+8We however do not impose this stronger factorization across time, since cross-component de-pendencies via st−1 are essential for capturing integration effects. In Appendix A we discuss the modifications to the learning rules to enforce the conditional independence structure stated above. 
+
+# 3 Experiment 
+
+We calculate the integrated information values of the simulated agents that learn to avoid touch-ing the walls of their environment. The agents are trained via the active inference approach, as described in Section 2.1 and defined in Appendix A. In the next section, we first describe the agents and their environment, and then define additional measures that we consider in the discussion of the results. 
+
+## 3.1 Setting of the Experiment 
+
+The agents in our experiments should learn how to navigate a racetrack environment while avoiding to touch the walls. The Figure 4 on the left depicts a sketch of such an agent. It consists of a round body with a tail that marks the back and two binary sensors that can detect the walls of the environment. The agent can move as if it had two wheels that can spin either fast or slow, so it can go fast forward, slow forward, forward to the left or forward to the right. 
+
+Figure 4: Sketch of an agent detecting a wall on the left, a trajectory of an agent in its environment on the right. The right hand side of Figure 4 shows how an agent moves in its environment. A video of an agent moving in this environment can be found at [16]. The agent moves multiple steps through the environment and in each step the color of the body indicates what action is chosen for the next movement. If the body of the agent touches a wall, then this agent is stuck and can only 9turn on the spot. Once both sensors do not detect a wall anymore, so once the agent faces a way from the wall, the agent is free to move away from it. The goal of not touching the wall is included in the action selection algorithm by setting the preference distribution in the expected free energy in equation (2) to favor observations in which the body of the agent does not touch a wall. The changes to the learning algorithm, described in Section 2.3, would in theory be sufficient to train an active inference agent on which the calculation of integrated information measures is possible. However, we observe that performing the updates of all three sets of parameters as described in (3), (4) and (5) at the same time does in general not lead to agents with a representation of their environment. In that case, the agents learn to repeat one turn movement, either left or right, without any variation, hence the observations Ot and the internal states St
+
+become independent. Since these agents are not successful in the sense of the active inference framework, we reduce the complexity of the task by sampling the distribution p(Ot|St). We discuss alternative solutions to this problem in Section 5. 
+
+## 3.2 Success Rate and Multiinformation 
+
+In addition to the free energy and the various integrated information measures, we also consider two additional values: the success rate and the multiinformation of the generative model. The success rate is a sampled quantity, where we simply save and then normalize how often an agent’s body is touching a wall. Hence, a success rate of 0.1 translates to an agent that was stuck 90% of the 50 000 total steps. An agent with a high success rate has therefore learned to effectively avoid the walls. The multiinformation is an information-geometric quantity that is also known as total correlation and can be seen as a generalization of the mutual information. Its properties and the relationship to stochastic dependence are discussed in [27]. Let X be a multivariate, discrete random variable with X = ( X1, . . . , X n), then the multiinfor-mation is defined as follows: 
+
+M I (X) = 
+
+> n
+
+X
+
+> i=1
+
+H(Xi) − H(X1, . . . , X n)where H denotes the entropy H(Xi) = − P
+
+> xi
+
+p(xi) log p(xi). In the experiments we calculate the multiinformaion of the generative model, hence 
+
+X = ( Ot+1 , S t+1 , A t+1 , S t, A t), in order to assess the total correlation of the information flow inside the generative model. 10 4 Results 
+
+Here, we discuss the results of the experiments. Each agent performs 50 000 steps in the environ-ment and we save a data point consisting of the different measure every 1 000 steps. Additionally, we calculate the VFE, as described in 1, every 1000 steps for the duration of 100 steps and then average over these 100 steps. This is then taken as an approximation of the free energy. We discuss this relationship between this free energy and other potential measures for the prediction error in Appendix B. The agents that we analyze differ in the number of internal states, more precisely, we train agents with n = 2 , 3 and 4 binary internal nodes. For each type of agent we perform 1000 such tests and calculate the Pearson and Spearman correlations between them using the Fisher z-transformation. There we compute the Pearson or Spearman correlation among the different measures for each time step, perform a z-transformation and calculate the arithmetic mean over the resulting z-values. Finally, we transform the values back. This method is described in, for example, [9, 26]. Since the agents first need to learn and build their generative model, we analyze the data starting at step 25000. However, the full results are depicted in Appendix C. 
+
+Figure 5: Spearman correlation results between the free energy and the integrated information measures. In Figure 5 we see the results of the different integrated information measures and the multiin-formation (MI) correlated to the free energy, with the Pearson correlation on the left and the Spearman correlation on the right. The correlations between the free energy and the integrated information measures, as well as the MI, strengthen with the size of the hidden states. We ob-serve that Φ T and the MI are highly negatively correlated to the free energy for n = 4 using the Spearman correlation. Hence, the lower the free energy, the higher Φ T and the MI. We can observe a similar trend for Φ 3.0 with an increase of the number of nodes, but the corre-lations are overall slightly weaker. Since the calculations for IIT 3.0 and 4.0 are very costly, it is unfortunately not possible to increase the size of n much further. There are many differences 11 in the calculations of the various measures, as briefly discussed in Section 2.2, most notably the dependencies of Φ 3.0 and Φ 4.0 on the current state and their focus on only the internal nodes. Hence, we have additionally calculated the Spearman correlation between these measures and the negative log evidence − log p(ot), which is the state-dependent value that we average to get to the free energy. This calculation also shows only a very weak negative correlation between the negative log likelihood and Φ 3.0, as well as Φ 4.0. These values lie roughly between 0 and -0.2 in the case of Φ 4.0, around 0 for ϕs 
+
+> 4.0
+
+and between 0 and -0.3 for Φ 3.0.Now we take a closer look at the correlations among the IIT measures. Figure 6 depicts in the first row the Pearson correlation matrices among the integrated information related measures for 
+
+n = 2 , 3 and 4 and in the second row the Spearmon correlation matrices. We observe that Φ 3.0 and 
+
+ϕs 
+
+> 4.0
+
+are correlated to Φ 4.0 and that the correlation to Φ T and the MI is weaker. In Section C we depict the complete results of the experiments and there we observe that the different measures result in vastly different scales. Considering the many differences in the calculations of these measures, even a weak correlation is surprising and an argument for some level of consistency in the theory that extends from the axioms to the mathematical formulation. 
+
+Figure 6: Pearson and Spearman correlation among the IIT related measures. It is important to note that agents that are successful at minimizing free energy do not necessarily perform well in terms of the success rate. The correlation between the success rate and the free energy results in approximately 0.01, -0.08 and -0.11 for Pearson and 0.02, -0.06 and -0.07 for 12 Spearman and n = 2 , 3 and 4 respectively. In Appendix C we observe that there is a small number of agents that have a very low free energy, but a success rate close to 0. Removing agents with a final success rate below 2% leads to correlation coefficients of roughly -0.23, -0.31, -0.2 for Pearson and -0.1, -0.33 and -0.27 for Spearman. Hence, being good at minimizing the free energy does not necessarily lead to the desired behavior. 
+
+# 5 Discussion 
+
+In this article we combine the active inference framework and the Integrated Information theory and examine their relationship empirically. In our experiments we observe that the measures ΦT and the MI are much closer to assessing the information flow in the network compared to the integrated information measures from IIT 3.0 and 4.0. The latter two have been derived considering further axioms in addition to “information” and “integration”. Hence, there seems to be a relation between the information integration in a system and the minimization of the free energy, but not necessarily a relation between the amount of consciousness, as defined by IIT, and the free energy. While training the agents we encountered the problem that learning all the different parts of the generative model at once leads to a convergence to an undesirable local optimum. There the observation is independent of the internal states. In our experiments we decided to make the task easier by sampling the distribution p(Ot, S t) and thereby reducing the number of parameters that need to be optimized via active inference. An alternative approach to learning the whole generative model is proposed by the authors of [7]. They suggest that the different aspects of the active inference framework follow different time scales. Hence, we could vary the number of time steps after which we update the parameters defined in (3)–(5). Additionally, more involved agents or tasks might reveal additional nuances in the relationship between these theories. However, the measures defined in IIT 3.0 and 4.0 are computationally expensive, which limits the size of the generative model. Furthermore, a more detailed theoretical treatment of the relationship among the different mea-sures could advance the understanding of their relationship. Here a joint theoretical treatment of the measures Φ T , MI and the free energy seems to be natural, whereas the mathematically vastly different definitions of the measures in IIT 3.0 and 4.0 make a theoretical comparison more difficult. 13 Acknowledgments 
+
+The authors would like to thank Lancelot Da Costa, Pablo Lanillos, Thomas Parr and Larissa Albantakis for the helpful discussions and William Mayner for help with the PyPhi toolbox. We acknowledge the support of the Deutsche Forschungsgemeinschaft project 402780474 (Infor-mation Integration in Predictive Processes: A Mechanistic Grounding of the Self) within the Priority Programme “The Active Self” (SPP 2134). 
+
+# References 
+
+[1] L. Albantakis and G. Tononi. “The Intrinsic Cause-Effect Power of Discrete Dynamical Systems—From Elementary Cellular Automata to Adapting Animats”. In: Entropy (2015), pp. 5472–5502. doi : 10.3390/e17085472 .[2] L. Albantakis, L. Barbosa, G. Findlay, M. Grasso, A. M. Haun, W. Marshall, W. G. P. Mayner, A. Zaeemzadeh, M. Boly, B. E. Juel, S. Sasai, K. Fujii, I. David, J. Hendren, J. P. Lang, and G. Tononi. “Integrated information theory (IIT) 4.0: Formulating the properties of phenomenal existence in physical terms”. In: PLOS Computational Biology 19.10 (Oct. 2023), pp. 1–45. [3] L. Albantakis, A. Hintze, C. Koch, C. Adami, and G. Tononi. “Evolution of Integrated Causal Structures in Animats Exposed to Environments of Increasing Complexity”. In: 
+
+PLOS Computational Biology 10.12 (2014), pp. 1–19. doi : 10 . 1371 / journal . pcbi . 1003966 .[4] L. Barbosa, W. Marshall, S. Streipert, L. Albantakis, and G. Tononi. “A measure for intrinsic information”. In: Scientific Reports 10 (Nov. 2020). doi : 10.1038/s41598-020-75943-4 .[5] A. Clark. Being there . mit Press Cambridge, MA, 1997. [6] A. W. Corcoran, A. M. Haun, R. Dorman, G. Tononi, K. J. Friston, and C. M. Pennartz. “Integrated information and predictive processing theories of consciousness: An adversarial collaborative review”. In: Neuroscience & Biobehavioral Reviews 187 (2026), p. 106742. 
+
+issn : 0149-7634. doi : https : / / doi . org / 10 . 1016 / j . neubiorev . 2026 . 106742 . url :
+
+https://www.sciencedirect.com/science/article/pii/S0149763426001995 .[7] L. Da Costa, T. Parr, N. Sajid, S. Veselic, V. Neacsu, and K. Friston. “Active inference on discrete state-spaces: A synthesis”. In: Journal of Mathematical Psychology 99 (2020), p. 102447. 14 [8] J. A. Edlund, N. Chaumont, A. Hintze, C. Koch, G. Tononi, and C. Adami. “Integrated Information Increases with Fitness in the Evolution of Animats”. In: PLoS Computational Biology 7.10 (2011). doi : 10.1371/journal.pcbi.1002236 .[9] R. A. Fisher. “Frequency distribution of the values of the correlation coefficient in samples from an indefinitely large population”. In: Biometrika 10.4 (1915), pp. 507–521. [10] K. Friston. “The free-energy principle: a unified brain theory?” In: Nature reviews neuro-science 11.2 (2010), pp. 127–138. [11] K. J. Friston, W. Wiese, and J. A. Hobson. “Sentience and the Origins of Consciousness: From Cartesian Duality to Markovian Monism”. In: Entropy 22.5 (2020). [12] R. C. Heins, B. Millidge, D. Demekas, B. Klein, K. Friston, I. D. Couzin, and A. Tschantz. “pymdp: A Python library for active inference in discrete state spaces”. In: The Journal of Open Source Software (JOSS) 7.43 (2022). [13] M. Kirchhoff, T. Parr, E. Palacios, K. Friston, and J. Kiverstein. “The Markov blankets of life: autonomy, active inference and the free energy principle”. In: Journal of The royal society interface 15.138 (2018). [14] J. Kleiner and S. Tull. “The Mathematical Structure of Integrated Information Theory”. In: 
+
+Frontiers in Applied Mathematics and Statistics Volume 6 - 2020 (2021). issn : 2297-4687. 
+
+doi : 10.3389/fams.2020.602973 . url : https://www.frontiersin.org/journals/ applied-mathematics-and-statistics/articles/10.3389/fams.2020.602973 .[15] S. Krohn and D. Ostwald. “Computing integrated information”. In: Neuroscience of Con-sciousness 2017.1 (Jan. 2017), nix017. issn : 2057-2107. doi : 10.1093/nc/nix017 .[16] C. Langer. IntegratedInfromation in ActiveInference . 2026. url : https://github.com/ CarlottaLanger/IntegratedInformation_in_ActiveInference (visited on 08/14/2026). [17] C. Langer and N. Ay. “Complexity as Causal Information Integration”. In: Entropy 22.10 (2020). doi : 10.3390/e22101107 .[18] C. Langer and N. Ay. “How Morphological Computation Shapes Integrated Information in Embodied Agents”. In: Frontiers in Psychology 12 (2021). issn : 1664-1078. doi : 10.3389/ fpsyg.2021.716433 .[19] C. Langer and N. Ay. “Outsourcing Control Requires Control Complexity”. In: Artificial Life 30.4 (Nov. 2024), pp. 486–507. issn : 1064-5462. doi : 10.1162/artl_a_00443 .[20] C. Lundbak Olesen, P. T. Waade, L. Albantakis, and C. Mathys. “Phi fluctuates with surprisal: An empirical pre-study for the synthesis of the free energy principle and integrated information theory”. In: PLOS Computational Biology 19.10 (Oct. 2023), pp. 1–30. [21] W. Marshall, M. Grasso, W. G. P. Mayner, A. Zaeemzadeh, L. S. Barbosa, E. Chastain, G. Findlay, S. Sasai, L. Albantakis, and G. Tononi. “System Integrated Information”. In: 15 Entropy 25.2 (2023). issn : 1099-4300. doi : 10.3390/e25020334 . url : https://www.mdpi. com/1099-4300/25/2/334 .[22] W. G. P. Mayner, W. Marshall, L. Albantakis, G. Findlay, R. Marchman, and G. Tononi. “PyPhi: A toolbox for integrated information theory”. In: PLOS Computational Biology 
+
+14 (July 2018). [23] M. Oizumi, L. Albantakis, and G. Tononi. “From the Phenomenology to the Mechanisms of Consciousness: Integrated Information Theory 3.0”. In: PLOS Computational Biology 
+
+(2014). doi : 10.1371/journal.pcbi.1003588 .[24] T. Parr, G. Pezzulo, and K. J. Friston. Active inference: the free energy principle in mind, brain, and behavior . MIT Press, 2022. [25] C. E. Shannon. “A Mathematical Theory of Communication”. In: The Bell System Tech-nical Journal 27 (1948), pp. 379 –423. issn : 0005-8580. [26] N. C. Silver and W. P. Dunlap. “Averaging correlation coefficients: should Fisher’s z trans-formation be used?” In: Journal of applied psychology 72.1 (1987), p. 146. [27] M. Studen´ y and J. Vejnarov´ a. “The Multiinformation Function as a Tool for Measuring Stochastic Dependence”. In: Learning in Graphical Models . Ed. by M. I. Jordan. Dordrecht: Springer Netherlands, 1998, pp. 261–297. isbn : 978-94-011-5014-9. doi : 10.1007/978-94-011-5014-9_10 . url : https://doi.org/10.1007/978-94-011-5014-9_10 .[28] G. Tononi. “An information integration theory of consciousness”. In: BMC Neuroscience 5(2004). doi : 10.1186/1471-2202-5-42 .[29] G. Tononi. “Consciousness as Integrated Information: a Provisional Manifesto”. In: The Biological Bulletin 215 (2008), pp. 216–242. doi : 10.2307/25470707 .[30] G. Tononi and O. Sporns. “Measuring information integration”. In: BMC Neuroscience 4(2003). doi : https://doi.org/10.1186/1471-2202-4-31 .[31] G. Tononi, O. Sporns, and G. M. Edelman. “A measure for brain complexity: Relating functional segregation and integration in the nervous system”. In: Proceedings of the Na-tional Academy of Sciences of the United States of America (1994), pp. 5033–5037. doi :
+
+10.1073/pnas.91.11.503 .[32] J. van Oostrum, C. Langer, and N. Ay. “A concise mathematical description of active inference in discrete time”. In: Journal of Mathematical Psychology 125 (2025), p. 102921. 
+
+issn : 0022-2496. doi : https://doi.org/10.1016/j.jmp.2025.102921 . url : https: //www.sciencedirect.com/science/article/pii/S0022249625000227 .16 A Active Inference 
+
+Action selection 
+
+Let an agent be at time step t, having received observations o1: t and performed actions a1: t−1.The agent selects its next action by sampling a policy πt, which is a sequence of future actions (at, · · · aT ), from the following distribution: 
+
+σ(−G(πt|o1: t, a 1: t−1)) and selecting the action at corresponding to that policy. The function σ denotes the softmax function and G is the expected free energy function given by 
+
+G(πt|o1: t, a 1: t−1) = −
+
+
+
+Eqt(Ot+1: T |πt)
+
+
+
+DKL 
+
+
+
+qt(St+1: T |ot+1: T , π t) ∥ qt(St+1: T |πt)
+
+
+
++ Eqt(Ot+1: T |πt)
+
+h
+
+ln pC (Ot+1: T )
+
+i
+
+,
+
+(2) where pC is a preference distribution over observations that is given explicitly to the agent. 
+
+Perception 
+
+For a general t the belief about st is updated as follows: 
+
+q(St|o1: t, a 1: t−1) ∝ p(Ot|st) X
+
+> st−1
+
+p(St|st−1, a t−1)q(st−1|o1: t−1, a 1: t−2).
+
+For future time point τ > t , the belief about the state sτ is given by 
+
+q(Sτ |o1: t, a 1: τ −1) = X 
+
+> sτ−1
+
+p(Sτ |sτ −1, a τ −1)q(sτ −1|o1: t, a 1: τ −2).
+
+The belief about a future state given a future observation is calculated as follows: 
+
+q(Sτ |oτ , o 1: t, a 1: τ −1) ∝ p(oτ |Sτ )q(Sτ |o1: t, a 1: τ −1).
+
+In order to compute G in (2), we need a posterior distribution q(Oτ |o1: t, a 1: τ −1) over future observations oτ . This can be computed as follows: 
+
+q(Oτ |o1: t, a 1: τ −1) = X
+
+> sτ
+
+p(Oτ |sτ )q(sτ |o1: t, a 1: τ −1).
+
+In order to perform inference over states in the past, present and future (which is needed for the learning of the generative model and for the computation of the variational free energy over 17 states), the agent can use the following formula: 
+
+q(S1: T |o1: t, a 1: t−1, π t) ∝ p(o1: t|S1: T , a 1: t−1, π t)p(S1: T |a1: t−1, π t)= p(o1: t|S1: t)p(S1: T |a1: t−1, π t)=
+
+> t
+
+Y 
+
+> τ=1
+
+p(oτ |Sτ ) p(S1)
+
+> T
+
+Y 
+
+> τ=2
+
+p(Sτ |Sτ −1, a τ −1),
+
+where we use aτ −1 in the last term for elements of both a1: t−1 and πt.
+
+Learning 
+
+The generative model consists of three (conditional) categorical distributions that are parametrized by θ = ( θD , θ A, θ B ) in the following way: 
+
+p(s(j)1 |θD ) = θDj ,p(o(i) 
+
+> τ
+
+|s(j) 
+
+> τ
+
+, θ A) = θAij ,p(sf (j) 
+
+> τ
+
+|s(k) 
+
+> τ−1
+
+, a (l) 
+
+> τ−1
+
+, θ B ) = θBf jkl ,
+
+where we have enumerated the elements of the observation, action and state space with the bracketed superscript (·), and we use normal superscript f to index the different state factors / dimensions. In order to learn the parameters of the generative model, we adopt a Bayesian belief updating scheme with a Dirichlet prior. More specifically, the prior over θ is parametrized by 
+
+α = ( αD , α A, α B ) and is given by 
+
+p(θ|α) = p(θD |αD ) Y
+
+> j
+
+p(θA 
+
+> •j
+
+|αA) Y
+
+> f,k,l
+
+p(θBf •kl |αB )
+
+p(θD |αD ) ∝ Y
+
+> j
+
+ θDj
+
+αDj −1 ,p(θA 
+
+> •j
+
+|αA) ∝ Y
+
+> i
+
+ θAij 
+
+αAij −1 ,p(θBf •kl |αB ) ∝ Y
+
+> j
+
+ θBf jkl 
+
+αBf jkl −1 ,
+
+where θ•j denotes the vector ( θ1j , . . . , θ nj ). Now after performing actions a1: T −1 and receiving observations o1: T we want to update our belief about θ according to Bayes’ rule. The approximate posterior distribution is a Dirichlet 18 distribution where the hyperparameter α is updated in the following way: 
+
+αDj 
+
+> ′
+
+= αDj + qT
+
+
+
+s(j)1
+
+
+
+, (3) 
+
+αAij  
+
+> ′
+
+= αAij +
+
+> T
+
+X 
+
+> τ=1
+
+1o(i) (oτ )qT
+
+
+
+s(j)
+
+> τ
+
+
+
+, (4) 
+
+αBf jkl  
+
+> ′
+
+= αBf jkl +
+
+> T
+
+X 
+
+> τ=2
+
+qT
+
+
+
+sf (j)
+
+> τ
+
+
+
+qT
+
+
+
+s(k) 
+
+> τ−1
+
+
+
+1a(l) (aτ −1). (5) The distributions qT (sτ ) , τ ∈ { 1, . . . , T } are approximate posteriors obtained using the current version of the generative model (before θ has been updated). In order to go from a Dirichlet distribution p(θ|α) to an actual value of the parameter that can be used for the generative model, the mean of the distribution is used, which is given by ˆθi = Ep(θ|α)[θi]= αi
+
+P 
+
+> j
+
+αj
+
+. (6) 19 B Relationship between the free energy and other mea-sures for the prediction error 
+
+The VFE, as defined in (1), is a state-dependent quantity that has to be calculated for each step of the agent and changes not only with the observations, but also with the belief q(Ot|o1: t−1, a 1: t−1). Hence, for more advanced applications it would be useful to have a measure that is easier to calculate and approximates the behavior of the variational free energy. In the Figure 7, we depict the Pearson correlation of the different candidates to the free energy, as an average over the VFE, on the left and the Spearman correlation on the right. Overall we observe that the correlations, positive or negative, increase with the number of the internal nodes. The first measure is the KL-divergence between the sampled observations ˜ p(Ot) and the internal belief over the observations p(Ot) = P
+
+> st
+
+p(Ot|st)q(st), where q(St) is the belief over the current state. Here we denote by O⋆ the random variable corresponding to a sampled distribution ˜ p.Then we have 
+
+D(O⋆t ∥ Ot) = X
+
+> ot
+
+˜p(ot) log ˜p(ot)
+
+p(ot) = H ˜P ,P (Ot) − H(O⋆t ),
+
+where H ˜P ,P (Ot) is the cross-entropy 
+
+H ˜P ,P (Ot) = − X
+
+> ot
+
+˜p(ot) log p(ot).
+
+In Figure 7, we observe that D(O⋆t ∥ Ot), as well as H ˜P ,P (Ot) (depicted as the last measure), are strongly inversely correlated to the free energy, while D(Ot ∥ O⋆t ) is slightly positively correlated and HP, ˜P (Ot) is positively correlated to the free energy. Hence, the measures where the internal prediction p is in front of the logarithm lead to a positive correlation, while ˜ p leads to a negative correlation. 
+
+Figure 7: Pearson correlation to the free energy on the left an Spearman on the right. The VFE is minimized if the model learns to internally assign a high probability to the ob-servations that actually occur q(o⋆t |at−1, o t−1). Hence, it is not aimed at learning the overall 20 distribution of the observations, but to accurately predict the next observation. In each time step the best distribution q would be the one that assigns a likelihood of 1 to the observation that occurs. The KL-divergences and cross entropies measure, however, how close overall the distributions are to each other, which is a slightly differnt objective. The entropies H(Ot, S t) and H(O) that purely consider the internal generative model, without any direct influence of the actual sampled observations, lead to the strongest correlation with the free energy. The lower the entropy, the more structure the distribution has and the better the VFE. 21 C Complete Results 
+
+Here we depict the data from the experiments. In the following section the results for n = 2 is depicted in the first, n = 3 in the second and n = 4 in the last column. In each figure the x-axis signifies the steps that the agents take and on the y-axis are the 1000 agents depicted. The first row of results depicts the free energy. The agents are sorted via the arithmetic mean of their free energy values. Hence, the agent at position 0 has overall the lowest free energy value, while the agent as position 999 has the highest. In all following figures the agents remain to be sorted in the same way, so the agent with the lowest overall free energy is depicted at position 0 in all figures. 22 n = 2 n = 3 n = 4 Free Energy 
+
+> agents
+> Success Rate
+> agents
+> Multiinformation
+> agents
+
+23 n = 2 n = 3 n = 4 ΦT
+
+> agents
+> Φ3.0
+> agents
+> Φ4.0
+> agents
+> ϕs
+> 4.0
+> agents
+
+24 n = 2 n = 3 n = 4 
+
+> D(O⋆ ∥ O)
+> agents
+> D(O ∥ O⋆)
+> agents
+> H ˜P ,P  (O)
+> agents
+> HP,  ˜P (O)
+> agents
+
+25 n = 2 n = 3 n = 4 
+
+> H(O, S )
+> agents
+> H(O)
+> agents
+> H(O⋆)
+> agents
+
+26

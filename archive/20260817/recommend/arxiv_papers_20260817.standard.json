@@ -1,0 +1,415 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-17T20:56:23.210413+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 5,
+    "deep_cap": 7,
+    "deep_selected": 5,
+    "quick_candidates": 5,
+    "quick_skim_target": 12,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2608.14125v1",
+      "source": "arxiv",
+      "title": "Traj-LeWM: Path-Aware World-Model Planning via Latent Trajectory Cost",
+      "abstract": "LeWM is a lightweight visual world model that learns latent dynamics end-to-end from pixels and ranks candidate action sequences by the distance between their predicted endpoints and the goal. However, LeWM has two limitations. First, during training, it learns local next-step transitions without evaluating complete trajectories relative to the task goal. Second, during planning, it ranks candidates solely by predicted endpoint distance. Because model predictions may differ from actual execution outcomes, the candidate whose predicted endpoint is closest to the goal may not perform best when executed in the environment. The evolution of the complete predicted trajectory can therefore provide complementary information beyond endpoint distance. To address these limitations, we propose Traj-LeWM, which retains LeWM's local-dynamics objective and endpoint score while introducing a goal-conditioned latent trajectory cost (LTC) that aggregates trajectory-level information as a complementary signal. During training, LTC-based trajectory-preference supervision complements next-step prediction in shaping the shared representation. During planning, LTC is combined with endpoint distance to incorporate intermediate-path information into candidate ranking. With joint endpoint-plus-LTC scoring, Traj-LeWM outperforms LeWM on Push-T, OGBench-Cube, Reacher, and Two-Room by $3$, $14$, $7$, and $7$ percentage points, respectively. Controlled experiments and ablations further verify the complementary roles of trajectory-level representation shaping and path-aware candidate ranking.",
+      "authors": [
+        "Xiaodi Huang",
+        "Ziyi Ding",
+        "Jingtian Wan",
+        "Yuchen Liu",
+        "Yuan Zhang",
+        "Xiao-Ping Zhang",
+        "Jiayu Chen",
+        "Zhang Zhang",
+        "Tao Huang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-14T09:32:38+00:00",
+      "link": "https://arxiv.org/pdf/2608.14125v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "latent world model predicting future states, path-aware planning with trajectory cost",
+      "llm_evidence_cn": "潜在世界模型预测未来状态，基于轨迹代价的路径感知规划",
+      "llm_evidence": "潜在世界模型预测未来状态，基于轨迹代价的路径感知规划",
+      "canonical_evidence": "潜在世界模型预测未来状态，基于轨迹代价的路径感知规划",
+      "llm_tldr_en": "Traj-LeWM improves latent world-model planning by using the full predicted trajectory cost rather than only endpoint distance, yielding better action selection under model prediction errors.",
+      "llm_tldr_cn": "LeWM这类轻量视觉世界模型从像素端到端学习潜在动力学，但训练时只学习单步转移，规划时仅按预测终点距离排序，可能因模型误差而选错动作。为此提出Traj-LeWM，将完整预测轨迹的演化作为补充代价信号，在训练和规划中都考虑轨迹级信息。实验表明，引入路径感知代价后，规划出的动作序列在环境中的执行效果优于仅依赖终点距离的方法。该方法为潜在世界模型的规划策略提供了更鲁棒的改进思路。",
+      "llm_tldr": "LeWM这类轻量视觉世界模型从像素端到端学习潜在动力学，但训练时只学习单步转移，规划时仅按预测终点距离排序，可能因模型误差而选错动作。为此提出Traj-LeWM，将完整预测轨迹的演化作为补充代价信号，在训练和规划中都考虑轨迹级信息。实验表明，引入路径感知代价后，规划出的动作序列在环境中的执行效果优于仅依赖终点距离的方法。该方法为潜在世界模型的规划策略提供了更鲁棒的改进思路。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "papers on world models that predict future states",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14428v1",
+      "source": "arxiv",
+      "title": "GhostPoint: Self-Supervised Representation Learning by Hallucinating Occluded LiDAR Structure",
+      "abstract": "3D object detection from LiDAR point clouds is a core problem in autonomous driving. Recent advances in self-supervised learning (SSL) enable scalable pretraining and transfers well to per-point tasks such as semantic and panoptic segmentation, but transfer to 3D detection remains weaker. We analyze recent SSL methods and find that most objectives are defined only on measured LiDAR returns from visible surfaces, leaving occluded and unobserved regions unconstrained. This visible-surface bias can be sufficient for point-wise prediction, but 3D detection requires robustness to missing structure. To address this gap, we propose GhostPoint, an SSL framework that hallucinates latent features in local neighborhoods around discovered instances, generated via a novel instance voxel dilation. In GhostPoint, an encoder processes observed returns, and an additional predictor infers neighborhood representations from observed context. In addition to standard encoder-level supervision, we introduce a predictor-level supervision scheme on sampled voxels from generated neighborhoods. Specifically, observed (visible/masked) voxels match teacher-encoder targets, while unobserved voxels match teacher-predictor hallucinations. This design encourages the learned representation to explicitly model structure beyond observed returns. Extensive evaluations on nuScenes and Waymo demonstrate that our method achieves state-of-the-art performance, consistently improving downstream 3D detection, especially under sparse scans and limited labels.",
+      "authors": [
+        "Mohamed Abdelsamad",
+        "Bin Yang",
+        "Michael Ulrich",
+        "Miao Zhang",
+        "Yakov Miron",
+        "Alexandru Paul Condurache",
+        "Abhinav Valada"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-14T16:10:35+00:00",
+      "link": "https://arxiv.org/pdf/2608.14428v1",
+      "tags": [
+        "keyword:ssl",
+        "query:ssl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-supervised representation learning framework for LiDAR that hallucinates occluded structure, addressing SSL transfer to 3D detection",
+      "llm_evidence_cn": "面向LiDAR的自监督表示学习方法，通过幻觉遮挡结构提升3D检测迁移",
+      "llm_evidence": "面向LiDAR的自监督表示学习方法，通过幻觉遮挡结构提升3D检测迁移",
+      "canonical_evidence": "面向LiDAR的自监督表示学习方法，通过幻觉遮挡结构提升3D检测迁移",
+      "llm_tldr_en": "GhostPoint is an SSL framework that hallucinates latent features around occluded LiDAR regions to address visible-surface bias, improving self-supervised representation learning transfer to 3D object detection.",
+      "llm_tldr_cn": "在自动驾驶LiDAR点云上，现有自监督学习目标大多只在测量到的可见表面定义损失，对遮挡和未观测区域缺乏约束，因而迁移到3D目标检测效果不佳。为此，GhostPoint提出一种自监督框架，在已发现目标周围的局部邻域中幻觉遮挡结构对应的潜在特征。大量实验显示，该方法显著缓解了可见表面偏差，提高了对缺失结构的鲁棒性，并带来更强的3D检测迁移性能。这说明考虑未观测结构对点云自监督预训练具有重要价值。",
+      "llm_tldr": "在自动驾驶LiDAR点云上，现有自监督学习目标大多只在测量到的可见表面定义损失，对遮挡和未观测区域缺乏约束，因而迁移到3D目标检测效果不佳。为此，GhostPoint提出一种自监督框架，在已发现目标周围的局部邻域中幻觉遮挡结构对应的潜在特征。大量实验显示，该方法显著缓解了可见表面偏差，提高了对缺失结构的鲁棒性，并带来更强的3D检测迁移性能。这说明考虑未观测结构对点云自监督预训练具有重要价值。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised representation learning approaches",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14490v1",
+      "source": "arxiv",
+      "title": "Twin: Playing an Unknown Game with a Test-Time Digital Twin",
+      "abstract": "We present a Test-time World-model Inference (Twin) system, in which a frontier coding agent writes an executable world model for completing continual learning tasks, such as ARC-AGI-3 games. Traditional approaches hand-engineer such models, one custom design per task. Each game hides its rules and goal, and our system constructs them from simulation and interaction alone. Its inductive prior over grid games is strong enough to recover the true transitions of the game and the goal on nearly all levels. Replay validation happens in a twin world model. The harness enforces that an action is not made until the program reproduces every previous observed game transition. Each mismatch between a world model prediction and the actual action result becomes a counterexample that is used to repair the world model. Twin clears 179 out of 183 levels (97.8%), and does so more efficiently than humans in 158 out of 179 levels (88.3%). The system infers the goal before any reward on 156 of the levels it clears (87.2%), and in the remaining levels automatically discovers the goal by search. The benchmark scores completion and action efficiency, between 0 and 100, against humans playing each game for the first time. Played directly, the base model scores only 7.8%; an off-the-shelf harness increases it to 61.1%, whereas our twin world model increases the same base model to 93.3%, clearing 23 out of 25 games. Building a usable world model is simpler than anticipated, whereas the harder problem is inferring the right goal.",
+      "authors": [
+        "Alexy Skoutnev",
+        "Kirill Acharya",
+        "Gaston Longhitano",
+        "Madeleine Udell",
+        "Kevin Ellis",
+        "Iddo Drori"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-14T17:06:00+00:00",
+      "link": "https://arxiv.org/pdf/2608.14490v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "constructs and validates an executable world model from game interaction",
+      "llm_evidence_cn": "从游戏交互中构建并验证可执行世界模型",
+      "llm_evidence": "从游戏交互中构建并验证可执行世界模型",
+      "canonical_evidence": "从游戏交互中构建并验证可执行世界模型",
+      "llm_tldr_en": "Introduces a test-time world-model inference system that writes an executable world model from simulation and interaction, recovers game transitions and goals, and validates actions by replay in a twin world model.",
+      "llm_tldr_cn": "针对传统方法需要逐任务手工设计世界模型的问题，本文提出 Twin 系统，在测试时让编码智能体从模拟与交互中自动编写可执行世界模型，恢复游戏转移规则与目标，并在孪生世界模型中通过重放验证动作，使每个动作执行前必须复现所有已观测转移。实验表明该系统在几乎所有网格游戏关卡上都有效，为持续学习任务提供通用世界模型推断方案。",
+      "llm_tldr": "针对传统方法需要逐任务手工设计世界模型的问题，本文提出 Twin 系统，在测试时让编码智能体从模拟与交互中自动编写可执行世界模型，恢复游戏转移规则与目标，并在孪生世界模型中通过重放验证动作，使每个动作执行前必须复现所有已观测转移。实验表明该系统在几乎所有网格游戏关卡上都有效，为持续学习任务提供通用世界模型推断方案。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "learning world models from experience",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14372v1",
+      "source": "arxiv",
+      "title": "Catching the Imposter: Self-Supervised Learning of Physical Coherence with Cross-Entity Feature Permutations",
+      "abstract": "Scientific data often describe entities whose features are jointly governed by the laws of physics, yet existing self-supervised learning (SSL) objectives largely ignore this physical coherence. We introduce imposter, a discriminative pretext task that replaces subsets of an entity's features with real observations donated by another entity and trains the encoder to identify the swapped features. Because every donated value is individually plausible, the task can only be solved by learning cross-feature physical dependencies. We evaluate the proposed objectives on global ERA5-Land reanalysis data using 21 environmental variables and assess the learned representations on seven downstream tasks spanning climate classification, carbon flux estimation, and streamflow prediction. Our study includes, to our knowledge, the first systematic comparison of self-supervised objectives for land-surface modeling under a shared architecture and pre-training budget. We find that the most effective pretext task depends on the downstream task family rather than any single objective's superiority, and that imposter provides complementary information when combined with existing SSL objectives. These results suggest that physical coherence is a valuable new source of self-supervision for scientific foundation models.",
+      "authors": [
+        "Aleksei Rozanov",
+        "Arvind Renganathan",
+        "Vipin Kumar"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-14T15:15:19+00:00",
+      "link": "https://arxiv.org/pdf/2608.14372v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "New self-supervised pretext task based on cross-entity feature permutations to learn physical coherence",
+      "llm_evidence_cn": "基于跨实体特征置换的自监督前置任务，学习物理一致性",
+      "llm_evidence": "基于跨实体特征置换的自监督前置任务，学习物理一致性",
+      "canonical_evidence": "基于跨实体特征置换的自监督前置任务，学习物理一致性",
+      "llm_tldr_en": "Catching the Imposter proposes a discriminative pretext task that swaps features between entities and trains encoders to identify the swapped features, learning cross-feature physical dependencies for scientific data.",
+      "llm_tldr_cn": "针对现有自监督目标忽略物理一致性的问题，提出Imposter辨别式前置任务：用另一实体的真实观测替换当前实体部分特征，并训练编码器识别被替换的特征。因为每个替换值单独看均合理，模型必须学习跨特征的物理依赖才能解决任务。在ERA5-Land数据上的实验表明该方法在跨气候类下游任务中提高了表示质量。",
+      "llm_tldr": "针对现有自监督目标忽略物理一致性的问题，提出Imposter辨别式前置任务：用另一实体的真实观测替换当前实体部分特征，并训练编码器识别被替换的特征。因为每个替换值单独看均合理，模型必须学习跨特征的物理依赖才能解决任务。在ERA5-Land数据上的实验表明该方法在跨气候类下游任务中提高了表示质量。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14165v1",
+      "source": "arxiv",
+      "title": "Integrated Information in the Active Inference Framework",
+      "abstract": "The active inference framework provides a principled approach to modeling sentient behavior. In this framework perception and action selection are treated in a unified way. The resulting agents form an internal generative model of the relevant dynamics of the world in order to infer their future observations, their internal states and to select actions. We combine this modeling framework with the Integrated Information Theory of consciousness and are therefore able to analyze the active inference agents from the perspective of integrated information. The Integrated Information Theory aims at quantifying the level of consciousness of a system by assessing its capability to integrate information. Here, we define a measure of integrated information for the generative model by making an additional structural assumption. Experiments with simulated agents reveal a correlation between integrated information measures and the free energy of the active inference agents that increases with the size of the generative model.",
+      "authors": [
+        "Carlotta Langer",
+        "Jesse van Oostrum",
+        "Nihat Ay"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT"
+      ],
+      "published": "2026-08-14T10:23:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.14165v1",
+      "tags": [
+        "keyword:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Discusses internal generative world model in active inference agents for predicting future observations",
+      "llm_evidence_cn": "讨论主动推断智能体中的内部生成式世界模型，用于预测未来观测",
+      "llm_evidence": "讨论主动推断智能体中的内部生成式世界模型，用于预测未来观测",
+      "canonical_evidence": "讨论主动推断智能体中的内部生成式世界模型，用于预测未来观测",
+      "llm_tldr_en": "The paper connects active inference agents, which rely on an internal generative world model to predict future observations and select actions, with integrated information theory, proposing a measure of consciousness-related integration.",
+      "llm_tldr_cn": "主动推断框架将感知与动作选择统一处理，智能体通过内部生成模型预测未来观测和内部状态，以此指导行动。本文将整合信息理论引入该框架，定义了生成模型上的整合信息度量，能够刻画智能体的信息整合能力。该度量有助于从意识科学角度分析主动推断智能体的内部世界模型结构，为评估预测性世界模型的信息处理能力提供了新工具。",
+      "llm_tldr": "主动推断框架将感知与动作选择统一处理，智能体通过内部生成模型预测未来观测和内部状态，以此指导行动。本文将整合信息理论引入该框架，定义了生成模型上的整合信息度量，能够刻画智能体的信息整合能力。该度量有助于从意识科学角度分析主动推断智能体的内部世界模型结构，为评估预测性世界模型的信息处理能力提供了新工具。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "internal world model in agents",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.08418v1",
+      "source": "arxiv",
+      "title": "Learning Deep Modality-Shared Self-Expressiveness for Image Clustering with Textual Information",
+      "abstract": "Leveraging textual information for image clustering has emerged as a promising direction, largely owing to the powerful representations learned by Vision-Language Models (VLMs). Existing approaches typically retrieve a textual counterpart for each image and then refine multimodal representations by directly enforcing cross-modal agreement, e.g., maximizing image-text similarity inherited from pretrained VLMs. However, such a strategy aligns heterogeneous representations across modalities without explicitly modeling the intrinsic structure within each modality and thus might yield unreliable alignment or distort modality-specific structures that are crucial for clustering. In this paper, we propose a simple but principled approach, termed deep modality-shared self-expressive model (DeepMORSE), which discovers cross-modal structures via a modality-shared self-expressive model and simultaneously learns structured representations that conform to a union of modality-specific subspaces. Moreover, we theoretically justify that the modality-shared self-expressive coefficients suppress inter-class noise towards a subspace-preserving solution, and show that mini-batch optimization procedure introduces an implicit regularization onto the self-expressive model. We evaluate our DeepMORSE on six widely used image clustering benchmarks and observe performance improvements exceeding 3% on the UCF-101, DTD-47, and ImageNet-Dogs datasets. In addition, we demonstrate the strong transferability of the learned representations by achieving state-of-the-art performance on downstream tasks such as image retrieval and zero-shot classification---without requiring any task-specific losses or post-processing. The code is available at: https://github.com/mengxianghan123/DeepMORSE.",
+      "authors": [
+        "Xianghan Meng",
+        "Wei He",
+        "Zhiyuan Huang",
+        "Chun-Guang Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-09T02:23:49+00:00",
+      "link": "https://arxiv.org/pdf/2608.08418v1",
+      "tags": [
+        "keyword:ssl",
+        "query:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "modality-shared self-expressiveness for image clustering with text",
+      "llm_evidence_cn": "面向图像聚类的无标注多模态表示学习，与自监督表示学习相关",
+      "llm_evidence": "面向图像聚类的无标注多模态表示学习，与自监督表示学习相关",
+      "canonical_evidence": "面向图像聚类的无标注多模态表示学习，与自监督表示学习相关",
+      "llm_tldr_en": "Proposes learning deep modality-shared self-expressiveness for image clustering with textual info, explicitly modeling intra-modality structure instead of only enforcing cross-modal agreement. It is an unsupervised/self-supervised-style representation learning method.",
+      "llm_tldr_cn": "利用文本增强图像聚类时，现有方法仅强制跨模态对齐，容易扭曲各模态内在结构。本文提出一个简单而有原则的方法，显式建模模态共享的自表达结构，同时保留模态特定结构，从而获得更可靠的聚类嵌入。该方法在无标注数据上训练，属于与自监督表示学习紧密相关的技术路线。实验表明其聚类性能优于现有跨模态对齐方法。",
+      "llm_tldr": "利用文本增强图像聚类时，现有方法仅强制跨模态对齐，容易扭曲各模态内在结构。本文提出一个简单而有原则的方法，显式建模模态共享的自表达结构，同时保留模态特定结构，从而获得更可靠的聚类嵌入。该方法在无标注数据上训练，属于与自监督表示学习紧密相关的技术路线。实验表明其聚类性能优于现有跨模态对齐方法。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised representation learning approaches",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.12756v1",
+      "source": "arxiv",
+      "title": "ReconSpan: Reconstruction-Guided Adaptive Latent Tokenization",
+      "abstract": "Adaptive latent tokenization maps a fine-grained input to a shorter sequence of continuous representations associated with input-dependent spans. We introduce ReconSpan, which divides text into chunks that a backward decoder can reconstruct from a single contextual prefix code and retains one such code as the latent token for each chunk. The reconstruction criterion is applied when chunks are formed, allowing one trained autoencoder to produce average chunk lengths from 6.5 to 12.2. At matched average length, reconstruction-guided boundaries preserve more text than random boundaries. Readers of the resulting latent sequence recover topic information reliably but struggle to extract exact details.",
+      "authors": [
+        "Lixing Li"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-13T03:08:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.12756v1",
+      "tags": [
+        "keyword:ssl",
+        "keyword:world-models",
+        "query:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "reconstruction-guided latent tokenization learns compressed representations via autoencoder; transferable to SSL representation learning",
+      "llm_evidence_cn": "利用重建准则指导自适应潜在分词，其自编码器表示学习方法可与自监督表征学习相迁移",
+      "llm_evidence": "利用重建准则指导自适应潜在分词，其自编码器表示学习方法可与自监督表征学习相迁移",
+      "canonical_evidence": "利用重建准则指导自适应潜在分词，其自编码器表示学习方法可与自监督表征学习相迁移",
+      "llm_tldr_en": "Proposes ReconSpan, an adaptive latent tokenizer that learns continuous span representations from a single contextual prefix code via reconstruction, producing adjustable token lengths and preserving more text than random boundaries.",
+      "llm_tldr_cn": "针对自适应潜在分词中表示学习与重建目标脱节的问题，本文提出 ReconSpan，通过单个上下文前缀码重建文本块，并将重建码作为每个块的潜在 token。重建准则在分块时直接应用，使一个训练好的自编码器能产生平均 6.5 到 12.2 的分块长度，在相同平均长度下比随机边界保留更多文本。该方法可视为一种重建式自监督表示学习手段，能为语言模型提供更紧凑、可解释的潜在序列。",
+      "llm_tldr": "针对自适应潜在分词中表示学习与重建目标脱节的问题，本文提出 ReconSpan，通过单个上下文前缀码重建文本块，并将重建码作为每个块的潜在 token。重建准则在分块时直接应用，使一个训练好的自编码器能产生平均 6.5 到 12.2 的分块长度，在相同平均长度下比随机边界保留更多文本。该方法可视为一种重建式自监督表示学习手段，能为语言模型提供更紧凑、可解释的潜在序列。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised representation learning approaches",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.14049v1",
+      "source": "arxiv",
+      "title": "FlatLab: A Unified Methodology Framework and Simulation-Based Benchmark for Robotic Manipulation of Flat Objects",
+      "abstract": "Robotic manipulation of flat objects is challenging due to the ungraspable configurations and strong variations in object geometry and material. Existing methods rely on heuristic pre-manipulation and are often evaluated in closed settings with limited generalization. We propose a unified framework that decouples the manipulation into a strategy generator and an action execution module. The strategy generator predicts appropriate manipulation strategies from object point clouds by learning strategy-centric, object-invariant representations via simulated data transformation and contrastive learning. Conditioned on the predicted strategy, the execution module decomposes long-horizon manipulation into reusable action primitives and dynamically composes them to generate stable trajectories. To enable systematic evaluation, we introduce FlatLab, a comprehensive simulation benchmark for robotic flat object manipulation. FlatLab provides high-fidelity physical simulation of diverse rigid and deformable flat objects, automated multi-modal data collection, and standardized task definitions and evaluation protocols. Experiments conducted in FlatLab demonstrate that our approach generalizes effectively to unseen objects and categories, outperforming existing baselines. The project page and the code are provided at https://flatlab-web.github.io/.",
+      "authors": [
+        "Xingyu Zhu",
+        "Wenshuo Han",
+        "Zhouyu Wang",
+        "Yuran Wang",
+        "Ruihai Wu",
+        "Hao Dong",
+        "Fan Tang",
+        "Hechang Chen",
+        "Hyung Jin Chang",
+        "Yixing Gao"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-14T07:55:55+00:00",
+      "link": "https://arxiv.org/pdf/2608.14049v1",
+      "tags": [
+        "keyword:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Contrastive learning to learn strategy-centric object-invariant representations from point clouds",
+      "llm_evidence_cn": "利用对比学习从点云学习策略中心、物体不变的表示",
+      "llm_evidence": "利用对比学习从点云学习策略中心、物体不变的表示",
+      "canonical_evidence": "利用对比学习从点云学习策略中心、物体不变的表示",
+      "llm_tldr_en": "FlatLab decouples manipulation of flat objects into a strategy generator and action executor; the strategy generator learns strategy-centric, object-invariant representations via simulated data transformation and contrastive learning, and the executor decomposes long-horizon skills into reusable actions, validated in a simulation benchmark.",
+      "llm_tldr_cn": "扁平物体的机器人操作因不可抓取构型和几何材料差异而具有挑战。本文将操作解耦为策略生成器与动作执行模块，策略生成器通过仿真的数据变换与对比学习从点云中学习策略中心、物体不变的表示。执行模块将长时程操作分解为可复用动作。在仿真基准上验证了框架的泛化能力，说明对比学习可用于学习可迁移的操作表示。",
+      "llm_tldr": "扁平物体的机器人操作因不可抓取构型和几何材料差异而具有挑战。本文将操作解耦为策略生成器与动作执行模块，策略生成器通过仿真的数据变换与对比学习从点云中学习策略中心、物体不变的表示。执行模块将长时程操作分解为可复用动作。在仿真基准上验证了框架的泛化能力，说明对比学习可用于学习可迁移的操作表示。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.14249v1",
+      "source": "arxiv",
+      "title": "AT-ADD: All-Type Audio Deepfake Detection Challenge Summary",
+      "abstract": "This paper summarizes the ACM Multimedia 2026 AT-ADD Grand Challenge on all-type audio deepfake detection. AT-ADD contains two tracks: robust speech deepfake detection under realistic acoustic and channel variations, and type-agnostic detection over speech, environmental sound, singing voice, and music. We describe the challenge tasks, dataset and evaluation-set design, official leaderboard results, and common design patterns observed in participating systems. The best Track 1 system achieved 90.71% Macro-F1 on the final evaluation set, while the best Track 2 system achieved 96.10% Macro-F1. The final submissions show that strong systems commonly combine large-scale self-supervised audio representations, data augmentation, multi-crop inference, and structured fusion or routing. The results also reveal remaining challenges in generalization to unseen generators, robustness to realistic speech-domain distortions, and balanced performance across heterogeneous audio types.",
+      "authors": [
+        "Yuankun Xie",
+        "Haonan Cheng",
+        "Jiayi Zhou",
+        "Xiaoxuan Guo",
+        "Tao Wang",
+        "Changhao Zhang",
+        "Jian Liu",
+        "Weiqiang Wang",
+        "Ruibo Fu",
+        "Xiaopeng Wang",
+        "Hengyan Huang",
+        "Xiaoying Huang",
+        "Long Ye",
+        "Guangtao Zhai"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-08-14T12:28:54+00:00",
+      "link": "https://arxiv.org/pdf/2608.14249v1",
+      "tags": [
+        "keyword:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Discusses strong systems combining large-scale self-supervised audio representations",
+      "llm_evidence_cn": "讨论了结合大规模自监督音频表示的强系统",
+      "llm_evidence": "讨论了结合大规模自监督音频表示的强系统",
+      "canonical_evidence": "讨论了结合大规模自监督音频表示的强系统",
+      "llm_tldr_en": "Summarizes the AT-ADD audio deepfake detection challenge and shows that top systems commonly use large-scale self-supervised audio representations with augmentation.",
+      "llm_tldr_cn": "本文总结了ACM多媒体2026年AT-ADD全类型音频深度伪造检测挑战赛的任务、数据集与官方结果。参赛系统的共同模式是使用大规模自监督音频表示、数据增强和多裁剪推理。最佳语音检测系统达到90.71% Macro-F1，类型无关检测系统达到96.10% Macro-F1。该挑战表明自监督音频预训练在深度伪造检测中起到关键作用。",
+      "llm_tldr": "本文总结了ACM多媒体2026年AT-ADD全类型音频深度伪造检测挑战赛的任务、数据集与官方结果。参赛系统的共同模式是使用大规模自监督音频表示、数据增强和多裁剪推理。最佳语音检测系统达到90.71% Macro-F1，类型无关检测系统达到96.10% Macro-F1。该挑战表明自监督音频预训练在深度伪造检测中起到关键作用。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "self-supervised learning methods and techniques",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.14355v1",
+      "source": "arxiv",
+      "title": "Disentangled Shared Representations Improve Morpho-Transcriptomic Integration",
+      "abstract": "Spatial transcriptomics (ST) enables the simultaneous profiling of gene expression and tissue morphology, creating an opportunity to learn multimodal representations capturing shared morpho-transcriptomic structure. However, standard multimodal models often compress modalities into a common latent space without explicitly separating shared and modality-specific sources of variation, which may limit downstream utility. We investigate whether explicit disentanglement of shared and private latent components improves multimodal representation learning for paired Hematoxylin \\& Eosin (H\\&E) and ST data. We compare VAE-based and contrastive approaches, each in standard and disentangled variants, across two cancer cohorts under matched experimental conditions. Representations are evaluated using cross-modal reconstruction, downstream probing and cross-modal probe transfer. The experiments suggest two main trends. First, contrastive objectives yield higher downstream probing performance than VAE-based models. Second, disentangled variants improve the selected reconstruction and probing metrics, although the gains depend on the model family, task, direction, and disentanglement strength. Overall, our results suggest that explicitly factorizing shared and modality-specific information can improve multimodal representation learning for spatial transcriptomics and provides a useful evaluation framework for future foundation models.",
+      "authors": [
+        "Julian Ostermaier",
+        "Swann Ruyter",
+        "Reuben Dorent",
+        "Daniel Racoceanu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-14T14:56:31+00:00",
+      "link": "https://arxiv.org/pdf/2608.14355v1",
+      "tags": [
+        "keyword:ssl"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Contrastive approaches for disentangled multimodal representation learning",
+      "llm_evidence_cn": "对比学习与解耦表征用于多模态整合",
+      "llm_evidence": "对比学习与解耦表征用于多模态整合",
+      "canonical_evidence": "对比学习与解耦表征用于多模态整合",
+      "llm_tldr_en": "This paper investigates whether explicitly disentangling shared and private latent components improves multimodal representation learning for paired spatial transcriptomics and histology images, comparing VAE-based and contrastive approaches in standard and disentangled variants.",
+      "llm_tldr_cn": "空间转录组与组织学图像的多模态整合需要学习共享表征，但标准模型往往未分离共享与模态特有变异。论文提出将共享与私有潜成分显式解耦，并在标准与解耦变体下比较VAE与对比学习方法。在两种癌症队列中的实验结果表明，解耦共享表征能够提升多模态整合的下游效用。这表明显式解耦与对比学习可成为多模态自监督表征学习的有效设计原则。",
+      "llm_tldr": "空间转录组与组织学图像的多模态整合需要学习共享表征，但标准模型往往未分离共享与模态特有变异。论文提出将共享与私有潜成分显式解耦，并在标准与解耦变体下比较VAE与对比学习方法。在两种癌症队列中的实验结果表明，解耦共享表征能够提升多模态整合的下游效用。这表明显式解耦与对比学习可成为多模态自监督表征学习的有效设计原则。",
+      "llm_tags": [
+        "query:ssl"
+      ],
+      "matched_query_tag": "query:ssl",
+      "matched_query_text": "contrastive learning in self-supervised learning",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
