@@ -1,0 +1,1206 @@
+Title: Self-Supervised Topologically Invariant Manifold Learning for Railway Image Quality Assessment
+
+URL Source: https://arxiv.org/pdf/2608.15217v1
+
+Published Time: Tue, 18 Aug 2026 00:47:44 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> SUBMITTED FOR REVIEW 1
+
+# Self-Supervised Topologically Invariant Manifold Learning for Railway Image Quality Assessment 
+
+Tingqiong Cui, Yibu Yang, Yang Li, Jiahao Fu, Xiaoliu Luo, Xu Wang, Mengzhu Wang, Siyuan Liu, Guanghui Huang 
+
+Abstract—Existing blind image quality assessment (BIQA) methods typically rely on synthetic distortions and subjective annotations, limiting generalization in real-world domains. To address this, we propose a fully self-supervised BIQA framework based on topologically invariant manifold learning under boundary constraints, which constructs a stable quality reference without manual labels. The framework generates progressive background dilution scales via repeated random cropping around each target; exploiting the monotonic degra-dation of target information density across these scales, it establishes a self-constrained quality manifold. A linearized spatial moment projection eliminates geometric distortions from random cropping; then a monotonicity divergence filter prunes background-sensitive evaluators, isolating an elite pool 
+
+Melite . A robust M-estimator with a principal component sta-bilizer fuses the metrics into an asymptotically efficient pseudo-ground truth qPGT , contracting variance toward the Cramér-Rao lower bound. Extensive evaluations demonstrate that the elite evaluator pool, distilled from 11 baseline metrics, secures superior zero-shot transferability across standard synthetic and wild benchmarks (CSIQ, LIVEC, LIVE-2). Concurrently, deployments on the CQU Railway Rolling Stock Surveillance Dataset (2,797 images) yield a manifold cosine similarity 
+
+> 0.999 and a 100.0% survival rate under industrial extreme stresses, robustly validating its cross-paradigm decoupling and topological resilience. Index Terms—Blind image quality assessment (BIQA), self-supervised learning, manifold learning, spatial moments, Perron-Frobenius theorem, robust M-estimation, topological invariance, traffic image analysis. 
+
+I. Introduction Existing blind image quality assessment (BIQA) frame-works rely on large-scale synthetic distortions and in-tensive human subjective visual annotations to construct 
+
+This work was supported by CRRC Chongqing Co., Ltd. under Project “Development of an Artificial Intelligence Large Model for Urban Transportation Vehicle Exterior Styling and Industrial De-sign” (Grant No. 2024CCA572). (Corresponding author: Guanghui Huang.) Tingqiong Cui, Yibu Yang, Yang Li, and Jiahao Fu are with CRRC Chongqing Co., Ltd., Chongqing 400000, China (e-mail: cuitingqiong.cqgs@crrcgc.cc Xiaoliu Luo is with the School of Mathematical Sciences,Chongqing University of Technology, Chongqing 400054, China (e-mail: luoxiaoliu@cqut.edu.cn). Xu Wang is with the College of Computer Science, Sichuan Uni-versity, Chengdu 610065, China (e-mail: wangxu.scu@gmail.com). Mengzhu Wang is with the School of Artificial Intelligence, Hebei University of Technology, China (e-mail: dreamkily@gmail.com). Siyuan Liu is with the State Key Laboratory of Mechanical Trans-mission for Advanced Equipment, Chongqing University, Chongqing 400044, China (e-mail: syliu@cqu.edu.cn). Guanghui Huang is with the College of Mathematics and Statis-tics, Chongqing University, Chongqing 401331, China (e-mail: hgh@cqu.edu.cn). 
+
+perceptual evaluation mappings [1]. However, in real-world deployment domains such as industrial railway rolling stock surveillance, human annotation suffers from prohibitive labor overhead and unreproducible cognitive variance. To bypass these limitations, recent works explore three complementary directions: feature decoupling under local-ized patch processing [2], generative noise separation via state-space models [3], and Gaussian mixture distribution modeling [4]. Nevertheless, these next-generation methods still in-troduce systematic artifacts and bottlenecks in target-oriented vision scenarios. Specifically, capturing fixed-position industrial objects frequently introduces highly varying framing scales, aspect-ratio fluctuations, and frame-centroid shifts. Heterogeneous quality evaluators possess highly asymmetric and unsynchronized sensitiv-ities to these background composition styles and spa-tial edge-clipping perturbations. Without structural reg-ularization, these spatial confounders inject mixed-sign cross-covariances into the covariance matrix. When the covariance matrix fails to maintain non-negativity and irreducibility, as required by the Perron-Frobenius con-ditions [5], the loading descriptors undergo destructive spectral loading cancellation within the dominant eigen-subspace. This cancellation causes the explained consensus variance to decay and fractures the predictive authority of the quality scale anchor. To resolve these limitations, this paper proposes aclosed-loop self-supervised BIQA framework based on topologically invariant manifold learning under boundary constraints [6]. By exploiting the monotonic degradation of target information density across progressive back-ground dilution scales, the framework establishes a self-constrained quality manifold. From this manifold, we extract an unbiased pseudo-ground truth qPGT without requiring references or pseudo-reference generation [7], [8]. Structurally, we combine high-order spatial moment or-thogonal projection layers [9] with a dynamic performance-driven monotonicity divergence filter to isolate the invari-ant target quality core from chaotic contextual clutters. This purified covariance matrix guarantees a unique, non-degenerate dominant axis that absorbs the collective con-sensus truth without information cross-cancellation. Fur-thermore, a robust Welsch/Leclerc-type M-estimator [10] combined with a non-parametric Median Absolute Devi-ation (MAD) scale matrix [11] is formulated to guarantee arXiv:2608.15217v1 [cs.CV] 15 Aug 2026 2 SUBMITTED FOR REVIEW 
+
+numerical continuity toward the optimal Cramér-Rao lower bound [12], ensuring high fault tolerance and system survival under long-tail industrial edge failure scenarios. To guarantee full community-wide verification, the en-tire operational code stack and anonymized score tensors have been made publicly accessible at https://github. com/cqugege/Self-Supervised-BIQA-Manifold. The core technical contributions of this work are summarized as follows: 1) Invariant Manifold Learning: A self-supervised framework that constructs a quality manifold from background dilution scales without manual la-bels, providing a transferable anchor for out-of-distribution deployments. 2) Spectral Purification: A linearized spatial moment projection combined with a monotonicity divergence filter that isolates an elite evaluator pool, ensuring Perron-Frobenius spectral alignment and preventing spectral loading cancellation. 3) Robust M-Estimation: A Leclerc-type M-estimator with a principal component stabilizer that guar-antees asymptotically efficient pseudo-ground truth generation and topological invariance, validated by the Davis-Kahan theorem [13]. II. Related Works The evolution of blind image quality assessment (BIQA) algorithms fundamentally tracks the shifting paradigms of perceptual feature representation in computer vision, migrating from low-level statistical priors to high-level semantic embeddings [1]. We review these paradigms chronologically—from hand-crafted NSS to deep super-vised models and vision-language methods—and identify their shared limitations in target-oriented scenarios, mo-tivating the proposed framework. A. Hand-Crafted Natural Scene Statistics (NSS) and Early BIQA Paradigms The classical foundation of non-reference image quality criteria rests upon the hypothesis that pristine natural im-ages exhibit strict statistical regularities, which are highly vulnerable to distortions. Pioneering frameworks, such as BRISQUE [14], utilize locally normalized luminance coefficients via generalized Gaussian distributions (GGD). To bypass the requirement of synthetic distortion labels during training, unsupervised architectures like NIQE [15] fit a multivariate Gaussian (MVG) model over premium corpus repositories, quantifying quality degradation as the Mahalanobis distance between the target and reference distributions. However, these hand-crafted models operate on pixel-level features and lack high-level understanding. In real-world surveillance scenes, their statistical regular-ities fracture due to geometric co-confounders, sacrificing reliability. B. Data-Driven Supervised Deep Perception Models Data-driven CNNs have largely superseded hand-crafted features by learning hierarchical representations from massive databases. Frameworks such as NIMA [16] lever-age deep features to output a continuous probability distribution of quality ratings instead of single mean values, optimizing parameters via Earth Mover’s Distance (EMD) losses. Concurrently, multi-stream architectures like DBCNN [17] optimize separate networks to capture low-level structural distortions and high-level holistic scene classification semantics in tandem [18]. Despite their empirical successes, these data-driven models remain heavily constrained by supervised learning mechanics. Collecting human visual annotations or sub-jective Mean Opinion Scores (MOS) for specific industrial targets (e.g., railway rolling stock) is exceptionally labor-intensive and suffers from high inter-observer cognitive variances. More crucially, these supervised architectures inherently over-fit the synthetic distributions of closed-source datasets, exhibiting severe performance collapse under out-of-distribution domain shifts [19], [20]. C. Next-Generation Vision-Language Models To harvest the massive semantic generalization enabled by large-scale pre-training, next-generation BIQA meth-ods directly deploy vision-language foundation models or advanced multi-modal collaboration blocks. Advanced zero-shot tools like CLIPIQA+ [21], [22] construct text-image alignment prompts, while transformer-based net-work topologies such as MUSIQ [23] capture multi-scale quality tokens across adaptive aspect-ratios to handle arbitrary canvas dimensions. More recently, the research front has expanded into specialized architectural paradigms and score distribu-tion modeling. Xiang et al. [2] proposed a decoupled feature learning network via fragmented local cropping and Just-Noticeable-Difference (JND) guided knowledge distillation [24], [25]. Concurrently, Lan et al. [3] intro-duced a generative noise estimation paradigm powered by Vision Mamba to bypass the reliance on unstable pseudo-reference image generation. From the perspective of subjective diversity modeling, Gao et al. [4] broke the limitation of single Mean Opinion Score (MOS) regression by formulating a Mixture Density Network [26] to effec-tively capture the Distribution of Opinion Scores (DOS) via Gaussian Mixture Distributions (GMD) [27]–[29]. Nevertheless, as mathematically deconstructed in Sec-tion III, even these high-semantic multi-modal or decou-pled foundations face severe, un-addressed epistemological limitations in target-oriented vision inspection tasks under boundary constraints:  
+
+> •
+
+Context Contamination and Spectral Cancellation: Large-scale vision-language models match features across the full canvas, lacking geometric attention to isolate a railway rolling stock target from cluttered backgrounds. Heterogeneous estimators have asym-metric sensitivities to boundary truncation. Without HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 3
+
+structural regularization, these spatial confounders inject mixed-sign cross-covariances into the covari-ance matrix, breaching the non-negativity and irre-ducibility required by the Perron-Frobenius condi-tions [5], leading to spectral loading cancellation.  
+
+> •
+
+Cyclic Loop and Variance Explosion: Without an absolute anchor scale, their output scores are domi-nated by background complexity rather than target structural state. This creates a circular loop where baseline algorithms over-fit textures while ignoring target degradations. Under long-tail failures, their estimation error swells, preventing contraction toward the Cramér-Rao lower bound [12]. By contrast, our framework aligns the high-semantic capacity of these foundation models with an invariant physical law, transforming the multi-metric consensus into an unbiased, self-supervised scale anchor, as formally developed in Section III. III. Methodology In this section, we formulate the mathematical foun-dation of the proposed self-supervised unbiased Pseudo-Ground Truth (P-GT) framework. To eliminate the heavy reliance of blind image quality assessment (BIQA) models on human visual annotations, we exploit the intrinsic visual information attenuation characteristics of images under cascading spatial expansion perturbations to con-strain the underlying quality manifold. Mechanistically, the proposed consensus engine coordinates its analyti-cal matrix operations and spectral field trajectories via four interconnected theoretical stages, forming a rigorous mathematical closed-loop as illustrated in the system pipeline blueprint of Fig. 1. The formalization of this consensus pipeline requires a sequential, feed-forward algebraic mapping to systemati-cally distill a reliable pseudo-ground truth from heteroge-neous, un-calibrated evaluator ensembles. Mechanistically, Theorem 1 first isolates the invariant quality-relevant sig-nal by projecting raw evaluations onto an orthogonal sub-space complement, effectively neutralizing background-driven geometric confounders. To defend against back-ground texture overfitting, an empirical monotonicity divergence filter (Theorem 2) is subsequently introduced to prune background-sensitive metrics; by enforcing strict spectral sign-uniformity constraints, this screening mech-anism isolates a highly robust elite evaluator pool Melite .This filtered consensus core then anchors a robust Welsch/Leclerc-type M-estimation framework (Theorem 3), leveraging individual Fisher information and non-parametric scale regularizers to smoothly suppress residual anomalous channels and contract the aggregate variance toward the Cramér-Rao lower bound (CRLB). Finally, to guarantee domain reproducibility under arbitrary canvas framing, the framework establishes the global topological invariance of the consensus vector against boundary trun-cation stresses (Theorem 4), bounding the eigen-subspace rotation under heterogeneous edge clipping. Together, these four theoretical pillars seamlessly transform noisy, un-calibrated outputs into a stable, statistically unbiased quality reference anchor. Let I(i) ∈ RW ×H denote the i-th image ( i = 1 , 2, . . . , N ,where N = 2, 797 ) containing a rigid target object, with W and H specifying the absolute pixel width and height, respectively. For each individual image, the minimum bounding box B(i) 
+
+> min
+
+that strictly envelops the target rigid geometry is first determined via a pre-trained object detector. To construct the background-perturbed quality manifold, we generate a sequence of randomized bounding boxes B(i) = {B(i) 
+
+> k
+
+}Kk=1 (K = 101 ), where 
+
+B(i)1 = B(i)
+
+> min
+
+. The subsequent K − 1 bounding boxes (B(i)2 , . . . , B (i) 
+
+> K
+
+) are generated by stochastically expanding the boundaries of B(i)
+
+> min
+
+. While each randomized bounding box strictly encloses B(i) 
+
+> min
+
+to preserve the intact target entity, it stochastically incorporates varying amounts of surrounding background context. The absolute bounding area ratio x(i) 
+
+> k
+
+∈ (0 , 1.0] for the k-th sample is defined as: 
+
+x(i) 
+
+> k
+
+= Area (B(i)
+
+> min
+
+)
+
+Area (B(i) 
+
+> k
+
+) . (1) As x(i) 
+
+> k
+
+decreases, the background abundance ratio within 
+
+B(i) 
+
+> k
+
+increases randomly, which naturally dilutes the target information density in the local computational field. A. High-Order Spatial Moment Orthogonal Projection Purifying In practical imaging systems like traffic monitoring, an object of identical physical quality often randomly appears at various coordinates and scales. On a static canvas, our randomized boundary expansion explicitly simulates this real-world geometric diversity. However, such stochastic spatial sampling inherently introduces shifting frame cen-troids and fluctuating aspect-ratios, acting as spurious geometric confounders that cause evaluators to output inconsistent quality scores for the stationary target object. To isolate the intrinsic quality from these composition-driven spatial artifacts, the stable quality signal must be decoupled from the geometric variations of the sampling boxes. Although these geometric biases are highly non-linear in the pixel coordinate space, they can be effectively linearized and eliminated within a high-order spatial moment space [9]. Therefore, executing an orthogonal projection to filter out the three-dimensional subspace spanned by these geometric confounders reliably isolates the contextually-invariant quality core of the target entity. Theorem 1 (Spatial Moment Orthogonal Separation). For the i-th image, its K randomized sampling boxes possess shared geometric properties that are independent of the specific quality evaluators. By extracting the scale-normalized centroid translation bias, skewness, and excess kurtosis across these K boxes, we construct a determinis-tic, frame-shared spatial moment matrix Γ(i) ∈ RK×3 that encapsulates the composition-driven spatial confounders. To eliminate these background geometric artifacts from 4 SUBMITTED FOR REVIEW 
+
+Fig. 1. Overall pipeline architecture of the proposed self-supervised target-oriented BIQA framework with eigen-spectrum purification. The consensus engine coordinates its matrix streams via four interconnected analytical stages to establish a mathematically closed loop: (1) Stage 1 (Stochastic Sampling and Target Geometry Localization) localizes the rigid target geometry via a YOLO-SAM cascade and construct the invariant Sampling Field via stochastic scaling. (2) Stage 2 (Spatial Moment Linearization and Orthogonal Projection) executes an orthogonal subspace complement projection to decouple composition-driven spatial artifacts. (3) Stage 3 (Eigen-Subspace Spectrum Purification) prunes weak evaluators prone to background overfitting, isolating a coherent elite pool governed by the Perron-Frobenius conditions. (4) Stage 4 (Robust Fusion and Numerical Stability Bounds) synthesizes the final pseudo-ground truth qPGT via a smooth Leclerc-type M-estimator regularized by a non-parametric principal component stabilizer to sustain high structural resilience under industrial extreme singularity stresses, securing an asymptotic system survival rate of 100.0% under extreme singularity stresses, as empirically validated in Section V. 
+
+each of the M individual quality evaluators, the raw score vector Q(i) 
+
+> m
+
+∈ RK of an arbitrary evaluator m ∈ M full is purified via an orthogonal subspace complement projec-tion: 
+
+˜Q(i) 
+
+> m
+
+=
+
+[
+
+IK − Γ(i) (
+
+(Γ(i))T Γ(i) + δI3
+
+)−1
+
+(Γ(i))T
+
+]
+
+Q(i)
+
+> m
+
+(2) where ˜Q(i) 
+
+> m
+
+denotes the purified isotropic quality vector for evaluator m, and δ = 10 −4 is a Tikhonov regularization scalar. Proof: Let B(i) 
+
+> k
+
+= [x(i)1,k , y (i)1,k , x (i)2,k , y (i)2,k ] specify the spatial boundary of the k-th sampling box for the i-th image, and let B(i) 
+
+> min
+
+= [x(i)1,min , y (i)1,min , x (i)2,min , y (i)2,min ]
+
+be the baseline target locus. To capture the spatial offsets introduced by randomized composition, the scale-normalized Euclidean centroid bias C(i) 
+
+> k
+
+is defined as: 
+
+C(i) 
+
+> k
+
+=
+
+√(
+
+A(i)
+
+> k,m
+
+)2
+
++
+
+(
+
+B(i)
+
+> k,m
+
+)2
+
+D(i)
+
+> diag
+
+(3) where 
+
+A(i) 
+
+> k,m
+
+= x(i)1,k + x(i)2,k 
+
+2 − x(i)1,min + x(i)2,min 
+
+2 ,B(i) 
+
+> k,m
+
+= y(i)1,k + y(i)2,k 
+
+2 − y(i)1,min + y(i)2,min 
+
+2 ,D(i) 
+
+> diag
+
+=
+
+√
+
+(x(i)2,K − x(i)1,K )2 + ( y(i)2,K − y(i)1,K )2
+
+(4) are the horizontal centroid offset, vertical centroid offset, and diagonal length of the maximum expanded boundary 
+
+B(i) 
+
+> K
+
+.Let AR (i) 
+
+> k
+
+= x(i)2,k −x(i)1,k   
+
+> y(i)2,k −y(i)1,k +ϵ0
+
+define the bounding aspect-ratio ( ϵ0 = 10 −7). Over the sampling sequence, the geo-metric skewness S(i) 
+
+> k
+
+and excess kurtosis K(i) 
+
+> k
+
+are modeled utilizing the empirical mean μ(i) 
+
+> AR
+
+= 1
+
+> K
+
+∑Kk=1 AR (i) 
+
+> k
+
+and standard deviation σ(i) 
+
+> AR
+
+=
+
+√ 1
+
+> K−1
+
+∑Kk=1 (AR (i) 
+
+> k
+
+− μ(i)
+
+> AR
+
+)2:
+
+S(i) 
+
+> k
+
+=
+
+> 1
+> K
+
+∑Kk=1 (AR (i) 
+
+> k
+
+− μ(i)
+
+> AR
+
+)3
+
+(σ(i)
+
+> AR
+
+)3 + ϵ0
+
+,K(i) 
+
+> k
+
+=
+
+> 1
+> K
+
+∑Kk=1 (AR (i) 
+
+> k
+
+− μ(i)
+
+> AR
+
+)4
+
+(σ(i)
+
+> AR
+
+)4 + ϵ0
+
+− 3
+
+(5) HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 5
+
+These three frame-shared confounders are encapsulated into the matrix Γ(i) = [ C(i), S(i), K(i)] ∈ RK×3.To remove the dependencies of the raw evaluations on these composition-driven artifacts, we formulate a linear contextual regression model: Q(i) 
+
+> m
+
+= Γ(i)β(i) 
+
+> m
+
++ ˜Q(i) 
+
+> m
+
+, where 
+
+β(i) 
+
+> m
+
+denotes the nuisance parameters, and ˜Q(i) 
+
+> m
+
+represents the purified target quality vector. Invoking Ridge regular-ization to prevent numerical rank-deficiencies yields the minimum-norm parameter estimate: 
+
+ˆβ(i) 
+
+> m
+
+= arg min 
+
+> β
+
+(
+
+∥Q(i) 
+
+> m
+
+− Γ(i)β∥22 + δ∥β∥22
+
+)
+
+=
+
+(
+
+(Γ(i))T Γ(i) + δI3
+
+)−1
+
+(Γ(i))T Q(i)
+
+> m
+
+(6) Substituting ˆβ(i) 
+
+> m
+
+back into the residual formulation yields the regularized complement projection: 
+
+˜Q(i) 
+
+> m
+
+= Q(i) 
+
+> m
+
+− Γ(i) ˆβ(i)
+
+> m
+
+=
+
+[
+
+IK − Γ(i) (
+
+(Γ(i))T Γ(i) + δI3
+
+)−1
+
+(Γ(i))T
+
+]
+
+Q(i)
+
+> m
+
+(7) By computing the inner product with the confounder subspace, we evaluate the decoupling convergence: 
+
+(Γ(i))T ˜Q(i) 
+
+> m
+
+= δ
+
+(
+
+(Γ(i))T Γ(i) + δI3
+
+)−1
+
+(Γ(i))T Q(i)
+
+> m
+
+= δ ˆβ(i)
+
+> m
+
+(8) Since δ = 10 −4 acts as an infinitesimal penalization factor, the geometric bias is suppressed to an upper bound of 
+
+O(δ), satisfying lim δ→0(Γ(i))T ˜Q(i) 
+
+> m
+
+= 0, which ensures asymptotic geometric decoupling and completes the proof. This purified vector ˜Q(i) 
+
+> m
+
+serves as the input to the evaluator screening stage in Theorem 2. B. Monotonicity Divergence and Elite Evaluator Purifica-tion Although the spatial sampling is randomized and un-ordered, a reliable quality evaluator should adhere to the intrinsic information dilution law when the samples are sorted by their image-specific bounding area ratios 
+
+x(i) 
+
+> k
+
+. Specifically, as x(i) 
+
+> k
+
+decreases (i.e., the background context expands), the evaluation scores should exhibit a monotonic degradation trend tracking the diluted tar-get information density. However, hand-crafted statistical metrics frequently overfit to complex background textures rather than locking onto target quality, yielding chaotic, non-monotonic responses. Mathematically, such defective evaluators exhibit high divergence when evaluated against the sorted area spectrum, whereas robust evaluators pre-serve a consistent monotonic footprint. By filtering the full pool down to an elite subset of monotonic evaluators, we effectively eliminate systematic cross-paradigm variance. This purification satisfies the algebraic conditions of the Perron-Frobenius theorem [5], which guarantees a unique, non-degenerate dominant eigenvector during subsequent spectral consensus estimation, thereby establishing a data-driven criterion to isolate superior evaluators without manual annotations. Definition 1 (Empirical Monotonicity Divergence). Let 
+
+˜Q(i) 
+
+> m
+
+= [ ˜Q(i) 
+
+> m
+
+(x(i)1 ), . . . , ˜Q(i) 
+
+> m
+
+(x(i) 
+
+> K
+
+)] T ∈ RK be the purified quality vector of evaluator m on the i-th image, where the 
+
+K elements are sorted such that the area ratios satisfy an image-specific strictly monotonic sequence 1.0 = x(i)1 >x(i)2 > · · · > x (i) 
+
+> K
+
+. To decouple the purification validation from parametric curve fitting and eliminate numerical instability from discrete backward finite differences, the empirical monotonicity divergence D(i) 
+
+> m
+
+for a single image is formulated as: 
+
+D(i)
+
+> m
+
+= 1
+
+K − 1
+
+> K−1
+
+∑
+
+> k=1
+
+I
+
+(( ˜Q(i) 
+
+> m
+
+(x(i)
+
+> k+1
+
+) − ˜Q(i) 
+
+> m
+
+(x(i) 
+
+> k
+
+)
+
+)
+
+· Polarity m > 0
+
+)
+
+(9) where I(·) is the indicator function, and Polarity m ∈{+1 , −1} denotes the directional sign of the evaluator. The macro-aggregated divergence expectation across the entire empirical image domain X is defined as: 
+
+¯Dm = Ei∈X 
+
+[
+
+D(i)
+
+> m
+
+]
+
+= 1
+
+N
+
+> N
+
+∑
+
+> i=1
+
+D(i) 
+
+> m
+
+(10) where N = |X | specifies the absolute dataset scale. An arbitrary evaluator b ∈ Mfull is identified as a defective model over the image domain X if and only if its macro-aggregated divergence expectation satisfies the mathematical boundary condition: 
+
+¯Db ≥ τD (11) where τD = 0 .6 is a critical threshold governed by a data-driven bimodal separation and variational spectrum constraints computed across the N = 2, 797 images. Empirical computation of ¯Dm yields a distinct statistical gap, where robust high-semantic algorithms cluster within 
+
+[0 .18 , 0.35] , whereas background-overfitting baselines esca-late past 0.62 . Ablation tests demonstrate that relaxing this boundary (τD > 0.6) introduces negative cross-covariances into the aggregate manifold, triggering severe spectral loading cancellation that collapses the dominant eigenvector variance explanation ratio from 74.68% down to 14.25%. Under this structural criterion, the full pool is parti-tioned into mutually exclusive subsets satisfying Mfull =
+
+Melite ∪ M defect with Melite ∩ M defect = ∅, whereby the defective subset Mdefect = {b ∈ M full | ¯Db ≥ τD }
+
+is systematically pruned. This purification mechanism enforces the Perron-Frobenius conditions, ensuring that the filtered elite pool Melite exclusively retains models possessing positive marginal gains under spatial composi-tion perturbations: 
+
+Melite = {m ∈ M full | ¯Dm < τ D } (12) 6 SUBMITTED FOR REVIEW 
+
+In our implementation, Melite is spanned by seven baseline metrics, namely PI [30], CLIPIQA+ [21], NRQM [31], MUSIQ [23], NIMA [16], BRISQUE [14], and NIQE [15]. Theorem 2 (Eigen-Subspace Consensus Purification). Let 
+
+Σ ∈ RM ×M denote the global covariance matrix eval-uated over the evaluator macro characterization vectors 
+
+em = [ E(1)  
+
+> m
+
+, . . . , E (N ) 
+
+> m
+
+]T ∈ RN , where m ∈ M full and 
+
+M = |M full |. Here, the scalar E(i) 
+
+> m
+
+= F( ˜Q(i) 
+
+> m
+
+) represents a macro-aggregated quality representation derived from the purified isotropic quality vector ˜Q(i) 
+
+> m
+
+of the i-th image. The dominant loading eigenvector vPC1 ∈ RM
+
+obtained via unsupervised eigenvalue decomposition sat-isfies a uniform positive directional alignment ( vPC1 > 0)if and only if the active evaluation covariance structure is restricted to the purified elite ensemble pool Melite ,which satisfies the non-negativity and matrix irreducibility constraints. Conversely, the inclusion of the defective subset Mdefect introduces negative off-diagonal entries in 
+
+Σ and induces structural block-reducibility under out-of-distribution compositions, triggering severe spectral load-ing cancellation that disrupts the uniform sign alignment. Proof: Let E ∈ RN ×M define the global quality eval-uation matrix whose columns consist of the energy vectors 
+
+em across the empirical image domain ( N = 2 , 797 ), where each column is zero-mean centered such that eTm1N = 0 .The global covariance matrix is rigorously formulated as Σ = 1  
+
+> N−1
+
+ET E. Under the Rayleigh-Ritz variational theorem [5], the dominant principal component PC 1 is extracted by solving the optimization problem for the loading vector v ∈ RM that maximizes the Rayleigh quotient: 
+
+max 
+
+> v
+
+vT Σv vT v = λPC1 , subject to vT v = 1 (13) Expanding the quadratic form of the symmetric covariance matrix Σ yields the cross-paradigm interaction compo-nents: 
+
+vT Σv = ∑
+
+> m∈M full
+
+v2
+
+> m
+
+Var (em) + 2 ∑
+
+> m<j
+
+vmvj Cov (em, ej )
+
+(14) To evaluate the necessity of purifying the evaluator pool, assume that a defective evaluator b ∈ Mdefect 
+
+remains within the active pool. Because its monotonicity divergence transcends the performance-driven threshold ( ¯Db ≥ τD ), its energy trajectory eb is regularized by random background contextual textures rather than the invariant target quality. Under out-of-distribution scenes, this composition-driven decoupling renders the defective channel statistically independent of, or inversely correlated with, the high-semantic elite metrics. This independent noise perturbatively structures the global covariance ma-trix as a block-reducible operator: 
+
+Σ =
+
+[Σelite ∆b
+
+∆Tb Var (eb)
+
+]
+
+(15) where the cross-coupling boundary satisfies ∥∆b∥2 →
+
+0 due to contextual clutter saturation. Resolving the quadratic energy by isolating the defective channel b
+
+yields: 
+
+vT Σv = vT
+
+> elite
+
+Σelite velite + v2 
+
+> b
+
+Var (eb) + 2 vbvT
+
+> elite
+
+∆b (16) where v = [vT
+
+> elite
+
+, v b]T . As ∥∆b∥2 → 0, the cross-coupling elements within ∆b (representing Cov (eg , eb) for 
+
+g ∈ M elite ) either vanish or transition into local nega-tive values owing to un-calibrated operational polarities. This algebraic degradation introduces a strict structural fracture that disrupts the matrix non-negativity. Conse-quently, the optimization workspace breaks the uniform sign property ( vPC1 ≯ 0) to maintain subspace orthog-onality under block-reducible constraints, collapsing the primary explained variance from 74 .68% down to 14 .25% .Conversely, pruning Mdefect restricts the system to Σelite . The filtered covariance matrix Σelite ex-clusively comprises strictly positive cross-covariances (Cov (eg , ej ) > 0), rendering it a strictly non-negative and irreducible matrix. Invoking the Perron-Frobenius theorem [5], these algebraic conditions guarantee that the dominant eigenvalue λPC1 is unique and its corresponding loading eigenvector vPC1 possesses a uniform positive directional alignment (vPC1 > 0), ensuring a stable consensus topology and completing the proof. Remark 1 (Spectral Alignment Dynamics of Theorem 2). The algebraic deduction linking the empirical divergence bounds and the sign-uniformity conclusion under Theorem 2 is strictly governed by variational boundaries. The condition ¯Db ≥ τD guarantees that the metric vector eb
+
+is dominated by chaotic background contextual textures rather than target quality, which fundamentally disrupts the topological network of the evaluator graph. Math-ematically, this statistical decoupling induces a block-reducible boundary condition ∥∆b∥2 → 0, violating the matrix irreducibility required by the Perron-Frobenius theorem [5]. Conversely, once the active evaluation pool is re-stricted to the purified non-negative covariance domain (Cov (em, ej ) ≥ 0) under the synchronized polarity lock, the cross-paradigm intersections form a strongly connected operator network. Under these algebraic constraints, max-imizing the Rayleigh quotient automatically drives the loading coordinates to align harmoniously on a uniform sign polarity ( vPC1 > 0). This directional consensus max-imizes the dominant eigenvalue λPC1 while eliminating spectral loading cancellation, thereby establishing a data-driven criterion to isolate superior evaluators without manual annotations. The elite pool Melite identified here provides the de-terministic input for the robust minimum-variance fusion stage formulated in Theorem 3. C. Robust M-Estimation and Variance Contraction Boundary After isolating the high-semantic pool via the mono-tonicity divergence filter, the aggregation of multiple HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 7
+
+noisy, heterogeneous quality metrics forms a non-linear sensor fusion challenge. Although classical inverse-variance weighted averaging based on Maximum Likelihood Es-timation (MLE) achieves minimum variance under in-dependent Gaussian noise assumptions, it exhibits high sensitivity to atypical outlier predictions triggered by local contextual clutter. To mitigate this vulnerability, we formulate a robust Welsch/Leclerc-type M-estimator [10] regularized via a non-parametric Median Absolute Devi-ation (MAD) scale matrix [11]. This framework smoothly attenuates anomalous evaluation channels based on their local deviations without hard boundary rejection, preserv-ing high asymptotic efficiency under nominal distribu-tions while ensuring error boundedness under sparse data contamination. Furthermore, a non-parametric principal component stabilizer ζ(i) 
+
+> PC1
+
+is introduced to dynamically compensate for residual systemic drifts between hand-crafted statistics and deep semantic features across the global manifold. Theorem 3 (Robust M-Estimation Scale Convergence). Let ξ(i) 
+
+> m
+
+denote the curve-fitting standard error of the purified elite model m ∈ M elite on the i-th target image, tracking individual parameter estimation variance bounds. The ultimate self-supervised pseudo-ground truth q(i)
+
+> PGT
+
+synthesized via the robust M-estimator framework is obtained as the unique solution to the global likelihood optimization problem: 
+
+q(i) 
+
+> PGT
+
+=
+
+∑ 
+
+> m∈M elite
+
+ω(i) 
+
+> m
+
+exp 
+
+(
+
+− (E(i) 
+
+> m−Med (E(i))) 2
+> 2(1 .4826 ·MAD (i)+ϵ0)2
+
+) ¯Q(i)
+
+> m
+
+∑ 
+
+> m∈M elite
+
+ω(i) 
+
+> m
+
+exp 
+
+(
+
+− (E(i) 
+
+> m−Med (E(i))) 2
+> 2(1 .4826 ·MAD (i)+ϵ0)2
+
+)
+
++ ζ(i)
+
+> PC1
+
+(17) where ω(i) 
+
+> m
+
+= 1(ξ(i) 
+
+> m)2+ϵ0
+
+represents the individual Fisher information metric weights ( ϵ0 = 10 −7), Med (·) is the median operator, E(i) = [ E(i)1 , . . . , E (i)
+
+> |M elite |
+
+]T ∈ R|M elite |
+
+is the ensemble macro energy vector, and MAD (i) is the Median Absolute Deviation evaluated over E(i). The term 
+
+¯Q(i) 
+
+> m
+
+= 1
+
+> K
+
+∑Kk=1 ˜Q(i) 
+
+> m
+
+(x(i) 
+
+> k
+
+) represents the mean intensity of the purified quality vector. The stabilizer component 
+
+ζ(i) 
+
+> PC1
+
+handles the anisotropic feature drift across distinct architectural paradigms: 
+
+ζ(i) 
+
+> PC1
+
+= η ·
+
+(
+
+1.0 + |μ(i) 
+
+> E
+
+− Med (E(i))|
+
+Φ + ϵ0
+
+)
+
+(18) where μ(i) 
+
+> E
+
+= 1
+
+> |M elite |
+
+∑ 
+
+> m∈M elite
+
+E(i) 
+
+> m
+
+, and η, Φ are performance-driven scaling hyperparameters whose cal-ibrated values and ablation sensitivities are cross-referenced in Section V. Proof: Let each purified elite evaluator be modeled as an independent observation channel perturbed by localized additive noise: ¯Q(i) 
+
+> m
+
+= q(i) + e(i) 
+
+> m
+
+, where q(i) represents the theoretical target quality. According to the Cramér-Rao bound theorem [12], the parameter estimation variance of each non-linear evaluator trajectory is bounded from below by the inverse of its individual Fisher Information matrix: Var (e(i) 
+
+> m
+
+) ≥ (F(i) 
+
+> m
+
+)−1 ≈ (ξ(i) 
+
+> m
+
+)2. Under the nominal independent Gaussian noise hypothesis, maximizing the joint log-likelihood optimization yields the minimum-variance unbiased estimator weights ω(i) 
+
+> m
+
+= 1 /(( ξ(i) 
+
+> m
+
+)2 +ϵ0).To ensure numerical stability against atypical observa-tion noise triggered by extreme contextual contamination, we formulate a robust Welsch/Leclerc-type M-estimator loss function to guarantee continuous differentiability and achieve asymptotic suppression for anomalous channels: 
+
+ρ(d(i) 
+
+> m
+
+) = 1 − exp 
+
+(
+
+− (d(i) 
+
+> m
+
+)2
+
+2( σ(i) 
+
+> MAD
+
++ ϵ0)2
+
+)
+
+(19) where d(i) 
+
+> m
+
+= E(i) 
+
+> m
+
+− Med (E(i)) represents the local energy deviation distance, and σ(i) 
+
+> MAD
+
+= 1.4826 · MAD (i) is the robust scale parameter, with 1.4826 serving as the canonical MAD-to-standard-deviation conversion factor under Gaussian partitions [11]. Differentiating ρ(d(i) 
+
+> m
+
+) with respect to the local metric variables yields the bounded redescending influence function ψ(d(i) 
+
+> m
+
+) = ∂ρ (d(i) 
+
+> m)
+> ∂d (i)
+> m
+
+:
+
+ψ(d(i) 
+
+> m
+
+) = d(i)
+
+> m
+
+(σ(i) 
+
+> MAD
+
++ ϵ0)2 · exp 
+
+(
+
+− (d(i) 
+
+> m
+
+)2
+
+2( σ(i) 
+
+> MAD
+
++ ϵ0)2
+
+)
+
+(20) This smooth Leclerc-type influence function is strictly bounded, satisfying |ψ(d(i) 
+
+> m
+
+)| ≤ 1(σ(i) 
+
+> MAD +ϵ0)√e
+
+≈ 0.6065 
+
+> σ(i)
+> MAD +ϵ0
+
+,and asymptotically vanishes under infinite deviation lim-its: lim |d(i)  
+
+> m|→∞
+
+ψ(d(i) 
+
+> m
+
+) = 0 .To implement the robust optimization under an itera-tively reweighted least squares (IRLS) execution frame-work, the equivalent robust weight function w(d(i) 
+
+> m
+
+) is derived via the score-to-deviation ratio: 
+
+w(d(i) 
+
+> m
+
+) = ψ(d(i) 
+
+> m
+
+)
+
+d(i)
+
+> m
+
+= 1
+
+(
+
+σ(i) 
+
+> MAD
+
++ ϵ0
+
+)2 exp 
+
+(
+
+− (d(i) 
+
+> m
+
+)2
+
+2( σ(i) 
+
+> MAD
+
++ ϵ0)2
+
+) (21) The global objective function incorporates both the Fisher information structure and the robust gating weights. Maximizing the aggregate robust likelihood equations requires setting the first-order optimality condition to zero: ∑ 
+
+> m∈M elite
+
+ω(i) 
+
+> m
+
+w(d(i) 
+
+> m
+
+)( ¯Q(i) 
+
+> m
+
+− q(i)) = 0 . Solving this system for the latent target variable directly yields the regularized consensus formulation presented in Eq. (17), where the scalar multiplier 1/(σ(i) 
+
+> MAD
+
++ ϵ0)2 in w(d(i) 
+
+> m
+
+)
+
+scales both the numerator and denominator equally and naturally cancels out. This structural formulation ensures a robust asymptotic breakdown point of exactly 50% .Finally, the residual anisotropic feature drift between the empirical mean μ(i) 
+
+> E
+
+and the median central hub is dynamically regularized via the non-parametric principal component stabilizer ζ(i)
+
+> PC1
+
+, completing the proof. The synthesized q(i) 
+
+> PGT
+
+is the final output of the fusion pipeline, whose stability is verified in Theorem 4. 8 SUBMITTED FOR REVIEW 
+
+D. Boundary Margin Sufficiency and Topological Invari-ance In real-world imaging deployments, captured frames ex-hibit highly heterogeneous spatial framing configurations, where target coordinates are either centrally embedded or severely constrained by canvas boundaries. Individual quality evaluators often possess asymmetric sensitivities to such spatial truncation and edge-clipping artifacts, caus-ing their empirical covariance structures to drift across varying composition distributions. To resolve this domain discrepancy, Theorem 4 leverages matrix perturbation theory and the Davis-Kahan theorem [13] to guarantee that despite these rank-deficient structural variations, the dominant principal component vector remains topolog-ically invariant ( sin Θ → 0). This property rigorously ensures that the synthesized pseudo-ground truth q(i)
+
+> PGT
+
+is mathematically reproducible across arbitrary spatial partitions, effectively neutralizing structural composition bias. Theorem 4 (Topological Invariance under Heterogeneous Boundary Truncation). Let Σhigh and Σconst denote the localized covariance matrices evaluated over the high-margin abundance subset Xhigh and the constrained-margin subset Xconst , respectively, where Xhigh ∪ X const =
+
+X and Xhigh ∩ X const = ∅. Let ∆trunc = Σhigh − Σconst be the anisotropic symmetric perturbation matrix induced by varying evaluator sensitivities to edge clipping. Under the evaluator purification criteria derived in Theorem 2, the perturbed dominant eigenvector vconst PC1 remains topologically uniform against its unperturbed counterpart 
+
+vhigh PC1 , satisfying the refined Davis-Kahan perturbation bound [13]: 
+
+sin Θ 
+
+(
+
+vhigh PC1 , vconst PC1 
+
+)
+
+≤ ∥∆trunc ∥2
+
+δgap 
+
+(22) where Θ( ·) evaluates the canonical angle between the dominant eigen-subspaces, ∥ · ∥ 2 represents the spectral operator norm, and δgap = λhigh PC1 − λhigh PC2 denotes the unperturbed principal spectral gap spanning the elite evaluation pool Melite .Proof: Traditional formulations that simplistically model the boundary truncation error as a scalar scaling (∆trunc ≈ κΣ) are structurally invalid in real-world scenarios because heterogeneous quality evaluators possess asymmetric sensitivities to canvas clipping, rendering 
+
+∆trunc an anisotropic, symmetric perturbation matrix. To prove the topological stability of the dominant consensus axis under this structural stress, we invoke the Davis-Kahan sin Θ Theorem over symmetric linear operators [5], [13]. Let λhigh PC1 > λ high PC2 ≥ · · · ≥ 0 specify the unique, non-degenerate eigenvalue spectrum of Σhigh under the Perron-Frobenius conditions established in Theorem 2. We treat Σconst as a perturbed matrix operator defined as 
+
+Σconst = Σhigh − ∆trunc .To evaluate the directional rotation of the dominant coordinate axis, we introduce the unperturbed and per-turbed rank-one orthogonal subspace projection operators, 
+
+P1 = vhigh PC1 (vhigh PC1 )T and Pconst  
+
+> 1
+
+= vconst PC1 (vconst PC1 )T , respec-tively. Evaluating the perturbed residual field relative to the orthogonal complement of the unperturbed dominant subspace yields the foundational algebraic relation: 
+
+(I − P1) Σconst vconst PC1 = − (I − P1) ∆trunc vconst PC1 (23) Since Σconst vconst PC1 = λconst PC1 vconst PC1 , the left-hand side of Eq. (23) directly tracks the canonical subspace rota-tion. Invoking the invariant subspace restriction opera-tor, the minimal singular value of the restricted oper-ator (I − P1) Σhigh (I − P1) − λconst PC1 I is bounded from below by the unperturbed principal spectral gap δgap 
+
+under tight first-order concentration boundaries. Taking the spectral operator norm on both sides and utilizing the refined geometric identity for rank-one projections 
+
+∥ (I − P1) vconst PC1 ∥2 = sin Θ 
+
+(
+
+vhigh PC1 , vconst PC1 
+
+)
+
+provides the direct contraction inequality without redundant multi-term expansions: 
+
+δgap · sin Θ 
+
+(
+
+vhigh PC1 , vconst PC1 
+
+)
+
+≤ ∥ (I − P1) ∆trunc vconst PC1 ∥2
+
+(24) Upper-bounding the orthogonal complement projection envelope ∥I − P1∥2 ≤ 1 and enforcing Euclidean norm preservation under standard rotation (∥vconst PC1 ∥2 = 1)yields the tightly bound formulation: 
+
+sin Θ 
+
+(
+
+vhigh PC1 , vconst PC1 
+
+)
+
+≤ ∥∆trunc ∥2
+
+δgap 
+
+(25) Under the evaluator purification framework specified in Theorem 2, all active models in Melite share non-negative cross-covariances, leading to a concentrated spec-tral distribution where the primary eigenvalue absorbs the dominant variance ( 74 .68% ). This energy concentration drives the denominator spectral gap δgap = λhigh PC1 −λhigh PC2 to expand toward its maximum theoretical upper boundary. Concurrently, as the sorted area ratio scales down to the near-zero edge, the high-order spatial moment orthogonal separation derived in Theorem 2 compresses the tail-area clipping artifacts into a flat scaling domain, forcing the spectral operator norm toward zero: ∥∆trunc ∥2 → 0.Substituting these asymmetric asymptotic limits back into the formulation yields sin Θ → 0 = ⇒ Θ → 0.Under finite-sample discrete empirical observations (N = 2 , 797 ), the empirical covariance matrix converges to its population counterpart governed by the central limit theorem at a stochastic rate of O(N −1/2). This bounds the global directional alignment of the perturbed dominant eigenvector within a tight stochastic error shell of O(N −1/2 +∥∆trunc ∥2/δ gap ). As verified by the empirical cosine similarity score of 0.999147 (sin Θ ≈ 0.0412 ) across the 2, 797 traffic images documented in Section V, the perturbation matrix norm ∆trunc ∥2 is heavily suppressed relative to the deep semantic primary spectral gap δgap .This constraint ensures that vconst PC1 ≈ vhigh PC1 within the continuous domain limit, guaranteeing that the consensus voting axis exhibits high structural resilience against heterogeneous frame-truncation blocks and completing the proof. HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 9
+
+This topological invariance guarantees that the pseudo-ground truth q(i) 
+
+> PGT
+
+remains stable across diverse imaging conditions, completing the closed-loop framework. IV. Experimental Setup and Methodological Benchmarking To rigorously evaluate the empirical performance and numerical stability of the proposed self-supervised frame-work, we construct a comprehensive quantitative bench-marking pipeline over real-world railway rolling stock surveillance scenarios. A. Railway Rolling Stock Imaging Dataset and Structural Constraints The empirical evaluation is executed over the CQU Railway Rolling Stock Surveillance Dataset. The raw repository comprises 3,100 high-definition images of di-verse rolling stock (locomotives, trams, subways, intercity trains) from multiple countries, time periods, and viewing conditions. To eliminate sampling exceptions from severe occlusions or blind sensor regions, we retain only those reliably detected by YOLO [32], yielding a final set of 
+
+N = 2 , 797 valid images. For each image, a cascade framework combining YOLO and SAM [33] localizes the rigid target boundary. The minimal bounding box B(i) 
+
+> min
+
+is extracted as the initial anchor. To construct the background-perturbed quality manifold, we generate K = 101 randomized bounding boxes B(i) = {B(i) 
+
+> k
+
+}Kk=1 , where B(i)1 = B(i)
+
+> min
+
+, and sub-sequent boxes are stochastic expansions of B(i)
+
+> min
+
+. This yields 2, 797 × 101 = 282 , 497 localized patches, each in-dependently evaluated by |M full | = 11 BIQA algorithms, producing a score tensor of dimensions 2, 797 × 101 × 11 .The dataset spans diverse viewpoints (frontal, side, elevated), environmental conditions (daylight, dusk, varied weather), and background complexities (urban, suburban, industrial). This diversity, combined with cross-country and cross-era coverage, validates the framework’s gener-alization capability for out-of-distribution deployments. Following a rank-based equal partition lock, the 2, 797 
+
+images are partitioned into four tiers: Tier-1 ( n = 700 ), Tier-2 ( n = 699 ), Tier-3 ( n = 699 ), and Tier-4 ( n = 699 ). The fully anonymized image repository, score tensors, and source code are publicly available at https://github.com/ cqugege/Self-Supervised-BIQA-Manifold. B. Baseline Models and Algorithmic Polarity Configura-tion Over each patch, quality evaluations are independently executed using |M full | = 11 BIQA algorithms spanning three technological eras: 1) Hand-crafted NSS Statistics: BRISQUE [14] and NIQE [15]. 2) Deep Opinion-Aware Networks: NIMA [16], DBCNN [17], and CNNIQA [18].       
+
+> TABLE I System Hardware and Software Computing Bounds Computational Component Deployment Specification Central Processing Unit (CPU) Intel Core i9-13900K Graphics Processing Unit (GPU) NVIDIA 1080Ti (11GB) Random Access Memory (RAM) 36GB DDR5 Dual-Channel Operating System Windows 11 Professional Core Mathematical Stack NumPy 1.25, PyTorch 2.1
+
+3) Deep Semantic Transformers: CLIPIQA+ [21], MUSIQ [23], NRQM [31], PI [30], MANIQA [34], and PAQ2PIQ [35]. Prior to eigen-subspace consensus decomposition, the in-trinsic operational polarity Polarity m ∈ { +1 , −1} of each baseline is calibrated via polarity lock, ensuring that all scoring sequences align with the target quality degradation direction. C. Hardware and Software Computing Bounds All evaluations and spectral optimizations are deployed on a centralized high-performance workstation. The hard-ware and software configuration is specified in Table I, optimized for single-column IEEE layout. D. Configuration of the Macro Qualitative Matrix Plots To visualize the continuous spatial decay paths and consensus trajectories, we construct two 6 × 7 qualitative matrix plots, as shown in Fig. 2 and Fig. 3. Each matrix consists of 42 subplots rendered at 300 DPI. In the nominal evaluation matrix (Fig. 2), Column 1 shows the initial target bounding boxes, while Columns 2–7 demonstrate the continuously damped decay tra-jectories ( ˜Q(i) 
+
+> m
+
+) generated by the elite baselines, where our framework’s consensus indicator robustly tracks the stable perceptual manifold. Conversely, in the boundary failure stress matrix (Fig. 3), which simulates extreme edge truncation and severe spatial anomalies, the framework activates its regularized exponential weighting scheme, dy-namically compressing anomalous inputs ( ω(i) 
+
+> m
+
+· G(i) 
+
+> m
+
+→ 0)to prevent cross-paradigm noise from polluting the global quality scale anchor. V. Empirical Results and Axiomatic Validation This section evaluates the synthesized pseudo-ground truth ( q(i)
+
+> PGT
+
+) through quantitative and qualitative anal-yses. The evidence focuses on three aspects: orthogonal feature separation, non-convex subspace recovery, and topological invariance under boundary constraints. A. Performance Evaluation and Asymptotic Efficiency Analysis We evaluate the proposed framework against 11 baseline evaluators using three indicators (Table II): Aggregated MDC Energy, Cramér-Rao Lower Bound (CRLB) Stan-dard Error [12], and Target Quality Rebound Gain. 10 SUBMITTED FOR REVIEW 
+
+Fig. 2. Qualitative success evaluation matrix ( 6×7) across heteroge-neous elite paradigms and varying spatial positions under standard scenarios. Column 1 visualizes the input context bounding box coordinates generated via the YOLO-SAM cascade framework [32], [33], while Columns 2–7 demonstrate the smooth, continuously damped decay trajectories ( ˜Q(i) 
+
+> m
+
+) tracked by the purified elite baselines. 
+
+Fig. 3. Comprehensive boundary failures and stress-testing matrix (6 × 7) under long-tail industrial edge failures and severe spatial truncation anomalies. Under extreme conditions where raw un-purified statistics undergo chaotic divergence, our framework au-tomatically dampens the toxic inputs ( ω(i) 
+
+> m
+
+· G(i) 
+
+> m
+
+→ 0) to protect the global consensus scale anchor. 
+
+BRISQUE [14] and NIQE [15] yield low energy (16.93, 13.21) with negative rebounds ( −41 .80 , −68 .41 ). NIMA [16] and MUSIQ [23] show attenuation ( −32 .62 ,
+
+−29 .20 ). CLIPIQA+ [21] and NRQM [31] have positive gains ( +30 .67 , +21 .31 ) but high CRLB errors (0.096, 0.076). Our framework achieves energy 25.14, rebound gain +9.83, and compresses CRLB to 0.0003, validating the Leclerc-type M-estimator’s [10] minimum-variance property as predicted by Theorem 3. 
+
+TABLE II Efficiency Analysis Across Evaluators Algorithm Name Agg. Energy ↑ CRLB SE ↓ Quality Gain Our Framework 25.1419 0.0003 +9.8267 PI Baseline 24.8079 0.0032 −25 .3989 
+
+CLIPIQA+ 21.8302 0.0963 +30 .6698 
+
+NRQM 21.0596 0.0764 +21 .3086 
+
+NIMA 17.7060 0.0011 −32 .6198 
+
+MUSIQ 18.2627 0.0016 −29 .2012 
+
+BRISQUE 16.9284 0.0032 −41 .7956 
+
+NIQE 13.2071 0.0012 −68 .4102 
+
+TABLE III Manifold Energy Dividend and Convex Hull Breach Comparison Projective Space Config. Energy ↑
+
+Our Framework 25.1419 Linear Convex Hull Bound 24.8079 Conventional Linear Combination 19.3422 TABLE IV Ablation of the Hard-Gate Purified Constraint Layer Fusion Strategy Infrastructure Agg. Gain Our Framework (Purified) +9.8425 Traditional Inverse-Variance −15 .4855 
+
+B. Manifold Energy Analysis and Convex Hull Boundary Traversal Table III analyzes the macro evaluation energy across projective space boundaries. A conventional linear com-bination yields energy 19.34, indicating that un-purified metric integration introduces spectral loading cancellation that dampens consensus. The linear convex hull bound (PI [30]) restricts energy to 24.81. Our framework tran-scends this to 25.14, recovering a +1 .34% non-convex increment, empirically verifying the non-parametric prin-cipal component stabilizer from Theorem 3. The hard-gate purification ablation (Table IV) confirms that our purified strategy (+9.84) outperforms traditional inverse-variance fusion ( −15 .49 ). C. Spectral Alignment Dynamics and Consensus Eigen-Subspace Concentration Eigenvalue decomposition of Σelite (Table V) shows PC1 capturing 74.68% variance, PC2 sharply attenuating to 11.21%, and PC3–PC7 decaying to residual noise. This verifies the Perron-Frobenius conditions [5] from Theorem 2, confirming that the purified elite covariance matrix is irreducible and produces a strictly positive dominant eigenvector (vPC1 > 0). The empirical PDF (Fig. 4) HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 11 
+
+shows a convergent Dirac-like delta spike after polarity calibration, confirming that the elite sub-pool isolates coherent perceptual consensus from out-of-distribution noise. The polarity lock ablation (Table VI) directly validates Theorem 2: without elite purification, PC1 variance col-lapses from 74.68% to 14.25%, confirming that defective evaluators violate the Perron-Frobenius non-negativity and irreducibility conditions, while the purified elite pool restores spectral alignment.                      
+
+> TABLE V Scree Analysis of Eigen-Subspace Over Elite Pool Axis Exp. Var. (%) ↑Cum. Var. (%) PC1 74.68 74.68 PC2 11.21 85.89 PC3 4.37 90.27 PC4 3.25 93.51 PC5 2.42 95.93 PC6 2.18 98.12 PC7 1.88 100.00 TABLE VI Ablation of Polarity Lock: Variance Explanation Comparison Alignment Configuration PC1 Exp. Var. (%) ↑
+> Our Framework (With Lock) 74.68 Naive PCA (Without Lock) 14.25
+
+D. Topological Invariance under Spatial Truncation and Numerical Stability Analysis Cross-environment evaluation (Table VII) partitions data into high-margin (N1 = 924 ) and constrained-margin ( N2 = 1 , 873 ) pools. Despite slight variance shifts (69.83% vs. 76.36%), cosine similarity reaches 0.998259, confirming sin Θ → 0 per the Davis-Kahan bound [13], which is precisely the topological invariance guaranteed by Theorem 4. Multi-tier analysis (Table VIII) yields cosine similarities 0.999010, 0.999783, 0.999837, 0.999147 across Tiers 1–4, further manifesting the Davis-Kahan bound from Theorem 4 [13]. Numerical stability analysis (Table IX) shows that without regularization, survival drops to 64.13% due to singularities at xk → 0. With our ξ-regularization derived in Theorem 3, the domain expands to x ∈ [10 −6, 1.0] ,achieving 100.0% survival (Fig. 5).         
+
+> TABLE VII Topological Stability Under Heterogeneous Truncation Dataset Partition PC1 Var. Cosine Sim. High-Margin Pool ( N1= 924 )69.83% 0.998259 Constrained Pool ( N2= 1 ,873 )76.36%
+
+E. Macro Statistical Significance and Independent Exter-nal Feature Decoupling Wilcoxon signed-rank tests compare our framework against CLIPIQA+ [21], NRQM [31], PI [30], and                            
+
+> TABLE VIII Stratified Multi-Tier Spatial Invariance Analysis Stratified Spatial Tier PC1 Var. Cosine Sim. Tier-1: High Abund. ( n= 700 )68.20% 0.999010 Tier-2: Mod. Margin ( n= 699 )73.77% 0.999783 Tier-3: Const. Margin ( n= 699 )76.27% 0.999837 Tier-4: Rel. Const. ( n= 699 )78.18% 0.999147 TABLE IX Algorithmic Shielding and Numerical Stability Analysis Configuration Effective Domain Survival ↑
+> Our Framework x∈[10 −6,1.0] 100.0000% Naive Kinetics x∈[10 −4,1.0] 64.1258%
+
+NIQE [15]. Table X shows W > 3.8 × 10 6 and P < 0.0001 
+
+for all pairwise tests, rejecting the null hypothesis at 
+
+α = 0 .01 and confirming statistical significance. Cross-validation against VIF [20] (Table XI) yields low correlations (SRCC = 0.3184, PLCC = 0.2704) with P < 0.0001 . This low correlation validates our orthogonalization objectives: VIF is driven by pixel-level information [36], while our framework decouples consensus quality from background contexts via Theorem 1 [9] and Theorem 2.                                      
+
+> TABLE X Non-Parametric Wilcoxon Signed-Rank Test Results Hypothesis Pairwise Track Statistic WP-Value Our Framework vs. CLIPIQA+ 3,884,197 <0.0001
+> Our Framework vs. NRQM 3,944,103 <0.0001
+> Our Framework vs. PI 3,964,191 <0.0001
+> Our Framework vs. NIQE 3,966,336 <0.0001
+> TABLE XI Independent Decoupling Verification Against FR Baseline Validation Pairwise Track SRCC ↑PLCC ↑P-Value Our P-GT vs. Independent FR-VIF 0.3184 0.2704 <0.0001
+> TABLE XII Elite Ablation Test: Resiliency Under Massive Juror Loss Ablation Set Type PLCC SRCC Elite Decision Pool ( Me= 7 )1.0000 1.0000 Deep Elite Pool ( Me= 3 )0.9842 0.9765 Clipped Elite Pool ( Me= 4 )0.9541 0.9418
+
+F. Quantitative Evaluation Spanning Three Standard Benchmarks To verify the robust cross-dataset zero-shot transferabil-ity and open-loop generalization resilience of the proposed paradigm, we evaluate performance across three heteroge-neous databases: CSIQ, LIVEC, and a dense multi-scale crop iteration of LIVE-2. Crucially, the training-free val-idation pipeline is established by constructing stochastic multi-scale localization observation spaces at the instance 12 SUBMITTED FOR REVIEW                                           
+
+> Fig. 4. Empirical probability density function of the macro-aggregated evaluation energy across distinct paradigms. Following the application of the polarity calibration lock and hard-gate selection rules, the purified elite metrics collapse onto a highly convergent, synchronized Dirac-like delta spike trajectory.
+> Fig. 5. Asymptotic numerical stability analysis over the infinite con-text fluid domain limit ( x→0). While the un-regularized baseline (Naive Kinetics) undergoes mathematical singularity collapses, the proposed parameter-regularized scheme guarantees high operational survival across all 2,797 test images. TABLE XIII Kinetics Goodness of Fit over Information Dilution Manifold Algorithm Architecture R2Score ↑RMSE ↓
+> Our Framework (P-GT) 0.9854 1.4251 CLIPIQA+ 0.9624 2.1024 NRQM 0.9415 2.6841 NIMA 0.9238 3.1092 PI 0.9105 3.5412 MUSIQ 0.8942 4.6851 BRISQUE 0.6512 12.4851 NIQE 0.5241 18.9654
+
+level. Specifically, for each individual image within CSIQ and LIVEC, we deploy 50 randomized localized crop samples to capture multi-scale structural quality decay. To further challenge the framework under a high-density spatial-moment perturbation environment, the sampling density is expanded to 100 continuous multi-scale crop bounding boxes per image for the LIVE-2 benchmark. Throughout this cross-domain exploration, our model operates under a strict fully training-free, frozen-parameter zero-shot transfer configuration, without trig-gering any dataset-specific weight back-propagation or absorbing any prior mean opinion score (MOS) optimiza-tion labels. Crucially, the internal elite expert pool is rigidly frozen using the three most dominant founda-tional paradigms across different structural dimensions: the multi-modal text-image aligned network CLIPIQA+, the multi-scale scene-adaptive transformer MUSIQ, and the localized patch-attention architecture MANIQA. This specialized triad forms the invariant voting pool to gener-ate the consensus pseudo-ground truth ( QPGT ) via the 3.5 σ adaptive envelope filter. The holistic quantitative indicators across overall and individual distortion channels are systematically compiled within the single-column￿￿￿ in Table XIV.                 
+
+> TABLE XIV Cross-Dataset Zero-Shot Performance (SRCC/PLCC) Across Three Benchmarks Under Consensus Quality Evaluation Baseline CSIQ LIVEC LIVE-2 Method SRCC PLCC SRCC PLCC SRCC PLCC MUSIQ 0.6889 0.7513 0.4509 0.5259 0.5693 0.5635 NIMA 0.3516 0.3654 0.0240 0.1432 0.5326 0.5346 MANIQA 0.6345 0.6345 0.5434 0.5904 0.4935 0.5287 BRISQUE 0.5560 0.7363 0.0469 0.0641 0.3643 0.4115 CLIPIQA+ 0.7245 0.7709 0.3313 0.3876 0.3349 0.3692 NRQM 0.4968 0.6088 0.2149 0.2431 0.2565 0.3174 PI 0.5903 0.6992 0.1650 0.1690 0.2564 0.2609 NIQE 0.5770 0.6933 0.0496 0.0598 0.2445 0.2438 PAQ2PIQ 0.5633 0.6399 0.2015 0.2259 0.1761 0.2181 CNNIQA 0.3281 0.4534 0.1086 0.1182 0.1440 0.1836 DBCNN 0.5508 0.5776 0.1396 0.1642 0.1032 0.1926 Global Pool 0.0939 0.3562 0.4321 0.4810 0.4990 0.5370 Ours 0.7427 0.7767 0.5965 0.6548 0.5657 0.5625
+
+VI. Conclusion and Future Work This paper presented a closed-loop self-supervised BIQA framework under heterogeneous boundary constraints, eliminating manual annotations. Exploiting monotonic degradation of target information density across ran-domized spatial scales, it establishes a tractable con-straint on the continuous evaluation manifold. The high-order spatial moment orthogonal projection [9] eliminates centroid translations, aspect-ratio fluctuations, and lo-cal geometric drift, while Pareto optimization restricts the workspace to an elite consensus pool. Backed by the Perron-Frobenius theorem [5] and Leclerc-type M-estimator [10], the framework aligns voting polarities without spectral cancellation, minimizing variance to-ward the Cramér-Rao lower bound [12]. Stratified eval-uations across standard synthetic and wild benchmarks (CSIQ, LIVEC, LIVE-2) demonstrate robust zero-shot transferability. Parallel deployments on 2, 797 indus-trial images confirm its validity; PC1 absorbs 74 .68% 
+
+global variance with cosine similarity exceeding 0.9982 —HUANG ET AL.: SELF-SUPERVISED TOPOLOGICALLY INVARIANT MANIFOLD LEARNING 13 
+
+empirically manifesting the Davis-Kahan bound [13]. The stabilizer and ξ-regularization extend the numer-ical domain to x ∈ [10 −6, 1.0] , securing 100 .0% sur-vival under extreme stresses. Datasets, score tensors, and code are available at https://github.com/cqugege/ Self-Supervised-BIQA-Manifold. Future work will extend the framework to dynamic video streams and integrate finite-sample statistical learning bounds into the Rayleigh-Ritz framework [5] for stricter error guarantees under out-of-distribution conditions. References 
+
+[1] G. Zhai and X. Min, “Perceptual image quality assessment: a survey,” Science China Information Sciences, vol. 63, no. 11, p. 211101, 2020. [2] J. Xiang, Y. Dang, P. Chen, R. Liang, and W. Lin, “Learning decoupled features with perceptual distillation for blind image quality assessment,” IEEE Transactions on Image Processing, vol. 35, pp. 418–433, 2026. [3] X. Lan, W. Xian, M. Zhou, J. Yan, X. Wei, J. Luo, W. Jia, and S. Kwong, “No-reference image quality assessment: Exploring intrinsic distortion characteristics via generative noise estima-tion with mamba,” IEEE Transactions on Circuits and Systems for Video Technology, vol. 35, no. 12, pp. 12 692–12 706, 2025. [4] Y. Gao, X. Min, Y. Cao, W. Lin, B. S. Lee, and G. Zhai, “Blind image quality assessment by gaussian mixture distribution,” IEEE Transactions on Image Processing, vol. 34, pp. 4660–4675, 2025. [5] C. D. Meyer, Matrix Analysis and Applied Linear Algebra. SIAM, 2000. [6] J. B. Tenenbaum, V. De Silva, and J. C. Langford, “A global geometric framework for nonlinear dimensionality reduction,” Science, vol. 290, no. 5500, pp. 2319–2323, 2000. [7] X. Min, K. Gu, G. Zhai, J. Liu, X. Yang, and C. W. Chen, “Blind quality assessment based on pseudo-reference image,” IEEE Transactions on Multimedia, vol. 20, no. 8, pp. 2049– 2062, 2018. [8] K.-Y. Lin and G. Wang, “Hallucinated-iqa: No-reference image quality assessment via adversarial learning,” in IEEE Confer-ence on Computer Vision and Pattern Recognition (CVPR), 2018, pp. 732–741. [9] J. Flusser, T. Suk, and B. Zitova, 2D and 3D Object Analysis Using Numerical Invariants. John Wiley & Sons, 2016. [10] L. J. Leclerc, “Constructing continuity-preserving piecewise-smooth descriptions of 2D shapes,” International Journal of Computer Vision, vol. 3, no. 1, pp. 73–102, 1989. [11] P. J. Rousseeuw and C. Croux, “Alternatives to the median absolute deviation,” Journal of the American Statistical Asso-ciation, vol. 88, no. 424, pp. 1273–1283, 1993. [12] S. M. Kay, Fundamentals of statistical signal processing: esti-mation theory. Upper Saddle River, NJ, USA: Prentice-Hall, 1993. [13] C. Davis and W. M. Kahan, “The rotation of eigenvectors by a perturbation. III,” SIAM Journal on Numerical Analysis, vol. 7, no. 1, pp. 1–46, 1970. [14] A. Mittal, A. K. Moorthy, and A. C. Bovik, “No-reference image quality assessment in the spatial domain,” IEEE Transactions on Image Processing, vol. 21, no. 12, pp. 4695–4708, 2012. [15] A. Mittal, R. Soundararajan, and A. C. Bovik, “Making com-pletely blind image quality assessment practical,” IEEE Signal Processing Letters, vol. 20, no. 3, pp. 209–212, 2013. [16] H. Talebi and P. Milanfar, “Nima: Neural image assessment,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2018, pp. 11–20. [17] W. Zhang, K. Ma, J. Y. Yan, D. Deng, and Z. Wang, “Blind image quality assessment using a deep bilinear convolutional neural network,” IEEE Transactions on Circuits and Systems for Video Technology, vol. 30, no. 1, pp. 36–47, 2020. [18] L. Kang, P. Ye, Y. Li, and D. Doermann, “Convolutional neural networks for no-reference image quality assessment,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2014, pp. 1733–1740. [19] S. Su, Q. Yan, Y. Zhu, C. Zhang, X. Ge, J. Sun, and Y. Zhang, “Blindly assess image quality in the wild guided by a self-adaptive hyper network,” in IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR), 2020, pp. 3664– 3673. [20] H. R. Sheikh, M. F. Sabir, and A. C. Bovik, “A statistical evaluation of recent full reference image quality assessment algorithms,” IEEE Transactions on Image Processing, vol. 15, no. 11, pp. 3440–3451, 2006. [21] J. Shen, S. Dong, and R. T. Tan, “Clip-iqa+: Powerful and effi-cient blind image quality assessor,” in IEEE/CVF International Conference on Computer Vision (ICCV), 2024. [22] J. Wang, K. C. K. Chan, and C. C. Loy, “Exploring clip for blind image quality assessment,” in Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), 2023, pp. 2890–2900. [23] J. Ke, Q. Wang, Y. Wang, P. Milanfar, and F. Yang, “Musiq: Multi-scale image quality transformer,” IEEE Transactions on Image Processing, vol. 32, pp. 2945–2957, 2023. [24] J. Wu, L. Li, W. Dong, G. Shi, W. Lin, and C.-C. J. Kuo, “Enhanced just noticeable difference model for images with pattern complexity,” IEEE Transactions on Image Processing, vol. 26, no. 6, pp. 2682–2693, 2017. [25] W. Lin and G. Ghinea, “Progress and opportunities in modelling just-noticeable difference (jnd) for multimedia,” IEEE Transac-tions on Multimedia, vol. 24, pp. 3706–3721, 2022. [26] C. M. Bishop, “Mixture density networks,” Aston University, Birmingham, U.K., Tech. Rep. NCRG/94/004, 1994. [27] T. Hofeld, R. Schatz, and S. Egger, “Sos: The mos is not enough,” in Proceedings of the International Workshop on Quality of Multimedia Experience (QoMEX), 2011, pp. 131– 136. [28] Y. Gao, X. Min, W. Zhu, X.-P. Zhang, and G. Zhai, “Image quality score distribution prediction via alpha stable model,” IEEE Transactions on Circuits and Systems for Video Technol-ogy, vol. 33, no. 6, pp. 2656–2671, 2022. [29] Y. Gao, X. Min, Y. Cao, X. Liu, and G. Zhai, “No-reference image quality assessment: Obtain mos from image quality score distribution,” IEEE Transactions on Circuits and Systems for Video Technology, vol. 35, no. 2, pp. 1840–1854, 2025. [30] A. Kumar, S. Desai, and S. Narasimhan, “Perceptual image quality assessment via implicit and explicit feature learning,” IEEE Transactions on Image Processing, vol. 30, pp. 8474–8488, 2021. [31] K. Gu, S. Wang, G. Zhai, S. Ma, X. Yang, W. Lin, W. Zhang, and W. Gao, “Blind quality assessment of tone-mapped images via analysis of information, naturalness, and structure,” IEEE Transactions on Multimedia, vol. 18, no. 3, pp. 432–443, 2016. [32] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You only look once: Unified, real-time object detection,” in IEEE Con-ference on Computer Vision and Pattern Recognition (CVPR), 2016, pp. 779–788. [33] A. Kirillov, E. Mintun, N. Ravi, H. Mao, C. Rolland, L. Gustafson, T. Xiao, S. Whitehead, A. C. Berg, W.-Y. Lo, P. Dollár, and R. Girshick, “Segment anything,” in IEEE/CVF International Conference on Computer Vision (ICCV), 2023, pp. 4015–4026. [34] S. Yang, T. Wu, S. Shi, S. Lao, Y. Gong, M. Cao, J. Wang, and Y. Yang, “Maniqa: Multi-dimension attention network for no-reference image quality assessment,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, 2022, pp. 1191–1200. [35] Z. You, J. Gu, X. Cai, Z. Li, K. Zhu, C. Dong, and T. Xue, “En-hancing descriptive image quality assessment with a large-scale multi-modal dataset,” IEEE Transactions on Image Processing, vol. 34, pp. 8201–8215, 2025. [36] Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, “Image quality assessment: From error visibility to structural similarity,” IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600–612, 2004.

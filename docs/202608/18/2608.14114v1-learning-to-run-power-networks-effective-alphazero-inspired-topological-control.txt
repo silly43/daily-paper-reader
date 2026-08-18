@@ -1,0 +1,411 @@
+Title: Learning to Run Power Networks: Effective AlphaZero-inspired Topological Control
+
+URL Source: https://arxiv.org/pdf/2608.14114v1
+
+Published Time: Mon, 17 Aug 2026 00:37:13 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. 
+
+# Learning to Run Power Networks: Effective AlphaZero-inspired Topological Control 
+
+# LUKAS ZETTO, Karlsruhe Institute of Technology, Germany 
+
+# BENJAMIN SCHÄFER, Karlsruhe Institute of Technology, Germany 
+
+# QIONG HUANG ∗, Karlsruhe Institute of Technology, Germany 
+
+As the integration of volatile renewable energy sources increases the strain on modern power grids, the use of Reinforcement Learning (RL) for au-tonomous topological reconfiguration has emerged as a promising research field to keep strained grids stable and operational. Compared to traditional redispatching measures, topological actions offer a cheaper and more cost-effective way to manage grid congestion. However, their implementation is hindered by a vast combinatorial action space and strict operational con-straints. This paper investigates the effectiveness of model-based AlphaZero-inspired approaches that utilize Monte Carlo Tree Search (MCTS) for proac-tive grid management. We systematically evaluate how reward functions, observation density, and search guidance influence an agent’s survivability. Our results demonstrate that the optimized AlphaZero approach achieves a peak survivability of 98.43%, significantly outperforming the proximal pol-icy optimization (PPO) variant. We find that conducting the MCTS without guidance from a prior learned policy or value function can enhance train-ing efficiency, and that a straightforward binary survival reward provides more effective search guidance than complex, multi-objective functions. Our findings demonstrate that while AlphaZero is a powerful framework for topological control, pure reinforcement learning is not sufficient; rather, an effective and reliable system requires a ‘minimalist’ integration of domain-specific heuristics, binary rewards, and a restricted observation space of line loads. CCS Concepts: • Computing methodologies → Reinforcement learn-ing ; • Hardware → Smart grid .Additional Key Words and Phrases: Learning to Run a Power Network (L2RPN), Deep Reinforcement learning, Monte Carlo Tree Search (MCTS), AlphaZero, Topological control 
+
+Availability of Data and Material: 
+
+The data and code used in this paper are available at https://github.com/KIT-IAI-DRACOS/AlphaZero_L2RPN.git 
+
+1 Introduction 
+
+The global transition toward carbon neutrality has catalyzed a funda-mental shift in power system dynamics. While essential for reaching climate goals, the integration of volatile renewable energy sources (RES), such as solar and wind, introduces two main challenges to the grid: First, these generators are volatile, threatening the balance of supply and demand and thereby the stability of the grid. Second, gen-eration is often located far from consumption centers, as seen with offshore wind farms, increasing the strain on the transmission sys-tem and leading to congested and potentially overloaded lines. These conditions can trigger cascading failures and catastrophic blackouts, paralyzing critical infrastructure as recently demonstrated in Spain and Portugal [33]. 
+
+> ∗Corresponding author Authors’ Contact Information: Lukas Zetto, Karlsruhe Institute of Technology, Karl-sruhe, Germany, lukas.zetto@student.kit.edu; Benjamin Schäfer, Karlsruhe Institute of Technology, Karlsruhe, Germany, benjamin.schaefer@kit.edu; Qiong Huang, Karlsruhe Institute of Technology, Karlsruhe, Germany, qiong.huang@kit.edu.
+
+Conventionally, the use of Reinforcement Learning (RL) for au-tonomous topological reconfiguration has emerged as a promising research field to keep strained grids stable and operational. Histor-ically, grid congestion has been managed through redispatching, which is adjusting the setpoints of generators [11], or curtailing renewable energy generation or feed-in management [10, 28]. While effective, these methods are economically costly and often under-utilize existing infrastructure. Topological actions, such as busbar reconfiguration and line switching, offer a more cost-effective al-ternative by rerouting power through underloaded sections of the grid. However, the practical implementation of topological control is hindered by the combinatorial explosion of possible grid config-urations, which exceeds the capabilities of traditional exhaustive search or manual intervention [17]. To address this complexity, the Learning to Run a Power Network 
+
+(L2RPN) challenge was established as a multi-year competition se-ries to benchmark autonomous agents in realistic grid environments [22]. These challenges have facilitated a paradigm shift from tradi-tional redispatching toward topological control as the primary tool for grid management. While model-free reinforcement learning (RL) agents, such as Proximal Policy Optimization (PPO), have set strong reactive baselines, they inherently lack explicit look-ahead capabili-ties [25]. In safety-critical power systems, a purely reactive agent struggles to handle cascading thermal failures because it cannot evaluate the downstream, multi-step consequences of a topological action prior to execution. Consequently, there is an increasing interest shift toward model-based frameworks, specifically those inspired by AlphaZero, which couple deep neural networks with Monte Carlo Tree Search (MCTS) to proactively plan stable grid configurations [11]. AlphaZero uniqu-ely bridges this gap by utilizing MCTS to perform systematic, non-parametric exploration of the discrete combinatorial action space, while the neural network progressively learns to guide the search, mitigating the need for computationally exhaustive full-tree rollouts. While real-world transmission networks encompass thousands of nodes, systematically analyzing the architectural sensitivities of these model-based controllers requires a controlled environment. In this work, we utilize the standard IEEE-14 bus system. Despite its relatively small physical footprint, its combination of substations and lines still yields a vast, non-trivial combinatorial action space of 405 raw actions (reduced to 203 via symmetry constraints). This configuration serves as an ideal, computationally viable sandbox to isolate how reward structures, search guidance, and observation configurations impact MCTS performance before deploying such frameworks to larger scales. arXiv:2608.14114v1 [cs.LG] 14 Aug 2026 Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. In addition, we provide a systematic evaluation of AlphaZero-inspired approach proposed by [11]. While AlphaZero has revolu-tionized board games [26], its sensitivity to design factors in physical domains like power systems remains under-explored. We bridge this research gap by analyzing the impact of three critical design dimen-sions: observation density, reward shaping, and action space prun-ing. Furthermore, we investigate the influence of MCTS guidance variants, ranging from heuristic-based leaf evaluation to learned Q-functions, and tune hyperparameters to balance computational ef-ficiency with grid survivability. Our findings contribute to a deeper understanding of the trade-offs between search depth and training stability in autonomous grid management and can help implement AlphaZero approaches more effectively. The remainder of this paper is organized as follows: Section 2 re-views the previous literature in L2RPN; Section 3 details the method-ology, including the implementation of the AlphaZero-inspired ap-proach and the design choices evaluated; Section 4 presents the experimental setup and results; Section 5 discusses the findings and their implications; and Section 6 summarizes the contributions and outlines future research directions. 
+
+2 Related Works 
+
+The application of Deep Reinforcement Learning (DRL) to power systems has been formalized by the L2RPN challenges, which have taken place annually between 2019 and 2023 [22]. These competi-tions utilize realistic grid environments to benchmark autonomous agents’ ability to maintain stability via topological control, focusing on real-time operational windows to prevent cascading failures [30]. 
+
+2.1 Evolution of the L2RPN Challenge 
+
+The inaugural 2019 IJCNN challenge utilized the IEEE 14-bus system and established the core objective of operating a grid using only bus-splitting and line-switching actions. The winning solutions from this first competition introduced several foundational concepts that have since become default standards in the field: 
+
+• Action Space Reduction: The A3C-2019 solution first iden-tified the need to eliminate redundant busbar symmetry actions, a strategy now included by default in the Grid2Op package to manage combinatorial complexity [24]. 
+
+• Curriculum learning [2]: To improve training effectiveness, early winners employed curriculum strategies, training neu-ral networks on simpler tasks before transitioning to full grid complexity. 
+
+• Activation Thresholds: The DDQN-2019 solution introduced a “warning flag” based on line loading levels [16]. This threshold determines when the agent should intervene ver-sus choosing a “do-nothing” action, a mechanism used in all subsequent L2RPN solutions. 
+
+• Guided Search and Simulation: Early agents began using guided exploration and the simulation of the top N pre-dicted actions to select the best move [21]. This established a primitive form of look-ahead that serves as the conceptual precursor to the more advanced Monte Carlo Tree Search (MCTS) employed in our work. 
+
+2.2 Model-Free Expert System Paradigms 
+
+The current landscape of L2RPN solutions is dominated by two primary paradigms. First, extensive research has focused on model-free RL, particularly Proximal Policy Optimization (PPO) [6, 19, 30]. These methods have been iteratively refined with heuristics and curriculum frameworks, such as the Teacher-Tutor-Junior-Senior (TTJS) framework [12]. Notable examples include the 2023 win-ners, La Javaness [7] and Artelys [15], who utilized optimized PPO variants. Second, several successful approaches utilize expert systems or combine them with brute-force methods. These non-RL solutions have proven to be highly competitive, achieving multiple top-three placements in recent challenges [1, 13, 23]. While these findings established a robust benchmark for reactive agents, they remain confined to model-free or rule-based paradigms and do not account for the look-ahead capabilities inherent in tree-search methods. 
+
+2.3 Transition to Model-Based Approaches 
+
+The limitations of reactive agents have catalyzed interest in model-based frameworks, specifically those inspired by the AlphaZero framework which utilizes Monte Carlo Tree Search (MCTS) [11]. By simulating potential sequences of actions, these agents can proactively plan stable grid configurations. The progression of top-performing methodologies is summarized in Table 1. This approach emerged as a dominant force in recent challenge iterations, achiev-ing third and first place respectively in the 2021 ICAPS and 2022 WCCI competitions. While the 2022 WCCI winner successfully employed MCTS, a significant research gap remains regarding the sensitivity of such agents to specific design factors. Currently, there is a lack of publicly available codebases for AlphaZero-inspired grid controllers, and a significant research gap exists regarding the sensitivity of such model-based agents to design factors such as reward shaping, MCTS guidance methods, and observation space configurations. This paper builds upon these foundations by providing a systematic guide to effectively implementing AlphaZero controllers in safety-critical grid environments. 
+
+3 Methodology 
+
+For this work, we use the Grid2op [22] framework as intended for the L2RPN competition. The experiments are conducted on the IEEE-14 Grid, a standard benchmark used in the first iteration of the challenge [22, 30]. This grid consists of 14 substations, 20 lines, 3 transformers and 5 generators. We utilize 1004 chronics, each 8064 time steps long. To ensure generalization, performance for Rainbow-PPO and AlphaZero is measured on a held-out set of 10% of the chronics. 
+
+3.1 Non-AlphaZero Baselines 
+
+We retrace the progression of L2RPN agents to establish a variation of baselines: 
+
+• DQN and PPO : Implemented via the Stable-Baselines3 li-brary [25]. PPO is evaluated in the Redispatch (continuous) and Topology (discrete) paradigms. Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. 
+
+> Table 1. Historical evolution of top-performing agents and methodologies in the Learning to Run a Power Network (L2RPN) challenges. The progression shows a shift from early model-free RL toward specialized architectures involving Curriculum Learning and model-based Tree Search.
+
+Year Challenge Track Approach / Agent Name Key Methodology 
+
+2019 IJCNN (Sandbox) DDQN-2019 Dueling DQN + Imitation Learning [16] 2020 WCCI (Robustness) Semi-Markov Afterstate Actor-Critic (SMAAC) SAC-based [32] 2020 NeurIPS (Robustness) Search with Action Set (SAS) Evolutionary strategies (ES) [35] 2021 ICAPS (Trust) Different modes Mix of SAS [20] 2022 WCCI (Adaptability) AlphaZero MCTS [11] 2023 L2RPN Delft (Remake of 2022) PPO Rainbow-Based PPO-Rainbow + Heuristics [17, 27] 
+
+• Curriculum Learning (TTJS) : Integrates a Teacher-Tutor-Junior-Senior framework [17, 27]. The agent is initialized via Imitation Learning before transitioning to active RL. (See Appendix A.1). 
+
+• Rainbow PPO : An optimized PPO agent utilizing the RLlib library [30]. This includes adapted reward functions and supporting heuristics, serving as our state-of-the-art model-free baseline. 
+
+3.2 AlphaZero and MCTS Approach 
+
+Our primary approach adapts the AlphaZero framework, utilizing Monte Carlo Tree Search (MCTS) to navigate the grid’s combina-torial topology [11, 26]. In the search tree, nodes represent critical states where grid load exceeds an activation threshold. MCTS Guidance and Configuration: The choice of these three specific search guidance variants is explicitly motivated by the need to isolate the underlying source of control intelligence within a physical, physics-governed domain: (1) The Imitation Learning (IL) Variant (no prior guid-ance): Evaluates the baseline efficacy of pure look-ahead search depth and structural discovery, independent of a learned value landscape. (2) The Original Heuristic Approach: Examines the perfor-mance gains achieved by narrow, domain-specific physics heuristics that act as hardcoded rules to evaluate leaf states. (3) The Learned Q-Function setup: Tests the classical Al-phaZero paradigm to determine whether a parameterized neural network can effectively approximate the highly non-linear, stochastically driven boundaries of power grid stabil-ity better than hardcoded rules. The specific settings for thresholds and search limits are detailed in the Appendix A. 
+
+Action Space Ablations . To maintain a manageable search space, we evaluate three action reduction strategies: Symmetry (SYM), (𝑁 − 0) [29], and ( 𝑁 − 1) [9] reductions. Their impact on action space size is summarized in Table 2. 
+
+Observation Space Configurations . We also evaluate four in-cremental observation feature sets, ranging from Minimal (line loads only) to Complete (full telemetry), as detailed in Table 3. 
+
+Reward Function Configurations . A critical factor in MCTS efficiency is the alignment of the reward signal with the search 
+
+> Table 2. Impact of Reduction Strategies on Action Space Size for IEEE-14
+
+Reduction Method Total Actions (+ Do Nothing) 
+
+Complete 405 SYM 203 N-0 142 N-1 82 
+
+> Table 3. Overview of Observation Space Configurations
+
+Configuration Included Features Minimal Line loads ( 𝜌 )
+
+Custom Line loads, line status, cooldowns, topology 
+
+Reduced Line load, production, load, overflow, topology 
+
+Complete All available Grid2op features including voltage and time objective. We implement six distinct reward functions categorized by their complexity and goal orientation: (1) the original AlphaZero Reward [11], (2) the binary D3QN-2022 Survival Reward [8], (3) the multi-objective D3QN-2020 Composite Reward [34], (4) an efficiency-based Loss Reward [32], and (5) linear safety-margin rewards ( MaxRho and PPO Reward ) [14]. Detailed mathematical formulations for each are provided in Appendix A.3. 
+
+MCTS Guidance Variants . To optimize the search efficiency of the AlphaZero agent, we implement three distinct methods for guiding the MCTS process: an Imitation Learning (IL) Variant, an Original Heuristic Approach, and a Learned Q-Function setup. These variants differ in how they prioritize node selection and evaluate leaf nodes. The IL Variant operates without a prior learned policy or value function, relying exclusively on search depth and transition rewards to identify surviving trajectories. This essentially treats the MCTS as a systematic discovery mechanism. Full descriptions of each approach are provided in Appendix A.4. 
+
+Baseline Configuration . To compare the impact of different design choices, we define a Baseline AlphaZero Configuration con-sisting of a 0 .98 activation threshold, a maximum of 250 MCTS simulations per step, and the original AlphaZero reward function. Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. All subsequent ablation studies on rewards, observations, and ac-tions are compared against this standard. Detailed parameters for search limits and safety heuristics are provided in the Appendix B.2. 
+
+4 Experiments 4.1 Comparative Performance and Training Efficiency 
+
+In this section, we benchmark the AlphaZero-inspired approach against established RL paradigms to validate its competitiveness and analyze the trade-offs between survival capability and computa-tional overhead. The performance of each agent’s is assessed based on the ability to maintain grid stability over the maximum horizon of 8,064 steps. 
+
+The Model-Free Landscape . As shown in Table 4, vanilla DQN and PPO-Redispatch fail to navigate the complex grid constraints, surviving only 1.1% and 20.7% of the horizon, respectively. Transi-tioning to a topological action space (PPO Topological) doubles per-formance, while Curriculum Learning (TTJS) provides a significant jump to 51.2%. These results confirm that topological reconfigura-tion is the superior tool for grid management. 
+
+Table 4. Peak performances of the different RL approaches compared to the Do Nothing agent. For the PPO Rainbow, AlphaZero Baseline and Alphzero D3QN-2022 we averaged the peaks over 4 runs. Additionally, we can also see the average standard deviation over the 101 training chronics for these. 
+
+Model Avg. Steps survived Std. dev. DQN 89 (1.1%) Do Nothing 847 (10.5%) PPO Redispatch 1670 (20.7%) PPO Topological 3250 (40.3%) PPO Curriculum 4130 (51.22%) PPO Rainbow 7403 (91.80%) 1372 AlphaZero Baseline 7486 (92.83%) 1323 AlphaZero D3QN-2022 7937 (98.43%) 515 
+
+The AlphaZero Advantage . Our AlphaZero baseline achieves 92.83% survivability, rivaling the state-of-the-art Rainbow PPO (91.80%). Crucially, by integrating the D3QN-2022 binary reward, AlphaZero reaches a peak survivability of 98.43%, effectively solving the IEEE-14 benchmark. 
+
+The Efficiency Trade-off . The average survived steps are shown in Figure 1. The baseline AlphaZero agent achieves an average peak performance of 7486 which is comparable to the Rainbow PPO agent from [30] which achieved 7403 steps. Although AlphaZero provides superior reliability, it requires significantly more training steps ( ∼40M) compared to Rainbow PPO ( ∼100k). This suggests that while MCTS is highly effective for “running” the network, its “learning” phase is computationally intensive and benefits greatly from the design optimizations explored in the next section. As demonstrated in Table 4, modifying the AlphaZero design by adopting the simple binary reward from the D3QN approach [8] significantly enhanced the performance, reaching an average peak of 7937 steps (98.43% survivability). Beyond pure performance, 0 10 20 30 40 50      
+
+> Training Steps (Millions)
+> 01000 2000 3000 4000 5000 6000 7000 8000
+> Average Steps Survived
+> Model Comparison
+> PPO Topological PPO Redispatch PPO Curriculum AlphaZero Baseline AlphaZero D3QN-2022 DoNothing Baseline (847.3) Rainbow PPO
+> 0100 200 300 400 500
+> Rainbow PPO Training Steps (Thousands)
+
+Fig. 1. Comparison of AlphaZero with the different PPO variants. The results for the AlphaZero baseline described in subsection B.2, the AlphaZero with the D3QN-2022 reward function as well as the PPO rainbow variant are evaluated over 4 runs and plotted with their standard deviation using a sliding window for smoothing. 
+
+this modification notably improves training efficiency, allowing the agent to converge more stably. This result not only significantly outperforms the state-of-the-art Rainbow PPO baseline but also confirms that objective alignment through sparse, survival-oriented signals is a critical factor for effective MCTS-based control. These findings provide a concrete path for improving upon the original baseline AlphaZero agent as suggested in [11]. 
+
+4.2 Systematic Design Guidelines for Effective AlphaZero 
+
+To provide actionable insights for implementing AlphaZero-inspired controllers, we perform a series of ablation studies on the core architectural components. 
+
+Objective Alignment (Reward Functions) . Contrary to the intu-ition that complex, multi-objective rewards provide better gradients, our results in Figure 2 show that he simple binary survival reward 
+
+𝑅 D3QN-2022 significantly outperforms all others, achieving a peak of 7937 steps. Complex rewards like D3QN-2020 and Loss-based effi-ciency signals introduced noise and slowed convergence, reaching an averaged peak performance of 4484 steps and the Loss reward showed much slower training speed as they failed to reach the 40 million training steps in the given time frame. Competitive results were reached by the originally proposed AlphaZero as well as the Loss reward as they achieved a peak performance of 7485 and 6705 respectively. 
+
+Navigation of Action Space . Surprisingly, the most restrictive reduction strategy (N-1) did not yield the best results. The Symmetry (SYM) reduction, which maintains the highest degree of topologi-cal flexibility while removing redundant actions, proved to be the fastest and most stable (Figure 3). MCTS is robust enough to handle moderate action spaces; over-restricting the topology (e.g., N-0 or N-1) can limit the agent’s ability to find “survival paths” in extreme congestion. Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. 0 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 1000 2000 3000 4000 5000 6000 7000 8000
+> Average Steps Survived
+
+Reward Function Comparison: Average Steps Survived 
+
+> AlphaZero Loss MaxRho D3QN-2022 D3QN-2020 PPO
+
+Fig. 2. Training progression of the AlphaZero agent using the different reward functions presented in Appendix A.3. The average performance is evaluated over 4 runs and plotted with the standard deviation using interpolation. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+
+Action Space Comparison: Average Steps Survived 
+
+> SYM N0 N1
+
+Fig. 3. Training progression of the AlphaZero agent using the different action spaces presented in Section 3.2. The average performance is evaluated over 4 runs and plotted with the standard deviation using interpolation. 
+
+Information Density (Observation Space) . Our analysis shows that the Minimal observation space configuration, which uses only line loads, consistently outperformed configurations with complete telemetry. The result yields the fastest learning rate and the highest training stability, as can be found in Figure 4. Its peak performance achieved a survival time of 7340 steps. The Custom, Reduced and Complete configurations achieve similar peak performances with 7285, 7328 and 7287 steps, respectively. However, they all learn slower and are less consistent. Providing full nodal injections and voltage phase angles appeared to overcomplicate the state-action mapping, leading to slower learning and inconsistency. 
+
+The Guidance Paradox . The simplified no-guidance variant, which uses neither a prior policy nor a value-function guidance, achieved strong performance with the highest training efficiency. It reached an average peak survival of 7220 steps within only 25 million 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+
+Observation Space Comparison: Average Steps Survived 
+
+> Minimal Essential Custom Gym
+
+Fig. 4. Training progression of the AlphaZero agent using the different observation spaces presented in Section 3.2. The average performance is evaluated over 4 runs and plotted with the standard deviation using inter-polation. 
+
+training steps. In contrast, while the average peak performance is compatible with 7250 steps, the original heuristic-based version required a lot more training steps to achieve strong performance. Finally, the integration of a learned Q-function proved to be the least effective. This configuration resulted in an extremely slow execution runtime as even with an increased runtime of 72 hours, it only reached 20-30 million training steps due to the additional overhead. While the performance for the achieved number of training steps seems competitive with the other variants, the extremely long run-time makes this approach unattractive. Unbiased MCTS search, when paired with an effective reward signal, is often more efficient than search guided by potentially inaccurate or high-latency learned functions. The results are shown in Figure 5. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 1000 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+
+Method Comparison: Average Steps Survived 
+
+> Learned Q-function Heuristic No Guidance
+
+Fig. 5. Comparison of the three MCTS guidance methods of using learned prior and value function, learned prior and heuristic value function or no guidance at all. Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. 
+
+5 Discussion 
+
+This section analyzes the design principles for the AlphaZero in-spired controller, identifying the relationship between tree-search mechanics and the physical constraints of the power system, in-cluding reward structures, action space reduction, and observation density. 
+
+Optimizing Information Density (Observation Space) . Our findings demonstrate that AlphaZero agent performance is inversely proportional to observation complexity, with the minimal configu-ration (line loads only) consistently yielding the fastest convergence and highest training stability. This result challenges the intuitive assumption that denser telemetry, such as voltage phase angles, ac-tive power injections, and local demand profiles, inherently enables superior grid control. One hypothesis for this behavior is that ex-panding the observation space drastically increases the state-space dimensionality, introducing what can be termed as “feature noise”. In the context of topological reconfiguration, line loading acts as the most direct physical proxy for systemic grid stress and imminent thermal failure. By saturating the neural network with granular, high-dimensional inputs, the model risks overfitting to stochastic demand fluctuations and localized noise rather than learning the structural bottleneck features critical for long-term survival. This interpretation aligns with recent findings in Reinforcement Learning for Optimal Power Flow (OPF), where it has been shown that over-complicating or duplicating telemetry features during the training phase can yield highly counterintuitive results and degrade policy optimization [5]. Rather than providing a richer context, excessive feature density complicates the state-action mapping for the neural network, ultimately impeding the value propagation within the MCTS framework. Therefore, we recommend a more conservative, simulation-verified approach to feature selection in safety-critical grid domains, prioritizing core physical constraints over complete telemetry saturation. 
+
+Objective Alignment and Sparse Signals (Reward Function) .
+
+Contrary to our observations regarding the observation space, the results visualized in Figure 2 show that the superiority of the bi-nary survival reward ( 𝑅 D3QN-2022 ) over complex, load-based rewards (MaxRho, D3QN-2020) highlights a critical “Objective Alignment” challenge in MCTS. Dense rewards attempt to guide the search via a smooth gradient, but in safety-critical environments, they often introduce conflicting subgoals, e.g., optimizing for efficiency at the cost of stability. While the energy loss-based and the original AlphaZero reward (based on maximal line load and the number of lines that are of-fline) were effective, the simple binary reward proved superior in both training speed and final performance. By providing a clear “pass/fail” signal, the agent avoided distraction from possible sub-goals. Additionally, this strategy aligns effectively with the MCTS tree algorithm, as it provides a clean, unambiguous signal for value propagation; especially since the final action selection in MCTS is purely based on the maximum steps reached within the tree. In contrast, other reward structures involving continuous or penalty-heavy metrics performed poorly, likely because they introduced a “dense but noisy” gradient. MCTS is a discovery-driven algorithm; if the agent is penalized for minor line-load fluctuations that do not lead to failure, the search may prune branches that contain the deci-sive topological maneuver needed for long-term survival. A binary signal ensures that the value propagation within the search tree re-mains focused solely on the terminal survival objective, preventing the distraction observed with penalty-heavy reward structures. 
+
+Action Space Flexibility vs. Over-Pruning . For the IEEE-14 grid, we found that strict action space reduction is counterpro-ductive. The Symmetry (SYM) reduction strategy, which retains 203 actions, outperformed more restrictive 𝑁 − 1 strategies. This suggests that the combinatorial explosion of a small grid is not yet a bottleneck for MCTS. Instead, the bottleneck is the loss of reachability: over-pruning removes the unconventional busbar con-figurations that are often necessary to reroute flow during extreme contingencies. While larger grids will eventually require stricter dimensionality management, these results suggest that MCTS’s in-herent search capability is robust enough to handle moderate action spaces without losing efficiency. 
+
+The Guidance Paradox: Search vs. Prior Policy . The eval-uation of guidance variants reveals a Guidance Paradox: the no guidance variant was the most training-efficient. In traditional Alp-haZero, a prior policy is essential to prune the tree. However, in the power grid domain where state transitions are governed by physical power flow, the rewards collected directly within the search tree are often more reliable than a nascent, learned 𝑄 -function. While a learned prior can stabilize the agent in the long run, the com-putational overhead of frequent neural network updates and the risk of policy collapse, where a poor early policy misguides the search, make unbiased MCTS a more effective starting point for autonomous grid controllers. 
+
+6 Conclusion and Outlook 
+
+This study provides a systematic evaluation of AlphaZero-inspired topological control, demonstrating that while the framework is highly capable, pure RL is not sufficient for the operational demands of modern power grids. Our results highlight that achieving a peak survivability of 98.43% on the IEEE-14 benchmark is not a result of increased model complexity, but rather of strategic simplification and the integration of domain-specific heuristics. We have established a minimalist design blueprint for effective AlphaZero implementation: utilizing a minimal observation space (line loads only) and a binary survival-based reward. These choices ensure objective alignment between the neural network and the Monte Carlo Tree Search (MCTS), preventing the agent from being distracted by the “feature noise” and conflicting subgoals inherent in multi-objective reward structures. Crucially, this blueprint con-strains the agent exclusively to topological actions. In real-world deployment, grid operators would prioritize these topological recon-figurations because they do not incur direct market costs. However, a production-grade controller would treat topology as the first line of defense to minimize expensive redispatch, falling back on gener-ation adjustments only when topological maneuvers are exhausted. While AlphaZero successfully outperformed the state-of-the-art Rainbow PPO in survival time, this gain comes with a significant Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. trade-off in training efficiency. The superior performance of our search-based adaptation, alongside the historical success of non-RL expert systems in the L2RPN challenges, suggests that the “intelli-gence” in grid control may lie more in the search and physics-based heuristics than in the reinforcement learning policy itself. This raises fundamental questions for the community: as we move to-ward larger grids, should we prioritize learning complex policies, or should we focus on optimizing the efficiency of the search and the accuracy of the underlying heuristics? To bridge the gap between high-performance research and real-world grid deployment, future work must prioritize several key areas. First, addressing the computational overhead of MCTS is essential; integrating AlphaZero into a Curriculum Learning frame-work, where the agent masters small-scale topological maneuvers before tackling cascading failures, could significantly accelerate con-vergence. Furthermore, an Options Framework could allow agents to treat complex bus-switching sequences as temporally extended ab-stract actions, enabling reasoning over high-level grid states rather than individual busbar changes. Scalability and transparency also remain primary concerns for larger networks. In general, the importance of reflecting domain knowledge in feature design has been shown for RL applications in OPF [31], which provides valuable input for optimizing our minimal-ist observation framework in future work. Adopting Multi-Agent Reinforcement Learning (MARL) or hierarchical frameworks would allow modular AlphaZero instances to manage regional substations, reducing the global action space to a manageable level [3, 9, 18]. Finally, for autonomous agents to be adopted by grid operators, their decisions must be interpretable. Future research should prioritize Explainable RL (XRL) techniques, such as SHAP or LIME, to provide human-interpretable justifications for topological reconfigurations [4, 5]. This transparency is vital for transforming a “black-box” con-troller into a trusted decision-support tool, ultimately leading to a hybrid approach that respects the physical laws of the system through heuristics and look-ahead search while using RL to refine decision efficiency. 
+
+Acknowledgments 
+
+We gratefully acknowledge funding from the Helmholtz Association under grant No. VH-NG-1727 and the Networking Fund through Helmholtz AI. We also thank EnBW Research Department for their valuable support/discussion. The authors acknowledge support by the state of Baden-Württemberg through bwHPC. 
+
+References 
+
+[1] Alibaba Research. 2022. L2RPN WCCI 2022 Competition Repository. GitHub. https://github.com/AlibabaResearch/l2rpn-wcci-2022/tree/main, Accessed 08 May 2026. [2] Yoshua Bengio, Jérôme Louradour, Ronan Collobert, and Jason Weston. 2009. Curriculum learning. In Proceedings of the 26th annual international conference on machine learning . 41–48. [3] E. Boguslawski, A. Leite, M. Dussartre, B. Donnot, and M. Schoenauer. 2024. Emulation of Zonal Controllers for the Power System Transport Problem. RJCIA 
+
+41 (2024). [4] Hallah Shahid Butt, Qiong Huang, and Benjamin Schäfer. 2024. Explainable Reinforcement Learning for Optimizing Electricity Costs in Building Energy Management. In 2024 3rd International Conference on Energy Transition in the Mediterranean Area (SyNERGY MED) . IEEE, 1–6. [5] Hallah Shahid Butt and Benjamin Schafer. 2024. Why reinforcement learning in energy systems needs explanations. In Proceedings of the 2024 Workshop on Explainability Engineering . 26–30. [6] Anandsingh Chauhan, Mayank Baranwal, and Ansuma Basumatary. 2023. PowRL: A reinforcement learning framework for robust management of power networks. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 37. 14757– 14764. [7] D. A. E. Lab. 2023. Learning to Run a Power Network - Delft 2023 Competition. https://codalab.lisn.upsaclay.fr/competitions/12420. CodaLab; Accessed 08 May 2026. [8] I. Damjanovic, I. Pavić, M. Puljiz, and M. Brcic. 2022. Deep reinforcement learning-based approach for autonomous power flow control using only topology changes. 
+
+Energies 15, 19 (2022), 6920. [9] Barbera de Mol, Davide Barbieri, Jan Viebahn, and Davide Grossi. 2025. Centrally coordinated multi-agent reinforcement learning for power grid topology control. In Proceedings of the 16th ACM International Conference on Future and Sustainable Energy Systems . 460–475. [10] Job Doornhof. 2026. Renewable curtailment compensation costs in Ger-many decrease 22% in 2025. https://www.cleanenergywire.org/news/renewable-curtailment-compensation-costs-germany-decrease-22-2025. Accessed 01 May 2026. [11] Matthias Dorfer, Anton R Fuxjäger, Kristian Kozak, Patrick M Blies, and Marcel Wasserer. 2022. Power grid congestion management via topology optimization with AlphaZero. arXiv preprint arXiv:2211.05612 (2022). [12] H. T. EI Innovation Lab, Huawei Cloud. 2020. NeurIPS Competition 2020: Learn-ing to Run a Power Network (L2RPN) - Robustness Track. https://github.com/ leizhu0608/L2RPN-2020-Robustness-Track-Solution. Accessed 08 May 2025. [13] Honda Research Institute Europe. 2022. L2RPN Trial and Error (TAE) Agent. GitHub. https://github.com/HRI-EU/l2rpn_tae_agent, Accessed 08 May 2026. [14] La Javaness. 2026. L2RPN with PPO: A Winning Solution for the L2RPN Challenge. GitHub. https://github.com/lajavaness/l2rpn-with-ppo, Accessed 10 March 2026. [15] N. Lair, A. Bossavy, P. Champion, and V. Renault. 2023. Artificial agents designed to run a power network - White Paper. Artelys. https://www.artelys.com/app/ uploads/2024/04/White_paper_L2RPN_2023_.pdf, Accessed 08 May 2026. [16] Tu Lan, Jiajun Duan, Bei Zhang, Di Shi, Zhiwei Wang, Ruisheng Diao, and Xiaohu Zhang. 2020. AI-based autonomous line flow control via topology adjustment for maximizing time-series ATCs. In 2020 IEEE Power & Energy Society General Meeting (PESGM) . IEEE, 1–5. [17] Malte Lehna, Jan Viebahn, Antoine Marot, Sven Tomforde, and Christoph Scholz. 2023. Managing power grids through topology actions: A comparative study between advanced rule-based and reinforcement learning agents. Energy and AI 
+
+14 (2023), 100276. [18] G. Losapio, D. Beretta, M. Mussi, A. M. Metelli, and M. Restelli. 2024. State and Action Factorization in Power Grids. arXiv preprint arXiv:2409.04467 (2024). [19] Blazej Manczak, Jan Viebahn, and Herke van Hoof. 2023. Hierarchical re-inforcement learning for power network topology control. arXiv preprint arXiv:2311.02129 (2023). [20] Antoine Marot, Benjamin Donnot, Karim Chaouache, Adrian Kelly, Qiuhua Huang, Ramij-Raja Hossain, and Jochen L Cremer. 2022. Learning to run a power network with trust. Electric Power Systems Research 212 (2022), 108487. [21] Antoine Marot, Benjamin Donnot, Gabriel Dulac-Arnold, Adrian Kelly, Aidan O’Sullivan, Jan Viebahn, Mariette Awad, Isabelle Guyon, Patrick Panciatici, and Camilo Romero. 2021. Learning to run a power network challenge: a retrospective analysis. In NeurIPS 2020 competition and demonstration track . PMLR, 112–132. [22] Antoine Marot, Benjamin Donnot, Camilo Romero, Balthazar Donon, Marvin Lerousseau, Luca Veyrin-Forrer, and Isabelle Guyon. 2020. Learning to run a power network challenge for training topology controllers. Electric Power Systems Research 189 (2020), 106635. [23] H. Martinez. 2021. L2RPN. GitHub. https://github.com/horacioMartinez/L2RPN, Accessed 08 May 2026. [24] Amarsagar Reddy Ramapuram Matavalam, Kishan Prudhvi Guddanti, Yang Weng, and Venkataramana Ajjarapu. 2022. Curriculum based reinforcement learning of grid topology controllers to prevent thermal cascading. IEEE Transactions on Power Systems 38, 5 (2022), 4206–4220. [25] RTE-France. 2026. L2RPN Baselines: A repository to host baselines for L2RPN competitions. GitHub. https://github.com/rte-france/l2rpn-baselines, Accessed 22 March 2026. [26] David Silver, Thomas Hubert, Julian Schrittwieser, Ioannis Antonoglou, Matthew Lai, Arthur Guez, Marc Lanctot, Laurent Sifre, Dharshan Kumaran, Thore Graepel, Timothy Lillicrap, Karen Simonyan, and Demis Hassabis. 2018. A general rein-forcement learning algorithm that masters chess, shogi, and Go through self-play. 
+
+Science 362, 6419 (2018), 1140–1144. doi:10.1126/science.aar6404 [27] J. Sintes and V. T. Dang. 2024. How we built the winning real-time au-tonomous agent for power grid management in the L2RPN challenge 2023. Medium. https://lajavaness.medium.com/how-we-built-the-winning-real-time-autonomous-agent-for-power-grid-management-in-the-l2rpn-41ab3cfaddbd, Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026.                        
+
+> Accessed 08 May 2026. [28] SMARD. 2024. The development of congestion management. https: //www.smard.de/page/en/topic-article/212250/217910/the-development-of-congestion-management. Accessed 01 May 2026. [29] Medha Subramanian, Jan Viebahn, Simon H Tindemans, Benjamin Donnot, and Antoine Marot. 2021. Exploring grid topology reconfiguration using a simple deep reinforcement learning approach. In 2021 IEEE Madrid PowerTech . IEEE, 1–6. [30] Erica van der Sar, Alessandro Zocca, and Sandjai Bhulai. 2025. Optimizing power grid topologies with reinforcement learning: A survey of methods and challenges.
+> Foundations and Trends in Electric Energy Systems 9, 1 (2025), 1–119. [31] Thomas Wolgast and Astrid Nieße. 2024. Learning the optimal power flow: Environment design matters. Energy and AI 17 (2024), 100410. [32] Deunsol Yoon, Sunghoon Hong, Byung-Jun Lee, and Kee-Eung Kim. 2021. Win-ning the l2rpn challenge: Power grid management via semi-markov afterstate actor-critic. In International Conference on Learning Representations .[33] Holly Young. 2025. What the blackout in Spain, Portugal says about renew-ables. https://www.dw.com/en/spain-portugal-blackout-renewables-wind-solar-energy-grid-v2/a-72606531. Accessed 08 March 2026. [34] Y. Zhihong et al. 2020. A winning approach of NeurIPS 2020 L2RPN Comp. GitHub. https://github.com/lujasone/NeurIPS_2020_L2RPN_Comp_An_Approach, Ac-cessed 10 March 2026. [35] Bo Zhou, Hongsheng Zeng, Yuecheng Liu, Kejiao Li, Fan Wang, and Hao Tian. 2021. Action set based policy optimization for safe power grid management. In Joint European Conference on Machine Learning and Knowledge Discovery in Databases . Springer, 168–181.
+
+A Appendix A.1 Curriculum Learning (TTJS) Framework 
+
+Using the same setup and hyperparameters as PPO Topology, we supplemented it with an additional Curriculum Learning setup as provided by the La Javaness [27] combined with the Curriculum Agent [17] repository. These apply a Teacher-Tutor-Junior (TTJS) framework where the “Teachers” run a brute-force search to collect a large amount of trajectories (approximately 50GB). The “Tutors” then filter these for high-quality experiences to reduce the action space accordingly and initialize the Junior neural network via IL. Only after this, does the Senior apply the actual RL utilizing the previously initialized neural network. 
+
+A.2 MCTS Mathematical Framework and Structure 
+
+Whenever the AlphaZero agent reaches a state with a maximin line load that is above our activation threshold, the iterative MCTS algorithm is triggered. In each iteration, we traverse the tree from the root, which represents the current state of the power grid, until we reach the leaf layer, where a new node is then appended. The traversal follows the Predictor Upper Confidence Bound applied to Trees (PUCT) formula: 
+
+𝑎 𝑡 = argmax 𝑎 𝑄 (𝑠, 𝑎 ) + 𝑐 𝑝𝑢𝑐𝑡 · 𝑃 (𝑠, 𝑎 ) · √︁ Í𝑏 𝑁 (𝑠, 𝑏 )
+
+1 + 𝑁 (𝑠, 𝑎 )
+
+!
+
+, (1) where: 
+
+• 𝑄 (𝑠, 𝑎 ) is the action-value (the mean reward of choosing action 𝑎 in state 𝑠 ). 
+
+• 𝑃 (𝑠, 𝑎 ) is the prior probability of choosing action 𝑎 as pro-vided by the policy network. 
+
+• 𝑁 (𝑠, 𝑎 ) is the visit count for the specific edge, while 
+
+Í𝑏 𝑁 (𝑠, 𝑏 ) is the total visit count of the parent node. 
+
+• 𝑐 𝑝𝑢𝑐𝑡 is a constant that controls the level of exploration. [11] suggests determining the value of the leaf nodes added to the MCTS using the heuristic function: 
+
+𝑣 𝑡 =
+
+> 𝑡 +ℎ
+
+∑︁ 
+
+> 𝑗 =𝑡
+
+𝛾 𝑗 −𝑡 𝑟 𝑗 (2) where ℎ is a sufficiently large horizon depending on the discount factor 𝛾 [26], and the reward 𝑟 𝑗 at the current time step 𝑗 . To manage computational complexity, an early stopping mechanism is included. This mechanism terminates the search once a specific number of recovery nodes are identified. Specifically, when 𝑡 𝑠𝑘𝑖𝑝𝑝𝑒𝑑 steps are skipped between critical nodes, a “recovery node” is added to mark an action that solved the congestion and led to a period of grid stability. The search is interrupted once 𝑡 stopping recovery nodes have been identified or we have exhausted a predetermined budget of simulations. The training target is then determined by evaluating which branch of the tree reached the greatest depth in terms of survival steps. The action corresponding to this deepest subtree is selected as the training target for the current root state. These state-action pairs are appended to a replay buffer, which is used to update the neural network once a sufficient number of chronics have been processed to ensure a diverse and representative dataset. 
+
+A.3 MCTS Reward Function 
+
+Previous studies have employed a wide variety of reward functions. In this work, we cover the most relevant categories, including safety margins, maximum line loading, survival time, and energy efficiency, as well as composite multi-objective strategies. The full mathemat-ical definitions for the AlphaZero Reward, D3QN-2022 Survival Reward, D3QN-2020 Composite Reward, Loss Reward, MaxRho Re-ward, and PPO Reward are summarized in [30] and given as follows: 
+
+• AlphaZero Reward [11] Originally utilized with the Alp-haZero agent, this reward is designed to penalize high line loading and network fragmentation. It uses an exponential decay function to provide a smooth gradient for the MCTS: 
+
+𝑅 AlphaZero = 𝑒 −𝑢 (𝑡 ) − 0.5·𝑛 offline (3) The penalty term 𝑢 (𝑡 ) is calculated based on the maximum line loading ratio 𝜌 max :
+
+𝑢 (𝑡 ) =
+
+(
+
+max (𝜌 max − 0.5, 0) if 𝜌 max ≤ 1
+
+Í𝑖 ∈ O (𝜌 𝑖 − 0.5) if 𝜌 max > 1 (4) where O denotes the set of overflowing lines (i.e., all lines 𝑖 
+
+for which 𝜌 𝑖 > 1). The term 𝑛 offline accounts for the number of lines currently disconnected. 
+
+• D3QN-2022 Survival Reward [8] A binary reward signal focusing exclusively on survival: 
+
+𝑅 D3QN-2022 =
+
+(
+
+1 if grid is operational at step 𝑡 
+
+0 if game over or illegal action (5) 
+
+• D3QN-2020 Composite Reward [34] This is a multi-objective reward function that balances grid stability, safety margins, and topological similarity: 
+
+𝑅 D3QN-2020 = 𝑤 1 · 𝑅 sandbox + 𝑤 2 · 𝑅 overflow 
+
++ 𝑤 3 · 𝑅 distance + 𝑤 4 · 𝑅 capacity 
+
+(6) Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. The weights are 𝑤 1=30, 𝑤 2=200, 𝑤 3=20, 𝑤 4=3. 𝑅 sandbox (𝑡 )
+
+is based on the costs for redispatch and power loss, while 
+
+𝑅 overflow (𝑡 ) rewards a lower magnitude of line overflows. 
+
+𝑅 distance (𝑡 ) is determined by the distance from the reference topology (where a smaller distance yields a higher reward), and 𝑅 capacity (𝑡 ) rewards global safety margins based on the available line capacity. 
+
+• Loss Reward (Efficiency-Based) [32] Targets the mini-mization of active power losses: 
+
+𝑅 Loss (𝑡 ) =
+
+Í 𝑃 loads 
+
+Í 𝑃 gens 
+
+− 0.9 (7) 
+
+• MaxRho Reward (LJN Agent) [14] A linear reward aimed at maximizing the safety margin: 
+
+𝑅 MaxRho (𝑡 ) = 2.0 − 𝜌 max (8) 
+
+• PPO Reward (LJN Agent) [14] Combines the MaxRho prin-ciple with a progressive step-penalty: 
+
+𝑅 PPO (𝑡 ) = (2.0 − 𝜌 max ) − penalty + bonus action (9) The penalty term is defined as: penalty =
+
+
+
+0 if 𝜌 max ≤ 0.81 if 0 .8 < 𝜌 max ≤ 0.92 if 0 .9 < 𝜌 max ≤ 0.95 3 if 0 .95 < 𝜌 max ≤ 1.05 if 𝜌 max > 1.0(10) A bonus action = 0.1 is applied for the “Do Nothing” action. 
+
+A.4 MCTS Guidance Variants: Detailed Descriptions 
+
+To optimize the search efficiency of the AlphaZero agent, we exam-ine three distinct methods for guiding the MCTS process: 
+
+• IL Variant: This configuration operates without using the learned policy or a value function within the MCTS. It relies exclusively on the search depth and the transition rewards encountered during tree expansion to identify surviving trajectories, essentially treating the MCTS as systematic discovery mechanism. 
+
+• Original Heuristic Approach: This version uses the policy prior to narrow the search breadth by focusing on high-probability actions. Additionally, it employs the heuristic value function from Equation 2 to estimate the quality of newly added leaf nodes. 
+
+• Learned Q-Function: In this setup, node selection and evaluation are driven by a combination of the prior policy and learned Q-values. By replacing the heuristic estimation with predictions by the neural network, the agent attempts to leverage learned experience to prioritize more promising search branches. 
+
+B MCTS B.1 MCTS Hyperparameter Configurations 
+
+To investigate the impact of search depth and efficiency, the fol-lowing configurations for Early Stopping and Horizon size were evaluated: 
+
+Early Stopping Variants. 
+
+• Variant 1: 𝑡 skipped = 200 , 𝑡 stopping = 50 
+
+• Variant 2: 𝑡 skipped = 200 , 𝑡 stopping = 20 
+
+• Variant 3: 𝑡 skipped = 50 , 𝑡 stopping = 10 
+
+• Variant 4: 𝑡 skipped = 10 , 𝑡 stopping = 5
+
+Horizon Size and Reset Thresholds. We compared lookahead hori-zons of 20, 100, 200, and 500 steps applied to Equation 2. Additionally, the topology reset threshold was examined across values of 75%, 80%, 85%, 90%, and 95% defined by the maximum line load observed within the grid. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+> Horizon parameter comparison
+> Horizon = 30 Horizon = 100 Horizon = 200 Horizon = 500
+
+Fig. 6. Evaluation of different horizon sizes for the heuristic based AlphaZero baseline approach. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+> Topology reset threshold comparison
+> Reset Threshold = 0.75 Reset Threshold = 0.8 Reset Threshold = 0.85 Reset Threshold = 0.9 Reset Threshold = 0.95
+
+Fig. 7. Evaluation of different thresholds for the application of the heuristic that leads the agent back to the reference topology. 
+
+B.1.1 MCTS Hyperparameters. The sensitivity of MCTS hyperpa-rameters reveals a consistent trend: while final agent performance is relatively robust across configurations, parameter selection signif-icantly impacts the stability and efficiency of the training process. Accepted for publication in ACM SIGENERGY Energy Informatics Review , Volume 6, Issue 3, September 2026. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000
+> Average Steps Survived
+> Early stopping parameter comparison
+> t_skipped=10, t_stopping=5 t_skipped=50, t_stopping=10 t_skipped=200, t_stopping=20 t_skipped=200, t_stopping=50
+
+Fig. 8. Evaluation of values for the 𝑡 𝑠𝑡𝑜𝑝𝑝𝑖𝑛𝑔 and 𝑡 𝑠𝑘𝑖𝑝𝑝𝑒𝑑 hyperparameters which define the early stopping mechanism for the MCTS tree. 5 10 15 20 25 30 35 40 
+
+> Training Steps (Millions)
+> 2000 3000 4000 5000 6000 7000 8000
+> Average Steps Survived
+> Batch size comparison
+> h = 50 h = 150 h = 300 h = 400 h = 903
+
+Fig. 9. Evaluation of the effect caused by different choices for the batch size which determines the number of chronics we collect data from between training iterations. 
+
+Overall, these results indicate that the primary role of MCTS hyper-parameters tuning is not to lift the performance ceiling, but rather to enhance computational efficiency and training robustness. 
+
+Search and Stopping Criteria. As shown in Figure 8, the medium early stopping configuration ( 𝑡 𝑠𝑘𝑖𝑝𝑝𝑒𝑑 = 50 and 𝑡 𝑠𝑡𝑜𝑝𝑝𝑖𝑛𝑔 = 10) avoided the training outliers seen in more aggressive or conservative vari-ants. An exception can be seen in the batch size experiment, where we learn that smaller batch sizes can lead to worse performance. Our evaluation of early-stopping parameters suggests that aggressive stopping criteria can be adopted to significantly reduce computa-tional overhead without degrading final survival times. Since the final survival times did not degrade under more aggressive early-stopping criteria, these settings offer a clear path to increasing the real-time feasibility of MCTS-based controllers. However, the su-perior stability of the “medium” configuration (Variant 2) indicates that some degree of search depth is necessary to prevent the high-variance training spikes observed in the more minimal variants. 
+
+Horizon and Thresholds. Regarding look-ahead depth, shorter horizons facilitated a more consistent learning trajectory. The longest horizon (500 steps) exhibited the pronounced instability, likely due to the diminishing validity of stationary reward assumptions over extended durations as grid dynamics evolve and stochasticity in-creases. Furthermore, a topology reset threshold of 0.85 emerged as the most robust setting. Higher thresholds, which delay inter-vention until the grid is more severely stressed, resulted in more frequent performance “down-spikes”, suggesting that overly delayed interventions lead to more volatile grid states. 
+
+Batch Size Efficiency. Finally, the batch size experiments demon-strate that insufficiently small batches lead to degraded performance, likely due to a lack of gradient diversity. While performance re-mained comparable across larger scales, the medium-sized batches provided the optimal balance between wall-clock training time and convergence stability. 
+
+B.2 Detailed Baseline Configuration 
+
+To compare all of the previously mentioned AlphaZero design op-tions we will use a baseline configuration with the following set-tings: 
+
+• Activation Threshold: 0.98 (max. line load of 98%). 
+
+• Search Limits: Maximum of 250 MCTS simulations per step. 
+
+• Temporal Parameters: 𝑡 𝑠𝑘𝑖𝑝𝑝𝑒𝑑 = 200 and 𝑡 𝑠𝑡𝑜𝑝𝑝𝑖𝑛𝑔 = 50. 
+
+• Reward Function: AlphaZero reward. 
+
+• Safety Heuristics: Automatic reconnection of a discon-nected line after coldown and reversion to the initial ref-erence topology when in safe state (below 75% max. line load). 
+
+• Observation Space: Minimal - restricted to line loads only.

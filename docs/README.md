@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-17</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-18</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 10 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 11 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>5</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-17 21:04:01 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-18 21:05:55 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读聚焦世界模型路径规划与自监督LiDAR表示学习，两篇高分论文分别探讨轨迹成本规划与点云自编码重构。速读覆盖图像聚类、轨迹分词及平面物体操作，共5篇均达6分。建议优先跟进Traj-LeWM的世界模型集成思路，并关注GhostPoint在无标签3D感知的潜力。</p>
+<p>今日共读11篇论文，精读7篇、速读4篇，核心聚焦世界模型与数据生成。</p>
+<p>最值得关注的是满分论文《Low-Rank Dynamics-Effective Latent Carriers》提出的反事实推演新机制，以及《WorldRover》的合成视频数据引擎。</p>
+<p>建议优先精读这两篇，后续可延伸探索自监督点云分割与可穿戴活动识别方向。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -71,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">5 篇</strong>
+    <strong class="dpr-home-dashboard-count">7 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Traj-LeWM: Path-Aware World-Model Planning via Latent Trajectory Cost">Traj-LeWM: Path-Aware World-Model Planning via Latent Trajectory Cost</span></li><li><span class="dpr-home-dashboard-paper-title" title="GhostPoint: Self-Supervised Representation Learning by Hallucinating Occluded LiDAR Structure">GhostPoint: Self-Supervised Representation Learning by Hallucinating Occluded LiDAR Structure</span></li><li><span class="dpr-home-dashboard-paper-title" title="Twin: Playing an Unknown Game with a Test-Time Digital Twin">Twin: Playing an Unknown Game with a Test-Time Digital Twin</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Low-Rank Dynamics-Effective Latent Carriers for Counterfactual Rollout in Learned World Models">Low-Rank Dynamics-Effective Latent Carriers for Counterfactual Rollout in Learned World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="WorldRover: A Scalable Synthetic Video Data Engine for World Exploration with Rich Annotations">WorldRover: A Scalable Synthetic Video Data Engine for World Exploration with Rich Annotations</span></li><li><span class="dpr-home-dashboard-paper-title" title="Beyond Visual CoT: Internalized Visual Thinking for Proactive Video Reasoning">Beyond Visual CoT: Internalized Visual Thinking for Proactive Video Reasoning</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>4</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -84,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">5 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Learning Deep Modality-Shared Self-Expressiveness for Image Clustering with Textual Information">Learning Deep Modality-Shared Self-Expressiveness for Image Clustering with Textual Information</span></li><li><span class="dpr-home-dashboard-paper-title" title="ReconSpan: Reconstruction-Guided Adaptive Latent Tokenization">ReconSpan: Reconstruction-Guided Adaptive Latent Tokenization</span></li><li><span class="dpr-home-dashboard-paper-title" title="FlatLab: A Unified Methodology Framework and Simulation-Based Benchmark for Robotic Manipulation of Flat Objects">FlatLab: A Unified Methodology Framework and Simulation-Based Benchmark for Robotic Manipulation of Flat Objects</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Emergent 3D Instance Segmentation from Self-Supervised Point Transformers">Emergent 3D Instance Segmentation from Self-Supervised Point Transformers</span></li><li><span class="dpr-home-dashboard-paper-title" title="TransfHAR: Self-Supervised Wrist Representations for On-Demand Activity Recognition">TransfHAR: Self-Supervised Wrist Representations for On-Demand Activity Recognition</span></li><li><span class="dpr-home-dashboard-paper-title" title="Physiological World Models for Human State Transitions">Physiological World Models for Human State Transitions</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>5</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>2</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>2</strong></span></div>
 </section>
 </div>
 
