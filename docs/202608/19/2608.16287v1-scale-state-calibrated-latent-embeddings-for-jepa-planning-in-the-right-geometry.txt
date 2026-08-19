@@ -1,0 +1,483 @@
+Title: SCALE: State-Calibrated Latent Embeddings for JEPA Planning in the Right Geometry
+
+URL Source: https://arxiv.org/pdf/2608.16287v1
+
+Published Time: Tue, 18 Aug 2026 01:48:26 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# SCALE: State-Calibrated Latent Embeddings for JEPA Planning in the Right Geometry 
+
+Jiaming Hu 1,2 ∗ Yan Zheng 2 Tian Wang 21Boston University 2Unity Technologies 
+
+> {jiaming.hu,yan.zheng,tianwang}@unity3d.com
+
+## Abstract 
+
+Joint-embedding predictive world models plan by scoring predicted terminal em-beddings against a goal embedding using a cost defined on the representation it-self. Two prominent strategies for obtaining non-collapsed representations are to inherit a pretrained feature space, as in DINO-WM, and to learn an embedding end to end with anti-collapse regularization, as in LeWorldModel (LeWM) with SIGReg. These strategies show complementary strengths across tasks. Although task-relevant state is decodable from the full embeddings of both models, DINO-WM’s leading principal components usually retain substantially more state infor-mation than LeWM’s. Because Euclidean planning costs are dominated by high-variance directions, this difference affects how strongly state can influence candi-date selection. We propose SCALE (State-CAlibrated Latent Embeddings) to give the end-to-end LeWM representation the favorable geometric property observed in DINO-WM. SCALE induces this property by correlating sampled pairwise la-tent distances with distances in a standardized task-relevant state space, without replacing LeWM’s learned encoder. Across five tasks, three planning solvers, and five compute budgets, SCALE improves every task–solver average over LeWM. A latent-to-state regression control matches or exceeds SCALE’s full-embedding decodability yet leaves latent–state distance alignment essentially unchanged and yields less consistent planning gains. SCALE adds a single lightweight training-time regularizer and no planning-time overhead. These results show that plan-ning depends not only on whether task-relevant information is present, but also on whether it shapes the geometry consumed by the planner. 
+
+## 1 Introduction 
+
+World models support control by predicting the consequences of candidate actions before they are executed [Ha and Schmidhuber, 2018, Hafner et al., 2020]. Reconstruction-based visual world mod-els predict future observations in pixel space, but high-fidelity reconstruction can devote capacity to appearance details that are irrelevant to control. Latent-predictive world models instead forecast representations of future observations, offering a compact space for prediction and planning [Hafner et al., 2019, Zhou et al., 2024, Sobal et al., 2025, Maes et al., 2026]. In JEPA-based variants [As-sran et al., 2023], an encoder maps an observation to a latent, an action-conditioned predictor rolls that latent forward, and a planner scores each candidate action sequence by a cost evaluated on its predicted terminal embedding and a goal embedding. The planner never inspects the representation directly: this cost is its entire interface to what the model has learned. LeWorldModel (LeWM) provides a concrete instance of this setup. It jointly learns an encoder and an action-conditioned dynamics predictor, and evaluates imagined futures through distances between predicted terminal and goal embeddings. To prevent the collapsed representations admitted 
+
+> ∗This work was completed while Jiaming Hu was an intern at Unity Technologies. Preprint. arXiv:2608.16287v1 [cs.LG] 17 Aug 2026
+
+by end-to-end joint-embedding training, LeWM uses SIGReg, which encourages a globally well-spread, approximately isotropic embedding distribution. This regularization, however, does not determine which factors of variation should most strongly shape the distances used for planning. A representation may therefore predict accurately, remain non-collapsed, and retain task-relevant state information, while that information has little influence on the planner’s cost. This raises a central question: what makes a latent geometry useful for planning? Comparing LeWM with DINO-WM reveals a useful contrast. Both representations retain substan-tial task-relevant state information, yet they expose that information differently through the geom-etry used for planning. In DINO-WM, variations in task state are more strongly reflected in latent distances, whereas in LeWM the same information can remain readily decodable without strongly shaping those distances. This suggests that the relevant distinction is not simply whether task-relevant information is encoded, but whether its variation is expressed in the metric through which the planner interacts with the representation. This distinction matters because the planner has no learned decoder with which to recover and reweight latent information; it acts directly through the planning cost. Under the Euclidean cost used by LeWM and DINO-WM, directions with larger variation contribute more, on average, to latent distances. Task-relevant information concentrated in weakly varying directions can therefore remain easy to decode while having little effect on candidate ranking. Decodability and geometric influence are thus distinct properties of a representation. We therefore ask whether an end-to-end JEPA can be trained to acquire the favorable latent geometry observed in DINO-WM while retaining the flexibility of an end-to-end learned representation. We propose SCALE (State-CAlibrated Latent Embeddings), a training objective that correlates pairwise latent distances with distances in task-relevant state space. Empirically, this geometric intervention translates into consistently better planning: SCALE out-performs LeWM on all 15 task–solver averages, with gains persisting across compute budgets. To test whether these improvements can be explained simply by stronger state encoding, we compare against an auxiliary latent-to-state regression objective. Although this control matches or exceeds SCALE’s full-embedding decodability on two tasks, it yields less consistent planning improvements. Together, these results support the distinction between encoding task-relevant information and mak-ing that information geometrically influential. Our contributions are: • We identify metric leverage —the weight a latent direction carries in the planner-facing cost—and show that under the squared Euclidean metric it is exactly the direction’s vari-ance(Sec. 4). • We introduce SCALE, a state-calibration regularizer that reshapes latent-space geometry so pairwise latent distances reflect task-relevant state differences. (Sec. 5). • We empirically verify SCALE with extensive experiments: across five environments, three planning solvers, and five compute budgets, it improves all 15 task–solver averages over LeWM, while a state-regression control(Aux) with identical supervision fails to match it(Sec. 6). 
+
+## 2 Related Work 
+
+Latent-predictive world models. World models support control through several mechanisms, in-cluding learning policies from imagined trajectories [Ha and Schmidhuber, 2018, Hafner et al., 2020] and optimizing action sequences online using model rollouts [Chua et al., 2018, Nagabandi et al., 2018, Hansen et al., 2024]. Reconstruction-free approaches predict future latent representa-tions rather than pixels. DINO-WM predicts pretrained DINOv2 patch features and plans by opti-mizing action sequences [Oquab et al., 2024, Zhou et al., 2024]; PLDM jointly trains an encoder and latent dynamics model with latent-prediction, VICReg-inspired anti-collapse, and inverse-dynamics objectives [Bardes et al., 2022, Sobal et al., 2025]; and LeWM combines next-embedding prediction with SIGReg [Maes et al., 2026]. These models differ in how they obtain non-collapsed represen-tations, but none explicitly trains the latent-space planning cost to reflect task-relevant differences. SCALE retains LeWM’s prediction and SIGReg objectives while adding state supervision for this purpose. 2Supervising latent geometry. Several approaches add supervision to make JEPA representations more useful for planning. Value-guided JEPA aligns latent distances with goal-conditioned value [Destrade et al., 2025]; SCALE instead aligns them with logged simulator state, requiring no re-ward, value estimate, or policy. Two concurrent methods use such privileged state for grounding: PhyLatent [Zeng et al., 2026] and PSG-JEPA [Yan et al., 2026] train auxiliary heads to predict phys-ical state or state changes from latents. Notably, PhyLatent diagnoses physically distant pairs that remain latent-close in LeWM—independent evidence for our premise, which SCALE turns from a diagnostic into a differentiable objective. Head-based grounding certifies that state is decodable ; be-cause a head can be an arbitrary nonlinear map, it leaves the metric unconstrained. Our Aux control implements exactly this form of supervision, and SCALE constrains the pairwise distance directly. 
+
+## 3 Preliminaries 
+
+3.1 Latent-space planning 
+
+Let ot and at denote the observation and action at time t. The encoder Eθ produces zt = Eθ (ot),and the action-conditioned predictor Pψ predicts ˆzt+1 = Pψ (zt, at). At test time, given a candidate action sequence a0: H−1 and current observation o0, the model sets ˆz0 = Eθ (o0) and rolls out 
+
+ˆzt+1 = Pψ (ˆ zt, at), t = 0 , . . . , H − 1. (1) For a goal observation og with embedding zg = Eθ (og ), the planner ranks candidates by a scalar cost 
+
+J(a0: H−1) = C ˆzH (a0: H−1), zg
+
+, (2) computed entirely from the learned representation. In LeWM and DINO-WM this cost is the squared Euclidean distance 
+
+J(a0: H−1) = ˆzH (a0: H−1) − zg
+
+> 22
+
+, (3) Because the solver interacts with the representation only through J, its decisions depend entirely on the distance geometry the encoder has learned. 
+
+3.2 LeWM training objective 
+
+For a transition (ot, at, o t+1 ), the encoder and predictor are trained with the one-step latent-prediction loss 
+
+Lpred = ˆzt+1 − zt+1 
+
+> 22
+
+, (4) where zt+1 = Eθ (ot+1 ) is the target embedding. This loss alone admits collapsed solutions in which the encoder maps every observation to the same point. For a batch of N encoder outputs Z =
+
+{zi}Ni=1 , SIGReg samples random unit directions in latent space, projects Z onto each, and penalizes deviations of the projected empirical distributions from a univariate standard normal [Balestriero and LeCun, 2025, Maes et al., 2026]. Applied across many directions, this drives the embedding distribution toward an isotropic Gaussian and maintains global spread. LeWM therefore optimizes 
+
+LLeWM = Lpred + λsig SIGReg( Z). (5) Neither term specifies which task-relevant differences should dominate pairwise latent distances. A representation can satisfy both while organizing its geometry around variation that has nothing to do with the task. 
+
+## 4 Where Task-Relevant State Lives 
+
+4.1 A motivating distance aligment contrast 
+
+The planner of Sec. 3.1 interacts with the representation only through the scalar cost of Eq. (3): whatever a representation encodes, the planner sees it only insofar as it registers in latent distance. We therefore quantify the contrast sketched in the introduction directly at this interface, computing the Spearman rank correlation between ∥zi − zj ∥22 and ∥qi − qj ∥22 over held-out trajectory frame pairs, where q denotes the task-relevant state variables logged alongside each trajectory (formally specified in Sec. 5.1). For the sampled frame pairs, we rank the latent distances and state distances 3separately. Spearman ρ measures the agreement between these two rankings: a high value means that pairs farther apart in task state also tend to be farther apart in latent space. This is directly relevant because the planner selects actions by ranking candidates according to latent cost. Ties are assigned average ranks. Table 1: Latent–state distance rank alignment (Spearman ρ) of the two reference world models over held-out frame pairs. Both models decode most of the same state accurately from their full embeddings (Appendix B); their metrics reflect it to very different degrees.             
+
+> Task LeWM DINO-WM Push-T .13 .70 Reacher .18 .46 Cube .00 .46 Two-Room .41 .85 PointMaze .52 .50
+
+Table 1 reveals a clear contrast. DINO-WM’s latent distances track state differences much more closely than LeWM’s on most tasks. The metric the planner will consume can be uninformative about task-relevant differences, even though probes still recover most of that state accurately from the full embedding (Appendix B). We next ask how such a dissociation between decodability and metric alignment can arise. 
+
+4.2 Metric leverage: which directions can influence the cost 
+
+Let μ be the mean of the encoded distribution and {(λj , uj )}Dj=1 its eigenvalue–eigenvector pairs, ordered by decreasing λj . Writing a centered embedding in this basis, 
+
+z − μ =
+
+> D
+
+X
+
+> j=1
+
+cj uj , Var( cj ) = λj , (6) the cost of Eq. (3) separates into independent per-direction contributions, 
+
+zi − zg 
+
+> 22
+
+=
+
+> D
+
+X
+
+> j=1
+
+ cij − cgj 
+
+2. (7) For a pair drawn independently from the encoded distribution, the expected contribution of direction 
+
+j is 
+
+E(cij − cgj )2 = 2 λj . (8) The scale at which a direction participates in the cost is thus set by its eigenvalue. Under the squared Euclidean cost, we accordingly define the metric leverage of a direction as its expected contribution to the cost, which by Eq. (8) equals 2λj : the weight it carries in the scalar that orders candidate action sequences. This resolves the dissociation of Table 1. Suppose a task-relevant variable q is encoded entirely in directions with small λj . A probe with sufficient capacity recovers q from the full embedding with high accuracy, since decodability does not depend on the variance of the directions used. The plan-ner, however, applies no learned head and cannot reweight directions; under Eq. (7) those directions contribute negligibly to J, and candidates differing substantially in q may receive near-identical costs. In short, 
+
+q is decodable from z ⇏ q strongly affects C(z, zg ).
+
+A representation in LeWM’s position—state decodable, alignment near zero—is one that stores task-relevant variation in directions with little metric leverage. 
+
+Hypothesis. Together, Table 1 and Sec. 4.2 suggest that planning performance depends not merely on whether task-relevant state is represented, but on whether it registers in latent distance. We therefore seek an objective that gives task-relevant variation direct influence over the metric. 45 Method 
+
+5.1 State-Calibrated Latent Embeddings 
+
+SCALE directly reshapes the pairwise latent distance used for planning. During training, each observation oi is paired with a simulator state qraw  
+
+> i
+
+. We construct the task-relevant state qi by selecting task-specific dimensions, representing angles with sine–cosine pairs, excluding velocities, and standardizing each component using fixed training-set statistics. This standardized state defines the target geometry and is used only as a detached training target; the encoder and planner remain image-only at test time. Because SCALE operates on pairwise distances, it requires neither equal dimensionality nor coordinate-wise correspondence between the latent and state spaces. The task-specific state selections are detailed in Appendix B. Consider a minibatch of B sub-trajectories, each containing T frames. We flatten its N = BT 
+
+frames into {(zn, qn, b n, e n)}Nn=1 , where zn ∈ RD is an encoder output, qn ∈ Rdq is its stan-dardized task-relevant state, bn identifies its sub-trajectory, and en its source episode. At each step, we sample a set P = {(ik, j k)}Kk=1 of distinct frame pairs, with half drawn within sub-trajectories (bik = bjk ) and half across episodes ( eik̸ = ejk ). This stratification supplies both local and global geometric comparisons. We then define the latent and state distance profiles 
+
+xk = ∥zik − zjk ∥22, yk = ∥qik − qjk ∥22. (9) Let ¯x and sx be the mean and standard deviation of {xk}Kk=1 ; ¯y and sy are defined analogously. With a numerical constant ε > 0, the standardized profiles and correlation loss are 
+
+˜xk = xk − ¯xsx + ε , ˜yk = yk − ¯ysy + ε , Lcorr = 1 − 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+˜xk ˜yk. (10) Component-wise normalization of qn makes the selected state variables comparable, while normal-ization of the two distance profiles makes Lcorr depend on relative distance structure rather than global scale. In the ideal case, xk and yk are perfectly positively linearly related, their standardized profiles coincide, and Lcorr = 0 : larger state differences then produce proportionally larger latent distances. Therefore, the complete objective is 
+
+LSCALE = Lpred + λsig SIGReg( Z) + λcorr Lcorr , (11) where the three terms play complementary roles: Lpred trains action-conditioned latent prediction, SIGReg prevents collapse and maintains global embedding spread, and Lcorr redistributes infor-mation within that spread so task-relevant variation carries greater metric leverage. The complete 
+
+LSCALE updates the encoder Eθ , whereas the predictor Pψ is updated only by Lpred . Training pseudocode is provided in Appendix A.1. 
+
+5.2 Latent-to-state regression as a mechanistic control 
+
+To separate the two properties distinguished in Sec. 4.2, we train a control that optimizes decodabil-ity while leaving the metric unconstrained. The Aux baseline attaches a training-only head hϕ to the encoder output and minimizes 
+
+Laux = hϕ(zn) − qn 
+
+> 22
+
+(12) in place of Lcorr , using the same selected and standardized state, the same architecture, and the same training protocol. Because hϕ may be an arbitrary nonlinear map, Eq. (12) is satisfied by placing q
+
+anywhere in the representation, including directions with negligible metric leverage. Aux therefore poses a sharp question: if making state easier to decode were sufficient, it should match SCALE. 
+
+## 6 Experiments 
+
+6.1 Setup 
+
+We evaluate LeWM, SCALE, and the latent-to-state regression control on Push-T [Chi et al., 2023], DeepMind Control Reacher [Tassa et al., 2018], OGBench-Cube [Park et al., 2025], Two-Room 5Table 2: iCEM success rate (%) across tasks and compute tiers. Each entry reports mean ± SD over six evaluation sets; the final column averages T1–T5. DINO-WM is included as a pretrained-feature reference. Bold marks the best method per column. Appendix C reports complete results for all planning solvers.                                                                                                                                
+
+> Task Method T1 T2 T3 T4 T5 Mean Push-T LeWM 86 .2±3.380 .7±2.273 .5±6.553 .5±5.725 .7±5.463.9 SCALE 89 .7±2.087 .0±2.579 .0±3.959 .8±4.725 .5±5.868.2 Aux. 91 .3±1.287 .7±1.880 .3±4.060 .5±6.026 .7±4.669.3
+> DINO-WM 70 .5±4.265 .2±4.258 .5±5.239 .8±10 .022 .5±4.351.3 Reacher LeWM 85 .5±2.481 .8±3.183 .3±3.577 .8±6.161 .7±2.978.0 SCALE 86 .7±3.686 .2±2.986 .5±3.482 .3±3.264 .0±2.581.1
+> Aux. 84 .3±4.687 .0±2.886 .8±3.581 .2±3.861 .5±4.180.2 DINO-WM 79 .0±4.677 .5±5.679 .7±3.175 .5±5.052 .3±6.072.8 Cube LeWM 70 .7±5.368 .0±3.969 .7±3.662 .7±4.755 .2±5.765.3 SCALE 76 .7±3.976 .5±4.574 .8±3.564 .8±3.759 .7±4.570.5
+> Aux. 74 .5±3.273 .3±4.573 .0±3.164 .5±3.357 .7±3.868.6 DINO-WM 70 .8±2.667 .3±1.566 .2±1.757 .3±4.551 .7±3.862.7 Two-Room LeWM 91 .3±1.293 .3±1.289 .2±2.577 .5±1.463 .2±3.082.9 SCALE 100 .0±0.099 .8±0.497 .3±1.490 .5±1.476 .7±1.992.9 Aux. 92 .5±2.793 .5±2.188 .5±1.979 .0±2.462 .0±1.883.1 DINO-WM 100 .0±0.0100 .0±0.099 .7±0.598 .7±0.592 .8±1.798.2
+> PointMaze LeWM 81 .7±3.982 .7±4.481 .3±3.681 .7±5.173 .7±4.780.2 SCALE 87 .3±3.982 .7±3.984 .3±4.183 .2±4.679 .3±2.483.4 Aux. 83 .8±4.882 .8±3.780 .5±5.581 .2±2.978 .3±5.581.3 DINO-WM 94 .2±1.793 .7±2.392 .8±2.390 .8±1.786 .2±1.991.5
+
+[Sobal et al., 2025], and PointMaze [Fu et al., 2020, Zhou et al., 2024]. SCALE and the regression control use the same standardized task-relevant state; its task-specific components and selection ra-tionale are detailed in Appendix B. All three configurations share the LeWM architecture and train-ing protocol; only the added supervision differs. Exact architectures and training hyperparameters are given in Appendix A. We follow the LeWM goal-conditioned planning protocol and evaluate CEM [de Boer et al., 2005], iCEM [Pinneri et al., 2021], and MPPI [Williams et al., 2017], with DINO-WM as a pretrained-feature reference. We report success rates; planner budgets, horizons, temperature selection, and evaluation-set construction are detailed in Appendix A. 
+
+6.2 Planning performance 
+
+SCALE improves LeWM on every task–solver average (15/15). Under iCEM (Table 2), its gains averaged across budgets are 4.3, 3.1, 5.2, 10 .0, and 3.1 percentage points on Push-T, Reacher, Cube, Two-Room, and PointMaze, respectively. The same improvement holds under CEM and MPPI and across a 300 × range of rollout budgets (Appendix C), showing that SCALE improves the planner-facing cost rather than one particular search procedure. The regression control isolates why SCALE is more consistent. Full-embedding probes confirm that Aux successfully encodes the supervised state, even exceeding SCALE’s decodability on Push-T and Cube (Appendix B). Yet Aux improves only 13 of 15 task–solver averages and trails SCALE on four of five tasks; Push-T is the exception. The planning gap therefore cannot just be explained by whether state information is present, but by whether that information shapes latent geometry. The comparison with DINO-WM further highlights this consistency. DINO-WM is significantly better than LeWM on Two-Room and PointMaze, significantly worse on Push-T ( p = .031 ), and not significantly different on Reacher or Cube. SCALE, in contrast, never falls below LeWM on any task–solver pair. It thus learns a consistently useful planner-facing geometry without inheriting the task dependence of a fixed pretrained encoder. 
+
+6.3 How SCALE reorganizes the latent geometry 
+
+The planning results establish that SCALE improves an end-to-end latent world model, but do not by themselves reveal what changes inside the representation. We therefore trace the effect of SCALE through the geometry itself. We first examine how variance is distributed across latent directions, then identify what information occupies the directions whose variance increases, and finally test 6whether this reorganization survives model rollout strongly enough to affect the candidate selection used for planning. 
+
+SCALE increases variance in the dominant latent directions. We begin with the PCA spectrum of each frozen representation. Figure 1 shows that SCALE consistently raises the variance carried by the leading principal directions relative to LeWM and Aux on most tasks. DINO-WM also exhibits a strongly weighted spectral head, although its much higher dimensionality produces a qualitatively different long-tail spectrum. Under the squared Euclidean planning cost, this change has a direct geometric interpretation. As shown in Sec. 4.2, a principal direction with eigenvalue λj contributes 2λj in expectation to the squared distance between independently sampled embeddings. Increasing variance near the head of the spectrum therefore gives these directions greater average leverage over the cost consumed by the planner. The spectrum alone, however, does not tell us what factors of variation have acquired that leverage. 
+
+Figure 1: Normalized PCA eigenvalue spectra of the frozen embeddings. SCALE places more variance in the leading principal directions than LeWM and Aux on most tasks. DINO-WM also exhibits a strongly weighted spectral head, while its substantially larger representation produces a much longer spectral tail. 
+
+The additional dominant variation is task relevant. We next ask what the high-variance direc-tions actually encode. For each frozen representation, we regress the selected task-relevant state 
+
+q using only its leading k principal components. Figure 2 shows that the leading components of SCALE are substantially more predictive of q than those of LeWM. The separation from Aux is es-pecially informative: although Aux can recover q accurately from the full embedding, substantially less of that information appears in its leading components. Together with the spectral analysis, this identifies what SCALE changes. It does not merely increase variance in arbitrary latent directions; the directions receiving greater metric leverage become more strongly associated with task-relevant state. Conversely, auxiliary regression can make the same state highly decodable without organizing it in the part of the representation that contributes most strongly to Euclidean distance. Consistent with this interpretation, SCALE also substantially increases held-out latent–state distance alignment, whereas Aux leaves it near the LeWM level despite strong state decodability (Appendix B.1). 
+
+Figure 2: Held-out R2 for predicting the selected task-relevant state from the leading k principal components of each frozen embedding. SCALE makes the dominant latent subspace more infor-mative about q than LeWM on every task, and substantially more informative than Aux on Push-T, Reacher, Two Room and Cube despite Aux’s strong full-embedding decodability. 
+
+The reorganized geometry survives rollout and improves candidate ranking. The preceding analysis concerns encoded observations, whereas planning operates on predicted future embeddings. For each start and candidate action sequence m, the world model predicts a terminal embedding 7ˆz(m) 
+
+> H
+
+. Executing the same sequence from the same start in the simulator produces o(m),true  
+
+> H
+
+, which the same encoder maps to z(m),true  
+
+> H
+
+= Eθ (o(m),true  
+
+> H
+
+).These paired outcomes define two measurements. First, rollout error compares the predicted and simulator-derived embeddings as ∥ˆz(m) 
+
+> H
+
+− z(m),true  
+
+> H
+
+∥22/s , where s is the model’s mean squared dis-tance between random pairs of the simulator-derived terminal embeddings z(m),true  
+
+> H
+
+. Second, for the same goal embedding zg , we compute 
+
+ˆJm = ∥ˆz(m) 
+
+> H
+
+− zg ∥22, Jtrue  
+
+> m
+
+= ∥z(m),true  
+
+> H
+
+− zg ∥22,
+
+and report Kendall’s τ between the candidate rankings induced by { ˆJm} and {Jtrue  
+
+> m
+
+}.Table 3: Within-model rollout quality. Lower rollout error and higher Kendall τ are better. Parenthe-ses report change relative to LeWM; when LeWM’s τ is near zero, we report the absolute difference 
+
+∆. Results average 20 starts.                                                                     
+
+> Task Metric LeWM SCALE Aux DINO-WM Push-T RollErr ↓.0350 .0277 ( −21 .0% ).0269 ( −23 .1% ).2819 ( +704 .9% )Kendall τ↑.7316 .7857 ( +7 .4% ).7576 ( +3 .6% ).7000 ( −4.3% )Reacher RollErr ↓.1812 .1548 ( −14 .6% ).1686 ( −7.0% ).5860 ( +223 .4% )Kendall τ↑.6233 .6435 ( +3 .2% ).6328 ( +1 .5% ).6414 ( +2 .9% )Cube RollErr ↓.3195 .3174 ( −0.7% ).2389 ( −25 .2% ).3227 ( +1 .0% )Kendall τ↑.3654 .4433 ( +21 .3% ).4150 ( +13 .6% ).7775 ( +112 .8% )
+> Two-Room RollErr ↓.3600 .2857 ( −20 .6% ).3511 ( −2.5% ).1479 ( −58 .9% )
+> Kendall τ↑.5448 .6210 ( +14 .0% ).5389 ( −1.1% ).7250 ( +33 .1% )
+> PointMaze RollErr ↓2.4226 2.1132 ( −12 .8% )2.2418 ( −7.5% )1.9545 ( −19 .3% )
+> Kendall τ↑−.0029 .1675 (n/a, ∆+ .170 ).0540 (n/a, ∆+ .057 ).2850 (n/a, ∆+ .288 )
+
+SCALE increases Kendall ranking agreement over LeWM on every task. The improvement is mod-est on Push-T and Reacher, where LeWM already preserves candidate ordering relatively well, but becomes much larger on Cube, Two-Room, and PointMaze. This shows that the representational change identified by the PCA analyses is not confined to static encodings: it survives prediction strongly enough to improve the ordering of imagined futures presented to the planner. The comparison with Aux further separates this effect from generic prediction accuracy. Aux achieves the lowest rollout error on Push-T and Cube, yet its gains in Kendall agreement are consis-tently smaller than SCALE’s and nearly vanish on the navigation tasks. DINO-WM illustrates the complementary limitation: on Two-Room and PointMaze it combines favorable rollout and ranking behavior, while on Push-T and Reacher its rollout errors are dramatically larger. On Cube, DINO-WM attains the highest Kendall τ without the strongest planning performance. Thus, preserving a useful candidate ordering is an important interface between representation geometry and plan-ning, but it is not by itself sufficient for planning success; the latent dynamics must also remain predictable. 
+
+## 7 Conclusion 
+
+We study how the geometry of a learned representation affects latent-space planning. Our analysis shows that task-relevant information may be readily decodable from an embedding while remaining geometrically weak. Motivated by the contrasting geometries of DINO-WM and LeWM, we intro-duce SCALE to directly calibrate latent distances with task-relevant state differences during training. The resulting representations preserve LeWM’s end-to-end learning framework while making task-relevant variation more prominent in the geometry seen by the planner. More broadly, our results highlight that, when planning is performed directly with Euclidean latent distance, representation quality depends not only on what information is encoded, but also on how that information is orga-nized geometrically. 8References 
+
+Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15619–15629, 2023. Randall Balestriero and Yann LeCun. Lejepa: Provable and scalable self-supervised learning with-out the heuristics. arXiv preprint arXiv:2511.08544 , 2025. Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regularization for self-supervised learning. In International Conference on Learning Representations , 2022. Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin Burchfiel, and Shuran Song. Diffusion policy: Visuomotor policy learning via action diffusion. In Robotics: Science and Systems , 2023. Kurtland Chua, Roberto Calandra, Rowan McAllister, and Sergey Levine. Deep reinforcement learn-ing in a handful of trials using probabilistic dynamics models. In Advances in Neural Information Processing Systems , 2018. Pieter-Tjerk de Boer, Dirk P. Kroese, Shie Mannor, and Reuven Y. Rubinstein. A tutorial on the cross-entropy method. Annals of Operations Research , 134(1):19–67, 2005. doi: 10.1007/s10479-005-5724-z. Matthieu Destrade, Oumayma Bounou, Quentin Le Lidec, Jean Ponce, and Yann LeCun. Value-guided action planning with jepa world models, 2025. URL https://arxiv.org/abs/2601. 00844 .Justin Fu, Aviral Kumar, Ofir Nachum, George Tucker, and Sergey Levine. D4RL: Datasets for deep data-driven reinforcement learning. arXiv preprint arXiv:2004.07219 , 2020. David Ha and J¨ urgen Schmidhuber. World models. arXiv preprint arXiv:1803.10122 , 2018. Danijar Hafner, Timothy Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee, and James Davidson. Learning latent dynamics for planning from pixels. In Proceedings of the 36th In-ternational Conference on Machine Learning , volume 97 of Proceedings of Machine Learning Research , pages 2555–2565. PMLR, 2019. Danijar Hafner, Timothy Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to control: Learning behaviors by latent imagination. In International Conference on Learning Representations , 2020. Nicklas Hansen, Hao Su, and Xiaolong Wang. Td-mpc2: Scalable, robust world models for contin-uous control. In International Conference on Learning Representations , 2024. Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. Leworld-model: Stable end-to-end joint-embedding predictive architecture from pixels. arXiv preprint arXiv:2603.19312 , 2026. Anusha Nagabandi, Gregory Kahn, Ronald S. Fearing, and Sergey Levine. Neural network dynamics for model-based deep reinforcement learning with model-free fine-tuning. In IEEE International Conference on Robotics and Automation , 2018. Maxime Oquab, Timoth´ ee Darcet, Th´ eo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran, Nico-las Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Herv´ e J´ egou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. DINOv2: Learning robust visual features without super-vision. Transactions on Machine Learning Research , 2024. Seohong Park, Kevin Frans, Benjamin Eysenbach, and Sergey Levine. Ogbench: Benchmarking offline goal-conditioned reinforcement learning. In International Conference on Learning Repre-sentations , 2025. 9Cristina Pinneri, Shambhuraj Sawant, Sebastian Blaes, Jan Achterhold, J¨ org St¨ uckler, Michal Ro-linek, and Georg Martius. Sample-efficient cross-entropy method for real-time planning. In 
+
+Proceedings of the 2020 Conference on Robot Learning , volume 155 of Proceedings of Machine Learning Research , pages 1049–1065. PMLR, 2021. Vlad Sobal, Wancong Zhang, Kyunghyun Cho, Randall Balestriero, Tim G. J. Rudner, and Yann LeCun. Learning from reward-free offline data: A case for planning with latent dynamics models. 
+
+arXiv preprint arXiv:2502.14819 , 2025. Yuval Tassa, Yotam Doron, Alistair Muldal, Tom Erez, Yazhe Li, Diego de Las Casas, David Bud-den, Abbas Abdolmaleki, Josh Merel, Andrew Lefrancq, Timothy Lillicrap, and Martin Ried-miller. Deepmind control suite. arXiv preprint arXiv:1801.00690 , 2018. Grady Williams, Nolan Wagener, Brian Goldfain, Paul Drews, James M. Rehg, Byron Boots, and Evangelos A. Theodorou. Information theoretic MPC for model-based reinforcement learning. In 2017 IEEE International Conference on Robotics and Automation (ICRA) , pages 1714–1721, 2017. doi: 10.1109/ICRA.2017.7989202. Haodong Yan, Jiaguan Zhu, Mingyuan Jia, Ruiqing Yin, Junjie He, Zhide Zhong, Junfeng Li, Jinx-uan Lu, Hengtao Li, Tianran Zhang, Jiayi Chen, Wenxuan Song, Wen Chen, Yuxiang Gao, and Haoang Li. Is forward prediction enough? physical state grounding for jepa world models. arXiv preprint arXiv:2608.06799 , 2026. Xi Zeng, Haojie Ren, and Ziying Song. Phylatent: Learning dynamics-relevant representations for jepa world models. arXiv preprint arXiv:2608.05720 , 2026. Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. Dino-wm: World models on pre-trained visual features enable zero-shot planning. arXiv preprint arXiv:2411.04983 , 2024. 
+
+## A Implementation details 
+
+A.1 SCALE training pseudocode Algorithm 1 SCALE training. 
+
+Require: B = ( O, A, Q, e ): aligned pixels O and states Q over B × T frames, actions A over B × (T − 1) 
+
+transitions, and episode IDs e = ( eb)Bb=1 
+
+Require: Eθ , Pψ , K, ε, δ > 0, and λsig , λ corr ≥ 0 
+
+> 1:
+
+Z ← Eθ (O); bZ ← Pψ (Z:,1: T −1, A ) 
+
+> 2:
+
+Lpred ← MSE( bZ, Z :,2: T ) 
+
+> 3:
+
+z ← reshape( Z, (N, D )) ; q ← detach(reshape( Q, (N, d q ))) ▷ N = BT frames  
+
+> 4:
+
+bn ← ⌈ n/T ⌉; en ← ebn for n = 1 , . . . , N  
+
+> 5:
+
+Sample K/ 2 pairs within sub-trajectories ( bi = bj ) and K/ 2 across episodes ( ei̸ = ej ); denote their union by P 
+
+> 6:
+
+xk ← ∥ zik − zjk ∥22; yk ← ∥ qik − qjk ∥22 for (ik , j k ) ∈ P  
+
+> 7:
+
+if std( x) < δ or std( y) < δ then  
+
+> 8:
+
+Lcorr ← 0 · sum( z) ▷ graph-connected zero  
+
+> 9:
+
+else  
+
+> 10:
+
+˜x ← (x − mean( x)) /(std( x) + ε); ˜y ← (y − mean( y)) /(std( y) + ε) 
+
+> 11:
+
+Lcorr ← 1 − mean(˜ x ⊙ ˜y) 
+
+> 12:
+
+end if  
+
+> 13:
+
+LSCALE ← L pred + λsig SIGReg( Z) + λcorr Lcorr  
+
+> 14:
+
+gθ ← ∇ θ LSCALE ; gψ ← ∇ ψ Lpred  
+
+> 15:
+
+(θ, ψ ) ← Adam  (θ, ψ ), (gθ , g ψ )
+
+Hyperparameters. The encoder is a ViT-Tiny with patch size 14, 12 layers, 3 attention heads, and width 192. Its CLS token is passed through a linear–BatchNorm projector. The predictor is a six-layer causal transformer with 16 attention heads, dropout 0.1, a history length of 3, and actions injected through zero-initialized AdaLN; its output uses a matching projector. We use frame skip 5 10 and concatenate the five intervening actions into 10-dimensional action blocks. Training uses four-frame sub-trajectories, batch size 128, 10 epochs, and seed 3072. We optimize with Adam using learning rate 5 × 10 −5 and weight decay 10 −3. SIGReg uses M =1024 random unit projections with λsig = 0 .09 . For Lcorr , we sample K=4096 pairs per training step with equal within- and cross-episode proportions and set ε = 10 −6. We use λcorr = 0 .1, except for Reacher where it is 
+
+0.15 . The selected state dimensions for Push-T, Reacher, Cube, Two-Room, and PointMaze are 6,
+
+2, 5, 2, and 2, respectively. 
+
+Planner. All planning solvers use a horizon of five action blocks (25 environment steps), an action-block size of five, a receding-horizon interval of five, a 50-step evaluation horizon, and goals sam-pled 25 steps ahead. The five compute tiers use settings 300 /30 , 100 /20 , 50 /10 , 20 /5, and 10 /3,corresponding to 9000 , 2000 , 500 , 100 , and 30 rollout evaluations per replanning step. The elite count is max(round(0 .1 · candidates ), 2) .
+
+MPPI temperature. MPPI weights candidates by exp( −J/T ) and is therefore sensitive to the scale of J, which differs across representations. For the three LeWM-family models we select a sin-gle per-task temperature T ∗ on a separate tuning seed and report results on five held-out evaluation sets; the selected values are T ∗ = 64 for Push-T and Two-Room, 32 for Reacher and Cube, and 256 
+
+for PointMaze, shared by LeWM, SCALE, and Aux so that the comparison among them remains matched. DINO-WM uses T = 0 .5, which lies in the smooth operating region of its own cost scale. 
+
+Paired evaluation. For CEM and iCEM, each of six evaluation seeds defines a set of 100 episodes sampled without replacement, and every training configuration replays the same 600 episodes for each solver and compute tier. Planner randomness is initialized from a hash of the episode identifier and tier that is shared across training configurations, so paired outcomes differ only through the learned models. Standard deviations and standard errors across evaluation sets quantify episode-sampling variation only. 
+
+## B Additional representation and state-selection results 
+
+Tables 4–8 report held-out R2 for probes from the full frozen embedding to the task-relevant state variables. On Push-T, Two-Room, and PointMaze the probe targets coincide with the selected state 
+
+q used for supervision. On Reacher and Cube the probe targets are deliberately broader than q,so that recovery of supervised and unsupervised variables can be compared within the same repre-sentation; the supervised subset is identified in each caption. Linear denotes closed-form ridge re-gression. The MLP is a two-layer network with hidden width 256 and ReLU, trained for 30 epochs using Adam with learning rate 10 −3, batch size 1024, and seed 0. Its input contains all principal-component coordinates—an information-preserving rotation of the full embedding—divided by one global scalar; this gives 1499 inputs for DINO-WM and approximately 192 for the LeWM-family models. The finite-optimization MLP generally has lower absolute R2 than the closed-form probe, so comparisons are made within each probe family. Aux denotes the latent-to-state regression con-trol of Sec. 5.2. 11 Table 4: Per-component held-out R2 for Push-T. 
+
+Probe State component LeWM SCALE Aux DINO-WM Linear agent x .9191 .9656 .9851 .9342 agent y .9194 .9715 .9845 .9394 block x .9686 .9820 .9904 .9291 block y .9603 .9746 .9886 .9722 
+
+cos θ .9019 .9023 .9767 .8353 
+
+sin θ .8694 .8855 .9778 .5943 
+
+Mean .9231 .9469 .9839 .8674 MLP agent x .8580 .8876 .9187 .7704 agent y .8676 .9206 .9066 .7676 block x .9219 .9005 .9429 .7847 block y .9149 .8943 .9475 .7685 
+
+cos θ .8572 .8569 .8980 .5792 
+
+sin θ .8404 .8605 .9116 .4869 
+
+Mean .8767 .8867 .9209 .6929 
+
+Table 5: Per-component held-out R2 for Reacher. The selected state q comprises cos q0 and sin q0;
+
+cos q1 and sin q1 are probed but never supervised. 
+
+Probe State component LeWM SCALE Aux DINO-WM Linear 
+
+cos q0 .9996 .9998 .9996 .9972 
+
+sin q0 .9997 .9998 .9998 .9981 
+
+cos q1 .9994 .9997 .9995 .9953 
+
+sin q1 .9980 .9996 .9986 .9702 
+
+Mean .9992 .9997 .9994 .9902 MLP 
+
+cos q0 .9837 .9875 .9854 .9479 
+
+sin q0 .9835 .9882 .9846 .9245 
+
+cos q1 .9780 .9800 .9820 .8612 
+
+sin q1 .9838 .9886 .9830 .7814 
+
+Mean .9823 .9861 .9838 .8788 
+
+Table 6: Per-component held-out R2 for Cube. The selected state q comprises effector x, y, z and 
+
+cos 2 ψ, sin 2 ψ; gripper and block x, y, z are probed but never supervised. 
+
+Probe State component LeWM SCALE Aux DINO-WM Linear effector x .9773 .9854 .9934 .9814 effector y .9661 .9778 .9943 .9980 
+
+effector z .9825 .9899 .9928 .9818 
+
+cos 2 ψ .7599 .9888 .9938 .7627 
+
+sin 2 ψ -.2577 .9880 .9938 .4213 gripper .9072 .9783 .9742 .6638 block x .9870 .9922 .9950 .9282 block y .9884 .9792 .9924 .9804 block z .9869 .9935 .9937 .8871 
+
+Mean .8109 .9859 .9915 .8450 MLP effector x .8781 .8326 .8630 .7686 effector y .9038 .9059 .9200 .8992 effector z .8420 .8603 .8111 .8106 
+
+cos 2 ψ .6599 .9034 .9091 .5339 
+
+sin 2 ψ -.0394 .8868 .8724 .2822 gripper .7974 .8871 .8627 .4786 block x .9083 .8537 .9145 .7291 block y .9324 .9081 .9123 .8928 block z .8846 .9024 .9086 .5871 
+
+Mean .7519 .8823 .8860 .6647 
+
+12 Table 7: Per-component held-out R2 for Two-Room.                              
+
+> Probe State component LeWM SCALE Aux DINO-WM Linear
+> x.9957 .9982 .9963 .9957
+> y.9942 .9977 .9981 .9975
+> Mean .9950 .9979 .9972 .9966 MLP
+> x.9581 .9742 .9722 .9315
+> y.9660 .9829 .9714 .9209
+> Mean .9621 .9786 .9718 .9262
+
+Table 8: Per-component held-out R2 for PointMaze.                              
+
+> Probe State component LeWM SCALE Aux DINO-WM Linear
+> x.9988 .9992 .9989 .9982
+> y.9989 .9990 .9989 .9982
+> Mean .9989 .9991 .9989 .9982 MLP
+> x.9703 .9869 .9717 .9288
+> y.9824 .9733 .9796 .9609
+> Mean .9764 .9801 .9757 .9449
+
+State selection. On Reacher and Cube we supervise a strict subset of the available simulator state. Enlarging the selection does not help: average success moves from 66 .17 to 65 .75 on Reacher when both joint angles are supervised rather than the first alone, and from 62 .65 to 62 .55 on Cube when the gripper and block coordinates are added to the five selected variables. Reducing the six-dimensional Push-T state does not help either. Under the account of Sec. 4.2 this is expected rather than surprising: Lcorr distributes metric leverage over whatever variation q contains, so adding variables that matter less for the task dilutes the leverage available to those that matter more. State selection therefore acts as a task-dependent inductive bias, and more supervised variables are not automatically better. 
+
+B.1 Held-out latent–state distance alignment 
+
+As a direct held-out check of the geometric quantity optimized by SCALE, we measure the Spear-man rank correlation between pairwise latent distances and task-state distances using the protocol of Sec. 4.1. Because this quantity is directly targeted by Lcorr , we treat it as a consistency check rather than as independent evidence for the mechanism developed in Sec. 6.3. Table 9: Held-out latent–state distance rank alignment (Spearman ρ) over 1.12 M frame pairs per task. LeWM and DINO-WM repeat Table 1 for comparison.                         
+
+> Task LeWM SCALE Aux DINO-WM Push-T .13 .77 .18 .70 Reacher .18 .53 .17 .46 Cube .00 .56 .03 .46 Two-Room .41 .77 .41 .85
+> PointMaze .52 .80 .52 .50
+
+SCALE substantially increases latent–state rank alignment over LeWM on every task. Aux, in contrast, leaves the alignment essentially unchanged despite making task state highly recoverable from the full embedding. The latter provides an additional check on the distinction motivating SCALE: state decodability alone does not ensure that state differences are expressed in the latent metric. 13 C Full planning results 
+
+Tables 10–14 report success rates for every task, planning solver, and compute tier, including DINO-WM as the pretrained-feature reference. CEM and iCEM entries average six paired evaluation sets; MPPI entries use the per-task temperature protocol of Appendix A and average five held-out evaluation sets. Table 10: Push-T success rates (%) for all solvers. Mean ± SD per tier; the final column averages T1–T5. Bold marks the best method per column within each solver. 
+
+Solver Method T1 T2 T3 T4 T5 Mean CEM LeWM 92 .3±2.0 90 .5±3.3 79 .2±5.0 57 .0±7.1 33 .5±2.7 70.5 SCALE 96 .0±2.0 93 .2±2.6 84 .7±4.0 63 .0±4.6 32 .5±4.4 73.9 Aux. 94 .2±1.9 93 .3±2.0 84 .7±5.3 66 .2±8.9 36 .2±7.9 74.9 
+
+DINO-WM 73 .8±4.2 72 .5±4.9 65 .0±5.8 46 .8±5.0 24 .8±5.6 56.6 iCEM LeWM 86 .2±3.3 80 .7±2.2 73 .5±6.5 53 .5±5.7 25 .7±5.4 63.9 SCALE 89 .7±2.0 87 .0±2.5 79 .0±3.9 59 .8±4.7 25 .5±5.8 68.2 Aux. 91 .3±1.2 87 .7±1.8 80 .3±4.0 60 .5±6.0 26 .7±4.6 69.3 
+
+DINO-WM 70 .5±4.2 65 .2±4.2 58 .5±5.2 39 .8±10 .0 22 .5±4.3 51.3 MPPI LeWM 80 .2±2.6 82 .6±1.1 75 .0±3.6 58 .4±3.4 35 .8±5.2 66.4 SCALE 88 .6±3.8 87 .8±2.8 81 .0±3.7 59 .4±4.2 35 .4±4.0 70.4 Aux. 87 .8±4.3 89 .2±3.3 80 .6±4.0 58 .8±4.9 37 .8±5.8 70.8 
+
+DINO-WM 76 .4±3.8 72 .6±3.8 63 .2±5.8 47 .4±8.8 31 .2±6.2 58.2 
+
+Table 11: Reacher success rates (%) for all solvers. Mean ± SD per tier; the final column averages T1–T5. Bold marks the best method per column within each solver. 
+
+Solver Method T1 T2 T3 T4 T5 Mean CEM LeWM 81 .8±1.2 78 .8±4.4 72 .7±4.3 64 .3±4.9 55 .2±5.8 70.6 SCALE 82 .5±4.6 78 .7±3.8 74 .8±5.9 64 .5±8.4 57 .2±6.1 71.5 
+
+Aux. 80 .7±4.9 77 .3±4.5 74 .2±3.7 65 .0±5.0 55 .0±7.7 70.4 DINO-WM 76 .8±3.5 74 .0±5.8 70 .8±4.2 61 .5±4.0 47 .7±7.3 66.2 iCEM LeWM 85 .5±2.4 81 .8±3.1 83 .3±3.5 77 .8±6.1 61 .7±2.9 78.0 SCALE 86 .7±3.6 86 .2±2.9 86 .5±3.4 82 .3±3.2 64 .0±2.5 81.1 
+
+Aux. 84 .3±4.6 87 .0±2.8 86 .8±3.5 81 .2±3.8 61 .5±4.1 80.2 DINO-WM 79 .0±4.6 77 .5±5.6 79 .7±3.1 75 .5±5.0 52 .3±6.0 72.8 MPPI LeWM 56 .6±6.2 58 .2±1.9 52 .4±5.0 55 .0±6.1 50 .4±4.4 54.5 SCALE 57 .8±3.8 62 .2±3.6 56 .4±2.9 54 .6±3.4 54 .4±2.9 57.1 
+
+Aux. 51 .0±2.9 56 .0±6.6 56 .6±4.4 51 .4±6.3 49 .0±5.5 52.8 DINO-WM 59 .4±3.2 60 .0±6.6 54 .6±3.0 50 .2±8.5 48 .6±8.4 54.6 
+
+Table 12: Cube success rates (%) for all solvers. Mean ± SD per tier; the final column averages T1–T5. Bold marks the best method per column within each solver. 
+
+Solver Method T1 T2 T3 T4 T5 Mean CEM LeWM 67 .5±5.9 67 .0±3.8 61 .2±5.8 57 .3±3.6 53 .8±5.0 61.4 SCALE 73 .5±3.4 71 .3±4.2 65 .5±4.8 56 .3±5.2 54 .2±5.0 64.2 
+
+Aux. 73 .5±5.0 70 .3±4.6 62 .8±4.9 55 .5±5.2 55 .3±4.2 63.5 DINO-WM 72 .5±2.4 68 .0±1.3 58 .8±2.5 52 .3±4.3 54 .5±4.1 61.2 iCEM LeWM 70 .7±5.3 68 .0±3.9 69 .7±3.6 62 .7±4.7 55 .2±5.7 65.3 SCALE 76 .7±3.9 76 .5±4.5 74 .8±3.5 64 .8±3.7 59 .7±4.5 70.5 
+
+Aux. 74 .5±3.2 73 .3±4.5 73 .0±3.1 64 .5±3.3 57 .7±3.8 68.6 DINO-WM 70 .8±2.6 67 .3±1.5 66 .2±1.7 57 .3±4.5 51 .7±3.8 62.7 MPPI LeWM 58 .6±3.6 60 .2±5.2 54 .4±4.8 54 .2±5.3 54 .6±6.3 56.4 SCALE 64 .4±4.4 63 .0±3.5 57 .2±4.1 54 .6±2.1 52 .6±4.9 58.4 
+
+Aux. 64 .2±5.9 64 .0±4.0 54 .6±5.0 53 .6±6.1 53 .4±7.3 58.0 DINO-WM 64 .4±4.0 62 .6±3.4 52 .6±3.2 50 .8±5.0 53 .0±5.2 56.7 
+
+14 Table 13: Two-Room success rates (%) for all solvers. Mean ± SD per tier; the final column averages T1–T5. Bold marks the best method per column within each solver. 
+
+Solver Method T1 T2 T3 T4 T5 Mean CEM LeWM 88 .0±2.0 87 .7±2.6 84 .3±3.4 71 .7±3.5 58 .0±4.4 77.9 SCALE 99 .8±0.4 99 .3±0.8 93 .7±2.5 82 .3±3.0 71 .0±3.3 89.2 Aux. 87 .8±3.2 87 .5±3.6 82 .7±3.4 72 .0±2.7 60 .5±2.0 78.1 DINO-WM 100 .0±0.0 99 .8±0.4 98 .5±1.4 93 .8±2.3 87 .2±3.7 95.9 
+
+iCEM LeWM 91 .3±1.2 93 .3±1.2 89 .2±2.5 77 .5±1.4 63 .2±3.0 82.9 SCALE 100 .0±0.0 99 .8±0.4 97 .3±1.4 90 .5±1.4 76 .7±1.9 92.9 Aux. 92 .5±2.7 93 .5±2.1 88 .5±1.9 79 .0±2.4 62 .0±1.8 83.1 DINO-WM 100 .0±0.0 100 .0±0.0 99 .7±0.5 98 .7±0.5 92 .8±1.7 98.2 
+
+MPPI LeWM 91 .8±1.8 91 .4±2.4 86 .0±4.4 74 .8±2.3 68 .0±3.4 82.4 SCALE 95 .2±2.4 97 .2±2.5 91 .4±1.7 86 .2±2.2 78 .0±3.7 89.6 Aux. 93 .2±1.5 90 .4±1.5 86 .2±3.8 76 .6±4.0 67 .6±1.3 82.8 DINO-WM 93 .8±1.8 98 .4±1.5 93 .8±2.5 88 .0±2.3 90 .8±1.3 93.0 
+
+Table 14: PointMaze success rates (%) for all solvers. Mean ± SD per tier; the final column averages T1–T5. Bold marks the best method per column within each solver. 
+
+Solver Method T1 T2 T3 T4 T5 Mean CEM LeWM 83 .0±5.0 83 .7±3.9 85 .3±5.0 83 .3±3.9 75 .3±7.0 82.1 SCALE 89 .2±3.7 87 .3±5.1 87 .7±3.3 86 .3±2.3 80 .5±1.9 86.2 Aux. 88 .2±3.4 87 .0±4.0 84 .7±4.6 80 .3±4.5 81 .2±5.7 84.3 DINO-WM 97 .7±0.8 98 .0±1.3 97 .7±1.5 93 .5±2.8 87 .5±3.3 94.9 
+
+iCEM LeWM 81 .7±3.9 82 .7±4.4 81 .3±3.6 81 .7±5.1 73 .7±4.7 80.2 SCALE 87 .3±3.9 82 .7±3.9 84 .3±4.1 83 .2±4.6 79 .3±2.4 83.4 Aux. 83 .8±4.8 82 .8±3.7 80 .5±5.5 81 .2±2.9 78 .3±5.5 81.3 DINO-WM 94 .2±1.7 93 .7±2.3 92 .8±2.3 90 .8±1.7 86 .2±1.9 91.5 
+
+MPPI LeWM 83 .2±5.1 83 .4±4.6 84 .2±4.5 85 .0±6.6 75 .2±5.4 82.2 SCALE 90 .2±2.7 90 .0±2.5 88 .4±2.6 87 .8±2.5 80 .2±6.2 87.3 Aux. 87 .6±2.8 89 .2±1.8 88 .0±1.6 83 .0±2.7 84 .4±3.8 86.4 DINO-WM 99 .0±1.0 99 .2±1.3 97 .4±1.9 91 .4±2.7 92 .8±4.1 96.0 
+
+15

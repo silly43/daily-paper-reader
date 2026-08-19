@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-18</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-19</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 11 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 24 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>13</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>11</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-18 21:05:55 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-19 21:11:37 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共读11篇论文，精读7篇、速读4篇，核心聚焦世界模型与数据生成。</p>
-<p>最值得关注的是满分论文《Low-Rank Dynamics-Effective Latent Carriers》提出的反事实推演新机制，以及《WorldRover》的合成视频数据引擎。</p>
-<p>建议优先精读这两篇，后续可延伸探索自监督点云分割与可穿戴活动识别方向。</p>
+<p>今日精读13篇、速读11篇，共24篇，两篇满分论文聚焦“世界模型”驱动机器人操作与接触前监控。最值得看的方向是行动条件化的潜世界模型（ContactGuard、DreamX-Phi 1.0），它们让机器人更精准预测操作结果并避免接触风险。若想快速入门，建议优先精读这两篇满分论文，再结合速读中的自动驾驶与长程操作评分论文拓宽理解。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +71,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">7 篇</strong>
+    <strong class="dpr-home-dashboard-count">13 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Low-Rank Dynamics-Effective Latent Carriers for Counterfactual Rollout in Learned World Models">Low-Rank Dynamics-Effective Latent Carriers for Counterfactual Rollout in Learned World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="WorldRover: A Scalable Synthetic Video Data Engine for World Exploration with Rich Annotations">WorldRover: A Scalable Synthetic Video Data Engine for World Exploration with Rich Annotations</span></li><li><span class="dpr-home-dashboard-paper-title" title="Beyond Visual CoT: Internalized Visual Thinking for Proactive Video Reasoning">Beyond Visual CoT: Internalized Visual Thinking for Proactive Video Reasoning</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models">ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="DreamX-Phi 1.0: Action-Conditioned Video World Model for Robotic Manipulation">DreamX-Phi 1.0: Action-Conditioned Video World Model for Robotic Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="$τ_0$-VLA: a Hierarchical Robot Foundation Model with World-Model-Guided Test-Time Computation">$τ_0$-VLA: a Hierarchical Robot Foundation Model with World-Model-Guided Test-Time Computation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>4</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>13</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +84,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">4 篇</strong>
+    <strong class="dpr-home-dashboard-count">11 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Emergent 3D Instance Segmentation from Self-Supervised Point Transformers">Emergent 3D Instance Segmentation from Self-Supervised Point Transformers</span></li><li><span class="dpr-home-dashboard-paper-title" title="TransfHAR: Self-Supervised Wrist Representations for On-Demand Activity Recognition">TransfHAR: Self-Supervised Wrist Representations for On-Demand Activity Recognition</span></li><li><span class="dpr-home-dashboard-paper-title" title="Physiological World Models for Human State Transitions">Physiological World Models for Human State Transitions</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Toward the Cognitive--Physical Limits of Embodied Intelligence through a World-Model-Centric Autonomous Racing Agent">Toward the Cognitive--Physical Limits of Embodied Intelligence through a World-Model-Centric Autonomous Racing Agent</span></li><li><span class="dpr-home-dashboard-paper-title" title="BrainWAM: Action-Space Coordination of Semantic Priors and Predictive Dynamics for Autonomous Driving">BrainWAM: Action-Space Coordination of Semantic Priors and Predictive Dynamics for Autonomous Driving</span></li><li><span class="dpr-home-dashboard-paper-title" title="PACE: Phase-Progress-Aware Credit for Long-Horizon Embodied Manipulation">PACE: Phase-Progress-Aware Credit for Long-Horizon Embodied Manipulation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>2</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>11</strong></span></div>
 </section>
 </div>
 
