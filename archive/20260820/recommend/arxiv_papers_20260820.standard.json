@@ -1,0 +1,758 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-20T21:01:46.325104+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 17,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 17,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2608.18234v1",
+      "source": "arxiv",
+      "title": "GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction",
+      "abstract": "Whole-body motion tracking policies turn a humanoid into a robust control interface: the teleoperator---or an upstream model---only supplies a coarse movement intent, while the low-level policy keeps the robot balanced and physically feasible. Existing trackers deliver this interface only on flat ground: trained in empty scenes, they never learn how contact with terrain and objects reshapes their dynamics, and they attempt to teach the policy to balance under any command by continually enlarging the reference-motion corpus, which stops working once feasible behaviors become environment-dependent. We present GigaBrain-WBC-0.5, the first Behavior World Model (BWM) for humanoid whole-body control. Rather than a purely reactive tracker, we train a causal Transformer to jointly predict its next action, next state, and the distribution over its next latent behavior command, so the network that acts also models how the environment shapes what it can do next. An automatic terrain-annotation pipeline recovers full 3D contact geometry from retargeted motion, enabling terrain annotation at the scale of existing motion datasets. The predicted distribution is reused at deployment to detect implausible commands online and retract them onto learned behaviors, so the robot attempts tasks in a \"best-effort\" manner. The result is a unified policy that takes real-time command, interacts with environment, and stays robust to implausible commands, falls, and disturbances. GigaBrain-WBC-0.5 achieves the highest success rate across all four regimes among three large-scale tracker baselines: 81.3% on terrain interaction (4.3x the strongest baseline), 83.1% under implausible commands, and 99.3% fall recovery (16.8x the strongest baseline). Hardware trials show robust interaction under missing supports and disturbances; the Unitree G1 checkpoint transfers to the Maker L01 robot with simple fine-tuning.",
+      "authors": [
+        "Ziyang Cheng",
+        "Tianshu Tang",
+        "Jinxin Lan",
+        "Xinze Chen",
+        "Yuhan Gong",
+        "Zhichao Liu",
+        "Changzhong Wu",
+        "Yahao Mao",
+        "Zongyan Deng",
+        "Mingxuan Ma",
+        "Huasen Xi",
+        "Yilong Liu",
+        "Yutong Wu",
+        "Xiaofeng Wang",
+        "Yang Wang",
+        "Yun Ye",
+        "Guan Huang",
+        "Xiaojie Jin",
+        "Zheng Zhu",
+        "Jiwen Lu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-18T18:21:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.18234v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Behavior World Model for robot whole-body control with environment interaction",
+      "llm_evidence_cn": "用于机器人与环境交互的全身控制行为世界模型",
+      "llm_evidence": "用于机器人与环境交互的全身控制行为世界模型",
+      "canonical_evidence": "用于机器人与环境交互的全身控制行为世界模型",
+      "llm_tldr_en": "Proposes GigaBrain-WBC-0.5, the first Behavior World Model for humanoid whole-body control, enabling robust control with environment interaction by learning contact dynamics rather than relying on large reference-motion corpora.",
+      "llm_tldr_cn": "现有全身运动跟踪策略只在平坦地面训练，无法应对地形和物体接触带来的动力学变化。本文提出GigaBrain-WBC-0.5，首个行为世界模型，通过建模环境交互下接触如何改变动力学，实现鲁棒的全身控制。该方法不再依赖无限扩展参考动作库，而是让策略学会环境依赖的可行行为。实验表明该模型能提高人形机器人在环境交互场景中的平衡与控制性能。",
+      "llm_tldr": "现有全身运动跟踪策略只在平坦地面训练，无法应对地形和物体接触带来的动力学变化。本文提出GigaBrain-WBC-0.5，首个行为世界模型，通过建模环境交互下接触如何改变动力学，实现鲁棒的全身控制。该方法不再依赖无限扩展参考动作库，而是让策略学会环境依赖的可行行为。实验表明该模型能提高人形机器人在环境交互场景中的平衡与控制性能。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent space world model for robot",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.13049v1",
+      "source": "arxiv",
+      "title": "H2R-Bench: Benchmarking Human-to-Robot Manipulation Video Generation in World Models",
+      "abstract": "Large-scale manipulation data is essential for robot learning, yet collecting robot demonstrations remains expensive and difficult to scale. Meanwhile, abundant egocentric human manipulation videos provide rich behavioral experiences, but transferring them across embodiments remains challenging due to differences between human hands and robotic end-effectors. Recent advances in video world models offer a promising pathway to synthesize robot-centric manipulation videos from human observations, while their cross-embodiment transfer capability remains largely unexplored. Therefore, we introduce H2R-Bench, a benchmark for evaluating cross-embodiment human-to-robot manipulation video generation, where models transform egocentric human demonstrations into robot manipulation videos under specified embodiments. Each benchmark instance contains a human demonstration video, target embodiment constraints, and source-grounded annotations covering task goals, action events, functional contacts, and object responses. H2R-Bench evaluates generated videos through five dimensions, including goal-state completion, action-event completion, functional contact transfer, embodiment correctness, and general video quality. We benchmark eleven state-of-the-art video generation models across six manipulation families and two robot embodiments. Our evaluation reveals that current video world models remain limited in human-to-robot manipulation transfer: even leading models often fail in embodiment consistency, functional interaction, and task execution. H2R-Bench provides a systematic diagnostic framework for evaluating whether video world models can bridge the human-to-robot embodiment gap and convert human manipulation observations into robot-centric training resources.",
+      "authors": [
+        "Dingyi Rong",
+        "Yue Shi",
+        "Chaofan Ma",
+        "Jiezhang Cao",
+        "Zongrui Wang",
+        "Zeyu Zhang",
+        "Yao Mu",
+        "Guangtao Zhai",
+        "Ning Liu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-08-13T10:14:33+00:00",
+      "link": "https://arxiv.org/pdf/2608.13049v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Benchmark for world models generating robot manipulation videos from human demonstrations",
+      "llm_evidence_cn": "用世界模型从人类演示生成机器人操作视频的基准",
+      "llm_evidence": "用世界模型从人类演示生成机器人操作视频的基准",
+      "canonical_evidence": "用世界模型从人类演示生成机器人操作视频的基准",
+      "llm_tldr_en": "H2R-Bench evaluates cross-embodiment human-to-robot manipulation video generation in world models, addressing the high cost of robot demonstration collection by leveraging egocentric human videos.",
+      "llm_tldr_cn": "机器人演示数据昂贵且难以规模化，而人类操作视频丰富但存在跨本体差异。本文提出H2R-Bench基准，系统评估从人类演示生成机器人操作视频的世界模型。该基准检验模型在跨本体迁移下的视频生成能力，为利用人类数据增强机器人操作策略提供了评测平台。",
+      "llm_tldr": "机器人演示数据昂贵且难以规模化，而人类操作视频丰富但存在跨本体差异。本文提出H2R-Bench基准，系统评估从人类演示生成机器人操作视频的世界模型。该基准检验模型在跨本体迁移下的视频生成能力，为利用人类数据增强机器人操作策略提供了评测平台。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "learning world models for robot manipulation",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.16153v2",
+      "source": "arxiv",
+      "title": "Unified Condition-Action Modeling for Accurate One-Step Action Generation",
+      "abstract": "Robot manipulation requires policies that are both accurate and efficient, as robot control must respond to changing observations under tight latency constraints. Recent diffusion and flow policies are promising, but they often treat conditions as auxiliary signals rather than jointly evolving them with action trajectories. We find that this limitation can be effectively mitigated by a \\textbf{simple yet effective unified condition-action modeling design} that represents conditions and actions in a shared token space, allowing a compact model to achieve high performance while improving both inference speed and accuracy. Therefore, we propose UCA-Flow, a unified condition-action modeling framework for accurate one-step action generation. Our method unifies observation conditions, timestep conditions, interval conditions, and action tokens into a single sequence, and processes them with a Unified Condition-Action Transformer for joint condition-action representation learning. As a result, condition representations are dynamically reconstructed according to the current generation stage, highlighting information most relevant for action refinement. Furthermore, we introduce an improved dual-pass supervision scheme over $u$ and $v$ for stronger optimization of unified condition-action modeling. UCA-Flow improves the average success rate by 9.3 percentage points over the strongest baseline, while achieving $45.6\\times$ and $33.4\\times$ speedups over DP3 and Simple DP3, and remaining $4.3\\times$ and $2.3\\times$ faster than one-step FlowPolicy and MP1, respectively.",
+      "authors": [
+        "Xinyu Zhou",
+        "Zikun Cai",
+        "Kuangji Zuo",
+        "Gen Li",
+        "Boyu Ma",
+        "Yanshuo Lu",
+        "Yutong Song",
+        "Mingqi Yuan",
+        "Jiayu Chen",
+        "Jianfei Yang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-17T06:14:16+00:00",
+      "link": "https://arxiv.org/pdf/2608.16153v2",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Robot manipulation control with unified condition-action modeling",
+      "llm_evidence_cn": "基于统一条件-动作建模的机器人操作控制",
+      "llm_evidence": "基于统一条件-动作建模的机器人操作控制",
+      "canonical_evidence": "基于统一条件-动作建模的机器人操作控制",
+      "llm_tldr_en": "UCA-Flow represents conditions and actions in a shared token space to enable one-step action generation, improving both accuracy and inference speed for robot manipulation. Conditions are no longer auxiliary signals but jointly evolved with actions.",
+      "llm_tldr_cn": "机器人操作需要既准确又高效的动作策略，而现有扩散和流策略往往将条件视为辅助信号，未与动作轨迹共同演化。本文提出UCA-Flow，把条件和动作统一到共享令牌空间进行联合建模，用紧凑模型实现高精度一步动作生成，同时提升推理速度。实验表明该设计在准确性和效率上均超越基线。该方法为低延迟机器人控制提供了简单有效的生成式建模思路。",
+      "llm_tldr": "机器人操作需要既准确又高效的动作策略，而现有扩散和流策略往往将条件视为辅助信号，未与动作轨迹共同演化。本文提出UCA-Flow，把条件和动作统一到共享令牌空间进行联合建模，用紧凑模型实现高精度一步动作生成，同时提升推理速度。实验表明该设计在准确性和效率上均超越基线。该方法为低延迟机器人控制提供了简单有效的生成式建模思路。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.16503v1",
+      "source": "arxiv",
+      "title": "NebulaVLA: A Dual-Frequency Vision-Language-Action Model With Guide Action for Robotic Manipulation",
+      "abstract": "Real-world deployment of Vision-Language-Action (VLA) models is often bottlenecked by efficiency-performance trade-offs, cross-embodiment generalization, and execution smoothness. We present NebulaVLA, an asynchronous dual-frequency architecture that decouples high-level semantic reasoning from low-level action control, optimizing computational resources and modularity. To bridge semantic gaps across heterogeneous robots, we introduce GESTURE-7, a unified language-grounded action representation. Furthermore, our Guide Action algorithm enforces kinematic continuity via mask-based smoothness constraints. Comprehensive evaluations demonstrate that NebulaVLA significantly outperforms synchronous baselines, achieving an 85.5\\% average success rate on LIBERO-Plus and accelerating action generation by \\textasciitilde 2.7$\\times$. This asynchronous design enables highly efficient and responsive control for practical robotics.",
+      "authors": [
+        "Cong Zhao",
+        "Shuai Tian",
+        "Xu Zhang",
+        "Baocheng Ni",
+        "Xinguo Song",
+        "Xueying Sun",
+        "Shu Jiang",
+        "Shouchang Yang",
+        "Bo Tang",
+        "Jin Deng",
+        "Ge Zhu",
+        "YongCheng Wang",
+        "Jin Xu",
+        "Ri Yang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-08-17T12:40:23+00:00",
+      "link": "https://arxiv.org/pdf/2608.16503v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Vision-Language-Action model for efficient robotic manipulation",
+      "llm_evidence_cn": "面向机器人操作的高效视觉-语言-动作模型",
+      "llm_evidence": "面向机器人操作的高效视觉-语言-动作模型",
+      "canonical_evidence": "面向机器人操作的高效视觉-语言-动作模型",
+      "llm_tldr_en": "NebulaVLA decouples semantic reasoning from low-level control for efficient robot manipulation, introducing GESTURE-7 unified action representation and Guide Action smoothness constraints to outperform synchronous baselines.",
+      "llm_tldr_cn": "现有视觉-语言-动作模型在真实机器人部署中面临效率与性能难以兼顾、跨本体泛化差和动作不流畅等问题。本文提出NebulaVLA，采用异步双频架构将高层语义推理与低层动作控制解耦，并引入统一语言动作表征GESTURE-7和掩码平滑约束的Guide Action算法。实验表明，NebulaVLA显著优于同步基线，取得85.5%准确率。该工作为机器人操作提供了一种高效且可泛化的动作生成框架。",
+      "llm_tldr": "现有视觉-语言-动作模型在真实机器人部署中面临效率与性能难以兼顾、跨本体泛化差和动作不流畅等问题。本文提出NebulaVLA，采用异步双频架构将高层语义推理与低层动作控制解耦，并引入统一语言动作表征GESTURE-7和掩码平滑约束的Guide Action算法。实验表明，NebulaVLA显著优于同步基线，取得85.5%准确率。该工作为机器人操作提供了一种高效且可泛化的动作生成框架。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.13040v1",
+      "source": "arxiv",
+      "title": "Latent On-Policy Self-Distillation",
+      "abstract": "Enabling agents to learn from experience and internalize it into their policy has become a central problem in self-evolving AI. On-policy self-distillation (OPSD) offers an effective pathway by using a privileged self-teacher to provide dense supervision on the student's own trajectories; however, existing methods still rely heavily on designer-specified privileged artifacts (e.g., answers, feedback, skills, or trajectories), limiting the end-to-end learnability and scalability required for continual self-improvement. In this work, we introduce Latent On-Policy Self-Distillation (LOPD), which, rather than proposing another hand-crafted OPSD variant with a newly prescribed form of privileged context, makes the teacher's privileged context itself learnable end-to-end from experience. Technically, LOPD retrieves relevant experiences and composes them into continuous latent tokens that condition a self-teacher, while the student generates trajectories from the task and interaction history and receives dense token-level supervision at every visited prefix. We further introduce a privileged-margin objective to stabilize and regulate the learning of latent context. Empirically, LOPD demonstrates (I) strong performance, outperforming RLVR and representative OPSD methods including OPSD, SDPO, and Skill-SD across both agentic tool use and code generation; and (II) high learning efficiency, surpassing GRPO and Skill-SD with less than 30% of their rollout budget. Ablation studies further provide direct evidence that making privileged context learnable is necessary for realizing these gains. Together, these results position LOPD as a step toward a more scalable and self-directed paradigm for agent evolution.",
+      "authors": [
+        "Guibin Zhang",
+        "Jiayang Lyu",
+        "Ran Sun",
+        "Xinlei Yu",
+        "Haoyu Zhao",
+        "Qibing Ren",
+        "Shuicheng Yan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-08-13T10:05:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.13040v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-supervised representation learning via latent self-distillation",
+      "llm_evidence_cn": "通过潜在自蒸馏进行自监督表征学习",
+      "llm_evidence": "通过潜在自蒸馏进行自监督表征学习",
+      "canonical_evidence": "通过潜在自蒸馏进行自监督表征学习",
+      "llm_tldr_en": "LOPD makes the privileged teacher context learnable end-to-end from experience, enabling agents to internalize trajectories via latent on-policy self-distillation without hand-crafted privileged artifacts.",
+      "llm_tldr_cn": "论文针对现有在线策略自蒸馏方法依赖设计师指定特权上下文的问题，提出潜在在线策略自蒸馏（LOPD）。它不再手工设计新的特权形式，而是让教师的特权上下文从经验中端到端学习，从而在学生轨迹上提供密集监督。该方法增强了自演化智能体的持续自改进能力，减少了人工设计开销，并为自监督表征学习提供新途径。",
+      "llm_tldr": "论文针对现有在线策略自蒸馏方法依赖设计师指定特权上下文的问题，提出潜在在线策略自蒸馏（LOPD）。它不再手工设计新的特权形式，而是让教师的特权上下文从经验中端到端学习，从而在学生轨迹上提供密集监督。该方法增强了自演化智能体的持续自改进能力，减少了人工设计开销，并为自监督表征学习提供新途径。",
+      "llm_tags": [
+        "query:ssl:composite"
+      ],
+      "matched_query_tag": "query:ssl:composite",
+      "matched_query_text": "Papers central to 查找自监督学习相关论文, especially work that connects or combines: self-supervised learning methods and techniques; contrastive learning in self-supervised learning; masked autoencoder for self-supervised learning; self-supervised representation learning approaches; generative models for self-supervised learning; self-supervised visual representation learning; What are the latest advances in self supervised learning; How does contrastive learning work in self supervised learning; Applications of self supervised learning in computer vision; Self supervised pre training methods for natural language processing.",
+      "matched_requirement_id": "req-composite-ssl",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14028v1",
+      "source": "arxiv",
+      "title": "AdvDex: Learning Dexterous Manipulation from Human Demonstrations via Joint-Aligned Actions and Adversarial Learning",
+      "abstract": "Dexterous manipulation is a fundamental capability for embodied intelligence, but scaling it remains difficult because robot demonstrations are expensive to collect and action spaces vary across embodiments. Policies trained on heterogeneous data can also entangle task-relevant visual cues with embodiment-specific appearance, limiting cross-embodiment generalization. We present AdvDex, a unified Vision-Language-Action framework for learning dexterous manipulation from human and robot demonstrations. First, we introduce OmniShare, a large-scale multimodal dataset of human manipulation demonstrations that provides high-quality kinematic supervision and tactile measurements while reducing reliance on robot teleoperation. Second, we propose the Joint-Aligned Action Space (JAAS), a canonical action representation comprising an $\\mathrm{SE}(3)$ wrist pose and 15 finger joints, thereby functionally aligning human hands, dexterous robot hands, and parallel grippers. Finally, we use domain-adversarial learning to reduce embodiment-specific information in the learned visual representation. Experiments on hand-action prediction and real-world dexterous manipulation show consistent improvements over baselines, effective zero-shot human-to-robot skill transfer, generalization to unseen objects and environments, and data-efficient few-shot adaptation.",
+      "authors": [
+        "Zhiyue Zhao",
+        "Jingyi Wu",
+        "Hairuo Liu",
+        "Mingyu Liu",
+        "Liyang Li",
+        "Hengdi Zhang",
+        "Tong He",
+        "Zhengxue Cheng"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-08-14T07:19:06+00:00",
+      "link": "https://arxiv.org/pdf/2608.14028v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "dexterous manipulation control from demonstrations",
+      "llm_evidence_cn": "从演示中学习灵巧操作控制",
+      "llm_evidence": "从演示中学习灵巧操作控制",
+      "canonical_evidence": "从演示中学习灵巧操作控制",
+      "llm_tldr_en": "AdvDex is a unified VLA framework for learning dexterous manipulation from human and robot demonstrations, with a large-scale multimodal dataset and adversarial learning to improve cross-embodiment generalization.",
+      "llm_tldr_cn": "灵巧操作规模化困难且异质数据常导致跨具身泛化差，为此提出统一VLA框架AdvDex，并引入大规模多模态人类操作数据集OmniShare。通过关节对齐动作与对抗学习，模型降低了视觉外观与具身信息的纠缠，从人和机器人演示中学习可迁移的灵巧操作策略。该工作为提高跨具身数据利用率提供了新的训练范式和数据资源。",
+      "llm_tldr": "灵巧操作规模化困难且异质数据常导致跨具身泛化差，为此提出统一VLA框架AdvDex，并引入大规模多模态人类操作数据集OmniShare。通过关节对齐动作与对抗学习，模型降低了视觉外观与具身信息的纠缠，从人和机器人演示中学习可迁移的灵巧操作策略。该工作为提高跨具身数据利用率提供了新的训练范式和数据资源。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.14822v1",
+      "source": "arxiv",
+      "title": "Imagining Recovery: Inference-Time Counterfactual Realignment for Vision-Language-Action Models",
+      "abstract": "Vision-language-action (VLA) models have improved the flexibility and generality of robotic manipulation, yet they remain fragile to online disruptions, such as changes in task goal, scene configuration, or robot state. Existing recovery methods often require failure data, policy retraining, or external corrective agents, introducing additional data requirements and execution risks. We propose Counterfactual Realignment (CoRe), a training-free framework that recovers a frozen VLA at inference time without failure data. Upon detecting a deviation, CoRe imagines how the policy would continue toward the current goal from a recent viable state, using synthesized observations in place of physical execution, and then minimally realigns the robot and scene to rejoin this imagined continuation before returning control to the policy. Recovery is therefore planned without physical trial-and-error, preserves completed task progress, and handles both mid-episode instruction changes and physical perturbations in a unified manner. Extensive experiments across multiple simulators, VLA backbones, and real-world settings show that CoRe improves success rates by up to 85.0 percentage points to near-nominal levels while reducing physical restorations by 42.2%, without policy fine-tuning or failure-specific recovery training.",
+      "authors": [
+        "Yanyan Zhang",
+        "Disheng Liu",
+        "Kai Ye",
+        "Chaoda Song",
+        "Xinpeng Li",
+        "Mohsen Hariri",
+        "Vikash Singh",
+        "Yu Yin",
+        "Vipin Chaudhary"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-08-14T18:49:46+00:00",
+      "link": "https://arxiv.org/pdf/2608.14822v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Uses counterfactual imagination with synthesized observations for VLA recovery in robot manipulation",
+      "llm_evidence_cn": "在机器人操作中利用合成观测进行反事实想象并恢复VLA策略",
+      "llm_evidence": "在机器人操作中利用合成观测进行反事实想象并恢复VLA策略",
+      "canonical_evidence": "在机器人操作中利用合成观测进行反事实想象并恢复VLA策略",
+      "llm_tldr_en": "CoRe recovers frozen VLA policies at inference by imagining counterfactual continuations from a recent viable state and realigning the policy, without failure data or retraining.",
+      "llm_tldr_cn": "VLA模型在操作中易受目标变化、场景配置或机器人状态扰动影响，现有恢复方法需要失败数据或重新训练。本文提出Counterfactual Realignment训练无关框架，在推理时检测偏差后，从最近有效状态想象策略会如何继续，用合成观测代替物理执行并最小程度地重对齐冻结策略。该方法无需失败数据即可恢复执行，降低线上风险。该工作为鲁棒机器人操作提供了即时的恢复机制。",
+      "llm_tldr": "VLA模型在操作中易受目标变化、场景配置或机器人状态扰动影响，现有恢复方法需要失败数据或重新训练。本文提出Counterfactual Realignment训练无关框架，在推理时检测偏差后，从最近有效状态想象策略会如何继续，用合成观测代替物理执行并最小程度地重对齐冻结策略。该方法无需失败数据即可恢复执行，降低线上风险。该工作为鲁棒机器人操作提供了即时的恢复机制。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world model based robot control",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.14047v1",
+      "source": "arxiv",
+      "title": "Evolve Vision-Language-Action Model into an Agent with On-the-fly Tool-use",
+      "abstract": "This paper integrates end-to-end Visual-Language-Action (VLA) models with agentic tool-use to propose Agentic Robot with Tool-use (ART). ART is a tool-injection framework that tunes any VLA model to leverage off-the-shelf tool modules for low-level vision, high-level affordance, and embodiment enhancement. Compared to vanilla VLA models with a whole continuous action solution space, ART reduces the complexity of the action solution space through tool-use, which not only improves generalizability across different tasks but also reduces data dependency. To demonstrate the advantages (high generalizability and low data dependency) of this framework, we first built a dataset of 30K tool-use trajectories and action demonstrations, which is much smaller than those used by baseline methods. We then designed a training regimen for long-trajectory tool-use reasoning in challenging environments. Experiments show that ART achieves a 20% higher success rate than mainstream baselines on simulation and real-world tasks, such as pick-and-place in the dark at novel viewpoints. Empirical results highlight the benefits of an agent-based approach: modular tool utilization enables more efficient training, lightweight deployment, and scalable integration of new tools. This design fosters robustness, adaptability, and extensibility, paving the way for the practical deployment of VLA systems in complex real-world scenarios.",
+      "authors": [
+        "Yi Ding",
+        "Yanzhao Yu",
+        "Xili Dai",
+        "Xianbiao Qi",
+        "Peiwen Sun",
+        "Xueqian Wang",
+        "Xiangyu Yue",
+        "Jianan Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-08-14T07:53:18+00:00",
+      "link": "https://arxiv.org/pdf/2608.14047v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "tool-injection framework to improve robot manipulation generalization",
+      "llm_evidence_cn": "通过工具注入框架提升机器人操作的泛化能力",
+      "llm_evidence": "通过工具注入框架提升机器人操作的泛化能力",
+      "canonical_evidence": "通过工具注入框架提升机器人操作的泛化能力",
+      "llm_tldr_en": "ART is a tool-injection framework that tunes any VLA model to use off-the-shelf tools for low-level vision, affordance, and embodiment, reducing action-space complexity and improving generalization with less data.",
+      "llm_tldr_cn": "论文将端到端视觉-语言-动作模型与智能体工具使用相结合，提出ART工具注入框架。它让VLA模型利用现成的低层视觉、高层可及性与本体感知工具模块，缩小连续动作解空间，从而提升跨任务泛化并降低数据依赖。基于30K条工具使用轨迹与动作演示构建的数据集验证了该框架的优势。",
+      "llm_tldr": "论文将端到端视觉-语言-动作模型与智能体工具使用相结合，提出ART工具注入框架。它让VLA模型利用现成的低层视觉、高层可及性与本体感知工具模块，缩小连续动作解空间，从而提升跨任务泛化并降低数据依赖。基于30K条工具使用轨迹与动作演示构建的数据集验证了该框架的优势。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.17129v1",
+      "source": "arxiv",
+      "title": "PROBE: Manipulation-Grounded Visual Question Answering with VLM Agents",
+      "abstract": "Vision-language Models (VLMs) excel at 2D grounding, spatial reasoning and agentic tool-based planning in static scenes. However, consider asking a home robot \"Is my medication still in the cabinet?\" The answer may be physically hidden behind a row of containers that must first be moved aside. Answering such questions in real-world cluttered environments requires reasoning in dynamic scenes: distractors must be manipulated to reveal occluded objects, and each action changes the scene the model must reason over. We formalize this setting as Manipulation-Grounded Visual Question Answering (MG-VQA) and introduce PROBE, a framework for benchmarking and finetuning VLM agents on such tasks. We first develop PROBE-Sim, a high-fidelity tabletop simulator with everyday objects and a robot manipulator equipped with grasping and pushing tools. PROBE-Sim is used to create PROBE-Bench: an evaluation suite of 150 tasks across 6 question types on cluttered tabletop scenes, where a VLM perceives, picks up or pushes objects before answering. We observe consistent trend across all frontier VLMs: agentic tool-based methods outperform their perception-only baselines (8.0% on average) across all task types. We further design PROBE-Agent, a finetuning recipe to distill successful trajectories from a powerful teacher foundation model to a smaller open-weight model using a mixed data recipe that encourages manipulation-efficient question answering. PROBE Agent finetuned models outperform their off-the-shelf agent baseline (11.5% on average) and demonstrate positive transfer to unseen objects and a held-out task. We validate sim-to-real transfer by deploying PROBE-Agent finetuned policies in real-world tabletop environments.",
+      "authors": [
+        "Vineet Bhat",
+        "Siyi Chen",
+        "Alex Zook",
+        "Xuning Yang",
+        "Stan Birchfield",
+        "Valts Blukis",
+        "Jonathan Tremblay"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-08-17T21:03:31+00:00",
+      "link": "https://arxiv.org/pdf/2608.17129v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "robot manipulation in dynamic scenes, scene changes under actions",
+      "llm_evidence_cn": "机器人动态场景操作，动作改变场景",
+      "llm_evidence": "机器人动态场景操作，动作改变场景",
+      "canonical_evidence": "机器人动态场景操作，动作改变场景",
+      "llm_tldr_en": "A benchmark for VLM agents that answer visual questions by manipulating cluttered scenes, requiring reasoning over action-induced scene changes.",
+      "llm_tldr_cn": "针对家用机器人在杂乱环境中回答视觉问题需要操作遮挡物的场景，提出操作落地的视觉问答任务MG-VQA及基准PROBE。构建高保真桌面模拟器PROBE-Sim，评测和微调VLM智能体在动态场景中通过操作推理的能力。该工作强调了动作改变场景后模型需持续推理，为机器人操作与场景理解研究提供测试平台。",
+      "llm_tldr": "针对家用机器人在杂乱环境中回答视觉问题需要操作遮挡物的场景，提出操作落地的视觉问答任务MG-VQA及基准PROBE。构建高保真桌面模拟器PROBE-Sim，评测和微调VLM智能体在动态场景中通过操作推理的能力。该工作强调了动作改变场景后模型需持续推理，为机器人操作与场景理解研究提供测试平台。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.15139v1",
+      "source": "arxiv",
+      "title": "StructRL: Structured Action-Space Exploration for Flow-Based VLAs",
+      "abstract": "Flow-based Vision-Language-Action (VLA) models are now widely used for continuous robotic manipulation, and online reinforcement learning (RL) is emerging as a key technique for adapting them to new tasks. Existing RL methods typically inject stochasticity inside the denoising chain, often through isotropic or temporally independent noise. However, effective robot exploration calls for structured noise: temporally smooth and scaled differently across action groups. We show that simply switching the in-chain noise to a structured form does not suffice: noise added at an intermediate flow time can be weakened by the remaining denoising steps before execution, a phenomenon we call \\emph{Structured Noise Dilution}. We propose \\textbf{StructRL}, which avoids dilution by relocating policy stochasticity to the action space via three coupled choices: (i) a deterministic ODE decoder, (ii) structured noise injected directly in the action space, and (iii) last-step replay, where policy-gradient updates avoid assigning likelihoods to intermediate denoising states. This keeps structured exploration tied to the executed action while providing a tractable training signal for the flow decoder. Across three flow-based VLA models on multiple simulated manipulation benchmarks and two real-world tasks, StructRL improves exploration efficiency and OOD performance over prior in-chain baselines, demonstrating the effectiveness of structured action-space exploration for adapting flow-based VLA with RL. \\textbf{Project page:} https://flyfaerss.github.io/structrl/",
+      "authors": [
+        "Jiarui Yang",
+        "Bin Zhu",
+        "Jingjing Chen",
+        "Na Zou",
+        "Yanwei Fu",
+        "Jianggang Zhu",
+        "Yu-Gang Jiang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-15T09:31:29+00:00",
+      "link": "https://arxiv.org/pdf/2608.15139v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "online RL for robotic manipulation control",
+      "llm_evidence_cn": "用于机器人操作控制的在线强化学习",
+      "llm_evidence": "用于机器人操作控制的在线强化学习",
+      "canonical_evidence": "用于机器人操作控制的在线强化学习",
+      "llm_tldr_en": "StructRL addresses structured noise dilution in online RL for flow-based VLAs, enabling efficient exploration for robotic manipulation policies.",
+      "llm_tldr_cn": "流式视觉-语言-动作（VLA）模型在机器人连续操作中广泛应用，在线强化学习用于适配新任务，但现有注入噪声方式缺乏时序平滑与分组尺度设计。本文发现中间流时间噪声会被后续去噪步骤削弱，并提出StructRL结构化动作空间探索方法，通过避免稀释效应实现更高效的机器人探索。该方法为基于流式VLA的策略微调提供了实用的RL训练方案。",
+      "llm_tldr": "流式视觉-语言-动作（VLA）模型在机器人连续操作中广泛应用，在线强化学习用于适配新任务，但现有注入噪声方式缺乏时序平滑与分组尺度设计。本文发现中间流时间噪声会被后续去噪步骤削弱，并提出StructRL结构化动作空间探索方法，通过避免稀释效应实现更高效的机器人探索。该方法为基于流式VLA的策略微调提供了实用的RL训练方案。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.15269v1",
+      "source": "arxiv",
+      "title": "Remember Smarter: Visual History Compressor and Hyperbolic Experience Space for Robotic Memory",
+      "abstract": "Long-horizon robot policies require compact access to recent observations and   reusable experience without expanding the vision-language-action (VLA)   context. We introduce Remember Smarter (RS), a plug-and-play module with   complementary visual-history and hyperbolic experience-memory branches. Its   visual branch compresses multi-view patch histories using bidirectional   spatial Mamba and causal temporal Mamba, then exposes the resulting memory to   action-facing hidden states through residual cross-attention while leaving the   VLM visual-token stream unchanged. Its experience branch stores successful   final-layer VLM states in a Poincare VAE space, organizes them hierarchically,   and asynchronously converts retrieved experience into geodesic prompt tokens   without blocking action inference. When adapted to pi0, RS increases total   success on LIBERO-Plus from 53.6% to 70.6% and   achieves substantial   performance gains in real-robot experiments designed to evaluate memory   retention and experience utilization.",
+      "authors": [
+        "Dai Zhou",
+        "Jiexi Yan",
+        "Tong Li",
+        "Yuxuan Wang",
+        "Cheng Deng"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-15T15:13:33+00:00",
+      "link": "https://arxiv.org/pdf/2608.15269v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Plug-and-play memory module for long-horizon robot policies",
+      "llm_evidence_cn": "面向长程机器人策略的即插即用记忆模块",
+      "llm_evidence": "面向长程机器人策略的即插即用记忆模块",
+      "canonical_evidence": "面向长程机器人策略的即插即用记忆模块",
+      "llm_tldr_en": "Remember Smarter is a plug-and-play robotic memory module that compresses multi-view visual history via spatial-temporal Mamba and stores successful VLM states in a Poincare VAE experience space, enabling compact long-horizon manipulation without expanding VLA context.",
+      "llm_tldr_cn": "长程机器人策略需要紧凑保存近期观测和可复用经验，但直接扩展视觉-语言-动作上下文成本很高。本文提出Remember Smarter插件模块，用双向空间Mamba和因果时间Mamba压缩视觉历史，并通过残差交叉注意力提供给动作侧状态；经验分支在Poincare VAE空间分层存储成功状态并异步检索。实验显示该方法在不改变VLM视觉流的前提下有效扩展记忆，提升长程操作能力。该工作为VLA策略提供了即插即用的记忆增强方案。",
+      "llm_tldr": "长程机器人策略需要紧凑保存近期观测和可复用经验，但直接扩展视觉-语言-动作上下文成本很高。本文提出Remember Smarter插件模块，用双向空间Mamba和因果时间Mamba压缩视觉历史，并通过残差交叉注意力提供给动作侧状态；经验分支在Poincare VAE空间分层存储成功状态并异步检索。实验显示该方法在不改变VLM视觉流的前提下有效扩展记忆，提升长程操作能力。该工作为VLA策略提供了即插即用的记忆增强方案。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.15897v2",
+      "source": "arxiv",
+      "title": "Tactile Sim2Real without Tactile Simulation via Bottlenecked Latent Reconstruction",
+      "abstract": "Robot sensor designs, particularly tactile sensors, are highly diverse and evolve rapidly. Modeling each sensor in simulation demands substantial domain expertise and computational approximations can degrade the fidelity of the simulated signals. We propose Sim2Real via Bottlenecked Latent Reconstruction (SBLR), a framework that avoids sensor-specific simulation entirely by (1) training policies on a simulator-native oracle sensor that is easy to construct without modeling any particular sensor (e.g. we use a point-cloud and finger-tip forces as a tactile oracle), and (2) aligning real sensor latent embeddings to those of the oracle sensor at inference time. Policy training proceeds in two-stage: the policy first learns from the oracle sensor latents, then a bottlenecked latent reconstruction adapts it to the information loss expected when using the real sensor instead of the oracle. The alignment between oracle and real sensor is learned from unpaired random-play data collected in both simulation and the real world, using rectified-flow-based transformation networks trained on nearest-neighbor pseudo-pairs. Simulation experiments on three contact-rich tasks show that SBLR matches or approaches the performance of an oracle with direct access to tactile simulation. Hardware experiments on Peg Insertion and Gear Meshing with GelSight Mini and DIGIT sensors demonstrate 85-97.5% zero-shot success without requiring any sensor-specific modeling or calibration, outperforming a physics-based tactile simulation baseline by 7.5-15%.",
+      "authors": [
+        "Fan Yang",
+        "Youngsun Wi",
+        "Jinhao Yu",
+        "Nima Fazeli",
+        "Dmitry Berenson"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-16T19:09:55+00:00",
+      "link": "https://arxiv.org/pdf/2608.15897v2",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Robot manipulation control via tactile sim2real with bottlenecked latent reconstruction",
+      "llm_evidence_cn": "通过瓶颈潜在重建实现触觉仿真到真实的机器人操作控制",
+      "llm_evidence": "通过瓶颈潜在重建实现触觉仿真到真实的机器人操作控制",
+      "canonical_evidence": "通过瓶颈潜在重建实现触觉仿真到真实的机器人操作控制",
+      "llm_tldr_en": "SBLR trains policies on a simulator-native oracle sensor and aligns real sensor latent embeddings to the oracle, avoiding sensor-specific simulation for robot manipulation control.",
+      "llm_tldr_cn": "触觉传感器种类繁多，为每种传感器建模仿真成本高且精度有限。本文提出SBLR框架，在仿真中使用易于构建的oracle传感器训练策略，并在推理时将真实传感器潜在表征对齐到oracle，从而避免触觉仿真。该方法在机器人操作任务中实现有效的仿真到真实迁移，拓展了触觉策略在真实系统上的可用性。",
+      "llm_tldr": "触觉传感器种类繁多，为每种传感器建模仿真成本高且精度有限。本文提出SBLR框架，在仿真中使用易于构建的oracle传感器训练策略，并在推理时将真实传感器潜在表征对齐到oracle，从而避免触觉仿真。该方法在机器人操作任务中实现有效的仿真到真实迁移，拓展了触觉策略在真实系统上的可用性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.15446v1",
+      "source": "arxiv",
+      "title": "GUIDER: Evaluating Goal-Free Human Intent Inference for Teleoperated Manipulation on Real-Robot Data",
+      "abstract": "This paper presents an evaluation of a goal-free probabilistic framework for human intent inference during robotic manipulation. We deploy the Global User Intent Dual-phase Estimation for Robots (GUIDER) on data collected from a robotic arm to test the manipulation phase across various assistance scenarios, including making tea and fetching medicine. To support operation, we add online probability updates, workspace limits, support-plane filtering, and a grasping mode that prioritizes feasible grasp regions, all of which are tested on the recorded data while preserving its original temporal conditions. Across 20 manipulation steps in three scenarios, GUIDER estimated human intent within the correct grasp-candidate set in all cases and achieved a time to confident prediction of 3.7 s, a remaining time before first grasp of 49.6 s, a prediction stability of 96.4%, and a runtime of 4.857/4.474 s (mean/median) per perceptual phase of intent.",
+      "authors": [
+        "Nicholas Kenny",
+        "Cesar Alan Contreras",
+        "Basile Ouedraogo",
+        "Rustam Stolkin",
+        "Manolis Chiou",
+        "Maria Kyrarini"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.HC"
+      ],
+      "published": "2026-08-15T23:16:24+00:00",
+      "link": "https://arxiv.org/pdf/2608.15446v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Human intent inference for teleoperated robot manipulation assistance",
+      "llm_evidence_cn": "遥操作机器人操作中的人机意图推断",
+      "llm_evidence": "遥操作机器人操作中的人机意图推断",
+      "canonical_evidence": "遥操作机器人操作中的人机意图推断",
+      "llm_tldr_en": "GUIDER evaluates a goal-free probabilistic human intent inference framework for teleoperated manipulation on real-robot data, testing scenarios like making tea and fetching medicine, showing accurate grasp-candidate estimation.",
+      "llm_tldr_cn": "遥操作机器人辅助需要理解人类意图，但现有方法多假设固定目标。本文在真实机械臂数据上评估GUIDER，一种无目标概率意图推断框架，并加入在线更新、工作空间限制等模块。在沏茶和取药等场景的20个操作步骤中，GUIDER在正确的抓取候选集合内准确估计人类意图，验证了实用性。",
+      "llm_tldr": "遥操作机器人辅助需要理解人类意图，但现有方法多假设固定目标。本文在真实机械臂数据上评估GUIDER，一种无目标概率意图推断框架，并加入在线更新、工作空间限制等模块。在沏茶和取药等场景的20个操作步骤中，GUIDER在正确的抓取候选集合内准确估计人类意图，验证了实用性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.16195v1",
+      "source": "arxiv",
+      "title": "RoboStriker: Latent-Space Strategic Games for Autonomous Humanoid Boxing",
+      "abstract": "Achieving human-level competitive intelligence and physical agility in humanoid robots remains a profound challenge, particularly in contact-rich and highly dynamic tasks such as boxing. While Multi-Agent Reinforcement Learning offers a principled framework for strategic interaction, its direct application to unstructured raw motor spaces inevitably leads to joint-level physical collapse, preventing the emergence of any viable combat tactics. To resolve this fundamental conflict between strategic exploration and physical feasibility, we formulate the humanoid combat task as a novel two-player latent-space zero-sum Markov game. Under standard regularity and approximate best-response assumptions, we show that the latent formulation induces an equivalent game over the decoder-reachable action manifold, providing an approximate-Nash interpretation of the resulting self-play dynamics. To instantiate this theoretical formulation, we propose RoboStriker, a hierarchical framework that decouples high-level reasoning from low-level execution. It first distills the tracking expertise of predefined boxing motions into a topologically bounded latent manifold. This structured latent foundation subsequently drives multi-agent co-evolution via Latent-Space Neural Fictitious Self-Play. Extensive experimental results demonstrate that gaming within this structured latent space substantially outperforms direct exploration. By constraining strategic exploration through a pretrained motion decoder, RoboStriker substantially reduces the catastrophic balance failures observed in raw action-space methods and achieves superior tactical performance in both competitive win rates and striking efficiency. Finally, we successfully deploy and validate our learned combat policies on real-world humanoid robots. Our code and video and supplementary materials are available at RoboStriker.",
+      "authors": [
+        "Kangning Yin",
+        "Kaige Liu",
+        "Zhe Cao",
+        "Wentao Dong",
+        "Weishuai Zeng",
+        "Tianyi Zhang",
+        "Qiang Zhang",
+        "Jingbo Wang",
+        "Jiangmiao Pang",
+        "Yang Li",
+        "Ming Zhou",
+        "Weinan Zhang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-08-17T07:19:09+00:00",
+      "link": "https://arxiv.org/pdf/2608.16195v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Latent-space zero-sum Markov game for humanoid boxing control via reinforcement learning",
+      "llm_evidence_cn": "用于人形机器人拳击控制的潜在空间零和马尔可夫博弈",
+      "llm_evidence": "用于人形机器人拳击控制的潜在空间零和马尔可夫博弈",
+      "canonical_evidence": "用于人形机器人拳击控制的潜在空间零和马尔可夫博弈",
+      "llm_tldr_en": "RoboStriker formulates humanoid combat as a two-player latent-space zero-sum Markov game, enabling strategic exploration without joint-level physical collapse, and shows the latent formulation achieves equivalence under standard assumptions.",
+      "llm_tldr_cn": "在接触丰富、动态性高的任务（如拳击）中，直接对原始动作空间进行多智能体强化学习会导致物理塌缩。本文提出将人形机器人对打建模为双人潜在空间零和马尔可夫博弈，在保持物理可行性的同时支持策略探索。理论上证明了潜在博弈公式的等价性，为实现高级格斗战术提供了可行框架。",
+      "llm_tldr": "在接触丰富、动态性高的任务（如拳击）中，直接对原始动作空间进行多智能体强化学习会导致物理塌缩。本文提出将人形机器人对打建模为双人潜在空间零和马尔可夫博弈，在保持物理可行性的同时支持策略探索。理论上证明了潜在博弈公式的等价性，为实现高级格斗战术提供了可行框架。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "latent world models for reinforcement learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.17209v1",
+      "source": "arxiv",
+      "title": "Teach and Grow: An Agent-Centered Architecture for General Robot Learning",
+      "abstract": "End-to-end vision-language-action (VLA) and world-action models offer an elegant route to general-purpose robotics, but their reliability is bounded by validated physical coverage. When an unfamiliar object, sensor, embodiment, or contact falls outside that coverage and no validated fallback exists, correcting the failure requires new robot data, a policy update, and regression testing. This recurring burden is the retraining tax. Unlike text, embodied data must often be created by operating machines. We present Teach-and-Grow Learning (TGL), an agent-centered architecture for general robot learning. In its general form, a multimodal agent turns a few successful demonstrations into reusable Skill Blocks: closed-loop behaviors for meaningful subgoals. In a new scene, the agent grounds and composes these blocks, selects learned or geometric tools, observes the physical outcome, and revises the route when execution departs from intent. A Skill Library stores executable behavior, while structured Experience Memory carries forward success, failure, and repair. New tasks are acquired without task-specific policy retraining. Our LIBERO evaluation attains state-of-the-art performance; controlled studies expose skill induction, persistent reuse, and agent-directed adaptation. Finally, we propose the Teach-and-Grow scaling-law hypothesis: if X denotes effective reusable experience, future-task error and teaching demand should approach irreducible floors as power laws in X. The architecture therefore treats deployment as a period of continued learning, in which one task can make the next easier.",
+      "authors": [
+        "Chang Nie",
+        "Zhe Liu",
+        "Hesheng Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-17T23:45:21+00:00",
+      "link": "https://arxiv.org/pdf/2608.17209v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "robot learning architecture addressing world-action models and reusable skill blocks",
+      "llm_evidence_cn": "面向机器人与世界-动作模型局限性的智能体学习架构，以技能块复用为核心",
+      "llm_evidence": "面向机器人与世界-动作模型局限性的智能体学习架构，以技能块复用为核心",
+      "canonical_evidence": "面向机器人与世界-动作模型局限性的智能体学习架构，以技能块复用为核心",
+      "llm_tldr_en": "Teach-and-Grow Learning (TGL) is an agent-centered architecture that turns a few demonstrations into reusable Skill Blocks, avoiding the retraining tax of VLA and world-action models by reusing validated closed-loop behaviors.",
+      "llm_tldr_cn": "论文指出端到端视觉-语言-动作模型与世界-动作模型在物理覆盖不足时会陷入反复收集数据、更新与回归测试的重训负担。为此提出Teach-and-Grow Learning架构，多模态智能体将少量成功演示转化为可复用的闭环技能块，用于有意义的子目标行为。该方法通过复用已验证行为减少新数据需求，为通用机器人学习提供了一种智能体中心的新路径。",
+      "llm_tldr": "论文指出端到端视觉-语言-动作模型与世界-动作模型在物理覆盖不足时会陷入反复收集数据、更新与回归测试的重训负担。为此提出Teach-and-Grow Learning架构，多模态智能体将少量成功演示转化为可复用的闭环技能块，用于有意义的子目标行为。该方法通过复用已验证行为减少新数据需求，为通用机器人学习提供了一种智能体中心的新路径。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.16794v1",
+      "source": "arxiv",
+      "title": "Neurosymbolic Embodied Agents",
+      "abstract": "Language and vision-language models generate plausible embodied plans but do not guarantee executability, as their outputs can violate environment dynamics or act on incorrectly grounded entities. We present a neurosymbolic agent that factors long-horizon household tasks into task-directed visual exploration and constrained symbolic planning. In the first phase, a vision-language model and exploration harness acquire goal-relevant predicates and instance bindings from egocentric observations and grounded interactions, producing a symbolic initial state. In the second, a PDDL transition model restricts decoding to tokens that extend applicable actions. Monte Carlo tree search then evaluates executable continuations using a domain-independent planning heuristic. The resulting plans are executable by construction under the transition model, with transfer to the environment conditioned on correct visual grounding. On VirtualHome and ALFWorld, open 4B-27B models exceed 90% success in both environments, and our smallest agent substantially outperforms a 27B direct visual policy in each. Constraints and search prove complementary rather than interchangeable: in ALFWorld either alone solves under a third of tasks, whereas their combination solves over 95%. The method also uses several times fewer generated tokens than extended thinking and far fewer model-visible images than direct interaction, and residual failures localize to state acquisition rather than plan generation without any specialized training.",
+      "authors": [
+        "Mohammad Albinhassan",
+        "Yuming Feng",
+        "Alessandra Russo",
+        "Pranava Madhyastha"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-17T16:50:59+00:00",
+      "link": "https://arxiv.org/pdf/2608.16794v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "PDDL transition model used as a world model for long-horizon robot action planning",
+      "llm_evidence_cn": "以PDDL转移模型作为世界模型进行机器人长时程动作规划",
+      "llm_evidence": "以PDDL转移模型作为世界模型进行机器人长时程动作规划",
+      "canonical_evidence": "以PDDL转移模型作为世界模型进行机器人长时程动作规划",
+      "llm_tldr_en": "This neurosymbolic agent combines vision-language exploration with a PDDL transition model and MCTS to generate executable long-horizon household plans grounded in environment dynamics.",
+      "llm_tldr_cn": "语言与视觉语言模型生成的具身计划往往不可执行，因为它们可能违反环境动态或错误绑定对象。为此提出神经符号具身智能体：先通过视觉语言模型与探索获取目标相关的谓词和实例绑定，形成符号初始状态；再用PDDL转移模型限制解码仅产生适用动作，并借助蒙特卡洛树搜索评估可执行延续。实验表明该框架能生成符合环境动力学的可执行长时程家务计划，兼顾感知灵活性与符号规划严谨性。",
+      "llm_tldr": "语言与视觉语言模型生成的具身计划往往不可执行，因为它们可能违反环境动态或错误绑定对象。为此提出神经符号具身智能体：先通过视觉语言模型与探索获取目标相关的谓词和实例绑定，形成符号初始状态；再用PDDL转移模型限制解码仅产生适用动作，并借助蒙特卡洛树搜索评估可执行延续。实验表明该框架能生成符合环境动力学的可执行长时程家务计划，兼顾感知灵活性与符号规划严谨性。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot action planning with world models",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.16837v1",
+      "source": "arxiv",
+      "title": "HAF: Adapting Generalist VLAs to Humanoid Whole-Body Loco-manipulation via Hierarchical Action Flow and Spectral Latent RL",
+      "abstract": "Humanoid robots hold great promise as general-purpose agents in human-centered environments, yet generalist vision-language-action (VLA) foundation models are not readily applicable to humanoid whole-body loco-manipulation. The high dimensionality and interdependence of humanoid motions make it challenging for conventional single-stage VLA architectures to coordinate locomotion, waist posture, and dual-arm manipulation effectively. Moreover, policies trained through offline behavior cloning can remain suboptimal during real-world deployment. Although online reinforcement learning can refine policies through real-world interaction, directly tuning large VLA backbones demands excessive computation and may introduce safety risks during real-robot exploration. To address these bottlenecks, we introduce HAF (Humanoid Adaptation Framework), a two-part framework consisting of HAF-VLA and HAF-Steer that transfers off-the-shelf generalist VLA foundation models to humanoid whole-body loco-manipulation. HAF-VLA is a hierarchical action-flow generator built on a pretrained flow-matching VLA. It splits full-body action denoising into three sequential stages with stage embeddings and cross-stage KV caches that retain kinematic dependencies, avoiding incoherent whole-body actions from one-shot generation. On top of the frozen HAF-VLA, HAF-Steer is a latent offline-to-online RL pipeline that leverages flow-matching invertibility and DCT-based dimensionality reduction to restrict RL optimization to a compact noise subspace and train a regularized SAC policy. This avoids updating the large VLA backbone and enables efficient real-world policy refinement. Evaluated on seven real-world humanoid loco-manipulation tasks, HAF surpasses vanilla single-stage VLA baselines and improves whole-body coordination and task performance. Project website: https://grange007.github.io/HAF .",
+      "authors": [
+        "Langzhe Gu",
+        "Chengkai Hou",
+        "Meng Li",
+        "Xinhua Wang",
+        "Jiaming Liu",
+        "Xinyuan Lv",
+        "Bowei Zhang",
+        "Shuanghao Bai",
+        "Guangrun Li",
+        "Jingyang He",
+        "Gaole Dai",
+        "Ziluo Ding",
+        "Zhiyuan Xu",
+        "Kuan Cheng",
+        "Jian Tang",
+        "Zhengping Che",
+        "Shanghang Zhang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-08-17T17:22:33+00:00",
+      "link": "https://arxiv.org/pdf/2608.16837v1",
+      "tags": [
+        "keyword:world-models",
+        "query:world-models"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "whole-body loco-manipulation control",
+      "llm_evidence_cn": "全身移动操作控制",
+      "llm_evidence": "全身移动操作控制",
+      "canonical_evidence": "全身移动操作控制",
+      "llm_tldr_en": "HAF adapts generalist VLA models to humanoid whole-body loco-manipulation via hierarchical action flow and spectral latent RL, addressing high-dimensional coordination and suboptimal offline policies.",
+      "llm_tldr_cn": "通用VLA基础模型难以直接用于人形全身移动操作，高维且相互依赖的运动难以协调。HAF提出分层动作流和谱潜在强化学习，将全身动作分解为层次化表示，并通过潜空间RL在线微调策略。该方法降低了计算开销，同时提升离线行为克隆策略在人形操作部署中的表现。",
+      "llm_tldr": "通用VLA基础模型难以直接用于人形全身移动操作，高维且相互依赖的运动难以协调。HAF提出分层动作流和谱潜在强化学习，将全身动作分解为层次化表示，并通过潜空间RL在线微调策略。该方法降低了计算开销，同时提升离线行为克隆策略在人形操作部署中的表现。",
+      "llm_tags": [
+        "query:world-models"
+      ],
+      "matched_query_tag": "query:world-models",
+      "matched_query_text": "robot manipulation control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}

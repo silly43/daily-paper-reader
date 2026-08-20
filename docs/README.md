@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-19</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-20</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 24 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 17 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>13</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>6</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>11</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-19 21:11:37 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-20 21:12:46 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读13篇、速读11篇，共24篇，两篇满分论文聚焦“世界模型”驱动机器人操作与接触前监控。最值得看的方向是行动条件化的潜世界模型（ContactGuard、DreamX-Phi 1.0），它们让机器人更精准预测操作结果并避免接触风险。若想快速入门，建议优先精读这两篇满分论文，再结合速读中的自动驾驶与长程操作评分论文拓宽理解。</p>
+<p>今日推荐17篇论文，重点精读2篇、速读3篇，聚焦机器人控制与世界模型。</p>
+<p>最值得关注的是《GigaBrain-WBC-0.5》的全身控制世界模型和《H2R-Bench》的操作视频生成基准。</p>
+<p>下步建议优先深挖这两个方向，可搭配速读中的VLA模型探索与触觉sim2real方法。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -71,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">13 篇</strong>
+    <strong class="dpr-home-dashboard-count">6 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models">ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="DreamX-Phi 1.0: Action-Conditioned Video World Model for Robotic Manipulation">DreamX-Phi 1.0: Action-Conditioned Video World Model for Robotic Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="$τ_0$-VLA: a Hierarchical Robot Foundation Model with World-Model-Guided Test-Time Computation">$τ_0$-VLA: a Hierarchical Robot Foundation Model with World-Model-Guided Test-Time Computation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction">GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction</span></li><li><span class="dpr-home-dashboard-paper-title" title="H2R-Bench: Benchmarking Human-to-Robot Manipulation Video Generation in World Models">H2R-Bench: Benchmarking Human-to-Robot Manipulation Video Generation in World Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Unified Condition-Action Modeling for Accurate One-Step Action Generation">Unified Condition-Action Modeling for Accurate One-Step Action Generation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>13</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>5</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -87,7 +89,7 @@
     <strong class="dpr-home-dashboard-count">11 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Toward the Cognitive--Physical Limits of Embodied Intelligence through a World-Model-Centric Autonomous Racing Agent">Toward the Cognitive--Physical Limits of Embodied Intelligence through a World-Model-Centric Autonomous Racing Agent</span></li><li><span class="dpr-home-dashboard-paper-title" title="BrainWAM: Action-Space Coordination of Semantic Priors and Predictive Dynamics for Autonomous Driving">BrainWAM: Action-Space Coordination of Semantic Priors and Predictive Dynamics for Autonomous Driving</span></li><li><span class="dpr-home-dashboard-paper-title" title="PACE: Phase-Progress-Aware Credit for Long-Horizon Embodied Manipulation">PACE: Phase-Progress-Aware Credit for Long-Horizon Embodied Manipulation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Imagining Recovery: Inference-Time Counterfactual Realignment for Vision-Language-Action Models">Imagining Recovery: Inference-Time Counterfactual Realignment for Vision-Language-Action Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="StructRL: Structured Action-Space Exploration for Flow-Based VLAs">StructRL: Structured Action-Space Exploration for Flow-Based VLAs</span></li><li><span class="dpr-home-dashboard-paper-title" title="Tactile Sim2Real without Tactile Simulation via Bottlenecked Latent Reconstruction">Tactile Sim2Real without Tactile Simulation via Bottlenecked Latent Reconstruction</span></li></ul>
   </div>
   <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>11</strong></span></div>
 </section>
