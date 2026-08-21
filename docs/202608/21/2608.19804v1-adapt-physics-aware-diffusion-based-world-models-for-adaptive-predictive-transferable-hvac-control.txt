@@ -1,0 +1,1205 @@
+Title: 2608.19804v1.pdf
+
+URL Source: https://arxiv.org/pdf/2608.19804v1
+
+Published Time: Fri, 21 Aug 2026 00:38:08 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control 
+
+# Xu Yang 
+
+Department of Automation Tsinghua University, Beijing, China yangxu24@mails.tsinghua.edu.cn 
+
+# Kailai Sun ∗
+
+SMART, Singapore Massachusetts Institute of Technology Cambridge, MA, USA skl24@mit.edu 
+
+# Dianyu Zhong 
+
+Department of Automation Tsinghua University, Beijing, China 
+
+# Qianchuan Zhao ∗
+
+Department of Automation Tsinghua University, Beijing, China zhaoqc@tsinghua.edu.cn 
+
+## Abstract 
+
+Buildings account for about one-third of global energy consump-tion and CO 2 emissions. The optimization of indoor climate sys-tems plays a critical role in urban climate mitigation, aligning with UN Sustainable Development Goals 11 and 13. However, build-ing thermal dynamics are delayed and partially observable, while seasonal weather, solar radiation, and internal heat gains induce substantial differences across operating conditions. Existing meth-ods struggle to accurately predict indoor thermal dynamics and generalize robustly across different conditions. To address these challenges, we propose ADAPT, a novel physics-aware conditional diffusion indoor environmental world model (IEWM) for accurate and robust indoor climate control. ADAPT leverages the expres-sive generative capability of diffusion models to predict a thermal baseline that explicitly captures latent thermal inertia. We further incorporate a multi-zone physical heat-balance regularization to constrain transferable thermal dynamics, enabling physically con-sistent thermal baseline generation without requiring manually calibrated thermal parameters. The learned IEWM is subsequently integrated into a downstream reinforcement learning controller for delayed credit assignment. Experiments on SemiBuildingSim and Sinergym environments demonstrate that introducing IEWM into indoor climate systems improves downstream control perfor-mance, reducing HVAC energy consumption by 7.3% and occupant discomfort by 30.2% compared with the strongest baseline. More im-portantly, under cross-season and cross-climate out-of-distribution transfer, ADAPTmaintains robust control performance with only marginal degradation relative to IID, substantially outperforming sequential and data-driven world models. This interdisciplinary study offers an energy-efficient, transferable AI solution for con-trol science, building science, and energy sustainability. The code: https://github.com/xuyangthu88/ADAPT. 
+
+## Keywords 
+
+World models, diffusion models, HVAC control, physics-informed machine learning, building energy, reinforcement learning 
+
+> ∗Corresponding author.
+
+## 1 Introduction 
+
+The United Nations reports that 55% of the world’s population lived in urban areas in 2018, and this share is projected to reach 68% by 2050 [8, 11]. Cities concentrate energy use, emissions, infrastructure, and human exposure to climate risk [28, 40]. Buildings are a major part of this challenge. The UNEP and GlobalABC 2025 report further states that buildings consumed 32% of global energy and contributed 34% of global CO 2 emissions [5, 50]. Building energy efficiency is important for climate action and urban sustainability [4, 7]. Heating, ventilation, and air-conditioning (HVAC) systems con-tribute the largest share of building operational energy consump-tion [39]. At the same time, climate change is making heating and cooling demand increasingly dynamic, raising the requirements for closed-loop efficient HVAC control [51]. Recent studies sug-gest that accurately capturing weather-driven building thermal dynamics requires finer-grained temporal modeling, as evolving climate patterns introduce larger fluctuations to building thermal loads in many regions [46, 66, 67]. On the other hand, the HVAC system plays a key role as an interface between climate mitiga-tion and human well-being. Indoor thermal comfort, as defined in ASHRAE Standard 55, is a basic condition for health, produc-tivity, and occupant satisfaction [15, 47]. These global demands make occupant-centric HVAC control important at the intersec-tion of energy systems and occupancy [48]. To support building decarbonization, intelligent HVAC control should capture critical weather-driven thermal dynamics and remain robust under chang-ing weather and seasonal conditions, for energy efficiency and occupant comfort [21, 24, 55]. A practical challenge in HVAC control is the delayed and par-tially observed (PO) thermal response of buildings. Due to thermal inertia, heat is continuously stored and released by walls, floors, furniture, air volumes, and HVAC equipment, causing the effect of a control action to emerge only after multiple control intervals [53]. Meanwhile, occupancy, outdoor weather, and solar radiation jointly drive indoor thermal dynamics, while heat storage is not directly measured by sensors, rendering the latent thermal state only par-tially observable. Model Predictive Control (MPC) has long been the classic frame-work for HVAC control [1, 14, 27]. However, MPC is sensitive to model mismatch, disturbance forecasts, and solver overhead in real deployments. More recently, Deep Reinforcement Learning (DRL)  
+
+> 1Conference’27, August 2027, San Jose, California, USA Yang et al.
+
+has emerged as a promising alternative by directly learning con-trol policies from interaction data [32, 44, 52, 55, 56]. Nevertheless, most DRL methods remain fundamentally reactive and struggle to assign credit under delayed response systems [41]. Although recur-rent architectures and Transformer-based policies partially mitigate delayed thermal responses and the PO problem by exploiting his-torical observations [36], they still implicitly infer latent thermal dynamics from past trajectories, resulting in limited generalization across different conditions. These limitations naturally motivate learning an explicit predic-tive model of indoor thermal dynamics. Recently, world models have demonstrated remarkable success in long-horizon decision mak-ing by providing predictive representations for planning and value estimation in robotics and embodied AI [6, 13, 18, 19, 23, 58, 64]. Bringing this to HVAC control is appealing, as world model explic-itly models delayed thermal dynamics and provides informative future trajectories for downstream controllers. However, HVAC systems pose domain-specific challenges when applying world models in these systems. First, HVAC systems are partially observable and undergo substantial thermal distribution shifts across seasons, weather conditions, and climate regions, mak-ing accurate prediction considerably challenging. However, there is lack of world models that explicitly model indoor thermal dynamics for HVAC control. Second, sequential and vanilla data-driven world models tend to exploit specific statistical correlations of the train-ing dataset rather than physically invariant thermal mechanisms. As weather, solar radiation, and climate shift out of the training distribution, their predictions become inaccurate and physically implausible, directly degrading downstream control performance. To address the above challenges, we propose ADAPT (A D iffusion-based Adaptive Physics-aware indoor environmental world model for Transferable HVAC control), a physics-aware conditional dif-fusion IEWM for robust HVAC control. Specifically, we introduce a generative conditional diffusion model to capture the distribu-tion of future thermal baselines. To improve out-of-distribution generalization, we further introduce a physics-aware regulariza-tion that encourages generated baselines to satisfy fundamental thermal dynamics while preserving the ability of diffusion models. The regularization is based on a differentiable multi-zone physical heat-balance equation that models inter-zone exchange, outdoor-envelope exchange, solar radiation and internal heat gains. The IEWM is general and transferable, without requiring knowledge of the building geometry or hand-calibrated parameters. The predicted thermal baselines are used to support delayed credit assignment in downstream RL control. Our contributions are summarized as follows: 
+
+• We introduce ADAPT, a physics-aware conditional diffusion IEWM for HVAC control. The IEWM predicts the thermal base-line that captures delayed indoor thermal dynamics and support downstream RL credit assignment. 
+
+• We develop a physics-aware regularization based on a multi-zone heat-balance equation, encouraging diffusion-generated trajectories to satisfy fundamental thermal dynamics without requiring building-specific thermal parameters. 
+
+• We demonstrate that ADAPT consistently improves in-distribution control performance on SemiBuildingSim and Sinergym, reduc-ing HVAC energy consumption by 7.3% and occupant discomfort by 30.2% compared with the strongest baseline. 
+
+• Extensive transfer experiments across seasons (summer ↔winter) and climate regions (Stockholm ↔Arizona) demonstrate that ADAPTachieves substantially stronger robustness than baselines under OOD scenarios, leading to more generalized downstream HVAC control. 
+
+## 2 Related Work 2.1 Reinforcement Learning and Transfer for HVAC Control 
+
+RL has become a leading data-driven alternative to model predictive control for HVAC operation, learning policies directly from interac-tion data without a hand-calibrated dynamics model [24, 32, 44, 54– 56]. EnergyPlus-driven benchmarks such as Sinergym have further consolidated reproducible evaluation across zone temperature con-trol and demand response [9]. Yet HVAC control remains struc-turally hard for model-free RL: hidden thermal storage introduces delayed action effects under partial observability, and standard temporal-difference learning routes credit through this delay only implicitly. Recent surveys emphasize this gap and the resulting brittleness across seasons and buildings [35, 38]. Transfer-oriented HVAC research has approached the problem by policy transfer across buildings [62] and online fine-tuning under distribution shift [12], but both still require target-domain interaction and offer limited guarantees when weather and internal loads move outside the training domain [2]. ADAPT takes a complementary route: rather than adapting the policy after deployment, it learns a gener-ative indoor environmental world model whose predicted thermal baseline transfers across seasons and climate regions and is fed to a branch-wise action-value network [49], so the controller receives an explicit forecast of delayed thermal drift instead of an implicit latent state. 
+
+## 2.2 World Models for Decision Making 
+
+Learned dynamics have long been used for sample-efficient policy optimization and value expansion through PETS, MBPO, MBVE, and their extensions [16, 18, 26, 58, 63], and Dreamer, TD-MPC, and TD-MPC2 establish scalable latent world models for long-horizon planning [6, 19, 20, 22, 23]. Most of these methods target generic control domains where the observed state is largely sufficient and action-sequence search is the dominant challenge. HVAC control differs on both axes: observation is only a partial view of hidden thermal state, and the deployment distribution shifts across sea-sons and climate zones, so the world model is stressed more by 
+
+prediction than by planning. ADAPT reflects this distinction by using a generative indoor environmental world model to forecast the future indoor trajectory under an imagined control assumption, and by providing the resulting thermal baseline to a downstream RL controller for baseline-conditioned action evaluation and delayed credit assignment. 
+
+## 2.3 Diffusion Models for Time Series and Control 
+
+Diffusion models generate data by reversing a noise process [17, 37, 45] and have been extended to probabilistic time-series forecasting  
+
+> 2ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA
+
+and imputation [30, 42]. In sequential decision making, Diffuser recasts planning as trajectory denoising and diffusion policies gen-erate control sequences [10, 25]; in energy, recent work applies diffusion to probabilistic building load forecasting [29, 57]. These works establish diffusion as a powerful tool for uncertain temporal prediction, but they do not target the two properties HVAC control needs most: physically consistent multi-step indoor trajectories under distribution shift, and a control interface that turns those trajectories into decision-relevant thermal baselines. ADAPTcloses this gap with a conditional diffusion IEWM whose multi-step roll-outs are constrained by a learnable heat-balance regularizer, so generated trajectories remain on physically plausible manifolds across seasons, weather, and climate regions rather than reproduc-ing source-domain correlations. 
+
+## 3 Method 
+
+We propose the ADAPT framework. The key idea is to learn a trans-ferable indoor environmental world model (IEWM) that captures delayed indoor thermal dynamics, enabling HVAC controllers to make efficient decisions across various seasons and climate regions. 
+
+## 3.1 Problem Formulation 
+
+We model the optimal HVAC control problem as a Partially Ob-servable Markov Decision Process (POMDP), defined by the tuple 
+
+M = (S , O, A, 𝑃, 𝑅, 𝛾 ). In building environment, the true under-lying physical state S includes unmeasurable thermal storage in structural mass (e.g., concrete walls and windows). However, at time step 𝑡 , the agent only receives partial sensory observations 
+
+𝑜 𝑡 ∈ O : 𝑜 𝑡 = [T𝑡 , H𝑡 , O𝑜𝑐𝑐 𝑡 , T𝑜𝑢𝑡 𝑡 , S𝑡 , Z𝑡 ], (1) where T𝑡 ∈ R𝑁 is the vector of zone temperatures, 𝐻 𝑡 is relative humidity, 𝑂 𝑜𝑐𝑐 𝑡 denotes measured or estimated occupancy pattern, 
+
+𝑇 𝑜𝑢𝑡 𝑡 denotes outdoor temperature, 𝑆 𝑡 denotes solar radiation inten-sity, and 𝑍 𝑡 collects auxiliary sensor variables. The controller maps observations to a multidimensional discrete action vector 𝑎 𝑡 ∈ A , representing discretized HVAC control de-mands such as fan modes or temperature setpoints. The underlying thermal state evolves according to the thermodynamic transition 
+
+𝑃 (𝑠 𝑡 +1 |𝑠 𝑡 , 𝑎 𝑡 ). Due to the thermal inertia of building structures, the effect of an action at time 𝑡 may only become clearly visible after several control intervals. The objective is to optimize a policy 𝜋 
+
+that maximizes the discounted return: max 𝜋 E𝜋 
+
+Í ∞ 
+
+> 𝑡 =0
+
+𝛾 𝑡 𝑟 𝑡 
+
+ .
+
+## 3.2 Generative IEWM Modeling 
+
+HVAC systems are partially observable and exhibit substantial dis-tribution shifts across seasons, weather conditions, and climate regions, posing a greater challenge to world-model prediction than action-planning. To capture the resulting uncertainty and complex thermal dynamics, we formulate indoor environmental modeling as a conditional trajectory generation problem and learn a conditional diffusion IEWM, which models the distribution of a future thermal baseline conditioned on historical trajectories. Specifically, the conditioning context consists of historical trajec-tories together with a held-action protocol that specifies the future control sequence, and is defined as 
+
+c𝑡 = (𝑜 𝑡 −𝑁 :𝑡 , 𝑎 𝑡 −𝑁 :𝑡 −1, 𝑎 𝑡 :𝑡 +𝐻 −1 = 𝑎 𝑡 −1), (2) By assuming held-action, the prediction trajectory ˆ 𝑦 𝑡 serves as a counterfactual baseline that captures the building’s latent thermal inertia when the previous action 𝑎 𝑡 −1 is maintained. This baseline provides a reference for evaluating the long-term impact of the cur-rent control action, thereby improving delayed credit assignment in reinforcement learning. The IEWM predicts a future thermal baseline under the conditioning context: ˆy𝑡 = ˆ𝑜 𝑡 +1: 𝑡 +𝐻 ∼ 𝑝 𝜃 (y𝑡 | c𝑡 ), (3) To align the training objective, we enforce a held-action protocol (𝑎 𝑡 :𝑡 +𝐻 −1 = 𝑎 𝑡 −1) during offline data collection, utilizing the ground truth 𝑜 𝑡 +1: 𝑡 +𝐻 to provide supervision. Given the conditioning context c𝑡 , the IEWM models the condi-tional distribution of future indoor thermal baseline using a denois-ing diffusion probabilistic model (DDPM). The diffusion process consists of a forward noising process and a learned reverse denois-ing process. 
+
+Forward noising process. Given a normalized future trajec-tory y0 
+
+> 𝑡
+
+, the forward diffusion process gradually perturbs it with Gaussian noise. Following DDPM, the noisy trajectory at diffusion step 𝑘 is sampled directly from 
+
+𝑞 (y𝑘 𝑡 | y0 
+
+> 𝑡
+
+) = N ( √ ¯𝛼 𝑘 y0 
+
+> 𝑡
+
+, (1 − ¯𝛼 𝑘 )I), (4) where ¯ 𝛼 𝑘 is a predefined variance schedule. 
+
+Reverse denoising process. The reverse process reconstructs clean trajectories conditioned on the HVAC context c𝑡 . Following the state diffusion formulation of GlobeDiff [61], the reverse Markov chain is defined as 
+
+𝑝 𝜃 ( ˆy0: 𝐾 𝑡 | c𝑡 ) = 𝑝 ( ˆy𝐾 𝑡 )
+
+> 𝐾
+
+Ö
+
+> 𝑘 =1
+
+𝑝 𝜃 ( ˆy𝑘 −1 
+
+> 𝑡
+
+| ˆy𝑘 𝑡 , c𝑡 ), (5) where the terminal distribution is 𝑝 ( ˆy𝐾 𝑡 ) = N ( 0, I). Each reverse transition is parameterized as 
+
+𝑝 𝜃 ( ˆy𝑘 −1 
+
+> 𝑡
+
+| ˆy𝑘 𝑡 , c𝑡 ) = N ( ˆ𝝁 𝜃 ( ˆy𝑘 𝑡 , 𝑘, c𝑡 ), 𝛽 𝑘 I), (6) where the denoising network predicts the injected noise. The re-verse mean is computed as ˆ𝝁 𝜃 = 1
+
+√𝛼 𝑘 
+
+
+
+ˆy𝑘 𝑡 − 𝛽 𝑘 
+
+√1 − ¯𝛼 𝑘 
+
+ˆ𝜖 𝜃 ( ˆy𝑘 𝑡 , 𝑘, c𝑡 )
+
+
+
+. (7) The denoising network ˆ 𝜖 𝜃 takes as input the noisy trajectory, the diffusion step, and the conditioning context, enabling trajectory generation consistent with the historical observations, weather conditions, and actions. 
+
+Training objective. For each training sample, we randomly select a diffusion step, inject Gaussian noise according to Eq. 4, and optimize the denoising network to predict the injected noise: 
+
+Ldiff = E
+
+h
+
+𝜖 − ˆ𝜖 𝜃 (√ ¯𝛼 𝑘 y0 
+
+> 𝑡
+
++√︁ 1 − ¯𝛼 𝑘 𝜖, 𝑘, c𝑡 ) 1
+
+i
+
+. (8) 
+
+Inference. During inference, the model starts from Gaussian noise and iteratively performs reverse denoising conditioned on c𝑡 :ˆy𝑘 −1 
+
+> 𝑡
+
+= ˆ𝝁 𝜃 ( ˆy𝑘 𝑡 , 𝑘, c𝑡 ) + √︁ 𝛽 𝑘 𝜖 𝑘 , 𝜖 𝑘 ∼ N ( 0, I). (9) The final sample ˆ y0 
+
+> 𝑡
+
+is taken as the predicted thermal baseline, denoted by ˆ y𝑡 , which is used for evaluating delayed action effects. 
+
+> 3
+
+Conference’27, August 2027, San Jose, California, USA Yang et al. Physics-aware                     
+
+> Diffusion IEWM
+> Conditions
+> Conditional diffusion model 𝝐 𝜽
+> Thermal baseline
+> ෝ𝒚 𝒕 = ෝ 𝒐 𝒕+𝟏 , ⋯ , ෝ 𝒐 𝒕+𝑯
+> Gaussian noise
+> 𝒚 𝒕 𝑲 ~𝑵(𝟎; 𝑰)
+> Denoising
+> 𝒐 𝒕−𝑯:𝒕 𝒂 𝒕−𝑯:𝒕−𝟏
+> Physics-aware Diffusion IEWM Training
+> Physics-aware
+> Regularization
+> Physics-aware Regularization
+> 𝑪 𝒊 𝑻 𝒊,𝒌+𝟏 − 𝑻 𝒊,𝒌 /∆𝒕 = 𝑸 𝒊,𝒌 𝒛𝒐𝒏𝒆 + 𝑸 𝒊,𝒌 𝒐𝒖𝒕 + 𝑸 𝒊,𝒌 𝒓𝒂𝒅 + 𝑸 𝒊,𝒌 𝒊𝒏𝒕 + 𝑸 𝒊,𝒌 𝒉𝒗𝒂𝒄 + 𝒅 𝒊
+> 𝑳 = 𝑳 𝒅𝒊𝒇𝒇 + 𝝀 𝒕𝒓𝒖𝒆 𝑳 𝒕𝒓𝒖𝒆 +𝝀 𝒑𝒓𝒆𝒅 𝑳 𝒑𝒓𝒆𝒅 + 𝝀 𝒅 𝒅 𝟐
+> RL Policy
+> Training Dataset
+> Control
+> Action Thermal
+> Baseline
+> Online RL Policy Learning
+> IEWM Transfer
+> Value
+> Network
+> Advantage
+> Network
+> Thermal baseline ෝ𝒚 𝒕
+> 𝒐 𝒕−𝑯:𝒕
+> 𝒂 𝒕−𝑯:𝒕−𝟏
+> IEWM Conditional Sampling
+> Only 𝒐 𝒕
+> 𝑄
+> 𝑡 + 𝐻
+> 𝑸(𝒐 𝒕 , 𝒂 𝒕 , ෝ 𝒚 𝒕 )
+> V(𝒐 𝒕 )
+> 𝑡
+> 𝑨(𝒐 𝒕 , 𝒂 𝒕 , ෝ 𝒚 𝒕 )
+> Cross season transfer Cross climate-region transfer
+
+Figure 1: Overall framework of ADAPT. The training process of ADAPT is divided into two phases. Phase I: Physics-aware Diffusion IEWM Training. Phase II: Online RL Policy Learning. IEWM is frozen during phase II. 
+
+## 3.3 Physics-aware Thermal Regularization 
+
+The conditional diffusion IEWM can effectively model offline trajec-tories. However, vanilla data-driven learning may exploit domain-specific statistical correlations rather than invariant thermal dy-namics. Such overfitting often generalizes poorly across seasons and climate regions. To improve out-of-distribution robustness, we introduce a physics-aware regularization based on a differentiable multi-zone physical heat-balance equation, which encourages gen-erated trajectories to satisfy fundamental thermal dynamics while preserving the flexibility of the diffusion model. For each zone 𝑖 , the predicted temperature is encouraged to satisfy the following heat-balance equation: 
+
+𝐶 𝑖 
+
+ˆ𝑇 𝑖,𝑘 +1 − ˆ𝑇 𝑖,𝑘 
+
+Δ𝑡 = ˆ𝑄 𝑧𝑜𝑛𝑒 𝑖,𝑘 + ˆ𝑄 𝑜𝑢𝑡 𝑖,𝑘 + ˆ𝑄 𝑟𝑎𝑑 𝑖,𝑘 + ˆ𝑄 𝑖𝑛𝑡 𝑖,𝑘 + ˆ𝑄 ℎ𝑣𝑎𝑐 𝑖,𝑘 + 𝑑 𝑖 . (10) Rather than serving as an exact physical constraint, Eq. (10) acts as a soft structural prior that regularizes diffusion predictions. All physical coefficients are jointly learnt with the diffusion model, allowing the regularizer to adapt to different buildings while main-taining physically meaningful heat-transfer mechanisms. The heat-balance equation consists of five interpretable com-ponents. The inter-zone term models conductive heat exchange among neighboring zones using a symmetric nonnegative coupling matrix: ˆ𝑄 𝑧𝑜𝑛𝑒 𝑖,𝑘 =
+
+𝑁 ∑︁ 
+
+𝑗 =1
+
+𝑔 𝑖 𝑗 ( ˆ𝑇 𝑗,𝑘 − ˆ𝑇 𝑖,𝑘 ), 𝑔 𝑖 𝑗 = 𝑔 𝑗𝑖 ≥ 0. (11) The outdoor-envelope term captures heat transfer between in-door and outdoor environments: ˆ𝑄 𝑜𝑢𝑡 𝑖,𝑘 = 𝑘 𝑖 (𝑇 𝑜𝑢𝑡 𝑘 − ˆ𝑇 𝑖,𝑘 ), 𝑘 𝑖 ≥ 0. (12) The radiation term models weather-dependent heat gains: ˆ𝑄 𝑟𝑎𝑑 𝑖,𝑘 = s⊤
+
+𝑖 r𝑘 , s𝑖 ≥ 0, (13) The internal-gain term represents heat generated by occupants: ˆ𝑄 𝑖𝑛𝑡 𝑖,𝑘 = 𝛾 𝑖 ˆ𝑜 𝑖𝑛𝑡 𝑖,𝑘 , 𝛾 𝑖 ≥ 0. (14) Finally, the HVAC term models action-dependent heat exchange induced by the air-conditioning system, where ˆ 𝑢 ℎ𝑣𝑎𝑐 𝑖,𝑘 = 𝜙 (𝑎 𝑖,𝑘 ) is learned: ˆ𝑄 ℎ𝑣𝑎𝑐 𝑖,𝑘 = 𝜂 𝑖 ˆ𝑢 ℎ𝑣𝑎𝑐 𝑖,𝑘 (𝑇 𝑠𝑢𝑝 𝑖,𝑘 − ˆ𝑇 𝑖,𝑘 ), 𝜂 𝑖 ≥ 0. (15) A residual bias term 𝑑 𝑖 captures varying unmodeled disturbances. We further penalize its magnitude to discourage the model from explaining missing physics through an unconstrained bias. Collec-tively, these structured components encourage the diffusion IEWM to capture transferable thermal dynamics instead of relying on specific data, thereby improving robustness in domain transfer. 
+
+Joint Training with Data and Physics. We jointly optimize the conditional diffusion IEWM and the physics-aware regular-ization through two complementary thermal residual objectives with distinct roles. The first residual is evaluated on ground-truth trajectories to identify the physical coefficients of the heat-balance model, independent of the diffusion model. Based on these learned coefficients, the second residual is evaluated on diffusion-generated trajectories to regularize the conditional diffusion IEWM, encour-aging generated predictions to satisfy physical thermal dynamics. For an observed trajectory, we define the ground-truth thermal residual as 
+
+R𝑖,𝑘 = 𝐶 𝑖 
+
+𝑇 𝑖,𝑘 +1 − 𝑇 𝑖,𝑘 
+
+Δ𝑡 −( 𝑄 𝑧𝑜𝑛𝑒 𝑖,𝑘 +𝑄 𝑜𝑢𝑡 𝑖,𝑘 +𝑄 𝑟𝑎𝑑 𝑖,𝑘 +𝑄 𝑖𝑛𝑡 𝑖,𝑘 +𝑄 ℎ𝑣𝑎𝑐 𝑖,𝑘 +𝑑 𝑖 ). (16) The corresponding parameter-identification loss is 
+
+Ltrue = 1
+
+𝐻 𝑁 
+
+𝑡 +𝐻 −1∑︁ 
+
+𝑘 =𝑡 𝑁 ∑︁ 
+
+𝑖 =1
+
+𝜌 (R 𝑖,𝑘 (y𝑡 )) , (17) where 𝜌 (·) denotes the Huber loss. Using the identified physical coefficients, we further define the thermal residual for diffusion-generated trajectories: ˆR𝑖,𝑘 = 𝐶 𝑖 
+
+ˆ𝑇 𝑖,𝑘 +1 − ˆ𝑇 𝑖,𝑘 
+
+Δ𝑡 −( ˆ𝑄 𝑧𝑜𝑛𝑒 𝑖,𝑘 + ˆ𝑄 𝑜𝑢𝑡 𝑖,𝑘 + ˆ𝑄 𝑟𝑎𝑑 𝑖,𝑘 + ˆ𝑄 𝑖𝑛𝑡 𝑖,𝑘 + ˆ𝑄 ℎ𝑣𝑎𝑐 𝑖,𝑘 +𝑑 𝑖 ). (18) The corresponding prediction regularization loss is 
+
+Lpred = 1
+
+𝐻 𝑁 
+
+𝑡 +𝐻 −1∑︁ 
+
+𝑘 =𝑡 𝑁 ∑︁ 
+
+𝑖 =1
+
+𝜌 ( ˆR𝑖,𝑘 ( ˆy𝑡 )) . (19) This objective directly regularizes the conditional diffusion IEWM. It encourages generated trajectories to satisfy the learned multi-zone heat-balance dynamics, thereby reducing physically implausi-ble predictions and discouraging season-specific statistical overfit-ting under distribution shifts. The overall training objective is 
+
+L = Ldiff + 𝜆 true Ltrue + 𝜆 pred Lpred + 𝜆 𝑑 ∥d∥22. (20) where Ldiff is the standard diffusion denoising objective, Ltrue 
+
+identifies the parameters of the heat-balance model from observed trajectories, Lpred regularizes the conditional diffusion IEWM with physical dynamics. The bias penalty further discourages the regu-larizer from explaining missing physical effects through the uncon-strained residual term, resulting in the IEWM that is both physically consistent and robust to out-of-distribution operating conditions. 
+
+4ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA 
+
+## 3.4 Diffusion IEWM for RL learning 
+
+To leverage the proposed IEWM for downstream HVAC control, we integrate it into an online RL framework. After offline train-ing, the IEWM is frozen and queried twice at each decision step. Before action selection, it predicts a thermal baseline, estimating how the indoor environment would evolve if the previous HVAC action were maintained. This baseline provides an explicit forecast of delayed thermal dynamics for action evaluation. After an action is selected, the same IEWM predicts a committed-action rollout by repeatedly applying the selected action, providing imagined future transitions for delayed credit assignment. The former im-proves action evaluation, whereas the latter improves temporal credit assignment. For multidimensional HVAC control, we follow the branch-wise action-value architecture in [49], where each branch independently selects one actuator value 𝑎 𝑡,𝑑 . The thermal baseline ˆ 𝑦 𝑡 is incorpo-rated into the branch-wise action-value function as 
+
+𝑄 𝑑 (𝑜 𝑡 , 𝑎 𝑡,𝑑 , ˆy𝑡 ; Φ) = 𝑉 𝜓 (𝑜 𝑡 ) + 𝐴 𝜂 𝑑 (𝑜 𝑡 , 𝑎 𝑡,𝑑 , ˆy𝑡 ) − max  
+
+> 𝑎 ′∈ A 𝑑
+
+𝐴 𝜂 𝑑 (𝑜 𝑡 , 𝑎 ′, ˆy𝑡 ),
+
+(21) The thermal baseline is injected only into the advantage stream, enabling action preferences to be evaluated with explicit knowledge of future thermal dynamics while keeping state-value estimation based solely on current observation. After executing the selected action, the environment provides the real one-step transition (𝑥 𝑡 +1, 𝑟 𝑡 ). Starting from this, the IEWM predicts the future trajectory assuming the selected action is con-tinuously executed ˆy′ 
+
+> 𝑡
+
+= [ ˆ𝑜 (𝑎 𝑡 ) 
+
+> 𝑡 +2
+
+, . . . , ˆ𝑜 (𝑎 𝑡 ) 
+
+> 𝑡 +𝐻 +1
+
+] ∼ 𝑝 𝜃 (y | 𝑜 𝑡 −𝐿 +1: 𝑡 +1, 𝑎 𝑡 −𝐿 +1: 𝑡 , ˜𝑎 𝑡 +1: 𝑡 +𝐻 = 𝑎 𝑡 ).
+
+(22) This committed rollout estimates the delayed thermal effect of executing the chosen action. Future rewards are evaluated using the environment reward function without learning an additional reward model. For horizon ℎ, the expanded return is 
+
+𝐺 (ℎ) 
+
+> 𝑡
+
+(𝑎 𝑡 ) = 𝑟 𝑡 +
+
+> ℎ−1
+
+∑︁ 
+
+> 𝑘 =1
+
+𝛾 𝑘 ˆ𝑟 (𝑎 𝑡 ) 
+
+> 𝑡 +𝑘
+
++ 𝛾 ℎ𝑉 ¯𝜓 ( ˜𝑥 (𝑎 𝑡 ) 
+
+> 𝑡 +ℎ
+
+), (23) where ˆ 𝑟 (𝑎 𝑡 ) 
+
+> 𝑡 +𝑘
+
+denotes the imagined future reward computed from the committed rollout, and 𝑉 ¯𝜓 is the value function of the target network. To balance short and long-term delayed effects, the multi-step returns are aggregated into a TD-𝜆 target: 
+
+𝜏 𝜆 𝑡 = (1 − 𝜆 ) 
+
+> 𝐻 −1
+
+∑︁ 
+
+> ℎ=1
+
+𝜆 ℎ−1𝐺 (ℎ) 
+
+> 𝑡
+
+(𝑎 𝑡 ) + 𝜆 𝐻 −1𝐺 (𝐻 ) 
+
+> 𝑡
+
+(𝑎 𝑡 ). (24) This target propagates delayed comfort and energy feedback through the IEWM prediction, enabling more effective credit assignment under long thermal inertia. The branch-wise Q-network is optimized by Eq. 25. Full pseu-docode is provided in Algorithm A. 
+
+LRL (Φ) = EDrl 
+
+"
+
+1
+
+𝐷 
+
+> 𝐷
+
+∑︁ 
+
+> 𝑑 =1
+
+
+
+𝜏 𝜆 𝑡 − 𝑄 𝑑 (𝑜 𝑡 , 𝑎 𝑡,𝑑 , ˆy𝑡 ; Φ)
+
+2
+
+#
+
+. (25) 
+
+## 4 Experiments and Results 
+
+Our empirical evaluation is designed to answer three research ques-tions (RQs): 
+
+• RQ1: World-model benefit. To what extent does IEWM im-prove HVAC control performance compared to existing HVAC control methods? 
+
+• RQ2: Physics-aware modeling. How effectively does the pro-posed physics-aware regularization improve prediction perfor-mance and thermal physical consistency over vanilla data-driven IEWMs? 
+
+• RQ3: Transferable world model for control. How effectively does the proposed physics-aware IEWM improve the HVAC con-trol transferability under seasonal and climate-region transfer? 
+
+## 4.1 Experimental Setup and Evaluation Metrics 
+
+Environments. We introduce SemiBuildingSim , a high-fidelity HVAC simulation benchmark derived from a real 7-zone commer-cial office building in Hebei, China [59, 65]. The simulator is cali-brated using over 9,000 time-aligned operational records, including weather, occupancy, and HVAC control logs, thereby capturing realistic occupant-driven disturbances, and long-horizon thermal inertia. We evaluate seasonal transfer by training and testing across the building’s summer and winter operating conditions. The con-trol interval is 5 minutes. To further evaluate cross-climate robustness, we employ Siner-gym [9], an EnergyPlus-based open-source benchmark, using the 
+
+2ZoneDataCenterHVAC environment. We perform climate-region transfer between Stockholm, Sweden , characterized by a cold con-tinental climate, and Arizona, USA , characterized by a hot desert climate, creating a challenging out-of-distribution evaluation across different climatic conditions. The control interval is 15 minutes. 
+
+Prediction metrics. We report mean absolute error (MAE), root mean squared error (RMSE), coefficient of variation of the RMSE (CVRMSE) for key temperature and humidity dimensions, and occupancy exact-match rate (Occ EMR) when applicable. Room-temperature and return-temperature CVRMSE are the primary evaluation metrics, as they are the key thermal variables governed by the multi-zone RC heat-balance equations and directly reflect both physical consistency and control-oriented prediction quality. 
+
+HVAC control Metrics. HVAC control is a multi-objective op-timization problem that requires balancing thermal regulation, en-ergy efficiency, and control stability. Accordingly, we adopt evalua-tion metrics that are tailored to the objectives of each benchmark. Thermal performance is benchmark-dependent: for SemiBuildingSim, we report occupant-centric comfort metrics, whereas for the Siner-gym, we report the average temperature violation. 
+
+• Occupant-centric thermal comfort: We evaluate thermal com-fort using the Predicted Percentage of Dissatisfied (PPD) and the absolute Predicted Mean Vote ( |PMV |) according to ASHRAE Standard 55. Comfort metrics are computed primarily during occupied periods. 
+
+• Energy consumption: We report the total HVAC electricity consumption (kWh), which quantifies the energy efficiency and operational cost of the control policy. 
+
+• Actuator action fluctuation: We evaluate control smoothness using AF = 1
+
+> 𝑇
+
+Í𝑇 𝑡 =1
+
+Í𝐷 𝑑 =1 (𝑎 𝑡,𝑑 − 𝑎 𝑡 −1,𝑑 )2, where lower values in-dicate smoother actions, reducing unnecessary high-frequency control oscillations and improving operational stability.  
+
+> 5Conference’27, August 2027, San Jose, California, USA Yang et al.
+
+• Average temperature violation: Defined as the time-averaged absolute temperature violation outside the prescribed target tem-perature range, where zero indicates that the indoor temperature always remains within the acceptable bounds. 
+
+## 4.2 Main Results 
+
+Answer for RQ1: To answer RQ1, we first evaluate ADAPT on SemiBuildingSim against MPC [22], model-free RL (A2C [33], DQN [34], PPO [43], BDQ [49]), history-aware RL (TransformerRL [36]), and model-based RL (MBVE [16], MBPO [26], DreamerV3 [20]). All controllers are trained and evaluated under the in-distribution (ID) setting. As shown in Tab. 4, ADAPT achieves the best balance be-tween energy efficiency, occupant comfort, and control smoothness, which demonstrates that introducing the diffusion IEWM provides a clear benefit for HVAC control. 
+
+Table 1: Performance comparisons on SemiBuildingSim Sum-mer (mean ± std over three seeds, ID). Lower is better.   
+
+> Algorithm Energy (kWh)
+
+↓ Abs PMV ↓ PPD (%) ↓ Action Fluctuation ↓ 
+
+> MPC
+
+182 .34 ± 1.59 0.60 ± 0.04 17 .45 ± 1.19 16 .57 ± 0.93  
+
+> A2C
+
+157 .81 ± 7.59 0.50 ± 0.06 14 .05 ± 1.56 12 .89 ± 3.35  
+
+> PPO
+
+154 .83 ± 3.10 0.41 ± 0.01 12 .37 ± 0.33 9.75 ± 0.85  
+
+> DQN
+
+155 .77 ± 2.03 0.49 ± 0.06 13 .19 ± 1.88 9.86 ± 1.52  
+
+> BDQ
+
+154 .57 ± 5.23 0.37 ± 0.01 10 .88 ± 0.78 10 .20 ± 1.17  
+
+> TransformerRL
+
+149 .34 ± 2.93 0.37 ± 0.03 10 .05 ± 0.50 9.42 ± 1.05  
+
+> MBVE
+
+150 .73 ± 5.88 0.36 ± 0.01 10 .27 ± 0.14 9.61 ± 1.86  
+
+> MBPO
+
+150 .99 ± 3.12 0.38 ± 0.04 10 .47 ± 0.49 12 .47 ± 1.85  
+
+> DreamerV3
+
+149 .43 ± 1.02 0.36 ± 0.01 9 .88 ± 1.53 8.37 ± 0.15  
+
+> ADAPT (Ours)
+
+138 .49 ± 1.71 0.22 ± 0.01 7 .01 ± 0.05 6.73 ± 0.31 
+
+The improvement stems from the thermal baseline predicted by the IEWM, which summarizes the future evolution of the in-door thermal dynamics while maintaining the current action. By explicitly modeling delayed thermal responses and building ther-mal inertia, the controller can optimize against anticipated thermal dynamics rather than relying solely on instantaneous observations, thereby avoiding unnecessary heating and cooling actions. To further understand this benefit, Fig. 2 compares the training curves of different methods. ADAPT converges substantially faster and reaches a higher return, indicating that the predicted thermal baseline significantly improves RL sample efficiency. The Sinergym results (Fig. 3) further demonstrate that the bene-fits of the IEWM generalize beyond SemiBuildingSim. ADAPT si-multaneously reduces temperature violation while increasing en-ergy savings. The improvement is particularly pronounced during the summer months in Stockholm, when longer daylight hours and stronger solar heat gains produce larger and more dynamic cooling loads. By predicting a thermal baseline that captures delayed indoor thermal dynamics, the IEWM enables proactive cooling decisions, suppressing unnecessary HVAC actuation while maintaining tem-peratures within the desired operating range. Additional results are shown in C. 
+
+Answer for RQ2: To answer RQ2, we compare four IEWM designs: the full ADAPT (Ours), w/o Phys., which removes the proposed physics-aware regularization, MambaFormer [60], and a VAE-based [31] world model. Table 2 shows that the proposed physics-aware IEWM consistently achieves the best multi-step pre-diction performance under seasonal transfer. The improvement 0.0 0.2 0.4 0.6 0.8 1.0 
+
+Environment Steps 1e6 25000 
+
+> 22500
+> 20000
+> 17500
+> 15000
+> 12500
+> 10000
+> 7500
+> Episodic Return
+> ADAPT(Ours)
+> PPO TransformerRL DQN BDQ A2C
+> Steps: 1.0 ×
+> Value: 1.0 ×
+> Steps: 2.14 ×
+> Value: 0.57 ×
+> Steps: 3.73 ×
+> Value: 0.61 ×
+> Steps: 4.88 ×
+> Value: 0.44 ×
+> Steps: 1.28 ×
+> Value: 0.62 ×
+> Steps: 3.90 ×
+> Value: 0.49 ×
+
+Figure 2: Training curves on SemiBuildingSim Summer. Stars mark the first point where each method reaches 95% of its final episodic return. The labels report relative convergence steps (lower is better) and relative covergence return (higher is better), both normalized to ADAPT (Ours) = 1.0 ×.Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec  
+
+> -6% 2% 10% 18% 26%
+> (a) Energy Saving vs RBC Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+> -0.157 0.249 0.656 1.062 1.469
+> (b) Temperature Violation
+> RBC A2C BDQ DQN PPO TransformerRL MBPO MBVE DreamerV3
+> ADAPT(Ours)
+
+Figure 3: Comparison of ADAPT with baselines in Sinergym Stockholm environment (ID). (a) energy savings relative to rule-based controller (RBC), (b) temperature violation. 
+
+is particularly pronounced for room temperature and return tem-perature, while the purely data-driven diffusion model and other sequence modeling baselines degrade substantially under OOD conditions. 
+
+Table 2: OOD prediction performance under seasonal transfer on SemiBuildingSim. Except Occ EMR, lower is better.      
+
+> Category Metric ADAPT (Ours) w/o Phys. MambaFormer VAE
+> Summer
+
+→ Winter (OOD) 
+
+> Overall MAE (
+
+↓) 0.035 0.040 0.119 0.131 RMSE ( ↓) 0.074 0.083 0.207 0.222 Occ EMR (%) ( ↑) 98.475 98.086 77.021 82.855 CVRMSE (%) Return Temp 4.633 8.069 9.517 13.367 Room Temp 11.560 16.134 43.210 44.983  
+
+> Winter
+
+→ Summer (OOD) 
+
+> Overall MAE (
+
+↓) 0.049 0.059 0.181 0.204 RMSE ( ↓) 0.086 0.105 0.310 0.348 Occ EMR (%) ( ↑) 77.486 74.892 76.977 75.538 CVRMSE (%) Return Temp 6.531 9.237 18.105 21.279 Room Temp 6.847 9.560 34.031 38.174 
+
+The gains are most evident on room temperature and return temperature because these variables are directly governed by the multi-zone RC heat-balance equations and therefore provide the  
+
+> 6ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA
+
+most stringent test of physical consistency. By explicitly regu-larizing the denoising process with thermal dynamics, the pro-posed physics-aware objective prevents the diffusion model from exploiting season-specific statistical correlations and instead en-courages predictions that remain consistent with the underlying heat-transfer process. Consequently, the learned world model main-tains substantially better thermal-state prediction when weather conditions and building operating regimes change. Figure 4 further demonstrates that the benefits of the proposed physics-aware IEWM generalize across climate regions. Under Stockholm and Arizona bi-transfer, ADAPT consistently achieves the best overall prediction performance across all reported met-rics, whereas purely data-driven world models exhibit substantially larger degradation after climate transfer. These results demonstrate that incorporating physics-aware thermal constraints significantly improves the cross-region robustness and generalization ability of the learned indoor environment world model. 
+
+Table 3: Ablation study on the physics loss weight 𝜆 pred and the bias penalty 𝜆 𝑑 . Lower is better.                                                         
+
+> Ablation Value MAE ↓RMSE ↓CVRMSE (%) ↓Return Temp ↓Room Temp ↓
+> 𝜆 pred
+> 00.059 0.105 13.671 9.237 9.560 0.2 (Ours) 0.049 0.086 10.513 6.531 6.847
+> 0.5 0.052 0.093 11.368 7.029 6.988 0.8 0.056 0.101 12.501 6.314 8.321 1.0 0.062 0.106 13.475 6.298 9.313
+> 𝜆 𝑑
+> 00.061 0.108 13.783 6.670 9.557 0.1 (Ours) 0.049 0.086 10.513 6.531 6.847
+> 0.3 0.051 0.088 10.868 6.143 6.935 0.5 0.054 0.096 11.622 6.193 7.177
+
+Answer for RQ3: To answer RQ3, we evaluate the downstream control performance of the IEWMs introduced in RQ2. To isolate the contribution of world-model design, all compared methods use the same RL controller described in Section 3.4, while only the underlying IEWM is varied. Figure 5 shows that under seasonal transfer, ADAPTconsistently achieves the best trade-off between energy efficiency, occupant comfort, and control smoothness. The same trend is observed un-der climate-region transfer (Fig. 6). Across both transfer directions between Stockholm and Arizona, ADAPT consistently delivers higher energy savings with lower temperature violation than se-quential and purely data-driven world models. The consistent ad-vantage across different transfer scenarios demonstrates that im-proved world-model transferability leads to more robust and reliable downstream RL control. Additional results are shown in C.2. The transferability originates from the proposed physics-aware regularization. By modeling climate-invariant thermal dynamics in-stead of environment-specific statistical correlations, ADAPT main-tains accurate thermal prediction under OOD scenarios. Conse-quently, the downstream controller receives reliable future thermal baseline even in unseen environments, leading to more robust pol-icy optimization and consistently stronger transfer performance. 
+
+Ablation on Physics-Loss Weights. Tables 3 investigates the influence of the two physics-aware regularization weights under the SemiBuildingSim Winter →Summer transfer. Removing either term consistently deteriorates OOD prediction performance, demonstrat-ing that both physical consistency and residual-bias regulariza-tion are essential for learning transferable thermal dynamics. Con-versely, excessively large weights also reduce prediction accuracy, indicating that overly strong physical constraints may compromise the expressive capacity of the diffusion model. We therefore use 
+
+𝜆 pred = 0.2 and 𝜆 𝑑 = 0.1 throughout the paper. 
+
+## 5 Discussion 
+
+As global urbanization and climate change reshape building energy demand, effective modeling and control of indoor thermal dynam-ics is important for building decarbonization, occupant comfort, and peak-load management, advancing the UN’s SDGs 11 and 13. Our key contribution lies in introducing physics-aware generative indoor environmental world models as a transferable predictive foundation for HVAC control. Instead of learning a reactive con-troller tied to one season and one climate region, our framework utilizes world model to predict a thermal baseline that transfers across seasons and climate zones, supporting energy-efficient build-ing operation, comfort improvement, and cross-region deployment for energy system and building science . A central challenge in HVAC control is the combination of de-layed thermal dynamics, partial observability, and substantial ther-mal distribution shifts across seasons, weather conditions, and climate regions. Since the effect of an HVAC action emerges grad-ually, effective control requires a world model that explicitly pre-dicts future indoor thermal evolution for action evaluation and delayed credit assignment. We address this by introducing a physics-aware generative world model to guide RL learning. Besides, unlike existing deterministic and vanilla data-driven world models that primarily learn specific statistical correlations, our physics-aware diffusion IEWM learns transferable thermal dynamics through gen-erative trajectory modeling regularized by a multi-zone physical heat-balance equation. Consequently, the proposed IEWM learns from one operating condition and is transferable across seasons, weather conditions, and climate regions. In summary, our framework can offer building operators, HVAC engineers, and energy scientists a powerful generative tool for predicting delayed indoor thermal responses, transferring HVAC control across seasons and climate regions, and jointly improving energy consumption and occupant comfort across offices, residen-tial buildings, and high-density AI infrastructure such as data-center cooling. This work established a decarbonized, physically consis-tent, and transferable HVAC control process aligned with SDGs 11 and 13, advancing the development of AI for building science, energy systems, and climate mitigation. 
+
+## 5.1 Limitations and Ethical Considerations 
+
+While the proposed physics-aware regularization significantly im-proves the transferability of the IEWM, it currently constrains only indoor temperature dynamics through the multi-zone heat-balance equation. More complex processes, such as humidity, are not explic-itly modeled. Incorporating richer thermo-hygrometric dynamics into the world model is an important direction for future work. All experiments are conducted using publicly available build-ing simulators and weather data. No private, household-level, or personally identifiable information is collected, used, or inferred during model development or evaluation. 
+
+## 6 Conclusion 
+
+This paper presents ADAPT, a physics-aware diffusion IEWM for robust HVAC control under seasonal and climate-region transfer. 
+
+> 7
+
+Conference’27, August 2027, San Jose, California, USA Yang et al. MAE RMSE E-Hum W-Hum E-ZoneT W-ZoneT 
+
+00.5 1
+
+> Normalized error (1 = worst in metric)
+> 0.002
+> 0.002 0.011 0.012
+> 0.020
+> 0.020 0.029 0.028
+> 2.39
+> 2.72 5.97 6.32
+> 1.94
+> 2.11 4.39 4.67 0.019
+> 0.017
+> 0.074 0.063
+> 0.512
+> 0.588 0.591 0.620
+
+Stockholm → Arizona — IID 
+
+MAE RMSE E-Hum W-Hum E-ZoneT W-ZoneT 
+
+00.5 1
+
+> 0.120
+> 0.169 0.312 0.290
+> 0.311
+> 0.412 0.605 0.483
+> 14.6
+> 18.0 41.8 37.1
+> 20.6
+> 23.3 30.3 36.9
+> 2.04
+> 3.05 3.66 2.86
+> 1.63
+> 3.43 5.34 6.60
+
+Stockholm → Arizona — OOD 
+
+MAE RMSE E-Hum W-Hum E-ZoneT W-ZoneT 
+
+00.5 1
+
+> Normalized error (1 = worst in metric)
+> 0.003
+> 0.003 0.016 0.015 0.022
+> 0.021
+> 0.037 0.034
+> 2.18
+> 2.20 6.83 6.41
+> 3.19
+> 3.26 7.56 7.10 0.024
+> 0.021
+> 0.081 0.064 0.567
+> 0.200
+> 0.569 0.546
+
+Arizona → Stockholm — IID 
+
+MAE RMSE E-Hum W-Hum E-ZoneT W-ZoneT 
+
+00.5 1
+
+> 0.067
+> 0.074 0.191 0.224
+> 0.174
+> 0.226 0.387 0.354
+> 16.5
+> 22.1 30.1 45.6
+> 16.0
+> 20.0 25.9 42.5
+> 1.30
+> 1.89 2.90 2.22
+> 0.708
+> 1.55 3.79 6.86
+
+Arizona → Stockholm — OOD 
+
+IID — source region OOD — target region (cross-region transfer) 
+
+ADAPT(Ours) w/o Phys. MambaFormer VAE best in metric 
+
+Figure 4: Cross-region transfer prediction performance on Sinergym 2ZoneDataCenter (Stockholm ↔ Arizona). CVRMSE are annotated above each bar. Red outlines indicate the best value per metric (lower is better). ADAPT (Ours) 
+
+> w/o Phys. Mamba WM VAE WM
+
+140 150 160 
+
+Energy (kWh) 
+
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+
+0.3 0.4 0.5 
+
+Abs PMV 
+
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+
+510 15 
+
+PPD (%) 
+
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+
+5.0 7.5 10.0 
+
+Action Fluctuation 
+
+ADAPT (Ours) w/o Phys. Mamba WM VAE WM 
+
+Figure 5: Comparison of different IEWMs downstream control performance on SemibuildingSim Winter → Summer transfer. Lower is better. 6 7 8 9 10 
+
+Energy Saving (%) ↑
+
+> 0.4 0.6 0.8 1.0
+> Avg. Temperature Violation (  ∘ C) ↓
+> ADAPT(Ours)
+> better
+
+Stockholm → Arizona   
+
+> 810 12
+
+Energy Saving (%) ↑
+
+> 0.0 0.2 0.4 0.6 0.8
+> Avg. Temperature Violation (  ∘ C) ↓
+> ADAPT(Ours)
+> better
+
+Arizona → Stockholm      
+
+> ADAPT (Ours) w/o Phys. Mamba WM VAE WM IID OOD (transfer)
+
+Figure 6: Comparison of different IEWMs downstream con-trol performance on Sinergym cross climate-region transfer. 
+
+Experiments demonstrate that ADAPT consistently improves world-model prediction, downstream control performance, and transfer robustness over existing baselines. By integrating physics-aware thermal dynamics into generative world modeling, ADAPT provides a practical and transferable foundation for energy-efficient building control. We hope this work promotes further research on physics-guided world models for AI-driven building energy management, contributing to more sustainable and intelligent buildings. 
+
+## 7 GenAI Disclosure 
+
+The authors declare that AI tools were used only for language polishing and grammar checking. All scientific contributions, in-cluding ideas, experiments, and analyses, are the authors’ own. All intellectual content, data analysis, interpretations, and conclusions were conceived, written, and verified by the authors. 
+
+8ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA 
+
+## References 
+
+[1] Abdul Afram and Farrokh Janabi-Sharifi. 2014. Theory and applications of HVAC control systems–A review of model predictive control (MPC). Building and environment 72 (2014), 343–355. [2] Khalil Al Sayed, Abhinandana Boodi, Roozbeh Sadeghian Broujeny, and Karim Beddiar. 2024. Reinforcement learning for HVAC control in intelligent buildings: A technical and conceptual review. Journal of Building Engineering 95 (2024), 110085. [3] American Society of Heating, Refrigerating and Air-Conditioning En-gineers. 2023. ANSI/ASHRAE Standard 55-2023: Thermal Environ-mental Conditions for Human Occupancy . ASHRAE, Atlanta, GA. https://www.ashrae.org/technical-resources/bookstore/standard-55-thermal-environmental-conditions-for-human-occupancy [4] Yu Qian Ang, Zachary Michael Berzolla, Samuel Letellier-Duchesne, and Christoph F Reinhart. 2023. Carbon reduction technology pathways for existing buildings in eight cities. Nature communications 14, 1 (2023), 1689. [5] Hassam Ayaz, Mohammed Faizal, and Abdelmalek Bouazza. 2024. Energy, eco-nomic, and carbon emission analysis of a residential building with an energy pile system. Renewable Energy 220 (2024), 119712. [6] Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mido Assran, and Nicolas Ballas. [n. d.]. Revisiting Feature Prediction for Learning Visual Representations from Video. Transactions on Machine Learning Research ([n. d.]). [7] Chenhang Bian, Ka Lung Cheung, Xi Chen, and Chi Chung Lee. 2025. Integrating microclimate modelling with building energy simulation and solar photovoltaic potential estimation: The parametric analysis and optimization of urban design. 
+
+Applied Energy 380 (2025), 125062. [8] John Bongaarts. 2020. United Nations Department of Economic and Social Affairs, Population Division World Family Planning 2020: Highlights, United Nations Publications, 2020. 46 p. Popul Dev Rev 46, 4 (2020), 857–858. [9] Alejandro Campoy-Nieves, Antonio Manjavacas, Javier Jiménez-Raboso, Miguel Molina-Solana, and Juan Gómez-Romero. 2025. Sinergym–A virtual testbed for building energy optimization with Reinforcement Learning. Energy and Buildings 
+
+327 (2025), 115075. [10] Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burch-fiel, Russ Tedrake, and Shuran Song. 2025. Diffusion policy: Visuomotor policy learning via action diffusion. The International Journal of Robotics Research 44, 10-11 (2025), 1684–1704. [11] Conference of the Parties serving as the meeting of the Parties to the Paris Agreement (CMA). 2023. Outcome of the First Global Stocktake. UNFCCC Decision 1/CMA.5. FCCC/PA/CMA/2023/L.17. [12] Davide Coraci, Silvio Brandi, Tianzhen Hong, and Alfonso Capozzoli. 2023. Online transfer learning strategy for enhancing the scalability and deployment of deep reinforcement learning control in smart buildings. Applied Energy 333 (2023), 120598. [13] Jingtao Ding, Yunke Zhang, Yu Shang, Yuheng Zhang, Zefang Zong, Jie Feng, Yuan Yuan, Hongyuan Su, Nian Li, Nicholas Sukiennik, et al. 2025. Understanding world or predicting future? a comprehensive survey of world models. Comput. Surveys 58, 3 (2025), 1–38. [14] Ján Drgoňa, Javier Arroyo, Iago Cupeiro Figueroa, David Blum, Krzysztof Arendt, Donghun Kim, Enric Perarnau Ollé, Juraj Oravec, Michael Wetter, Draguna L Vrabie, et al. 2020. All you need to know about model predictive control for buildings. Annual reviews in control 50 (2020), 190–232. [15] Poul O Fanger. 1970. Thermal comfort. Analysis and applications in environmen-tal engineering. (1970). [16] Vladimir Feinberg, Alvin Wan, Ion Stoica, Michael I Jordan, Joseph E Gonzalez, and Sergey Levine. 2018. Model-based value estimation for efficient model-free reinforcement learning. arXiv preprint arXiv:1803.00101 (2018). [17] Hongfan Gao, Wangmeng Shen, Xiangfei Qiu, Ronghui Xu, Bin Yang, and Jilin Hu. 2025. SSD-TS: Exploring the potential of linear state space models for diffusion models in time series imputation. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2 . 649–660. [18] Ignat Georgiev, Varun Giridhar, Nicklas Hansen, and Animesh Garg. [n. d.]. PWM: Policy Learning with Multi-Task World Models. In The Thirteenth International Conference on Learning Representations .[19] Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. 2023. Mas-tering diverse domains through world models. arXiv preprint arXiv:2301.04104 
+
+(2023). [20] Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. 2025. Mas-tering diverse control tasks through world models. Nature 640, 8059 (2025), 647–653. [21] Ahmed M Hanafi, Mohamed Ahmed Moawed, and Osama Ezzat Abdellatif. 2024. Advancing sustainable energy management: a comprehensive review of artificial intelligence techniques in building. Engineering Research Journal (Shoubra) 53, 2 (2024), 26–46. [22] Nicklas Hansen, Hao Su, and Xiaolong Wang. [n. d.]. TD-MPC2: Scalable, Robust World Models for Continuous Control. In The Twelfth International Conference on Learning Representations .[23] N Hansen, X Wang, and H Su. 2022. Temporal Difference Learning for Model Predictive Control. In International Conference on Machine Learning, PMLR .[24] Thi Ngoc Yen Huynh, Anh Tuan Nguyen, Yonghan Ahn, Bee Lan Oo, and Ben-son TH Lim. 2025. Multi objectives reinforcement learning for smart buildings: A systematic review of algorithms, applications and future perspectives. Energy and Buildings 345 (2025), 116045. [25] Michael Janner, Yilun Du, Joshua Tenenbaum, and Sergey Levine. 2022. Planning with Diffusion for Flexible Behavior Synthesis. In International Conference on Machine Learning . PMLR, 9902–9915. [26] Michael Janner, Justin Fu, Marvin Zhang, and Sergey Levine. 2019. When to trust your model: Model-based policy optimization. In Advances in neural information processing systems , Vol. 32. [27] Michaela Killian and Martin Kozek. 2016. Ten questions concerning model predictive control for energy efficient buildings. Building and Environment 105 (2016), 403–412. [28] Hoesung Lee, Katherine Calvin, Dipak Dasgupta, Gerhard Krinner, Aditi Mukherji, Peter Thorne, Christopher Trisos, José Romero, Paulina Aldunce, Ko Barrett, et al. 2023. Climate change 2023: synthesis report. Contribution of working groups I, II and III to the sixth assessment report of the intergovernmental panel on climate change .[29] Rui Liang, Yang Deng, and Dan Wang. 2024. Probabilistic Building Load Forecast-ing via Conditional Diffusion Model. In Proceedings of the 15th ACM International Conference on Future and Sustainable Energy Systems . 490–491. [30] Yuansan Liu, Sudanthi Wijewickrema, Dongting Hu, Christofer Bester, Stephen O’Leary, and James Bailey. 2025. Stochastic diffusion: A diffusion based model for stochastic time series forecasting. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2 . 1939–1950. [31] Jie Lu, Chaobo Zhang, Bozheng Li, Yang Zhao, Ruchi Choudhary, and Max Langtry. 2025. Self-attention variational autoencoder-based method for incom-plete model parameter imputation of digital twin building energy systems. Energy and Buildings 328 (2025), 115162. [32] Antonio Manjavacas, Alejandro Campoy-Nieves, Javier Jiménez-Raboso, Miguel Molina-Solana, and Juan Gómez-Romero. 2024. An experimental evaluation of Deep Reinforcement Learning algorithms for HVAC control. arXiv e-prints (2024), arXiv–2401. [33] Volodymyr Mnih, Adria Puigdomenech Badia, Mehdi Mirza, Alex Graves, Tim-othy Lillicrap, Tim Harley, David Silver, and Koray Kavukcuoglu. 2016. Asyn-chronous methods for deep reinforcement learning. In International conference on machine learning . PmLR, 1928–1937. [34] Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A Rusu, Joel Veness, Marc G Bellemare, Alex Graves, Martin Riedmiller, Andreas K Fidjeland, Georg Ostrovski, et al. 2015. Human-level control through deep reinforcement learning. 
+
+nature 518, 7540 (2015), 529–533. [35] Zoltan Nagy, Gregor Henze, Sourav Dey, Javier Arroyo, Lieve Helsen, Xiangyu Zhang, Bingqing Chen, Kadir Amasyali, Kuldeep Kurte, Ahmed Zamzam, et al. 2023. Ten questions concerning reinforcement learning for building energy management. Building and Environment 241 (2023), 110435. [36] Tianwei Ni, Michel Ma, Benjamin Eysenbach, and Pierre-Luc Bacon. 2023. When do transformers shine in rl? decoupling memory from credit assignment. Ad-vances in Neural Information Processing Systems 36 (2023), 50429–50452. [37] Alexander Quinn Nichol and Prafulla Dhariwal. 2021. Improved denoising diffu-sion probabilistic models. In International conference on machine learning . PMLR, 8162–8171. [38] Kingsley Nweye, Bo Liu, Peter Stone, and Zoltan Nagy. 2022. Real-world chal-lenges for multi-agent reinforcement learning in grid-interactive buildings. En-ergy and AI 10 (2022), 100202. [39] Luis Pérez-Lombard, José Ortiz, and Christine Pout. 2008. A review on buildings energy consumption information. Energy and buildings 40, 3 (2008), 394–398. [40] UN Environment Programme. 2022. "2022 GLOBAL STATUS REPORT FOR BUILDINGS AND CONSTRUCTION". https://globalabc.org. [41] Aditya Ramesh, Kenny John Young, Louis Kirsch, and Jürgen Schmidhuber. [n. d.]. Sequence Compression Speeds Up Credit Assignment in Reinforcement Learning. In Forty-first International Conference on Machine Learning .[42] Kashif Rasul, Calvin Seward, Ingmar Schuster, and Roland Vollgraf. 2021. Au-toregressive denoising diffusion models for multivariate probabilistic time series forecasting. In International conference on machine learning . PMLR, 8857–8868. [43] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. 2017. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 
+
+(2017). [44] Alberto Silvestri, Davide Coraci, Silvio Brandi, Alfonso Capozzoli, and Arno Schlueter. 2025. Practical deployment of reinforcement learning for building controls using an imitation learning approach. Energy and Buildings 335 (2025), 115511. [45] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Ste-fano Ermon, and Ben Poole. 2021. Score-Based Generative Modeling through Stochastic Differential Equations. In International Conference on Learning Repre-sentations .9Conference’27, August 2027, San Jose, California, USA Yang et al. 
+
+[46] Iain Staffell, Stefan Pfenninger, and Nathan Johnson. 2023. A global model of hourly space heating and cooling demand at multiple spatial scales. Nature Energy 8, 12 (2023), 1328–1344. [47] Kailai Sun, Irfan Qaisar, Muhammad Arslan Khan, Tian Xing, and Qianchuan Zhao. 2023. Building occupancy number prediction: A Transformer approach. 
+
+Building and environment 244 (2023), 110807. [48] Kailai Sun, Qianchuan Zhao, and Jianhong Zou. 2020. A review of building occupancy measurement systems. Energy and Buildings 216 (2020), 109965. [49] Arash Tavakoli, Fabio Pardo, and Petar Kormushev. 2018. Action branching architectures for deep reinforcement learning. In Proceedings of the aaai conference on artificial intelligence , Vol. 32. [50] United Nations Environment Programme and Global Alliance for Build-ings and Construction. 2025. Global Status Report for Buildings and Construction 2024/2025 . Technical Report. United Nations Environment Programme. https://www.unep.org/resources/report/global-status-report-buildings-and-construction-20242025 [51] Rik van Heerden, Oreane Y Edelenbosch, Vassilis Daioglou, Thomas Le Gallic, Luiz Bernardo Baptista, Alice Di Bella, Francesco Pietro Colelli, Johannes Em-merling, Panagiotis Fragkos, Robin Hasse, et al. 2025. Demand-side strategies enable rapid and deep cuts in buildings and transport emissions to 2050. Nature Energy 10, 3 (2025), 380–394. [52] José R Vázquez-Canteli and Zoltán Nagy. 2019. Reinforcement learning for demand response: A review of algorithms and modeling techniques. Applied energy 235 (2019), 1072–1089. [53] Stijn Verbeke and Amaryllis Audenaert. 2018. Thermal inertia in buildings: A review of impacts across climate and building use. Renewable and sustainable energy reviews 82 (2018), 2300–2318. [54] Jingwei Wang, Qianyue Hao, Wenzhen Huang, Xiaochen Fan, Zhentao Tang, Bin Wang, Jianye Hao, and Yong Li. 2024. Dyps: Dynamic parameter sharing in multi-agent reinforcement learning for spatio-temporal resource allocation. In 
+
+Proceedings of the 30th ACM SIGKDD conference on knowledge discovery and data mining . 3128–3139. [55] Liangxu Wang and Tianzhen Hong. 2020. Reinforcement learning for building controls: The opportunities and challenges. Applied Energy 269 (2020), 115036. doi:10.1016/j.apenergy.2020.115036 [56] Xiangwei Wang, Peng Wang, Renke Huang, Xiuli Zhu, Javier Arroyo, and Ning Li. 2025. Safe deep reinforcement learning for building energy management. 
+
+Applied Energy 377 (2025), 124328. [57] Zhixian Wang, Qingsong Wen, Chaoli Zhang, Liang Sun, and Yi Wang. 2024. Dif-fLoad: Uncertainty quantification in electrical load forecasting with the diffusion model. IEEE Transactions on Power Systems 40, 2 (2024), 1777–1789. [58] Jialong Wu, Shaofeng Yin, Ningya Feng, and Mingsheng Long. [n. d.]. RLVR-World: Training World Models with Reinforcement Learning. In The Thirty-ninth Annual Conference on Neural Information Processing Systems .[59] Tian Xing, Hu Yan, Kailai Sun, Yifan Wang, Xuetao Wang, and Qianchuan Zhao. 2022. Honeycomb: An open-source distributed system for smart buildings. Pat-terns 3, 11 (2022). [60] Xiongxiao Xu, Yueqing Liang, Baixiang Huang, Zhiling Lan, and Kai Shu. 2024. Integrating mamba and transformer for long-short range time series forecasting. 
+
+arXiv preprint arXiv:2404.14757 2, 7 (2024). [61] Yiqin Yang, Xu Yang, Yuhua Jiang, Ni Mu, Hao Hu, Runpeng Xie, Ziyou Zhang, Siyuan Li, Yuan-Hua Ni, Qianchuan Zhao, et al. 2026. GlobeDiff: State Diffu-sion Process for Partial Observability in Multi-Agent Systems. arXiv preprint arXiv:2602.15776 (2026). [62] Xinbo Zhao, Yingxue Zhang, Xin Zhang, Yu Yang, Yiqun Xie, Yanhua Li, and Jun Luo. 2024. Urban-focused multi-task offline reinforcement learning with contrastive data sharing. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining . 4512–4523. [63] Yi Zhao, Aidan Scannell, Yuxin Hou, Tianyu Cui, Le Chen, Dieter Büchler, Arno Solin, Juho Kannala, and Joni Pajarinen. 2025. Generalist World Model Pre-Training for Efficient Reinforcement Learning. In ICLR 2025 Workshop on World Models: Understanding, Modelling and Scaling .[64] Zhida Zhao, Talas Fu, Yifan Wang, Lijun Wang, and Huchuan Lu. 2026. From fore-casting to planning: Policy world model for collaborative state-action prediction. 
+
+Advances in Neural Information Processing Systems 38 (2026), 134585–134611. [65] Dianyu Zhong, Tian Xing, Kailai Sun, Ziyou Zhang, Qianchuan Zhao, and Jian Kang. 2025. Topology-aware hypergraph reinforcement learning for indoor occupant-centric HVAC control. Energy and Buildings (2025), 116219. [66] Mengting Zhu, Mengqi Zhao, Rongqi Zhu, Jiyong Eom, Yuyu Zhou, Sha Yu, Fengqiao Mei, and Yang Ou. 2026. Warming-driven shifts in global building energy use reshape climate mitigation planning. Nature Communications (2026). [67] Xingchen Zou, Weilin Ruan, Siru Zhong, Yuehong Hu, and Yuxuan Liang. 2025. Fine-grained Urban Heat Island Effect Forecasting: A Context-aware Thermody-namic Modeling Framework. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2 . 4226–4237. 10 ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA 
+
+## A Training and Inference Algorithm 
+
+Algorithm 1 summarizes the two-stage training and online-use procedure of ADAPT. Phase I trains the physics-aware diffusion IEWM by jointly minimizing the diffusion denoising loss (Eq. 8), the true-trajectory thermal residual (Eq. 17), the predicted-trajectory thermal residual (Eq. 19), and the residual-bias regularizer (Eq. 20). Phase II freezes the world model and runs baseline-conditioned RL: at each step, the frozen IEWM produces (i) the held-action thermal baseline ˆ y𝑡 that conditions the branch-wise action-value network (Eq. 21) and drives greedy action selection (Eq. ?? ), and (ii) the action-committed rollout ˆ y′ 
+
+> 𝑡
+
+that supplies delayed states for the held-action TD-𝜆 target (Eqs. 23–24). The policy parameters Φ
+
+are updated by minimizing LRL (Eq. 25), followed by a soft update of the target network. 
+
+Algorithm 1 Training and online use of ADAPT 
+
+Require: Offline trajectories Doff , RL replay buffer Drl , horizon 
+
+𝐻 , diffusion steps 𝐾 , reward evaluator 𝑔 , target update rate 𝜅 
+
+Phase I: Physics-aware diffusion IEWM training  
+
+> 1:
+
+for each IEWM update do  
+
+> 2:
+
+Sample (𝑜 𝑡 −𝑁 :𝑡 +𝐻 , 𝑎 𝑡 −𝑁 :𝑡 −1) ∼ D off  
+
+> 3:
+
+Set ˜ 𝑎 𝑡 +ℎ ← 𝑎 𝑡 −1 for ℎ = 0, . . . , 𝐻 − 1 and build c𝑡 by Eq. 2  
+
+> 4:
+
+Set the clean target y0 
+
+> 𝑡
+
+← [ 𝑜 𝑡 +1, . . . , 𝑜 𝑡 +𝐻 ] 
+
+> 5:
+
+Sample 𝑘 ∼ Uniform ({ 1, . . . , 𝐾 }) and 𝜖 ∼ N ( 0, I) 
+
+> 6:
+
+Construct y𝑘 𝑡 ← √ ¯𝛼 𝑘 y0 
+
+> 𝑡
+
++ √1 − ¯𝛼 𝑘 𝜖 by Eq. 4  
+
+> 7:
+
+Predict ˆ 𝜖 𝜃 (y𝑘 𝑡 , 𝑘, c𝑡 ) and compute Ldiff by Eq. 8  
+
+> 8:
+
+Generate ˆ y𝑡 and extract ˆT𝑡 +1: 𝑡 +𝐻  
+
+> 9:
+
+Compute Ltrue and Lpred by Eqs. 17 and 19  
+
+> 10:
+
+Update 𝜃 and thermal coefficients by minimizing Eq. 20  
+
+> 11:
+
+end for  
+
+> 12:
+
+Freeze 𝜃 
+
+Phase II: Online RL Policy Learning  
+
+> 13:
+
+for each environment step 𝑡 do  
+
+> 14:
+
+Generate ˆ y𝑡 from Eq. 9  
+
+> 15:
+
+for each branch 𝑑 = 1, . . . , 𝐷 do  
+
+> 16:
+
+Select 𝑎 𝑡,𝑑 with 𝑄 𝑑 (𝑜 𝑡 , 𝑎, ˆy𝑡 ; Φ) from Eqs. 21  
+
+> 17:
+
+end for  
+
+> 18:
+
+Execute 𝑎 𝑡 ; observe 𝑜 𝑡 +1 and 𝑟 𝑡  
+
+> 19:
+
+Generate committed rollout ˆ y′ 
+
+> 𝑡
+
+using Eq. 22  
+
+> 20:
+
+Store (𝑜 𝑡 −𝐿 :𝑡 , 𝑎 𝑡 −𝐿 :𝑡 , 𝑟 𝑡 , 𝑜 𝑡 +1, ˆy𝑡 , ˆy′ 
+
+> 𝑡
+
+) in Drl  
+
+> 21:
+
+if it is time to update Φ then  
+
+> 22:
+
+Sample a minibatch from Drl  
+
+> 23:
+
+Compute ˆ 𝑟 (𝑎 𝑡 ) 
+
+> 𝑡 +𝑘
+
+for 𝑘 = 1, . . . , 𝐻 − 1 
+
+> 24:
+
+Compute 𝐺 (ℎ) 
+
+> 𝑡
+
+(𝑎 𝑡 ) and 𝑦 𝜆 𝑡 by Eqs. 23 and 24  
+
+> 25:
+
+Update Φ by minimizing LRL (Φ) in Eq. 25  
+
+> 26:
+
+Soft-update target parameters ¯ Φ ← 𝜅 Φ + ( 1 − 𝜅 ) ¯Φ 
+
+> 27:
+
+end if  
+
+> 28:
+
+end for  
+
+> 11 Conference’27, August 2027, San Jose, California, USA Yang et al.
+
+## B Experimental and Environmental Details B.1 SemiBuildingSim Environment 
+
+B.1.1 Environment Construction and Case Study Modeling. To com-prehensively evaluate the proposed control strategies, we utilize SemiBuildingSim, a high-fidelity simulator designed to replicate the complex thermal and energy dynamics of a real-world building. The simulation environment is grounded in historical data collected from a seven-zone office building in Hebei Province, China [59]. The building operates primarily during standard working hours (9:00-19:00 on weekdays), with reduced occupancy around lunchtime. An average of 12.4 people occupied the office (August 7 to August 22), with typical weekday usage and no regular weekend activity. As shown in Fig. 7, the building comprises several individual rooms and a hall. One fan coil unit (FCU) is installed in each thermal zone. FCUs 1–4 each serve an individual cellular office, whereas FCUs 5–7 serve zones that allow inter-zone heat exchange. The FCUs receive chilled or heated water from a central refrigeration station comprising a heat pump and a circulating water pump. The pump distributes water to all FCUs through a closed-loop pipe net-work, while the heat pump provides the thermal source for cooling and heating. An overview of the HVAC system configuration and representative devices is shown in Fig. 8. 
+
+Figure 7: Layout of the office building. Source from [65]. 
+
+The simulator comprises three rigorously coupled components: indoor zone models, parameterized HVAC equipment models, and a dynamic cooling water pipe network [59]. The indoor thermal dynamics are captured using a lumped capacitance approach that accounts for building envelope conduction (via the OTTV method), solar radiation, instantaneous occupancy loads, inter-zone heat transfer, and the sensible cooling/heating capacities delivered by the terminal HVAC units. The hydraulic pipe network utilizes a directed graph topology, solving the complete set of nonlinear hydraulic equations at each time step using the Newton-Raphson method to ensure mass continuity and system pressure-flow balance. To support simulator calibration and monitor indoor thermal conditions, a comprehensive sensing infrastructure is deployed. At the zone level, each thermal zone is equipped with indoor air temperature sensors (Fig. 8(f)), and occupancy is inferred from ceiling-mounted video cameras (Fig. 8(c, g)). At the terminal side, each FCU is instrumented with a water flow meter, supply and return water temperature sensors, and pressure sensors (Fig. 8(b)). In the central plant, the variable frequency drive (VFD) circulating water pumps (1 Hz control resolution) are equipped with pressure and temperature sensors (Fig. 8(d)), and their electrical power is measured via electrical meters (Fig. 8(e)). All sensors operated con-tinuously during HVAC runtime. 
+
+B.1.2 Observation and Action Spaces. The environment operates as a partially observable Markov decision process (POMDP), where the agent receives states and issues control commands at a fixed discrete timestep of Δ𝑡 = 5 minutes. 
+
+Observation Space: The state vector s𝑡 captures the current thermodynamic and operational context of the building. This in-cludes the indoor air temperatures of the 7 zones 𝑇 in ,𝑖 , the instanta-neous occupant counts 𝑛 p,𝑖 , outdoor weather conditions, and the current operational states of the HVAC system components. 
+
+Action Space: The control variables actuate the terminal distri-bution systems across the building. The action space is formulated as a MultiDiscrete space, allowing for the independent control of the 7 FCUs installed in the respective thermal zones. For each FCU, the controller selects from 4 discrete fan operational modes (e.g., off, low, medium, high). Consequently, the joint action at time step 
+
+𝑡 is defined as a𝑡 ∈ { 0, 1, 2, 3}7.
+
+B.1.3 Performance Metrics and Reward Function. To comprehen-sively assess the proposed building control strategies, we adopt a dual-objective evaluation framework that quantifies both occu-pant thermal comfort and HVAC energy use. These metrics define the reinforcement learning (RL) reward signal and are used for continuous controller performance evaluation. 
+
+Thermal Discomfort and Energy Metrics. Thermal comfort is eval-uated using the Predicted Mean Vote (PMV) and Predicted Per-centage of Dissatisfied (PPD) indices [15]. For the specific office conditions, the calculations assume an air velocity of 𝑣 = 0.15 m/s, relative humidity of RH = 40%, clothing insulation of 𝐼 𝑐𝑙 = 0.63 clo, and a metabolic rate of 𝑀 = 1.1 met. Due to the well-insulated en-velope, the mean radiant temperature 𝑇 𝑟 is approximated to equal the zone air temperature 𝑇 𝑎 .A PMV value of 0 indicates neutral thermal sensation, with an acceptable range of [− 0.5, +0.5] corresponding to a PPD below 10% [3]. The system-level discomfort at time step 𝑡 is computed as the occupancy-weighted mean PPD across all active zones: PPD mean ,𝑡 =
+
+
+
+1
+
+𝑁 𝑡 
+
+Í𝐽 𝑖 =1 𝑛 𝑖,𝑡 · PPD 𝑖,𝑡 , 𝑁 𝑡 > 0,
+
+0, 𝑁 𝑡 = 0,
+
+(26) where 𝐽 = 7 is the number of zones, 𝑛 𝑖,𝑡 is the occupancy count in zone 𝑖 , and 𝑁 𝑡 = Í𝐽 𝑖 =1 𝑛 𝑖,𝑡 is the total number of occupants. Energy consumption is measured as the total HVAC electrical power 𝑃 𝑡 (in kWh) at each time step 𝑡 , returned by the simulator. Cumulative energy over an episode is computed as 𝐸 = Í𝑡 𝑃 𝑡 · Δ𝑡 .
+
+Composite Reward Function. The objective of the RL agent is to maximize the expected cumulative reward. At each time step 𝑡 ,the composite reward 𝑟 𝑡 is formulated to balance thermal comfort, energy conservation, and system operational stability: 
+
+𝑟 𝑡 = −𝑟 comfort − 𝛼 · 𝑟 energy − 𝛽 · 𝑅 smooth ,𝑡 (27)  
+
+> 12 ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA
+
+Figure 8: HVAC system configuration. (a) FCUs of zones 5 to 7. (b) Sensors of FCU 1. (c) Video sampling of zone 7. (d) Sensors of water pumps. (e) Electrical cabinet. (f) Temperature sensor. (g) Video camera of zone 2. Source from [65]. 
+
+where 𝑟 comfort penalizes thermal discomfort based on the calculated PPD mean ,𝑡 , and 𝑟 energy penalizes the total electrical power consump-tion 𝑃 𝑡 .To optimize control performance and ensure physically plau-sible control, we introduce a smoothness penalty 𝑅 smooth ,𝑡 . This term explicitly discourages high-frequency oscillation and abrupt switching between FCU modes, thereby reducing mechanical wear and extending equipment longevity. The weighting coefficients are empirically established: the energy penalty coefficient is set to 𝛼 = 20. For the smoothness regularization, the coefficient is 
+
+𝛽 = 5 when employing a Log smoothness reward, and 𝛽 = 3 when utilizing a linear smoothness reward. 
+
+## B.2 Sinergym 2ZoneDataCenter Environment 
+
+B.2.1 Environment Construction. To benchmark our proposed con-trol strategy against baselines, we utilize the 2ZoneDataCenter 
+
+environment provided by the open-source Sinergym framework [ ?
+
+]. Sinergym serves as a Python-based virtual testbed that integrates deep reinforcement learning algorithms with the high-fidelity En-ergyPlus building simulation engine. The selected building model represents a single-story data center with a total surface area of 491.3 m 2. The facility is divided into two asymmetrical thermal zones: the West Zone and the East Zone. Unlike typical commercial buildings, the primary internal heat load in this environment is generated continuously by the hosted server racks (ITE objects), and the building has no windows or internal mass. To manage this intense thermal output, each zone is equipped with an HVAC system consisting of an air economizer, direct and indirect evaporative coolers, a single-speed direct expansion (DX) cooling coil, a chilled water coil, and a Variable Air Volume (VAV) system without reheat air terminal units. 
+
+B.2.2 Observation and Action Spaces. The environment is formu-lated as a discrete-time Markov Decision Process (MDP), where the agent interacts with the EnergyPlus backend via Sinergym’s Gymnasium interface. 
+
+Observation Space: The state vector s𝑡 encompasses both ex-ogenous disturbances and the internal thermodynamic state of the data center. Key observations include outdoor weather variables (e.g., outdoor air temperature, relative humidity, solar radiation), the current indoor air temperatures of the West and East zones, and the instantaneous power consumption of the HVAC components and IT equipment. 
+
+Action Space: The control variables manipulate the thermal setpoints of the HVAC system to regulate the cooling capacity delivered to the servers. The action space dictates the continuous cooling and heating temperature setpoints for both the West and East zones. By dynamically adjusting these setpoints, the controller coordinates the mechanical cooling and economizers. 
+
+B.2.3 Reward Function and Comfort Constraints. In data center operations, maintaining a strict thermal environment is critical for equipment reliability, while minimizing energy consumption is essential for operational sustainability. Following Sinergym’s official linear reward architecture, we define a dual-objective reward function that balances energy efficiency and thermal safety. For our specific case study, the operational comfort tempera-ture range for the server zones is strictly defined as [𝑇 low ,𝑇 high ] = 
+
+> 13 Conference’27, August 2027, San Jose, California, USA Yang et al.
+
+[20 ◦C, 26 ◦C]. The temperature deviation penalty Δ𝑇 𝑖,𝑡 at time step 
+
+𝑡 is calculated as the magnitude of the violation from this safe operating band for each zone: 
+
+Δ𝑇 𝑖,𝑡 = max (0,𝑇 𝑖,𝑡 − 26 ) + max (0, 20 − 𝑇 𝑖,𝑡 ), (28) where 𝑇 𝑖,𝑡 is the indoor air temperature of zone 𝑖 ∈ { West , East }.The step reward 𝑟 𝑡 computes a weighted sum of the energy penalty and the temperature violation penalty. To ensure both ob-jectives are scaled appropriately, the terms are normalized relative to their maximum operational limits: 
+
+𝑟 𝑡 = −𝛼 · 𝜔 ·
+
+ 𝐸 𝑡 
+
+𝐸 max 
+
+
+
+− 𝛽 · ( 1 − 𝜔 ) · 
+
+ Í 𝑖 Δ𝑇 𝑖,𝑡 
+
+𝑇 max 
+
+
+
+, (29) where 𝐸 𝑡 is the total electrical power consumption of the HVAC sys-tem at time step 𝑡 , and 𝐸 max and 𝑇 max are normalization constants established by the environment’s empirical bounds. The weighting coefficient 𝜔 ∈ [ 0, 1] dictates the trade-off between energy con-servation and thermal compliance. By imposing a hard penalty on temperatures outside the 20 ◦C to 26 ◦C threshold, the agent is incen-tivized to leverage free cooling dynamically without jeopardizing server integrity. We set 𝜔 = 0.5, 𝛼 = 1, 𝛽 = 5 × 10 −3.
+
+> 14
+
+ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA 
+
+## C Additional Experiments C.1 Sinergym ID Control Comparison 
+
+We provide additional ID control results on two representative scenarios: the Winter setting of SemiBuildingSim and the Arizona 
+
+setting of Sinergym. Tab. ?? and Fig. 9 show that ADAPT consis-tently achieves higher energy savings while maintaining occupant comfort within the desired temperature range. These results further demonstrate that the proposed physics-aware diffusion IEWM accu-rately captures building thermal dynamics under different seasons and climate conditions, providing reliable thermal baselines that consistently improve downstream HVAC control. 
+
+Table 4: Performance comparisons on SemiBuildingSim Sum-mer (mean ± std over three seeds, ID). Lower is better. 
+
+Algorithm Energy (kWh) ↓ Abs PMV ↓ PPD (%) ↓ Action Fluctuation ↓
+
+MPC 251 .00 ± 9.79 0.56 ± 0.06 16 .20 ± 1.08 9.94 ± 1.13 
+
+A2C 247 .28 ± 3.21 0.48 ± 0.03 13 .05 ± 1.46 6.02 ± 1.03 
+
+PPO 236 .52 ± 2.90 0.46 ± 0.04 12 .62 ± 0.75 4.94 ± 1.46 
+
+DQN 248 .41 ± 3.89 0.50 ± 0.05 13 .02 ± 0.77 6.59 ± 0.55 
+
+BDQ 241 .87 ± 2.73 0.45 ± 0.05 11 .40 ± 1.28 5.40 ± 0.46 
+
+TransformerRL 233 .97 ± 4.36 0.42 ± 0.03 11 .72 ± 1.62 4.66 ± 0.65 
+
+MBVE 236 .25 ± 3.03 0.42 ± 0.02 11 .10 ± 0.18 5.08 ± 0.71 
+
+MBPO 234 .66 ± 2.49 0.41 ± 0.01 11 .34 ± 0.12 4.23 ± 0.77 
+
+DreamerV3 228 .84 ± 2.43 0.40 ± 0.02 10 .65 ± 0.35 5.29 ± 0.88 
+
+ADAPT (Ours) 219 .48 ± 1.50 0.28 ± 0.01 7 .56 ± 0.05 3.62 ± 0.48 Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec  
+
+> -4% 4% 12% 20% 28%
+> (a) Energy Saving vs RBC Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+> -0.214 0.339 0.892 1.444 1.997
+> (b) Temperature Violation
+> RBC A2C BDQ DQN PPO TransformerRL MBPO MBVE DreamerV3
+> ADAPT(Ours)
+
+Figure 9: Comparison of ADAPT with baseline controllers in Sinergym under the ID control setting for the Arizona environment. Subfigure (a) reports energy saving relative to RBC, and subfigure (b) reports temperature violation. Higher energy saving and lower temperature violation indicate bet-ter overall control performance. 
+
+## C.2 SemibuildSim OOD Control Comparison 
+
+Figure 10 shows that under Summer →Winter seasonal transfer, ADAPTconsistently achieves the best balance between HVAC en-ergy efficiency and occupant comfort. The proposed physics-aware diffusion IEWM accurately captures transferable building thermal dynamics across seasons, enabling robust downstream control with lower energy consumption while maintaining indoor temperatures within the desired comfort range. ADAPT (Ours)    
+
+> w/o Phys. Mamba WM VAE WM
+> 220 230
+> Energy (kWh)
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+> 0.30 0.35 0.40
+> Abs PMV
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+> 8910
+> PPD (%)
+> ADAPT (Ours)
+> w/o Phys. Mamba WM VAE WM
+> 46
+> Action Fluctuation
+> ADAPT (Ours) w/o Phys. Mamba WM VAE WM
+
+Figure 10: Comparison of different IEWMs downstream con-trol performance on SemibuildingSim Winter → Summer transfer. Lower is better. 
+
+15 Conference’27, August 2027, San Jose, California, USA Yang et al. 
+
+## D Implementation Details D.1 Implementation of World Models 
+
+This section describes the implementation details of the world models used in our experiments. The proposed method is ADAPT ,the two neural world-model baselines are the MambaFormer and the VAE. All models are implemented in PyTorch and optimized with Adam. 
+
+Dataset collection and input layout. We construct transition datasets with a held-action protocol. Each training sample contains a his-tory window as the conditioning variable and a flattened future observation sequence as the prediction target, 
+
+𝑐 𝑡 = [o𝑡 −𝑁 +1: 𝑡 , a𝑡 −𝑁 +1: 𝑡 −1, 𝑎 𝑡 :𝑡 +𝐻 −1 = 𝑎 𝑡 −1], y = o𝑡 +1: 𝑡 +𝐻 .
+
+(30) The previous action 𝑎 𝑡 −1 is held fixed over the forecast horizon, matching the dataset generation procedure used by all world models. In SemiBuildingSim, the control interval is 5 minutes, the context length is 𝑁 = 6, and the forecast horizon is 𝐻 = 3. In Sinergym, the control interval is 15 minutes, the context length is 𝑁 = 4, and the forecast horizon is 𝐻 = 2. 
+
+Normalization and training protocol. Continuous inputs and tar-gets are normalized before training. Unless otherwise specified, models use a random seed of 3407, test split 0.2, batch size 64, learn-ing rate 10 −4, weight decay 10 −5, maximum 200 epochs, gradient clipping with norm 1.0, and early stopping on validation RMSE with patience 12. 
+
+ADAPT diffusion world model. ADAPT formulates world-model prediction as conditional denoising. A Temporal U-Net denoiser 
+
+𝑓 𝜃 is trained inside a Gaussian diffusion model with 20 denoising steps, dimension multiplier (8), hidden dimension 256, exponential moving average decay 0.995, and gradient accumulation every 2 mini-batches. The model uses an L1 denoising loss. Given the conditioning vector 𝑐 𝑡 , the reverse process iteratively samples ˆy ∼ 𝑝 𝜃 (y | c), (31) and the resulting denormalized sequence is evaluated as the multi-step world-model forecast. At evaluation time we use the EMA denoiser and enable clipped denoising for stable conditional sam-ples. 
+
+Thermal physics regularization. ADAPT augments the denoising objective with a differentiable multi-zone RC residual. For room 𝑖 ,the residual is based on 
+
+𝐶 𝑖 
+
+𝑑𝑇 𝑖 
+
+𝑑𝑡 = −[ 𝐾 T]𝑖 + 𝑘 out  
+
+> 𝑖
+
+𝑇 out + 𝑏 hvac  
+
+> 𝑖
+
+𝑢 𝑖 + 𝑏 occ  
+
+> 𝑖
+
+𝑂 𝑖 + 𝑑 𝑖 , (32) where 𝐾 = 𝐿 + diag (𝑘 out ) and 𝐿 is a learned symmetric graph Laplacian. The HVAC driver uses the held FCU fan mode and supply-water temperature, 
+
+𝑢 𝑖 = −𝜙 𝑖 (fan 𝑖 )( 𝑇 𝑖 − 𝑇 sup  
+
+> 𝑖
+
+), (33) where 𝜙 𝑖 (·) is a learned monotone map over the discrete fan modes. The physical penalty combines a Huber penalty on the predicted trajectory residual, a Huber penalty on the true trajectory residual for RC parameter calibration, and a small bias regularizer: 
+
+Lphys = 𝜆 pred 𝜌 𝛽 (𝑟 pred ) + 𝜆 true 𝜌 𝛽 (𝑟 true ) + 𝜆 d ∥𝑑 ∥22. (34) 
+
+Table 5: Physical-loss hyper-parameters of ADAPT. 
+
+Parameter Value 
+
+Predicted RC residual weight 𝜆 pred 0.2True RC residual weight 𝜆 true 0.5Bias penalty weight 𝜆 bias 1×10 −1
+
+Time step Δ𝑡 1.0Huber threshold 𝛽 0.25                
+
+> Condition history [o𝑡 −𝑁 +1: 𝑡 ,a𝑡 −𝑁 +1: 𝑡 −1]
+> Physical/min-max normalization Future target y=o𝑡 +1: 𝑡 +𝐻
+> Forward diffusion: add Gaussian noise Temporal U-Net denoiser Reverse diffusion, 20 steps Forecast ˆy
+> Residual loss on denormalized temperatures
+
+Figure 11: ADAPT architecture for conditional diffusion world-model prediction. 
+
+Tab. 5 reports the physical-loss parameters used by ADAPT . 
+
+Evaluation metrics. For continuous state variables, we report Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), coefficient of variation of RMSE (CVRMSE), and 𝑅 2 where applicable. For SemiBuildingSim occupancy-related targets, we additionally report Occupancy Exact Match Rate (OCC EMR) after converting the normalized predictions back to the original scale. 
+
+ADAPT architecture. Figure 11 illustrates the ADAPT training and sampling pipeline. The conditioning history is repeated across the diffusion horizon, the Temporal U-Net denoises the future target vector, and the heat-balance equation regularizes the denormalized temperature trajectory during training. 
+
+## D.2 MPC Implementation Details 
+
+We use a sampling-based model predictive control (MPC) approach for online decision making. At each environment step, the controller plans over a finite horizon using the learned indoor environment world model (IEWM), evaluates imagined trajectories using a combi-nation of a reward evaluator and a learned terminal value function, and executes only the first action of the best-scoring sequence. The procedure is repeated after the next observation is received.  
+
+> 16 ADAPT: A Diffusion-based Adaptive Physics-aware Indoor Environmental World Model for Transferable HVAC Control Conference’27, August 2027, San Jose, California, USA
+
+Planning objective. Let 𝑜 𝑡 denote the current observation and let a𝑡 :𝑡 +𝐻 −1 = (𝑎 𝑡 , . . . , 𝑎 𝑡 +𝐻 −1) be a candidate action sequence of horizon 𝐻 . The IEWM is used to recursively predict future states. We specifically utilize its single-step forward prediction, ˆ𝑜 𝑡 +𝑘 +1 = 𝑓 𝜃 ( ˆ𝑜 𝑡 +𝑘 , 𝑎 𝑡 +𝑘 ), ˆ𝑜 𝑡 = 𝑜 𝑡 , (35) where all planning rollouts are performed in the prediction space of the IEWM. To account for the long-term return beyond the fi-nite planning horizon, we bootstrap using a learned terminal value function 𝑉 𝜓 (·) . The quality of a candidate sequence is computed by accumulating discounted rewards and adding the temporal differ-ence (TD) value estimate at the terminal state, 
+
+𝐽 (a𝑡 :𝑡 +𝐻 −1) = 
+
+> 𝐻 −1
+
+∑︁ 
+
+> 𝑘 =0
+
+𝛾 𝑘 𝑔 ( ˆ𝑜 𝑡 +𝑘 , 𝑎 𝑡 +𝑘 ) + 𝛾 𝐻 𝑉 𝜓 ( ˆ𝑜 𝑡 +𝐻 ), (36) where 𝑔 (·) is the reward evaluator. 
+
+Iterative action-sequence planning. Following the trajectory op-timization scheme used in TD-MPC2 [22], we employ an itera-tive sampling procedure. At each planning iteration 𝑗 , the MPC maintains a factorized Gaussian proposal distribution over action sequences: 
+
+𝑞 ( 𝑗 ) (a) = 
+
+> 𝐻 −1
+
+Ö
+
+> 𝑘 =0
+
+N ( 𝑎 𝑡 +𝑘 ; 𝜇 ( 𝑗 ) 
+
+> 𝑘
+
+, (𝜎 ( 𝑗 ) 
+
+> 𝑘
+
+)2𝐼 ). (37) For the initial iteration ( 𝑗 = 1), the mean sequence 𝜇 (1) is initialized to the center of the valid action space. At each iteration, we sample 
+
+𝑁 candidate action sequences from this proposal distribution. Each sampled sequence is rolled out with the IEWM and scored by Eq. (36). We then select the top 𝐾 sequences to update the dis-tribution parameters 𝜇 ( 𝑗 +1) and 𝜎 ( 𝑗 +1) for the next iteration using the Cross-Entropy Method (CEM). After 𝑀 planning iterations, the controller selects the highest-scoring sequence from the final elite set, 
+
+a★  
+
+> 𝑡 :𝑡 +𝐻 −1
+
+= arg max     
+
+> a(𝑖 )
+> 𝑡 :𝑡 +𝐻 −1
+
+𝐽 (a(𝑖 ) 
+
+> 𝑡 :𝑡 +𝐻 −1
+
+), (38) and executes only its first action 𝑎 ★ 
+
+> 𝑡
+
+. This receding-horizon proce-dure replans after every real environment transition. 
+
+Hyperparameters. We use the MPC hyperparameters detailed in Tab. 6. 
+
+Table 6: MPC hyperparameters. 
+
+Hyperparameter Value Planning horizon 𝐻 6Number of candidate sequences 𝑁 16 Number of elite samples 𝐾 4Planning iterations 𝑀 3Discount factor 𝛾 0.98 
+
+## D.3 Online RL Policy Learning 
+
+All methods are trained for a total of 10 6 timesteps. For the discrete action space, DQN utilizes a Discrete representation, while all other algorithms employ a MultiDiscrete action space, modeled as factorized categorical distributions over action branches. To ensure a fair comparison, model-based extensions (MBVE, MBPO) are implemented using the same PPO backbone. Detailed hyper-parameters for our proposed DECARB, the model-free baselines, and the model-based baselines are summarized in Tab. 7, Tab. 8, and Tab. 9, respectively. 
+
+## D.4 Computational Cost 
+
+All experiments are conducted on an NVIDIA A100 GPU. The offline training of the indoor environmental world model requires about 12 hours. Subsequently, the downstream online RL training takes an average of 10 hours in SemiBuildingSim and 16 hours in the Sinergym environment. During inference, one time step diffusion costs about 150ms, ensuring the real-time control of HVAC systems.  
+
+> 17 Conference’27, August 2027, San Jose, California, USA Yang et al.
+
+Table 7: Hyper-parameters for the proposed ADAPT ( 𝐻 𝑓 𝑜𝑟𝑒 , 𝐻,𝑇 on SemiBuildingSim). Hyper-parameter Value Hyper-parameter Value 
+
+Optimizer Adam Learning rate 2×10 −3
+
+Discount factor 𝛾 0.99 Replay buffer size 5×10 5
+
+Batch size 64 Exploration 𝜀 1.0 → 0.04 Target update interval 1000 steps TD (𝜆 ) parameter 0.8Bootstrap horizon 𝐻 3 Forecaster horizon 𝐻 fore 3Network architecture (512 , 512 ) Forecaster History step 𝑇 6
+
+Table 8: Hyper-parameters for Model-Free Baselines. Parameter DQN BDQ A2C PPO TransformerRL 
+
+Learning rate 2×10 −3 2×10 −3 8×10 −4 10 −3 10 −3
+
+Discount factor 𝛾 0.99 0.99 0.98 0.98 0.98 Batch size 64 64 40 1200 1200 Network hidden dim 256 512 256 256 256 GAE 𝜆 – – 0.9 0.8 0.8PPO Clip 𝜀 – – – 0.2 0.2Entropy coef. – – 0 0.01 0.01 
+
+Table 9: Hyper-parameters for Model-Based Baselines (MBVE and MBPO built on the PPO backbone). Parameter MBVE MBPO DreamerV3 
+
+Rollout / Imagination horizon 8 8 8Transitions / Starts per iter. 256 1024 256 Blend / Return 𝜆 1.0 – 0.95 Warmup (iters) 3 3 3
