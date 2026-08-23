@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-22</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-23</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-22 20:30:51 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-23 20:08:29 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共梳理5篇论文，重点精读1篇、速读3篇，聚焦3D场景记忆与具身智能新进展。</p>
-<p>最值得关注的是《GaussMemory》，用任务驱动的3D高斯场景记忆提升长程机器人操作能力，评分8.0/10；另两篇涉及轨迹预测与VLA推理效率优化，可作扩展参考。</p>
-<p>建议优先精读GaussMemory的方法框架，再按需浏览其余三篇的采样策略或硬件协同设计，快速把握具身智能前沿趋势。</p>
+<p>今日精读2篇+速读1篇，聚焦灵巧操作力觉重定向与概率时间序列预测两大前沿方向。</p>
+<p>最值得深读：ReForce（力觉感知重定向，8.0分）与CLaST（上下文感知对比VAE，8.0分），均属高价值精读。</p>
+<p>若时间有限，优先看ReForce如何提升灵巧操作泛化能力，速读EgoTac作兴趣扩展即可。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GaussMemory: Task-Driven 3D Gaussian Scene Memory for Long-Horizon Robotic Manipulation">GaussMemory: Task-Driven 3D Gaussian Scene Memory for Long-Horizon Robotic Manipulation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ReForce: Learning Force-aware Retargeting for Dexterous Manipulation">ReForce: Learning Force-aware Retargeting for Dexterous Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="CLaST: Context-aware Contrastive VAE for Probabilistic Time Series Forecasting">CLaST: Context-aware Contrastive VAE for Probabilistic Time Series Forecasting</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">4 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Non-Parametric Spatiotemporal Trajectory Prediction via State-Conditioned Transition Sampling">Non-Parametric Spatiotemporal Trajectory Prediction via State-Conditioned Transition Sampling</span></li><li><span class="dpr-home-dashboard-paper-title" title="Algorithm-Architecture Co-Design for Efficient VLA Inference via Speculative Inference and Verification">Algorithm-Architecture Co-Design for Efficient VLA Inference via Speculative Inference and Verification</span></li><li><span class="dpr-home-dashboard-paper-title" title="Zetta $ζ$: An Efficient Closed-Loop Embodied Harness for Self-Evolving Physical Intelligence">Zetta $ζ$: An Efficient Closed-Loop Embodied Harness for Self-Evolving Physical Intelligence</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="EgoTac: In-the-wild Tactile Prediction from Egocentric Vision">EgoTac: In-the-wild Tactile Prediction from Egocentric Vision</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>3</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>1</strong></span></div>
 </section>
 </div>
 
