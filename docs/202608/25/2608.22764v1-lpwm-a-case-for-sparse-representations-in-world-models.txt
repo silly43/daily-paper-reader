@@ -1,0 +1,10027 @@
+Title: LpWM: A Case for Sparse Representations in World Models
+
+URL Source: https://arxiv.org/pdf/2608.22764v1
+
+Published Time: Tue, 25 Aug 2026 01:33:31 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# LpWM: A Case for Sparse Representations in World Models 
+
+Yilun Kuang ∗
+
+NYU, AMI Labs 
+
+Yash Dagade 
+
+Duke University 
+
+Quentin Le Lidec 
+
+NYU, AMI Labs 
+
+Lucas Maes 
+
+Mila, AMI Labs 
+
+Randall Balestriero 
+
+Brown University, AMI Labs 
+
+Yann LeCun 
+
+NYU, AMI Labs 
+
+Abstract 
+
+Joint-embedding predictive architectures (JEPAs) learn latent dynamics for plan-ning and avoid representation collapse by matching features to maximum-entropy distributions such as isotropic Gaussians, yielding dense representations. However, it is unclear whether dense representations are the most favorable geometry for modeling dynamics. In this work, we ask whether a different geometry—sparse representations—can make action-conditioned latent dynamics easier to model, and what dynamical structure emerges from such representations. We first show that nonlinear Lipschitz dynamics can be approximated arbitrarily well by action-conditioned linear dynamics in a sufficiently high-dimensional one-hot latent space, with rollout error vanishing as the dimension grows. This motivates distributed sparse representations as a practical relaxation of one-hot sparsity. We introduce LpWorldModel (LpWM), a JEPA model regularized with Rectified Distribution Matching Regularization (RDMReg) to match encoder features to a Rectified Gen-eralized Gaussian distribution, yielding non-negative sparse codes. Empirically, sparsity lowers the predictor complexity required for successful planning: on PushT, sparse LpWM outperforms dense LeWM by up to 57% in planning success at intermediate predictor capacities. This advantage also extends beyond Gaussian distribution matching, with LpWM outperforming dense VICReg representations across multiple predictor families. We further find that the learned sparse repre-sentations are mode-factored, with support encoding discrete dynamical regimes and feature magnitudes capturing continuous within-regime state. Together, these results suggest that sparse representations can reduce the predictor complexity required for control while revealing interpretable structure. 
+
+1 Introduction 
+
+Joint-embedding predictive architectures (JEPA) have emerged as a practical recipe for model-based control from pixels: an encoder maps observations to a latent space, a predictor rollouts the latent forward under actions, and planning is carried out by model-predictive control (MPC) in latent space [LeCun et al., 2022]. In the case of end-to-end training, where the encoder and predictor are jointly trained, an anti-collapse loss is necessary to prevent the feature representation from degenerating to a constant or low-rank subspaces [Jing et al., 2021]. Prior methods such as PLDM [Sobal et al., 2025] use VCReg [Bardes et al., 2022], while LeWM [Maes et al., 2026b] uses SIGReg [Balestriero and LeCun, 2025] to prevent collapse through informa-tion maximization, yielding dense representations in which all latent coordinates are nonzero almost     
+
+> ∗Correspondence to: Yilun Kuang <yilun.kuang@nyu.edu>, Yann LeCun <yann.lecun@nyu.edu>. Code: https: //github.com/YilunKuang/lpworldmodel .Preprint. arXiv:2608.22764v1 [cs.LG] 24 Aug 2026 ot
+> Enc f
+> ReLU
+> zt
+> Pred
+> g
+> at
+> zt
+> ReLU
+> ˆzt+1
+> ot+1
+> Enc f
+> ReLU
+> zt+1
+> MSE ↓
+> RDMReg
+
+(a) LpWM Schematic Diagram 020 40 60 80 100        
+
+> Open-Loop
+> Dimension
+> D= 384
+> D= 768
+> D= 1536
+> D= 2048
+> D= 4096
+> Deep-AdaLN (k)
+> Shallow-AdaLN (k)
+> MLP LTV (k)
+> MLP LTI (k)
+> LTI (k)
+> LTI (1)
+> 020 40 60 80 100
+> Closed-Loop
+> Method
+> LeWM LpWM ( )
+> LpWM ( )
+> Success Rate ( %)
+
+Predictor Type (b) PushT Planning Performance. 
+
+Figure 1: LpWorldModel: a JEPA model with sparse representations. (a) An encoder f maps observation ot to non-negative, sparse latents zt via a terminal (Rep)ReLU function. The predictor g
+
+takes inputs zt and actions at to predict ˆzt+1 , compared against the encoded target zt+1 = f (ot+1 ).RDMReg [Kuang et al., 2026b] matches per-timestep latent marginals to a Rectified Generalized Gaussian, preventing collapse and inducing sparsity. (b). Arrows indicate the success-rate difference between LpWM and LeWM: ↑ denotes higher performance for LpWM, while ↓ denotes lower perfor-mance. LpWM outperforms LeWM with more linear predictor variants (MLP ◦LTV (k), MLP ◦LTI (k),and LTI (k). See full specifications in Table 1) by up to 57% in success rate, while performing on par with LeWM using the high-capacity DiT predictors. This suggests that sparse representations induce a latent space with simpler dynamics to learn compared to their dense counterparts. surely. While effective for preventing collapse, it remains unclear whether dense features are the most favorable geometry for modeling controlled dynamics. In this work, we ask whether sparse representations provide a more favorable geometry for modeling action-conditioned dynamics. Our motivation comes from an idealized limit: for Lipschitz controlled dynamics on a compact state space, sufficiently high-dimensional one-hot representations can ap-proximate the dynamics with action-conditioned linear latent dynamics (Proposition 1), with rollout error vanishing as the dimension grows (Corollary 1). While exact one-hot codes are impractical, this suggests distributed sparse representations, in which a nontrivial fraction of latent coordinates are exactly zero, as a learnable relaxation that may simplify the dynamics. We introduce LpWorldModel ( LpWM ), a JEPA world model regularized with RDMReg [Kuang et al., 2026b] to learn non-negative, sparse codes. RDMReg matches rectified feature distributions to Rectified Generalized Gaussian targets, whose underlying Generalized Gaussian distributions are maximum-entropy under expected ℓp-norm constraints with p ≤ 1 yields sparse targets. Empirically, sparsity lowers the predictor complexity required for successful planning: predictors that fail over dense codes succeed over sparse ones. The resulting representations are also mode-factored: their support encodes discrete dynamics regimes, while feature magnitudes encode continuous within-regime state. Together, these results suggest that sparse latent geometry can make dynamics both easier to model and more interpretable. 
+
+Contributions. 
+
+• LpWorldModel . We introduce LpWM, a JEPA world model that uses RDMReg to learn non-negative sparse latent representations for latent dynamics modeling and planning. • Sparse representations for latent linearization . We formalize the intuition that sufficiently high-dimensional one-hot representations can approximate nonlinear controlled dynamics with linear latent transitions, motivating distributed sparse codes as a practical relaxation. 2• Lower-complexity latent dynamics . We show empirically that sparsity reduces the pre-dictor capacity needed for successful planning: while Wall dynamics are already solved by linear predictors, on the harder PushT environment sparse LpWM substantially outperforms dense LeWM with intermediate-capacity predictors, by up to 57% in success rate. • Mode-factored latent dynamics . We find that sparse representations organize dynamics into interpretable factors, with support encoding discrete dynamical regimes and feature magnitudes capturing continuous within-regime state. 
+
+2 Method 
+
+2.1 LpWM: JEPA with Rectified Distribution Matching Regularization (RDMReg) 
+
+Let zt+1 = fθ (xt+1 ) ∈ Rd be the encoder representation of the observation xt+1 and ˆzt+1 =
+
+gϕ(zt, at) be the predictor output with action inputs at ∈ Rda . The action-conditioned JEPA uses the following loss function to jointly train the encoder fθ and the predictor gϕ:
+
+min  
+
+> θ,ϕ
+
+∥ˆzt+1 − zt+1 ∥2 + λRDMReg · R (zt+1 ) (1) where λRDMReg is a hyperparameter and R(·) is an anti-collapse regularizer. We focus on the setting where R(·) is the Rectified Distribution Matching Regularization (RDMReg) [Kuang et al., 2026b]: 
+
+R(z) = Ec∼Unif( Sd−1 
+
+> ℓ2)
+
+L(Pc⊤z∥Pc⊤y) (2) where the random projection vector c ∈ Rd is sampled uniformly from the ℓ2 unit sphere Sd−1 
+
+> ℓ2
+
+:= 
+
+{x ∈ Rd | ∥ x∥2 = 1 }, the target random vector y ∼ Qdi=1 ReLU( GN p(μ, σ )) follows the Rectified Generalized Gaussian (RGG) distribution, Px denotes the probability distribution for the random variable x, and L(·∥· ) is a loss function that compute discrepancies between probability distributions. In our case, we follow Kuang et al. [2026b] and set L(·∥· ) to be the 2-Wasserstein distance. By default we choose μ = 0 , σ = p1/2, and p = 1 and hence our target distribution reduces to the Rectified Laplace distribution [Kuang et al., 2026b]. Note that when μ = 0 , σ = 1 , p = 2 , and in the absence of ReLU , we recover dense isotropic Gaussian used in LeWM [Maes et al., 2026b]. 
+
+2.2 Architecture and Rectification 
+
+Following Maes et al. [2026b], our encoder fθ is a ViT [Dosovitskiy et al., 2021] with the output CLS token passed through a three-layer MLP projector to produce the embedding z ∈ Rd. The predictor gϕ is a Transformer with AdaLN-zero action conditioning [Peebles and Xie, 2023] and a final three-layer MLP projector that predicts the next embedding ˆzt+1 .To induce exact zeros, both encoder and predictor MLP projector outputs pass through a repa-rameterized ReLU [Wang et al., 2024, Kuang et al., 2026b]: RepReLU( x) = sg(ReLU( x)) + GeLU( x) − sg(GeLU( x)) , where sg( ·) denotes the stop-gradient operator. In the forward pass, 
+
+RepReLU( x) = ReLU( x), yielding exact zeros, while in the backward pass gradients flow through 
+
+GeLU( x) to mitigate the dying-ReLU pathology [Hendrycks and Gimpel, 2023]. Importantly, LpWM does not rely on stop-gradient for collapse prevention: standard ReLU with RDMReg trains without collapse and yields exactly sparse representations [Kuang et al., 2026b]. We therefore use RepReLU 
+
+as an optimization safeguard against dead neurons rather than as an essential component of the method. See Figure 1a for LpWM architecture. 
+
+2.3 Planning with the Learned World Model 
+
+At test time the world model serves as the dynamics model for model-predictive control (MPC): we encode the current and goal observation images to z0 and zg , and search for an action sequence whose predicted latent rollout minimizes the goal cost C = ∥ˆzT − zg ∥2 using the Cross-Entropy Method (CEM) [Rubinstein, 1999, Zhou et al., 2025]. See additional experimental details in Appendix D. 
+
+3 Does Sparsity Simplify Latent Dynamics? 
+
+In the following sections, we ask whether a sparse code makes the action-conditioned latent dynamics simpler by requiring a less expressive predictor than a dense code. We first show that a sufficiently 3rendered  
+
+> probe input support Jaccard
+> unrendered
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Jaccard(ref, cell)
+
+(a) Support Jaccard Heatmap. zone (accuracy) agent position (R 2) 
+
+> 0.00 0.25 0.50 0.75 1.00
+> decode score
+> 0.97 0.83 0.97 0.94
+> support emb
+
+(b) State Decoding. 5 10 15 20    
+
+> planning horizon H
+> 30 40 50 60 70 80 90
+> episodic success (%)
+> true MPC ( R= 1 )
+> LpWM (sparse) LpWM + TJ LeWM (dense)
+
+(c) Planning Evaluation. 
+
+Figure 2: The sparse support recovers the piecewise structure of the dynamics. (a) Support Jaccard heatmap over a 20 × 20 grid: the Jaccard index of each cell’s support with a fixed reference cell (white +) is high within the reference zone and drops across zone boundaries (dashed), for a model trained with rendered zones (top) and one with no visual cues (bottom). (b) The binary support decodes the ground-truth zone identity as accurately as the full embedding, while agent position is decoded better from the magnitudes than from the support. (c) Planning success vs. horizon (closed-loop, 3-seed mean ±std). Goal locations of the dot agent are sampled randomly. Both sparse variants beat dense LeWM at every horizon. high-dimensional sparse code renders the latent dynamics exactly linear under appropriate assump-tions (Proposition 1). We then relax this to a learnable distributed sparse code and test, along a predictor-complexity ladder (Table 1), whether a simpler predictor plans better under sparsity. 
+
+3.1 Linearization of Nonlinear Dynamics with Sparse Representations 
+
+In Proposition 1, we show that compact controlled systems with Lipschitz dynamics admit finite one-hot sparse encodings with exactly linear latent dynamics. This is closely related to classical symbolic abstractions based on state-space quantization [Pola et al., 2008], which we reinterpret as one-hot sparse latent codes. 
+
+Proposition 1 (Linear Approximation of Nonlinear Dynamics with Sparse Representations) . Let 
+
+X ⊂ Rd be a compact state space and let A ⊂ Rp be a compact continuous action space. Consider a deterministic discrete-time controlled dynamical system xt+1 = f (xt, at) where f : X × A → X .
+
+Assume that f is uniformly Lipschitz in the state variable, i.e. there exists a finite constant L ≥ 0
+
+such that ∥f (x, a) − f (y, a)∥ ≤ L∥x − y∥ for every x, y ∈ X and a ∈ A . Then, for every ε > 0,there exist 1) a finite latent dimension N ; 2) a one-hot sparse encoder Eε : X → RN ; 3) a decoder 
+
+Dε : {e1, . . . , eN } → X ; and 4) an action-conditioned family of matrices Pε : A → { 0, 1}N ×N ,
+
+a 7 → Pε(a), such that the latent dynamics zt+1 = Pε(at)zt are exactly linear in zt, and the decoded one-step prediction satisfies 
+
+sup   
+
+> xt∈X ,at∈A
+
+∥f (xt, at) − Dε(Pε(at)Eε(xt)) ∥ ≤ (L + 1) ε. (3) 
+
+Proof. See Appendix G.1 In Corollary 1, we consider one example of a compact domain and show that the rollout error with respect to the ground-truth dynamics vanishes as the encoding dimension grows. 
+
+Corollary 1 (Sparsity in High-Dimensions) . Let the state space be X = [0 , 1] d and consider dividing each coordinate into n equal intervals, producing N = nd grid cells. We represent each cell by its center with the covering radius εN = √d 
+
+> 2
+
+N −1/d . Hence the one-step prediction error satisfies 
+
+sup 
+
+> x,a
+
+∥f (x, a) − DεN (PεN (a)EεN (x)) ∥ ≤ √d
+
+2 (L + 1) N −1/d = O(N −1/d ). (4) 
+
+For any fixed rollout horizon H, ∥xH − ˆxH ∥ ≤ √d 
+
+> 2
+
+N −1/d PHk=0 Lk and lim N →∞ ∥xH − ˆxH ∥ = 0 .
+
+4Table 1: Predictors with Different Levels of Complexity. ˆzt+1 is the predicted latent, zt−i past latents, and at the action. AdaLN predictors are Transformer-based models with Adaptive Layer Normalization for action conditioning, i.e. DiT architecture [Peebles and Xie, 2023]. The Deep-AdaLN (k) predictor is the one used in LeWM [Maes et al., 2026b]. LTI denotes a linear time-invariant predictor with fixed operators Ai, B, while LTV denotes a linear time-varying predictor with state-dependent operators Ai(zt), B(zt). We use MLP ◦ to denote one extra nonlinear transform. The history k denotes context length, with 1 the single-frame case. The output link is σ = identity for dense LeWM and σ = RepReLU for sparse LpWM. See Appendix B for details.                                                     
+
+> Predictor Layers History ( k)Functional form
+> Deep-AdaLN (k)63ˆzt+1 =σ
+> 
+> AdaLN (6) (zt−k+1: t,at)
+> 
+> Shallow-AdaLN (k)13ˆzt+1 =σ
+> 
+> AdaLN (1) (zt−k+1: t,at)
+> 
+> MLP ◦LTV (k)13ˆzt+1 =σ
+> 
+> WReLU( Pk−1
+> i=0 Ai(zt)zt−i+B(zt)at)
+> 
+> MLP ◦LTI (k)13ˆzt+1 =σ
+> 
+> WReLU( Pk−1
+> i=0 Aizt−i+B a t)
+> 
+> LTI (k)13ˆzt+1 =σ
+> Pk−1
+> i=0 Aizt−i+B a t
+> 
+> LTI (1) 11ˆzt+1 =σ(A z t+B a t)
+
+Proof. See Appendix G.2. We note that the approximation error of one-step prediction under an exact one-hot sparse encod-ing decreases as O(N −1/d ), and therefore suffers from the curse of dimensionality. Nonetheless, Corollary 1 illustrates a useful trade-off: higher-dimensional sparse representations can simplify the latent transition map, motivating distributed sparse codes as a practical relaxation that may reduce the complexity of the learned dynamics model. In the following experiments, we test whether this simplification enables successful planning with less expressive predictors. In the special case where the learned latent dynamics reduce further to a standard linear controlled system, classical control methods such as LQR become directly applicable under standard assumptions [Kalman et al., 1960]. 
+
+3.2 Experiment Designs 
+
+In practice, exact high-dimensional one-hot encodings are infeasible to optimize, and we need exponentially large feature dimensions to linearize the latent dynamics. LpWM instead learns distributed sparse codes whose sparsity is controlled by the target-distribution parameter μ. Although these codes maybe not linearize the dynamics exactly, we hypothesize that they make the latent dynamics simpler to model than dense representations, so that lower-capacity predictors can suffice. To test this, we consider a list of predictor options in Table 1, ranging from nonlinear DiT predictors with AdaLN action conditioning [Peebles and Xie, 2023] to linear time-invariant (LTI) state-space models. We train sparse LpWM and dense LeWM with the same encoder architecture described in Section 2.2, but replace the standard DiT predictor with candidates in Table 1 across latent dimensions 
+
+D ∈ { 384 , 768 , 1536 , 2048 , 4096 } with their corresponding parameter counts in Table 2. Additionally, we test a variant of LeWM in which SIGReg [Balestriero and LeCun, 2025] is replaced with VICReg [Bardes et al., 2022], yielding another JEPA model with dense representations. For simplicity, we use VICReg to denote this LeWM variant in Figure 3b. Since our experiment design involves comparing models under width scaling, we use maximum update parameterization ( μP) to stabilize training across widths, with details in Appendix F. Experiments are conducted on Wall and PushT environments (Appendix C). 
+
+3.3 Results 
+
+In Figure 3a, we observe that for the Wall environment, even the simplest linear LTI (1) predictor reaches nearly 100% closed-loop CEM success rate for both LeWM and LpWM, leaving little room to distinguish sparse and dense representations. 5Table 2: Predictor parameter counts across latent dimensions D. Counts are for the predictor alone for each D used in our experiments. LTI, MLP ◦LTI, and MLP ◦LTV are attention-free and far smaller than the AdaLN Transformers. Predictor D=384 D=768 D=1536 D=2048 D=4096 
+
+Deep-AdaLN (k) 25 .8M 62 .2M 166 .9M 260 .2M 822 .4M
+
+Shallow-AdaLN (k) 5.6M 13 .0M 33 .1M 50 .4M 151 .1M
+
+MLP ◦LTV (k) 0.81 M 3.10 M 12 .1M 21 .4M 84 .7M
+
+MLP ◦LTI (k) 0.74 M 2.95 M 11 .8M 21 .0M 83 .9M
+
+LTI (k) 0.59 M 2.36 M 9.44 M 16 .8M 67 .1M
+
+LTI (1) 0.30 M 1.18 M 4.72 M 8.39 M 33 .6M0.4 0.5 0.6 0.7 0.8 0.9 1.0 0.4 0.5 0.6 0.7 Open-Loop      
+
+> 0.75 0.80 0.85 0.90 0.95 1.00
+
+Deep-AdaLN (k) Success                      
+
+> 0.8 0.9 1.0
+> Closed-Loop
+> Method LeWM LpWM ( = 0 )=1=2
+> Method LeWM LpWM ( = 0 )=1=2
+> LTI (1)  Success
+> Dimension
+> D= 384 D= 768 D= 1536 D= 2048 D= 4096
+
+(a) Wall Environment. LeWM vs. LpWM 020 40 60 80 100          
+
+> Open-Loop
+> Dimension
+> D= 384
+> D= 768
+> D= 1536
+> D= 2048
+> D= 4096
+> Deep-AdaLN (k)
+> MLP LTV (k)
+> MLP LTI (k)
+> 020 40 60 80 100
+> Closed-Loop
+> Method
+> VICReg LpWM ( )LpWM ( )
+> Success Rate ( %)
+
+Predictor Type (b) PushT Environment. VICReg vs. LpWM 
+
+Figure 3: Linear predictor is sufficient for the wall environment regardless of dense or sparse embeddings, and LpWM outperforms VICReg-based JEPA across predictor settings in PushT. (a) We plot the planning success rate of the linear LTI (1) predictor against the nonlinear Deep-AdaLN (k), where each dot denotes one setting of method and feature dimension. For simplicity, we use μ = ∗ to denote LpWM with the target distribution parameter μ. We show the open-loop evaluation on top and closed-loop results at bottom. Both are ran using CEM planner. We observe that the closed-loop success rate for LTI (1) predictor using SIGReg is already approaching 100% ,indicating that the wall environment can already be described well by a linear dynamics model in the latent space. (b) We have already shown LeWM vs. LpWM in Figure 1b. Here we compare LpWM with a variant of LeWM where we replaced SIGReg with VICReg in the PushT environment across predictor settings. As oppposed to SIGReg, we observe consistent improvement from LpWM over VICReg even for the Deep-AdaLN (k) predictor, and the gap between sparse LpWM and dense methods (i.e. VICReg here) continues to hold for MLP ◦LTV (k) and MLP ◦LTI (k) predictors. See full hyperparameter sweeps in Appendix H.2. We therefore turn to the harder PushT environment with results shown in Figure 1b. At the lowest predictor capacity, LTI (1) fails for both LeWM and LpWM. Thus PushT differs from Wall in that the underlying dynamics cannot be modelled well by a linear predictor in practice. At the highest capacity, Deep-AdaLN (k) and Shallow-AdaLN (k) perform similarly for both represen-tations, indicating that the predictor complexity saturates and we don’t observe significant advantages of sparse LpWM against dense LeWM. The difference emerges at intermediate capacity: on PushT, sparse LpWM improves planning success over dense LeWM by 24% –57% with MLP ◦LTI (k), 36% –45% with MLP ◦LTV (k), and 11% –23% 
+
+with LTI (k). These performance gaps are verified across extensive hyperparameter sweeps for both sparse LpWM and dense LeWM in Appendix H.1. We also report the ℓ0 norms of the LpWM embeddings in Table 3. 60.0 0.2 0.4 0.6 0.8 1.0     
+
+> support instability  r support flips
+> effector motion gripper contact cube motion
+> 00.005 0.01 0.05 0.1
+> Temporal-Jaccard loss weight
+> 60 80
+> success (%)
+
+(a) Temporal Jaccard Regularization 0.0 0.2 0.4 0.6 0.8 1.0            
+
+> normalised
+> reff =0.86 rcube =0.21
+> no TJ ( w= 0 )
+> effector displ. cube displ. support instability gripper contact
+> 030 55 85 115 145 170 200
+> env step
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> normalised
+> reff =0.15 rcube =0.80
+> TJ ( w= 0.1 )
+
+(b) Example Episode. 0191           
+
+> feature no TJ ( w= 0 )
+> gripper contact
+> 030 55 85 115 145 170 200
+> env step
+> 0191
+> feature TJ ( w= 0.1 )
+
+(c) Support Raster Plot. 
+
+Figure 4: Temporal-Jaccard (TJ) makes the cube support track contact, not effector motion. (a) As TJ strength increases, support-instability correlation with effector motion drops ( 0.87 →0.40 )while cube-motion ( 0.26 →0.80 ) and gripper-contact ( 0.05 →0.61 ) rise—at no change in planning success. (b) One example episode: without TJ (top) support instability tracks effector displacement (reff =0 .86 ); with TJ (bottom) it tracks cube displacement ( rcube =0 .80 ), spiking inside the shaded contact windows. (c) Support raster: without TJ the support rapidly transitions across frame; with TJ it is smoothly varying in time, reorganizing almost during the shaded contact window. Additionally, Figure 3b shows that LpWM outperforms VICReg across Deep-AdaLN (k),MLP ◦LTV (k), and MLP ◦LTI (k) predictors. This indicates that the benefit of sparsity extends beyond comparison with the specific dense isotropic Gaussian targets used in LeWM to more gen-eral dense representations. Moreover, LpWM outperforms VICReg even with the high-capacity Deep-AdaLN (k) predictor. We hypothesize that this is because second-order moment constraints in VICReg alone can be insufficient as anti-collapse targets because they leave the target distribution underspecified. Overall, these results show that the benefit of sparsity depends on predictor capacity relative to dynamics complexity. In the simple Wall environment, even linear predictors are sufficient, leaving little room for sparsity to improve performance. In the harder PushT environment, sparsity provides substantial gains at intermediate capacities, but these gains diminish with sufficiently expressive predictors. As the underlying dynamics become more complex, the advantages of sparsity may extend to increasingly expressive predictors, potentially making sparse representations a preferable default over dense representations for modeling latent dynamics. We leave a systematic investigation of this hypothesis to future work. 
+
+4 Does Sparsity Lead to Interpretable Latent Dynamics? 
+
+Section 3 shows that sparse codes can simplify latent prediction. We now ask what structure emerges in these representations. We call a representation mode-factored when its binary support primarily identifies the discrete dynamics regime, while feature magnitudes capture finer within-regime state. We first test whether this structure emerges naturally in Piecewise, where the dynamics mode is known by construction, and then examine whether it extends to OGBench-Cube [Park et al., 2025], where contact provides a natural temporal regime change. 
+
+4.1 Discovering Piecewise-Affine Dynamics 
+
+Piecewise is a 2D navigation environment partitioned into zones with different force fields, yielding piecewise-affine dynamics (Appendix C.2). Empirically, we observe that success rate reaches 84 .7% 
+
+for LpWM versus 65 .3% for LeWM with random goals, while performance is saturated for goals sampled from the set of evaluation episodes for both methods (Table 4). To test whether the sparse support recovers the ground-truth piecewise structure, we discretize the Piecewise environment into a 20 × 20 grid, yielding 400 possible agent locations. For each location, we compute the corresponding embedding and binarize it into a support vector in {0, 1}D. For two 7binary support vectors x, y ∈ { 0, 1}D , we measure their overlap using the Jaccard index 
+
+J(x, y) = 
+
+PDi=1 1xi=1 ∧yi=1 
+
+PDi=1 1xi=1 ∨yi=1 
+
+, (5) where ∧, ∨ are logical “and”, “or” symbols. We defer further details and its differentiable relaxation given in Appendix E. We then select a reference cell, marked by + in Figure 2a, and compute its Jaccard similarity with every other cell. The resulting similarity is high within the reference zone and drops sharply across zone boundaries (dashed), a pattern that persists even when the zones contain no visual cues (bottom). This indicates that LpWM recovers the underlying dynamics regime from action-conditioned prediction rather than appearance alone, organizing the mode structure into which features are active. Linear probes further confirm a factorized code (Figure 2b): the binary support decodes the ground-truth zone at near-perfect accuracy for sparse LpWM, as accurately as the full embedding, while the continuous agent position is decoded better from the magnitudes. Therefore, the support carries the discrete zone mode, and the magnitudes carry the within-zone agent’s state. Finally, this structure also accompanies strong long-horizon planning (Figure 2c): sparse LpWM outperforms dense LeWM at every horizon H, with the gap widening as H increases. 
+
+4.2 From Navigation to Contact-Rich Dynamics 
+
+Does the sparse code also separate distinct phases of the dynamics in contact-rich manipulation? On OGBench-Cube, contact provides a natural regime change between free arm motion and arm–cube interaction. As a temporal analogue of the spatial partition in Piecewise, we measure the support instability 1 − J(zt, zt+1 ) between consecutive frames and compute its Pearson correlation with effector motion, cube motion, and gripper contact. Unlike Piecewise, sparsity alone does not determine which temporal factor is encoded by the support. RDMReg constrains only the per-frame marginal, and without an explicit temporal prior the support tends to follow the dominant fast-varying signal. Accordingly, without temporal regularization, support instability behaves largely as a motion detector: it correlates strongly with effector motion, with r ≈ 0.87 , but only weakly with contact, with r ≈ 0.05 (Figure 4a). To test whether the support can instead track slower physical regime changes, we additionally consider an optional temporal Jaccard (TJ) loss that encourages support stability across adjacent frames. As the TJ weight increases, support instability becomes less aligned with effector motion and increasingly aligned with cube motion and contact (Figure 4b); for example, the correlation with cube motion increases from rcube = 0 .21 to 0.80 . The support raster in Figure 4c shows the same effect visually. These results highlight a limitation of vanilla LpWM: sparsity alone may not ensure that support transitions correspond to semantically meaningful dynamical events, and without temporal structure the support can instead behave largely as a motion detector. However, they also suggest that, with an appropriate temporal prior, sparse support can become an interpretable tracker of physical regime changes such as object interaction and contact. We leave the design of temporal regularization for more complex dynamics to future work. 
+
+5 Conclusion 
+
+We introduced LpWM, an action-conditioned JEPA regularized with RDMReg to produce non-negative, exactly sparse latents. Motivated by a one-hot linearization result, we showed empirically that sparsity simplifies the action-conditioned latent dynamics: at a fixed, intermediate predictor capacity, a shallow predictor plans over sparse codes where it fails over dense ones on PushT. We further found the sparse code is mode-factored—its support encodes the discrete dynamics regime (94 –99% decodable on Piecewise) and, with a temporal-Jaccard prior, tracks contact on OGBench-Cube. Hence sparse representations can reduce the predictor complexity for control while leading to more interpretable dynamics. 8Acknowledgement 
+
+We thank Amir Bar, Raktim Goswami, Ying Wang, Wancong Zhang, Gaoyue Zhou, and Kefei Zhu for helpful discussions. This work was supported in part by AFOSR under grant FA95502310139 and NSF Award 1922658. This work was also supported through AMI Labs and NYU IT High Performance Computing resources, services, and staff expertise. 
+
+References 
+
+Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture, 2023. URL https://arxiv.org/abs/2301.08243 .Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba, Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nicolas Ballas. V-jepa 2: Self-supervised video models enable understanding, prediction and planning, 2025. URL 
+
+https://arxiv.org/abs/2506.09985 .Randall Balestriero and Yann LeCun. Lejepa: Provable and scalable self-supervised learning without the heuristics, 2025. URL https://arxiv.org/abs/2511.08544 .Randall Balestriero, Mark Ibrahim, Vlad Sobal, Ari Morcos, Shashank Shekhar, Tom Goldstein, Florian Bordes, Adrien Bardes, Gregoire Mialon, Yuandong Tian, Avi Schwarzschild, Andrew Gor-don Wilson, Jonas Geiping, Quentin Garrido, Pierre Fernandez, Amir Bar, Hamed Pirsiavash, Yann LeCun, and Micah Goldblum. A cookbook of self-supervised learning, 2023. URL 
+
+https://arxiv.org/abs/2304.12210 .Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regularization for self-supervised learning, 2022. URL https://arxiv.org/abs/2105.04906 .Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mahmoud Assran, and Nicolas Ballas. Revisiting feature prediction for learning visual representations from video, 2024. URL https://arxiv.org/abs/2404.08471 .Steven L Brunton, Joshua L Proctor, and J Nathan Kutz. Discovering governing equations from data by sparse identification of nonlinear dynamical systems. Proceedings of the national academy of sciences , 113(15):3932–3937, 2016. Deep Chakraborty, Yann LeCun, Tim G. J. Rudner, and Erik Learned-Miller. Improving pre-trained self-supervised embeddings through effective entropy maximization, 2025. URL https: //arxiv.org/abs/2411.15931 .Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations, 2020. URL https://arxiv.org/abs/2002. 05709 .Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale, 2021. URL https://arxiv.org/abs/2010.11929 .Aleksandr Ermolov, Aliaksandr Siarohin, Enver Sangineto, and Nicu Sebe. Whitening for self-supervised representation learning, 2021. URL https://arxiv.org/abs/2007.06346 .Raktim Gautam Goswami, Prashanth Krishnamurthy, and Farshad Khorrami. Data-driven deep learning based feedback linearization of systems with unknown dynamics. In 2023 American Control Conference (ACC) , pages 66–71. IEEE, 2023. 9Jean-Bastien Grill, Florian Strub, Florent Altché, Corentin Tallec, Pierre H. Richemond, Elena Buchatskaya, Carl Doersch, Bernardo Avila Pires, Zhaohan Daniel Guo, Mohammad Gheshlaghi Azar, Bilal Piot, Koray Kavukcuoglu, Rémi Munos, and Michal Valko. Bootstrap your own latent: A new approach to self-supervised learning, 2020. URL https://arxiv.org/abs/2006. 07733 .Danijar Hafner, Timothy Lillicrap, Mohammad Norouzi, and Jimmy Ba. Mastering atari with discrete world models, 2022. URL https://arxiv.org/abs/2010.02193 .Olivier J Henaff, Robbe LT Goris, and Eero P Simoncelli. Perceptual straightening of natural videos. 
+
+Nature neuroscience , 22(6):984–991, 2019. Dan Hendrycks and Kevin Gimpel. Gaussian error linear units (gelus), 2023. URL https://arxiv. org/abs/1606.08415 .Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. Lora: Low-rank adaptation of large language models, 2021. URL https: //arxiv.org/abs/2106.09685 .Jiaming Hu, Yan Zheng, and Tian Wang. Scale: State-calibrated latent embeddings for jepa planning in the right geometry, 2026. URL https://arxiv.org/abs/2608.16287 .Arnav Kumar Jain, Shivakanth Sujit, Shruti Joshi, Vincent Michalski, Danijar Hafner, and Samira Ebrahimi-Kahou. Learning robust dynamics through variational sparse gating, 2022. URL 
+
+https://arxiv.org/abs/2210.11698 .Li Jing, Pascal Vincent, Yann LeCun, and Yuandong Tian. Understanding dimensional collapse in contrastive self-supervised learning. arXiv preprint arXiv:2110.09348 , 2021. Rudolf Emil Kalman et al. Contributions to the theory of optimal control. Bol. soc. mat. mexicana , 5 (2):102–119, 1960. Milan Korda and Igor Mezi´ c. Linear predictors for nonlinear dynamical systems: Koopman operator meets model predictive control. Automatica , 93:149–160, 2018. Yilun Kuang, Yash Dagade, Deep Chakraborty, Erik Learned-Miller, Randall Balestriero, Tim G. J. Rudner, and Yann LeCun. Radial-vcreg: More informative representation learning through radial gaussianization, 2026a. URL https://arxiv.org/abs/2602.14272 .Yilun Kuang, Yash Dagade, Tim G. J. Rudner, Randall Balestriero, and Yann LeCun. Rectified lpjepa: Joint-embedding predictive architectures with sparse and maximum-entropy representations, 2026b. URL https://arxiv.org/abs/2602.01456 .Yann LeCun et al. A path towards autonomous machine intelligence version 0.9. 2, 2022-06-27. 
+
+Open Review , 62(1):1–62, 2022. Timothée Lesort, Natalia Díaz-Rodríguez, Jean-François Goudou, and David Filliat. State repre-sentation learning for control: An overview. Neural Networks , 108:379–392, December 2018. ISSN 0893-6080. doi: 10.1016/j.neunet.2018.07.006. URL http://dx.doi.org/10.1016/j. neunet.2018.07.006 .Lucas Maes, Quentin Le Lidec, Luiz Facury, Nassim Massaudi, Ayush Chaurasia, Francesco Capuano, Richard Gao, Taj Gillin, Dan Haramati, Damien Scieur, Yann LeCun, and Randall Balestriero. stable-worldmodel: A platform for reproducible world modeling research and evaluation, 2026a. URL https://arxiv.org/abs/2605.21800 .Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. Leworldmodel: Stable end-to-end joint-embedding predictive architecture from pixels, 2026b. URL https: //arxiv.org/abs/2603.19312 .Seohong Park, Kevin Frans, Benjamin Eysenbach, and Sergey Levine. Ogbench: Benchmarking offline goal-conditioned rl, 2025. URL https://arxiv.org/abs/2410.20092 .William Peebles and Saining Xie. Scalable diffusion models with transformers, 2023. URL https: //arxiv.org/abs/2212.09748 .10 Giordano Pola, Antoine Girard, and Paulo Tabuada. Approximately bisimilar symbolic models for nonlinear control systems. Automatica , 44(10):2508–2516, 2008. Joshua L Proctor, Steven L Brunton, and J Nathan Kutz. Dynamic mode decomposition with control. 
+
+SIAM Journal on Applied Dynamical Systems , 15(1):142–161, 2016. Reuven Rubinstein. The cross-entropy method for combinatorial and continuous optimization. 
+
+Methodology and computing in applied probability , 1(2):127–190, 1999. Mikuláš Ružiˇ cka. Anwendung mathematisch-statistischer methoden in der geobotanik: Synthetische bearbeitung von aufnahmen. Biológia, Bratislava , 13:647–661, 1958. Xu Shang, Masih Haseli, Jorge Cortés, and Yang Zheng. On the existence of koopman linear embeddings for controlled nonlinear systems. arXiv preprint arXiv:2602.14537 , 2026. Vlad Sobal, Wancong Zhang, Kyunghyun Cho, Randall Balestriero, Tim G. J. Rudner, and Yann LeCun. Learning from reward-free offline data: A case for planning with latent dynamics models, 2025. URL https://arxiv.org/abs/2502.14819 .Basile Terver, Randall Balestriero, Megi Dervishi, David Fan, Quentin Garrido, Tushar Nagarajan, Koustuv Sinha, Wancong Zhang, Mike Rabbat, Yann LeCun, and Amir Bar. A lightweight library for energy-based joint-embedding predictive architectures, 2026. URL https://arxiv.org/ abs/2602.03604 .Yifei Wang, Qi Zhang, Yaoyu Guo, and Yisen Wang. Non-negative contrastive learning, 2024. URL 
+
+https://arxiv.org/abs/2403.12459 .Ying Wang, Oumayma Bounou, Yann LeCun, and Mengye Ren. Adajepa: An adaptive latent world model, 2026a. URL https://arxiv.org/abs/2606.32026 .Ying Wang, Oumayma Bounou, Gaoyue Zhou, Randall Balestriero, Tim G. J. Rudner, Yann LeCun, and Mengye Ren. Temporal straightening for latent planning, 2026b. URL https://arxiv.org/ abs/2603.12231 .Greg Yang, Edward J. Hu, Igor Babuschkin, Szymon Sidor, Xiaodong Liu, David Farhi, Nick Ryder, Jakub Pachocki, Weizhu Chen, and Jianfeng Gao. Tensor programs v: Tuning large neural networks via zero-shot hyperparameter transfer, 2022. URL https://arxiv.org/abs/2203.03466 .Greg Yang, James B. Simon, and Jeremy Bernstein. A spectral condition for feature learning, 2024. URL https://arxiv.org/abs/2310.17813 .Thomas Yerxa, Yilun Kuang, Eero Simoncelli, and SueYeon Chung. Learning efficient coding of natural images with maximum manifold capacity representations, 2023. URL https://arxiv. org/abs/2303.03307 .Jure Zbontar, Li Jing, Ishan Misra, Yann LeCun, and Stéphane Deny. Barlow twins: Self-supervised learning via redundancy reduction, 2021. URL https://arxiv.org/abs/2103.03230 .Wancong Zhang, Basile Terver, Artem Zholus, Soham Chitnis, Harsh Sutaria, Mido Assran, Randall Balestriero, Amir Bar, Adrien Bardes, Yann LeCun, and Nicolas Ballas. Hierarchical planning with latent world models, 2026. URL https://arxiv.org/abs/2604.03208 .Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. Dino-wm: World models on pre-trained visual features enable zero-shot planning, 2025. URL https://arxiv.org/abs/2411.04983 .
+
+A Related Work 
+
+Latent world models for planning. Joint-Embedding Predictive Architectures (JEPA) predict in a learned latent space rather than reconstructing pixels [Assran et al., 2023, Bardes et al., 2024]. Equipped with action-conditioning, JEPA-style world models can be viewed as latent dynamics model of the environment, and can be used for planning with model predictive control [Assran et al., 2025, Zhou et al., 2025, Sobal et al., 2025, Maes et al., 2026b]. Hierarchical JEPA has also been shown to outperform standard flat JEPA models with improved planning performances [Zhang et al., 2026]. 11 Table 3: Sparsity of the LpWM encoder representations across predictor types and latent dimensions. Each entry is the fraction of non-zero coordinates E[∥z∥0]/D in the sparse code for the target distribution with {μ = 0 , σ = p1/2, p = 1 }, measured on the validation set at the tuned-best cell for the LpWM run paired with each predictor at latent dimension D. Dense LeWM has active fraction 1.0 by construction. The learned code stays ∼ 30 –65% active regardless of predictor or dimension, confirming the codes underlying the planning comparison are genuinely sparse.                                     
+
+> DDeep-AdaLN (k)Shallow-AdaLN (k)MLP ◦LTV (k)MLP ◦LTI (k)LTI (k)LTI (1) 384 0.34 0.33 0.37 0.28 0.41 0.63 768 0.44 0.37 0.54 0.53 0.41 0.63 1536 0.49 0.39 0.49 0.54 0.41 0.60 2048 0.42 0.46 0.51 0.46 0.43 0.61 4096 0.48 0.49 0.47 0.43 0.44 0.56
+
+Feature Regularization for Latent World Models. JEPA-style world models plan in the latent space, and hence proper regularizations of the embedding matters for both anti-collapse and also better planning performances. Preventing collapse without negative examples [Chen et al., 2020] is the central design problem of non-contrastive SSL [Balestriero et al., 2023]. The stop-gradient and EMA techniques [Grill et al., 2020] have been used in DINO-WM [Zhou et al., 2025], V-JEPA 2 AC [Assran et al., 2025] and related work. More recently, information maximization based techniques have also been proposed, which aims at reducing feature redundancies [Zbontar et al., 2021, Ermolov et al., 2021, Yerxa et al., 2023] and maximizing feature entropy through distribution-matching regularizations [Chakraborty et al., 2025, Balestriero and LeCun, 2025, Kuang et al., 2026a,b]. Beyond collapse preventions, other techniques have been proposed to improve the latent space for planning and control. Wang et al. [2026b] show that adding a temporal straightening loss [Henaff et al., 2019] reduces the curvature of the embeddings across time and hence enables better planning. SCALE [Hu et al., 2026] aligns latent distances with task-relevant state differences to make the planner-facing geometry more informative. Wang et al. [2026a] also considers adapting the final layer features online to improve planning performance and achieves better out-of distribution generalization. It’s also helpful to use inverse-dynamics modeling [Lesort et al., 2018], temporal smoothness [Sobal et al., 2025], which can lead to better downstream planning performances [Terver et al., 2026]. 
+
+Sparse and Discrete Representations in World Models. Discrete latent representations have previously been explored in world models. DreamerV2 [Hafner et al., 2022] replaces Gaussian stochastic states with a product of categorical variables, which can equivalently be viewed as a structured sparse binary representation, and finds that categorical latents substantially improve performance over Gaussian ones. The authors hypothesize that sparsity may contribute to this improvement and that categorical states may better capture non-smooth transitions. Relatedly, Variational Sparse Gating [Jain et al., 2022] introduces sparsity into latent dynamics by sparsely updating recurrent-state dimensions through stochastic binary gates. In contrast, we study sparsity directly as a geometry for continuous latent representations: LpWM learns distributed, non-negative sparse codes whose support is not fixed by a categorical grouping. Our focus is also different in that we ask whether sparsity reduces the complexity of the action-conditioned transition model itself, and whether the learned support recovers discrete dynamical regimes while the nonzero magnitudes retain continuous within-regime state. 
+
+Linearizing Nonlinear Dynamics. Koopman operator theory studies nonlinear autonomous sys-tems through lifted observables with linear evolution, with extensions to controlled systems enabling linear prediction and MPC [Proctor et al., 2016, Korda and Mezi´ c, 2018]. Recent work further characterizes the conditions for which exact finite-dimensional Koopman embeddings exist for con-trolled nonlinear systems [Shang et al., 2026]. Related approaches include SINDy, which identifies sparse nonlinear governing equations from candidate function libraries [Brunton et al., 2016]. Data-driven feedback linearization also learns state and input transformations of yielding linear controlled dynamics [Goswami et al., 2023]. 12 Table 4: Success Rate (%) over 50 Test Samples in the Piecewise Environments with Varying Numbers of Zones . Piecewise ( n × n) denotes the environment with varying numbers of zones. Goal images are either sampled from the evaluation dataset or randomly sampled from all possible locations of the dot agent. H denotes the horizon and R represents the receding-horizon. Results are shown as mean ±std over 3 seeds. Bold denotes the best performance.                                      
+
+> Goals from Evaluation Set Random Goals Env Method H=R= 5 H= 5 , R = 1 H=R= 5
+> Piecewise ( 2×2)LpWM (Ours) 99 .33 ±1.15 84 .67 ±4.16 59 .33 ±2.31
+> LpWM+TJ (Ours) 99 .33 ±1.15 82 .67 ±5.03 68 .67 ±4.62
+> LeWM 99 .33 ±1.15 65 .33 ±4.16 36 .00 ±3.46
+> Piecewise ( 3×3)LpWM (Ours) 100 .00 ±0.00 58 .67 ±1.15 56 .00 ±4.00
+> LpWM+TJ (Ours) 100 .00 ±0.00 60 .00 ±2.00 58 .00 ±5.29
+> LeWM 100 .00 ±0.00 50 .00 ±5.29 47 .33 ±6.11
+
+B Predictor Designs 
+
+B.1 Overall Designs 
+
+Table 1 lists the predictors we compare, in order of decreasing complexity. Deep- and Shallow-AdaLN (k) are 6- and 1-block Transformers with AdaLN-zero action conditioning [Peebles and Xie, 2023]; LTI (k) and LTI (1) are linear (time-invariant) state-space maps over k and 1 history lags; and 
+
+MLP ◦LTI (k) places a single nonlinear readout W ReLU( ·) on top of the linear core. One caveat is that we use the RepReLU link function in LpWM when using LTI (k) and LTI (1) predictors, so we don’t have exact linear dynamics models. We have also designed MLP ◦LTV (k), a data-dependent (linear-time-varying) predictor that moves beyond the fixed weight matrices in the linear-time invariant case. 
+
+B.2 MLP ◦LTV (k)
+
+MLP ◦LTV (k) retains the MLP ◦LTI form ˆzt+1 = σ W ReLU( Pk−1 
+
+> i=0
+
+Ai(zt) zt−i + B(zt) at) but makes the operator matrices state-dependent. Naively, designing a linear map with a matrix-valued output given a vector-valued input will require a O(D3) tensor for the feature dimension D.Instead, we consider a structured matrix parameterization, where the state emits only a small gate that modulates a fixed low-rank correction: 
+
+Ai(zt) = Ai + Ui diag  gi(zt) V⊤ 
+
+> i
+
+, g(zt) = sigmoid( G z t) ∈ [0 , 1] r , (6) where Ai is a fixed base operator, V⊤ 
+
+> i
+
+: RD → Rr and Ui : Rr → RD are learned low-rank factors, and the gate g(zt)—a single projection G : RD → R(k+1) r shared across the k lags and the action term—selects among r fixed low-rank “modes” ( r=16 in our experiments). The action operator 
+
+B(zt) is gated identically. This costs O(Dr ) with no D3 term. Crucially, only zt drives the gate, so the action at still enters affinely: the dynamics core stays control-affine up to the shared nonlinear readout. We zero-initialize the up-projections Ui (LoRA-style [Hu et al., 2021]) as an override after μPinitialization, so at initialization every correction vanishes and MLP ◦LTV (k) coincides exactly with MLP ◦LTI (k). It is therefore a strict superset that recovers the fixed-operator model unless the data reward state-dependence. 
+
+C Environment 
+
+C.1 TwoRoom, PushT, and OGBench Cube 
+
+We use the saved dataset in Zhou et al. [2025] for TwoRoom, PushT, and in Maes et al. [2026a] for OGBench Cube. During planning, we fix the goal location to be 25 steps away from the starting location and select episodes from the evaluation set. The action block size is fixed to be 5.13 (a) Wall (b) PushT (c) Piecewise (d) OGBench-Cube 
+
+Figure 5: Environments. (a) Wall: 2D navigation through a doorway (red agent). (b) PushT: push a T-shaped block to a target pose (green). (c) Piecewise: an open room partitioned into force-field zones (colored) with a known ground-truth segmentation. (d) OGBench-Cube: a robot arm manipulating a cube. 
+
+C.2 Piecewise Piecewise. To measure what the sparse code encodes about the dynamics, we use a synthetic, analytically-known environment called Piecewise [Maes et al., 2026b]. An open 224 × 224 room (no walls) is divided into a g × g grid of zones. Each zone i applies a fixed additive bias to motion, pt+1 = pt + at · speed + b[zone (pt)] , with radial biases bi = bias_scale · (cos θi, sin θi),
+
+θi = 2 πi/g 2. The dynamics are thus locally linear but globally piecewise-affine, with a known ground-truth zone segmentation and an exact expert policy (it inverts the motion equation). This is a controlled environment where the latent mode is known, so we can test directly whether the sparse support recovers it. We use g ∈ { 2, 3} (i.e. 4 and 9 zones) in our experiments. 
+
+C.3 Visualization of Environments 
+
+See Figure 5 for example snapshots of the environments. Note that there is another version of the Piecewise environment without the background color rendering as we have shown in Figure 2a. 
+
+D Experimental Details 
+
+Our experiments comprise two complementary studies implemented in separate experimental pipelines. Section 3 systematically varies predictor complexity and latent dimension to test whether sparsity reduces the complexity of the learned dynamics in Wall and PushT environments. The interpretability study in Section 4 instead fixes the model configuration and probes the structure of the learned sparse support in the Piecewise and OGBench-Cube environments. The two pipelines instantiate the same underlying LpWM formulation but differ in architecture and optimization details, summarized in Table 5. All comparisons and ablations are performed within the corresponding experimental pipeline. In both pipelines, we follow the settings in Section 2.1 and Section 2.2 for the loss, architecture, and link function designs. The model is an action-conditioned JEPA trained end-to-end. The encoder and predictor outputs pass through a link function σ, and per-timestep latent marginals are matched by 2-Wasserstein distance to a target distribution obtained by applying the same link to a Generalized Gaussian with shape parameter p and location or mean-shift parameter μ. Dense LeWM uses σ = identity with an isotropic Gaussian target ( p = 2 ), whereas sparse LpWM uses 
+
+σ = (Rep)ReLU with a Rectified Laplace target ( p = 1 ), yielding sparse representations. 
+
+Experimental Details for Section 3. We follow the settings in DINO-WM [Zhou et al., 2025] and set the context length ( k) for the Wall environment to be k = 1 . PushT uses k = 3 because velocity is not recoverable from a single observation. For each predictor type and latent feature dimension configuration, we sweep the RDMReg weight λRDMReg and the μP base learning rate 
+
+ℓmuP (Appendix H) and report the best-performing cell in the corresponding grid. We also swept the hyperparameter for LeWM and its VICReg variants in Appendix H to make sure we obtain strong baseline performances. 14 Table 5: Experimental configurations for Section 3 and Section 4. We list out the experimental pipelines in the following table.                                                                 
+
+> Section 3 Section 4 Wall PushT Piecewise OGBench-Cube
+> Encoder from-scratch ViT, 12 layers, width 384 from-scratch ViT-Tiny, width 192
+> Predictor See Table 1 Deep-AdaLN (k)
+> Dimension ( D){384 ,768 ,1536 ,2048 ,4096 }192
+> History k1333
+> Frameskip 5555
+> Batch size 128 64 128 128
+> Epochs 20 210 10
+> Optimizer Adam, μP (with base width 384 )AdamW Base LR See Appendix H 5×10 −5
+> Grad. clip 0.0 1.0
+> Reg. weight λSee Appendix H 25 10
+> Number of projections 8192 1024
+> Parameter μ{0,−1,−2}00
+> Temporal Jaccard off off {0.0,0.01 }{0.0,0.005 ,0.01 ,0.05 ,0.1}
+
+Experimental Details for Section 4. We follow the settings in stable-worldmodel [Maes et al., 2026a]. For both the Piecewise and OGBench-Cube environments, we use a from-scratch ViT-Tiny encoder (width 192 , CLS token), latent dimension D = 192 , and a depth-6 Deep-AdaLN (k) predictor with history k = 3 . Models are trained for 10 epochs using AdamW with learning rate 5 × 10 −5,weight decay 10 −3, a linear-warmup cosine schedule with warmup over approximately 1% of the optimization steps, batch size 128 , bf16 precision, and gradient clipping at 1.0. These experiments do not use μP since the feature dimension is relatively small, i.e. D = 192 .
+
+Planning and Evaluation. All experiments use the cross-entropy method (CEM) to optimize action sequences in latent space by minimizing the MSE between predicted latent rollouts and the encoded goal representation. Both experimental pipelines use 300 candidate action sequences per CEM iteration, retain the top 30 best-performing action sequences, and run CEM for 30 iterations with an initial variance scale of 1.0 and planning horizon H = 5 . With a frameskip of 5, the goal observation is therefore 25 raw environment steps ahead. In Section 3, we report both open-loop and closed-loop planning success rates. Open-loop evaluation executes a single CEM plan without replanning and therefore provides a more direct measure of accumulated model-prediction quality. Closed-loop evaluation uses receding-horizon MPC, replanning after each block of 5 executed actions, with at most 10 replanning iterations. Wall and PushT are evaluated over 50 trajectories whose goals are drawn from the evaluation dataset. In Section 4, we additionally evaluate Piecewise using randomly sampled goal images, since perfor-mance for both LeWM and LpWM saturates when goals are sampled from the evaluation set. In Table 4, we also consider a receding horizon of 1. For OGBench-Cube, we follow the evaluation protocol of Maes et al. [2026b], where goal observations are sampled only 25 raw environment steps ahead. This short horizon can make the planning task relatively easy, potentially leading to performance saturation and limiting the discriminative power of the benchmark. We leave evaluation under more challenging longer-horizon and larger-frameskip settings to future work. 
+
+E Jaccard Index 
+
+E.1 Hard and Soft Jaccard index 
+
+The standard Jaccard index between two sets A and B is Jac( A, B ) = |A ∩ B|/|A ∪ B|. For two binary vectors x, y ∈ { 0, 1}D this is J(x, y) = PDi=1 1xi=1 ∧yi=1 / PDi=1 1xi=1 ∨yi=1 , where ∧, ∨
+
+are logical “and”, “or” symbols. Because the encoder’s output is non-negative but not binary, directly optimizing this set Jaccard is non-differentiable. We therefore use the soft relaxation [Ružiˇ cka, 1958], 15 for x, y ∈ RD
+
+> ≥0
+
+,
+
+JS (x, y) = 
+
+PDi=1 min( xi, yi)
+
+PDi=1 max( xi, yi) + ϵ , (7) where min( ·, ·) and max( ·, ·) are smooth proxies for ∧ and ∨; a higher JS means more similar supports, and JS recovers the exact set Jaccard when its arguments are binary. 
+
+E.2 Temporal Jaccard Loss 
+
+Enforcing the feature distribution to be sparse independently across time steps via RDMReg imposes no constraints on the desired temporal transition. Therefore we also consider the optional temporal Jaccard loss (TJ) as a slowness prior on the binary support vector. The temporal Jaccard loss penalizes rapid support transitions between consecutive frames and hence encourages the support to be smoothly varying across time while not interfering with the global sparsity constraints brought by RDMReg. 
+
+Temporal Jaccard loss. Given encoder embeddings Z ∈ RB×T ×D 
+
+> ≥0
+
+, where B is batch size, T is the temporal dimension, and D is the feature dimension, the temporal jaccard loss is the mean support instability over all consecutive frame pairs: 
+
+LTJ = 1
+
+B(T − 1) 
+
+> B
+
+X 
+
+> b=1
+> T−1
+
+X
+
+> t=1
+
+
+
+1 − JS
+
+ Z[b, t, :] , Z[b, t + 1 , :] 
+
+(8) where Z[b, t, :] ∈ RD denotes the slice of the embedding tensor at batch index b and time index t.Minimizing LTJ encourages the support between embeddings of consecutive frames to be smoothly varying, and hence reduces the chance of drastic support changes between temporally adjacent frames. 
+
+F Maximal-Update Parameterization ( μP) for JEPA 
+
+Our predictor-complexity experiments vary the latent dimensions over more than an order of mag-nitude, from D = 384 to D = 4096 . A naive parameterization uses one learning rate for all layers in the neural network as D varies, so performance differences across widths can be confounded by width-specific optimization effects rather than properties of the learned representation. We therefore use maximal-update parameterization ( μP) [Yang et al., 2022] to preserve feature-learning dynamics across width and enable learning-rate transfer. For a dense linear map h = Wx with W ∈ Rdout ×din , μP chooses initialization and learning-rate scalings such that both the hidden activations and their training-induced updates remain of order 
+
+Θ( √dout ) as width changes. Equivalently, the weight and update operators remain at the appropriate spectral scale for stable feature learning [Yang et al., 2024]. For Adam-type optimizers, this gives an effective learning-rate scaling proportional to the inverse fan-in, 
+
+ηW ∝ 1
+
+din 
+
+. (9) We apply this rule to all width-dependent dense maps in the JEPA encoder and predictor. Let D0
+
+denote the reference latent width at which a base learning rate ηbase is selected. In our experiment, we fix D0 = 384 . For parameter matrices whose fan-in scales linearly with the latent dimension D,we use the following scaling equation: 
+
+ηW(D) = ηbase 
+
+D0
+
+D . (10) Width-independent parameter groups retain their base learning rate. Initialization follows the corre-sponding μP fan-in scaling. For all other layers or components like layer norm or bias, we follow the design recipe in Appendix B.1 in Yang et al. [2022]. Given that μP has not been demonstrated in JEPA architectures before for hyperparameter transfer across model width to our best knowledge, we don’t intend to use μP to reduce the hyperparameter tuning efforts. Instead, we use μP here simply to ensure stable feature learning, i.e. maintaining a stable spectral norm of the weight matrices to be around ∥W∥∗ = Θ( pdout /d in ).In Appendix H, we show the μP parameterization of learning rate can transfer across width most of the time, although there are occasional exceptions. We intend to investigate this more in future work. 16 G Proofs of Linearization 
+
+G.1 Proof of Proposition 1 
+
+Proof. Since X is a compact subset of Rd, the open cover of XX ⊆ [
+
+> c∈X
+
+Bε(c) (11) contains a finite subcover. In other words, for every ε > 0, there exists Cε = {c1, . . . , cN } ⊂ X 
+
+such that 
+
+X ⊆ [
+
+> c∈Cε
+
+Bε(c) (12) where Bε(c) := {x ∈ X : ∥x − c∥ < ε } . Now consider a deterministic quantization map Qε : X → {1, . . . , N } such that x − cQε(x) ≤ ε for all x ∈ X .Let’s define the encoder as Eε(x) = eQε(x), where ei is the i-th standard basis vector of RN . Hence 
+
+∥Eε(x)∥0 = 1 for every x ∈ X , i.e. Eε(·) is a one-hot encoder. Correspondingly, we also define the decoder by Dε(ei) = ci. Now fix any action a ∈ A . For each representative ci, define τa(i) := Qε(f (ci, a)) as the transition dynamics map. Then the transition matrix Pε(a) can be defined column-wise by Pε(a)ei = eτa(i).
+
+Thus every column of Pε(a) contains exactly one nonzero entry, and 
+
+zt+1 = Pε(at)zt (13) is exactly linear in z. It remains to bound the decoded one-step error. Fix arbitrary xt ∈ X and 
+
+at ∈ A , and let i := Qε(xt). Then by the definition of the encoder we have Eε(xt) = ei with 
+
+∥xt − ci∥ ≤ ε. We can rollout the latent dynamics to obtain 
+
+Pε(at)Eε(xt) = Pε(at)ei = eτat (i) (14) The decoded state is thus 
+
+ˆxt+1 := Dε(Pε(at)Eε(xt)) = cQε(f (ci,at)) . (15) Let the ground-truth next state be 
+
+xt+1 = f (xt, at). (16) By the triangle inequality, we have 
+
+∥xt+1 − ˆxt+1 ∥ = f (xt, at) − cQε(f (ci,at)) (17) 
+
+≤ ∥ f (xt, at) − f (ci, at)∥ + f (ci, at) − cQε(f (ci,at)) . (18) Since f is Lipschitz continuous in state, we know 
+
+∥f (xt, at) − f (ci, at)∥ ≤ L∥xt − ci∥ ≤ Lε. (19) Now because f (ci, at) ∈ X , the compactness property implies that 
+
+f (ci, at) − cQε(f (ci,at)) ≤ ε. (20) Therefore the approximation error is upper bounded by 
+
+∥xt+1 − ˆxt+1 ∥ ≤ Lε + ε = ( L + 1) ε. (21) Since the bound is uniform over xt and at,
+
+sup   
+
+> xt∈X ,at∈A
+
+∥f (xt, at) − Dε(Pε(at)Eε(xt)) ∥ ≤ (L + 1) ε. (22) Now since the Lipschitz constant L is fixed, we know that (L + 1) ε → 0 as ε → 0. Therefore, we arrive at 
+
+lim  
+
+> ε→0
+
+sup   
+
+> xt∈X ,at∈A
+
+∥f (xt, at) − Dε(Pε(at)Eε(xt)) ∥ = 0 . (23) 17 Lemma 1 (Finite-horizon rollout bound) . Under the assumptions of Proposition 1, let xt+1 =
+
+f (xt, at) for t = 0 , . . . , H − 1 be the ground-truth trajectory under an arbitrary action sequence 
+
+a0, . . . , aH−1 ∈ A . Initialize z0 = Eε(x0) and recursively define the latent transition as zt+1 =
+
+Pε(at)zt. Let ˆxt = Dε(zt) be the decoded state. Then 
+
+∥xH − ˆxH ∥ ≤ ε
+
+> H
+
+X
+
+> k=0
+
+Lk. (24) 
+
+Proof. Define the decoded quantization map as qε(x) := Dε(Eε(x)) = cQε(x). By construction, 
+
+∥x − qε(x)∥ ≤ ε for all x ∈ X . Since every latent state zt is one-hot, we know that if zt = ei, then 
+
+ˆxt = Dε(zt) = ci. Since the latent dynamics give 
+
+zt+1 = Pε(at)ei = eQε(f (ci,at)) . (25) We know that 
+
+ˆxt+1 = Dε(zt+1 ) = qε(f (ˆ xt, at)) . (26) Define the scalar rollout error as et := ∥xt − ˆxt∥. Then 
+
+et+1 = ∥f (xt, at) − qε(f (ˆ xt, at)) ∥ (27) 
+
+≤ ∥ f (xt, at) − f (ˆ xt, at)∥ + ∥f (ˆ xt, at) − qε(f (ˆ xt, at)) ∥≤ Le t + ε. (28) At t = 0 , e0 = ∥x0 − ˆx0∥ ≤ ε. Rolling out H steps give us 
+
+eH ≤ LH e0 + ε
+
+> H−1
+
+X
+
+> k=0
+
+Lk ≤ LH ε + ε
+
+> H−1
+
+X
+
+> k=0
+
+Lk = ε
+
+> H
+
+X
+
+> k=0
+
+Lk. (29) Hence we arrive at our conclusion 
+
+∥xH − ˆxH ∥ ≤ ε
+
+> H
+
+X
+
+> k=0
+
+Lk. (30) 
+
+G.2 Proof of Corollary 1 
+
+Proof. Partition each coordinate interval [0 , 1] into n subintervals of equal length h = 1 
+
+> n
+
+. The resulting partition of [0 , 1] d consists of nd = N axis-aligned hypercubes, each with side length h.Let ci denote the center of one such hypercube. For any point x in that cell, each coordinate differs from the corresponding coordinate of ci by at most h/ 2. Hence 
+
+|xj − ci,j | ≤ h
+
+2 , j = 1 , . . . , d. (31) Therefore, using the Euclidean norm, 
+
+∥x − ci∥2 =
+
+> d
+
+X
+
+> j=1
+
+|xj − ci,j |2 ≤
+
+> d
+
+X
+
+> j=1
+
+ h
+
+2
+
+2
+
+= d h2
+
+4 . (32) Taking square roots gives ∥x − ci∥ ≤ √d 
+
+> 2
+
+h. Since h = 1 /n , we arrive at 
+
+εN =
+
+√d
+
+2n =
+
+√d
+
+2 N −1/d . (33) Based on Proposition 1, the one-step decoded prediction error is bounded by 
+
+sup 
+
+> x,a
+
+∥f (x, a) − DεN (PεN (a)EεN (x)) ∥ ≤ (L + 1) εN . (34) 18 Substituting the expression for εN gives 
+
+sup 
+
+> x,a
+
+∥f (x, a) − DεN (PεN (a)EεN (x)) ∥ ≤ (L + 1) 
+
+√d
+
+2 N −1/d =
+
+√d
+
+2 (L + 1) N −1/d . (35) Since d and L are fixed constants, 
+
+sup 
+
+> x,a
+
+∥f (x, a) − DεN (PεN (a)EεN (x)) ∥ = O(N −1/d ). (36) Similarly, the finite-horizon rollout bound from Lemma 1 gives 
+
+∥xH − ˆxH ∥ ≤ εNHX
+
+> k=0
+
+Lk. (37) Substituting the covering radius, we have 
+
+∥xH − ˆxH ∥ ≤ √d
+
+2 N −1/d HX
+
+> k=0
+
+Lk. (38) Since H, d, and L are fixed, it follows that 
+
+lim   
+
+> N→∞
+
+∥xH − ˆxH ∥ = 0 . (39) 
+
+H Hyperparameter Sweeps 
+
+H.1 LpWM and LeWM Sweeps in the PushT Environment 
+
+To ensure full reproducibility and transparency, we perform and report hyperparameter sweeps underlying Figure 1b. We run a grid search over the RDMReg regularization weight λRDMReg ∈ { 0.01 , 0.1, 1.0, 10 .0}
+
+and the muP (or μP) learning rate ℓmuP ∈ { 0.05 , 0.005 , 0.0005 , 0.00005 } for each fixed feature dimension d ∈ { 384 , 768 , 1536 , 2048 , 4096 }, method (LeWM and LpWM with target distribution 
+
+Qdi=1 ReLU(Laplace( μ = 0 , σ = p1/2)) ), and predictor setting in Table 1. To ensure fair compar-ison and standardized hyperparameter sweeps, we use our sliced Wasserstein distance formulation as the distribution-matching loss for isotropic Gaussian targets instead of the Epps-Pulley loss in SIGReg [Balestriero and LeCun, 2025]. They are both in fact instantiations of Cramer-Wold theorem, and only differ in one-sample vs. two-sample style distribution matching [Kuang et al., 2026b]. Due to compute constraints, we fix one seed for training but average over 3 seeds during planning evaluations with Cross-Entropy Methods (CEM) [Rubinstein, 1999]. In practice, we execute our sweep sequentially. So there are some predictor types where we have done a very thorough grid search. After we have determined that some hyperparameters are always leading to bad performances (e.g. usually learning rate like 0.05 is too large), we drop them in our subsequent sweeps so the resulting figures for different predictor types usually cover different subset of the full grid. In Figure 9, we observe that ℓmuP ∈ { 0.05 , 0.005 } almost always leads to 0% success rate. Sub-sequent hyperparameter sweeps shown in Figure 6, Figure 7, Figure 8, Figure 11, and Figure 10 selectively remove portions of the grid to save compute. 
+
+H.2 VICReg Sweep in the PushT Environment 
+
+We also perform extensive hyperparameter sweeps for JEPA regularized with VICReg. Basically, we take the LeWM setting and replaced the SIGReg regularizer with VICReg. The resulting model doesn’t have a name yet, and we abuse the notation and simply call it VICReg here. In Figure 12, Figure 13, and Figure 14, we show the sweep results for the predictors Deep-AdaLN (k),MLP ◦LTV (k), and MLP ◦LTI (k) respectively. 19 0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+> LeWM Learning Rate
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.63 
+
+±0.06 
+
+0.59 
+
+±0.08 
+
+0.00 
+
+±0.00 
+
+0.48 
+
+±0.09 
+
+0.36 
+
+±0.09 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+D = 384 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.68 
+
+±0.05 
+
+0.60 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.20 
+
+±0.03 
+
+0.27 
+
+±0.05 
+
+0.02 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+D = 768 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.48 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.51 
+
+±0.05 
+
+0.35 
+
+±0.05 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.33 
+
+±0.05 
+
+0.59 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.38 
+
+±0.06 
+
+0.15 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 2048 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.23 
+
+±0.07 
+
+0.61 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.41 
+
+±0.02 
+
+0.37 
+
+±0.05 
+
+0.05 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.66 
+
+±0.03 
+
+0.44 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.17 
+
+±0.02 
+
+0.18 
+
+±0.03 
+
+0.08 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.29 
+
+±0.03 
+
+0.47 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+0.30 
+
+±0.07 
+
+0.17 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.57 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.22 
+
+±0.03 
+
+0.07 
+
+±0.02 
+
+0.04 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.64 
+
+±0.05 
+
+0.53 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.47 
+
+±0.07 
+
+0.58 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.17 
+
+±0.06 
+
+0.07 
+
+±0.01 
+
+0.05 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+Deep-AdaLN (k) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+> LeWM Learning Rate
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.79 
+
+±0.07 
+
+0.74 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.67 
+
+±0.07 
+
+0.63 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+D = 384 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.81 
+
+±0.01 
+
+0.71 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.30 
+
+±0.07 
+
+0.61 
+
+±0.07 
+
+0.09 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+D = 768 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.62 
+
+±0.02 
+
+0.04 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.68 
+
+±0.08 
+
+0.57 
+
+±0.06 
+
+0.07 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.53 
+
+±0.04 
+
+0.68 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.48 
+
+±0.03 
+
+0.35 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 2048 
+
+0.1 1 10 5e-3 5e-4 5e-5 5e-6 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.26 
+
+±0.06 
+
+0.70 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.58 
+
+±0.03 
+
+0.65 
+
+±0.01 
+
+0.09 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.75 
+
+±0.01 
+
+0.61 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.37 
+
+±0.11 
+
+0.37 
+
+±0.06 
+
+0.11 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.32 
+
+±0.03 
+
+0.72 
+
+±0.03 
+
+0.03 
+
+±0.02 
+
+0.46 
+
+±0.00 
+
+0.38 
+
+±0.02 
+
+0.06 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.69 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.37 
+
+±0.05 
+
+0.11 
+
+±0.01 
+
+0.07 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.75 
+
+±0.04 
+
+0.69 
+
+±0.07 
+
+0.02 
+
+±0.02 
+
+0.37 
+
+±0.02 
+
+0.09 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-3 5e-4 5e-5 5e-6 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.64 
+
+±0.02 
+
+0.79 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.25 
+
+±0.07 
+
+0.13 
+
+±0.02 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 
+
+> success rate
+
+Deep-AdaLN (k) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 6: Deep-AdaLN (k) Predictor. Hyperparameter Sweeps for the PushT Environment. 20 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.63 
+
+±0.05 
+
+0.49 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.20 
+
+±0.02 
+
+0.45 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.76 
+
+±0.02 
+
+0.47 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.10 
+
+±0.03 
+
+0.03 
+
+±0.02 
+
+0.11 
+
+±0.01 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.68 
+
+±0.07 
+
+0.55 
+
+±0.06 
+
+0.01 
+
+±0.02 
+
+0.21 
+
+±0.02 
+
+0.09 
+
+±0.06 
+
+0.07 
+
+±0.04 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.14 
+
+±0.04 
+
+0.35 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.20 
+
+±0.03 
+
+0.20 
+
+±0.06 
+
+0.02 
+
+±0.02 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.54 
+
+±0.04 
+
+0.48 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.15 
+
+±0.04 
+
+0.28 
+
+±0.07 
+
+0.05 
+
+±0.02 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.47 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.09 
+
+±0.05 
+
+0.05 
+
+±0.02 
+
+0.06 
+
+±0.03 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.67 
+
+±0.02 
+
+0.14 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.19 
+
+±0.05 
+
+0.02 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.63 
+
+±0.02 
+
+0.53 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.18 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.13 
+
+±0.09 
+
+0.53 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.15 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.04 
+
+±0.02 
+
+0.61 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.15 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 
+
+> success rate
+
+Shallow-AdaLN (k) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.79 
+
+±0.03 
+
+0.69 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.29 
+
+±0.01 
+
+0.70 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.79 
+
+±0.02 
+
+0.69 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.16 
+
+±0.05 
+
+0.04 
+
+±0.03 
+
+0.15 
+
+±0.03 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.77 
+
+±0.05 
+
+0.69 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.33 
+
+±0.02 
+
+0.18 
+
+±0.04 
+
+0.16 
+
+±0.04 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.22 
+
+±0.00 
+
+0.59 
+
+±0.07 
+
+0.01 
+
+±0.01 
+
+0.35 
+
+±0.01 
+
+0.38 
+
+±0.06 
+
+0.02 
+
+±0.02 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.62 
+
+±0.04 
+
+0.71 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.27 
+
+±0.02 
+
+0.47 
+
+±0.07 
+
+0.12 
+
+±0.03 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.61 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.21 
+
+±0.02 
+
+0.09 
+
+±0.02 
+
+0.11 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.75 
+
+±0.04 
+
+0.25 
+
+±0.12 
+
+0.00 
+
+±0.00 
+
+0.28 
+
+±0.04 
+
+0.03 
+
+±0.02 
+
+0.09 
+
+±0.03 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.77 
+
+±0.03 
+
+0.72 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.32 
+
+±0.07 
+
+0.00 
+
+±0.00 
+
+0.12 
+
+±0.03 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.21 
+
+±0.07 
+
+0.63 
+
+±0.05 
+
+0.02 
+
+±0.02 
+
+0.25 
+
+±0.03 
+
+0.03 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.10 
+
+±0.04 
+
+0.71 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.27 
+
+±0.01 
+
+0.12 
+
+±0.06 
+
+0.04 
+
+±0.02 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 
+
+> success rate
+
+Shallow-AdaLN (k) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 7: Shallow-AdaLN (k) Predictor. Hyperparameter Sweeps for the PushT Environment. 21 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.11 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.09 
+
+±0.02 
+
+0.09 
+
+±0.05 
+
+0.03 
+
+±0.01 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.02 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.05 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.04 
+
+±0.02 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.27 
+
+±0.08 
+
+0.47 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.13 
+
+±0.04 
+
+0.05 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.20 
+
+±0.04 
+
+0.48 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.02 
+
+0.09 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.28 
+
+±0.02 
+
+0.45 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.14 
+
+±0.03 
+
+0.05 
+
+±0.02 
+
+0.10 
+
+±0.03 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.35 
+
+±0.08 
+
+0.47 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.12 
+
+±0.03 
+
+0.06 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.23 
+
+±0.08 
+
+0.47 
+
+±0.07 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.07 
+
+±0.03 
+
+0.0 0.1 0.2 0.3 0.4 
+
+> success rate
+
+MLP LTV (k) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.20 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.13 
+
+±0.01 
+
+0.19 
+
+±0.07 
+
+0.03 
+
+±0.01 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.13 
+
+±0.04 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.17 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.04 
+
+0.02 
+
+±0.02 
+
+0.11 
+
+±0.01 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.11 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.04 
+
+0.02 
+
+±0.02 
+
+0.04 
+
+±0.04 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.37 
+
+±0.03 
+
+0.62 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.04 
+
+0.17 
+
+±0.02 
+
+0.11 
+
+±0.04 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.30 
+
+±0.03 
+
+0.59 
+
+±0.07 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.02 
+
+0.19 
+
+±0.07 
+
+0.07 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.30 
+
+±0.03 
+
+0.65 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.23 
+
+±0.05 
+
+0.05 
+
+±0.02 
+
+0.17 
+
+±0.02 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.43 
+
+±0.06 
+
+0.65 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.20 
+
+±0.02 
+
+0.08 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.36 
+
+±0.04 
+
+0.63 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.03 
+
+0.07 
+
+±0.03 
+
+0.09 
+
+±0.04 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+MLP LTV (k) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 8: MLP ◦LTV (k) Predictor. Hyperparameter Sweeps for the PushT Environment. 22 0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+> LeWM Learning Rate
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.03 
+
+0.05 
+
+±0.03 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 384 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 768 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 2048 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 4096 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a n/a 0.29 
+
+±0.01 
+
+0.19 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.13 
+
+±0.04 
+
+0.07 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a n/a 0.30 
+
+±0.05 
+
+0.51 
+
+±0.07 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.03 
+
+±0.03 
+
+0.15 
+
+±0.05 
+
+0.03 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a n/a 0.27 
+
+±0.05 
+
+0.36 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.04 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.04 
+
+±0.00 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a n/a 0.31 
+
+±0.07 
+
+0.36 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.03 
+
+±0.02 
+
+0.05 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a n/a 0.38 
+
+±0.07 
+
+0.63 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.05 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+MLP LTI (k) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+> LeWM Learning Rate
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.07 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.13 
+
+±0.02 
+
+0.10 
+
+±0.06 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 384 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.02 
+
+0.05 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 768 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.01 
+
+0.05 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.08 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.06 
+
+0.07 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.03 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 2048 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.14 
+
+±0.03 
+
+0.05 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 4096 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a 0.31 
+
+±0.02 
+
+0.32 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+n/a n/a n/a 0.18 
+
+±0.07 
+
+0.09 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a 0.34 
+
+±0.04 
+
+0.71 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.09 
+
+±0.05 
+
+0.23 
+
+±0.06 
+
+0.03 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a 0.32 
+
+±0.03 
+
+0.56 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+n/a n/a n/a 0.09 
+
+±0.02 
+
+0.08 
+
+±0.05 
+
+0.06 
+
+±0.03 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a 0.37 
+
+±0.08 
+
+0.59 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.14 
+
+±0.04 
+
+0.10 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0001 0.001 0.01 0.1 1 10 
+
+RDMReg 
+
+5e-2 5e-3 5e-4 5e-5 5e-6 
+
+n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a 0.46 
+
+±0.05 
+
+0.75 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a 0.15 
+
+±0.05 
+
+0.07 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+n/a n/a n/a n/a n/a n/a 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 
+
+> success rate
+
+MLP LTI (k) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 9: MLP ◦LTI (k) Predictor. Hyperparameter Sweeps for the PushT Environment. 23 0.1 15e-4 
+
+> LeWM Learning Rate
+
+0.10 
+
+> ±0.04
+> n/a
+
+D = 384 
+
+0.1 15e-4 0.13 
+
+> ±0.03
+> n/a
+
+D = 768 
+
+0.1 15e-4 0.01 
+
+> ±0.01
+> n/a
+
+D = 1536 
+
+0.1 15e-4 0.07 
+
+> ±0.02
+> n/a
+
+D = 2048 
+
+0.1 15e-4 0.01 
+
+> ±0.01
+> n/a
+
+D = 4096 
+
+0.1 1
+
+RDMReg 
+
+5e-4  
+
+> LpWM (  = 0 )
+> Learning Rate
+> n/a
+
+0.07 
+
+> ±0.03
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.10 
+
+> ±0.03
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.10 
+
+> ±0.05
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.03 
+
+> ±0.01
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.15 
+
+> ±0.04
+
+0.00 0.02 0.04 0.06 0.08 0.10 0.12 0.14 
+
+> success rate
+
+LTI (1) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.1 15e-4 
+
+> LeWM Learning Rate
+
+0.15 
+
+> ±0.08
+> n/a
+
+D = 384 
+
+0.1 15e-4 0.18 
+
+> ±0.03
+> n/a
+
+D = 768 
+
+0.1 15e-4 0.06 
+
+> ±0.03
+> n/a
+
+D = 1536 
+
+0.1 15e-4 0.09 
+
+> ±0.01
+> n/a
+
+D = 2048 
+
+0.1 15e-4 0.02 
+
+> ±0.03
+> n/a
+
+D = 4096 
+
+0.1 1
+
+RDMReg 
+
+5e-4  
+
+> LpWM (  = 0 )
+> Learning Rate
+> n/a
+
+0.09 
+
+> ±0.03
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.16 
+
+> ±0.06
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.17 
+
+> ±0.02
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.05 
+
+> ±0.01
+
+0.1 1
+
+RDMReg 
+
+5e-4 n/a 0.23 
+
+> ±0.04
+
+0.00 0.05 0.10 0.15 0.20 
+
+> success rate
+
+LTI (1) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 10: LTI (1) Predictor. Hyperparameter Sweeps for the PushT Environment. 24 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.12 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.09 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.10 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.03 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.05 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.16 
+
+±0.03 
+
+0.02 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.18 
+
+±0.06 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.23 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.15 
+
+±0.03 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.23 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.24 
+
+±0.00 
+
+0.11 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.15 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.28 
+
+±0.03 
+
+0.10 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.19 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 0.05 0.10 0.15 0.20 0.25 
+
+> success rate
+
+LTI (k) Open-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) (a) Open-Loop. 0.1 1 10 5e-4 5e-5 
+
+> LeWM Learning Rate
+
+0.18 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+D = 384 
+
+0.1 1 10 5e-4 5e-5 
+
+0.13 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 768 
+
+0.1 1 10 5e-4 5e-5 
+
+0.18 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+D = 1536 
+
+0.1 1 10 5e-4 5e-5 
+
+0.05 
+
+±0.04 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+D = 2048 
+
+0.1 1 10 5e-4 5e-5 
+
+0.10 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+D = 4096 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+> LpWM (  = 0 )
+> Learning Rate
+
+0.19 
+
+±0.02 
+
+0.05 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.32 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.26 
+
+±0.11 
+
+0.11 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.29 
+
+±0.08 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.19 
+
+±0.05 
+
+0.13 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.28 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.27 
+
+±0.01 
+
+0.18 
+
+±0.09 
+
+0.00 
+
+±0.00 
+
+0.21 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 
+
+RDMReg 
+
+5e-4 5e-5 
+
+0.35 
+
+±0.01 
+
+0.17 
+
+±0.04 
+
+0.01 
+
+±0.02 
+
+0.29 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 
+
+> success rate
+
+LTI (k) Closed-Loop plan success over RDMReg × Learning Rate (mean ± std, 3 seeds) 
+
+(b) Closed-Loop. 
+
+Figure 11: LTI (k) Predictor. Hyperparameter Sweeps for the PushT Environment. 25 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.10 
+
+±0.03 
+
+0.17 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.07 
+
+0.35 
+
+±0.03 
+
+0.33 
+
+±0.05 
+
+0.17 
+
+±0.04 
+
+0.03 
+
+±0.03 
+
+0.56 
+
+±0.05 
+
+0.41 
+
+±0.08 
+
+0.33 
+
+±0.10 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.11 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.24 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.12 
+
+±0.04 
+
+0.30 
+
+±0.06 
+
+0.21 
+
+±0.03 
+
+0.04 
+
+±0.02 
+
+0.05 
+
+±0.03 
+
+0.44 
+
+±0.10 
+
+0.38 
+
+±0.10 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.04 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.19 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.14 
+
+±0.00 
+
+0.36 
+
+±0.03 
+
+0.25 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.05 
+
+±0.03 
+
+0.13 
+
+±0.01 
+
+0.32 
+
+±0.04 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.11 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.02 
+
+0.15 
+
+±0.02 
+
+0.03 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.22 
+
+±0.04 
+
+0.34 
+
+±0.03 
+
+0.27 
+
+±0.09 
+
+0.04 
+
+±0.03 
+
+0.51 
+
+±0.04 
+
+0.43 
+
+±0.05 
+
+0.36 
+
+±0.04 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.14 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.17 
+
+±0.04 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.26 
+
+±0.02 
+
+0.31 
+
+±0.04 
+
+0.24 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.41 
+
+±0.01 
+
+0.23 
+
+±0.02 
+
+D = 4096 
+
+0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.39 
+
+±0.07 
+
+0.03 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.37 
+
+±0.07 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.20 
+
+±0.03 
+
+0.33 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.02 
+
+0.54 
+
+±0.04 
+
+0.42 
+
+±0.03 
+
+0.36 
+
+±0.07 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.25 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.08 
+
+0.35 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.03 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.27 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.40 
+
+±0.05 
+
+0.32 
+
+±0.07 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.04 
+
+0.02 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.29 
+
+±0.10 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.03 
+
+0.24 
+
+±0.07 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.21 
+
+±0.05 
+
+0.39 
+
+±0.08 
+
+0.04 
+
+±0.02 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.005
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+Dense-VICReg Deep-AdaLN (k) Open-Loop plan success (mean ± std, 3 seeds) 
+
+panel best (a) Open-Loop. 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.17 
+
+±0.08 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.04 
+
+0.33 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.29 
+
+±0.03 
+
+0.49 
+
+±0.04 
+
+0.47 
+
+±0.05 
+
+0.27 
+
+±0.03 
+
+0.10 
+
+±0.04 
+
+0.66 
+
+±0.05 
+
+0.44 
+
+±0.07 
+
+0.41 
+
+±0.05 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.03 
+
+0.40 
+
+±0.03 
+
+0.03 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.27 
+
+±0.08 
+
+0.42 
+
+±0.05 
+
+0.29 
+
+±0.01 
+
+0.13 
+
+±0.06 
+
+0.13 
+
+±0.03 
+
+0.52 
+
+±0.10 
+
+0.41 
+
+±0.09 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.09 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.03 
+
+0.04 
+
+±0.02 
+
+0.38 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+0.04 
+
+±0.02 
+
+0.25 
+
+±0.03 
+
+0.41 
+
+±0.03 
+
+0.31 
+
+±0.03 
+
+0.08 
+
+±0.00 
+
+0.12 
+
+±0.03 
+
+0.25 
+
+±0.05 
+
+0.39 
+
+±0.09 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.31 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.14 
+
+±0.03 
+
+0.32 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.40 
+
+±0.04 
+
+0.40 
+
+±0.03 
+
+0.32 
+
+±0.07 
+
+0.15 
+
+±0.08 
+
+0.53 
+
+±0.03 
+
+0.52 
+
+±0.05 
+
+0.39 
+
+±0.03 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.28 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.29 
+
+±0.04 
+
+0.09 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.49 
+
+±0.04 
+
+0.35 
+
+±0.06 
+
+0.29 
+
+±0.02 
+
+0.09 
+
+±0.03 
+
+0.11 
+
+±0.05 
+
+0.48 
+
+±0.03 
+
+0.28 
+
+±0.03 
+
+D = 4096 
+
+0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.42 
+
+±0.06 
+
+0.04 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.09 
+
+±0.01 
+
+0.09 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.43 
+
+±0.07 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.35 
+
+±0.01 
+
+0.39 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.15 
+
+±0.03 
+
+0.57 
+
+±0.05 
+
+0.45 
+
+±0.02 
+
+0.39 
+
+±0.07 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.39 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.08 
+
+0.47 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.09 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.13 
+
+±0.04 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.39 
+
+±0.06 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.45 
+
+±0.03 
+
+0.41 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.08 
+
+±0.02 
+
+0.11 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.45 
+
+±0.08 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.03 
+
+0.43 
+
+±0.05 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.26 
+
+±0.04 
+
+0.43 
+
+±0.10 
+
+0.10 
+
+±0.02 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.005
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 
+
+> success rate
+
+Dense-VICReg Deep-AdaLN (k) Closed-Loop plan success (mean ± std, 3 seeds) 
+
+panel best 
+
+(b) Closed-Loop. 
+
+Figure 12: Deep-AdaLN (k) Predictor. Hyperparameter Sweeps for VICReg-based JEPA models in the PushT Environment. 26 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.07 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.03 
+
+0.23 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.03 
+
+0.22 
+
+±0.04 
+
+0.30 
+
+±0.02 
+
+0.21 
+
+±0.04 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.14 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.01 
+
+0.14 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.03 
+
+0.01 
+
+±0.02 
+
+0.17 
+
+±0.02 
+
+0.18 
+
+±0.05 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.20 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.11 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.03 
+
+0.19 
+
+±0.03 
+
+0.18 
+
+±0.03 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.22 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.16 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.04 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.23 
+
+±0.03 
+
+0.27 
+
+±0.04 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.13 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.29 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.03 
+
+0.03 
+
+±0.03 
+
+0.21 
+
+±0.03 
+
+0.21 
+
+±0.05 
+
+D = 4096 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.22 
+
+±0.02 
+
+0.13 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.00 
+
+0.27 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.25 
+
+±0.01 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.22 
+
+±0.05 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.19 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.19 
+
+±0.06 
+
+0.07 
+
+±0.03 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.16 
+
+±0.06 
+
+0.29 
+
+±0.01 
+
+0.33 
+
+±0.03 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.05 
+
+0.26 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.00 
+
+0.05 
+
+±0.05 
+
+0.12 
+
+±0.04 
+
+0.35 
+
+±0.05 
+
+0.0 0.1 0.2 0.3 0.4 
+
+> success rate
+
+Dense-VICReg MLP LTV (k) Open-Loop plan success (mean ± std, 3 seeds) 
+
+panel best (a) Open-Loop. 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.17 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.16 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.10 
+
+±0.03 
+
+0.36 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.12 
+
+±0.04 
+
+0.29 
+
+±0.03 
+
+0.36 
+
+±0.00 
+
+0.31 
+
+±0.07 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.26 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.24 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.09 
+
+±0.03 
+
+0.26 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+0.09 
+
+±0.05 
+
+0.06 
+
+±0.03 
+
+0.27 
+
+±0.03 
+
+0.27 
+
+±0.06 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.28 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.29 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.04 
+
+±0.03 
+
+0.23 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.08 
+
+±0.03 
+
+0.13 
+
+±0.03 
+
+0.25 
+
+±0.03 
+
+0.27 
+
+±0.05 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.33 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.00 
+
+0.38 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.01 
+
+0.29 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.14 
+
+±0.03 
+
+0.09 
+
+±0.03 
+
+0.27 
+
+±0.01 
+
+0.33 
+
+±0.03 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.32 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.29 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.03 
+
+0.37 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.09 
+
+±0.07 
+
+0.07 
+
+±0.04 
+
+0.25 
+
+±0.04 
+
+0.29 
+
+±0.03 
+
+D = 4096 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.31 
+
+±0.01 
+
+0.23 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.03 
+
+0.35 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.35 
+
+±0.04 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.02 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.10 
+
+±0.02 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.14 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.09 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.33 
+
+±0.06 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.33 
+
+±0.07 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.26 
+
+±0.03 
+
+0.17 
+
+±0.10 
+
+0.20 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.27 
+
+±0.06 
+
+0.34 
+
+±0.03 
+
+0.45 
+
+±0.04 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.04 
+
+0.37 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.03 
+
+0.10 
+
+±0.03 
+
+0.23 
+
+±0.03 
+
+0.49 
+
+±0.05 
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+Dense-VICReg MLP LTV (k) Closed-Loop plan success (mean ± std, 3 seeds) 
+
+panel best 
+
+(b) Closed-Loop. 
+
+Figure 13: MLP ◦LTV (k) Predictor. Hyperparameter Sweeps for VICReg-based JEPA models in the PushT Environment. 27 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.05 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.08 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+0.07 
+
+±0.05 
+
+0.17 
+
+±0.01 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.03 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.00 
+
+0.01 
+
+±0.02 
+
+0.10 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.06 
+
+±0.03 
+
+0.07 
+
+±0.03 
+
+0.07 
+
+±0.05 
+
+0.03 
+
+±0.01 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.14 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.14 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.05 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.03 
+
+0.03 
+
+±0.01 
+
+0.18 
+
+±0.05 
+
+0.07 
+
+±0.01 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.16 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.06 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.10 
+
+±0.07 
+
+0.24 
+
+±0.06 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.11 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.11 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.20 
+
+±0.06 
+
+0.19 
+
+±0.03 
+
+D = 4096 
+
+0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.04 
+
+0.07 
+
+±0.04 
+
+0.01 
+
+±0.01 
+
+0.27 
+
+±0.04 
+
+0.03 
+
+±0.01 
+
+0.02 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.21 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.03 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.16 
+
+±0.04 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.06 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.16 
+
+±0.02 
+
+0.09 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.41 
+
+±0.06 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.005
+> var
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 
+
+> success rate
+
+Dense-VICReg MLP LTI (k) Open-Loop plan success (mean ± std, 3 seeds) 
+
+panel best (a) Open-Loop. 0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 5 e 05
+> var
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.09 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.03 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.01 
+
+0.15 
+
+±0.03 
+
+0.02 
+
+±0.02 
+
+0.13 
+
+±0.03 
+
+0.08 
+
+±0.03 
+
+0.16 
+
+±0.07 
+
+0.24 
+
+±0.03 
+
+D = 384 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.12 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.08 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+0.02 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.20 
+
+±0.07 
+
+0.00 
+
+±0.00 
+
+0.09 
+
+±0.04 
+
+0.13 
+
+±0.03 
+
+0.13 
+
+±0.03 
+
+0.05 
+
+±0.01 
+
+D = 768 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.27 
+
+±0.06 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.23 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.04 
+
+±0.02 
+
+0.07 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.08 
+
+±0.04 
+
+0.11 
+
+±0.02 
+
+0.27 
+
+±0.03 
+
+0.08 
+
+±0.02 
+
+D = 1536 
+
+0.1 1 10 100 100 10 10.1 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.30 
+
+±0.02 
+
+0.01 
+
+±0.02 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.04 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.05 
+
+±0.01 
+
+0.11 
+
+±0.05 
+
+0.00 
+
+±0.00 
+
+0.11 
+
+±0.01 
+
+0.11 
+
+±0.01 
+
+0.17 
+
+±0.09 
+
+0.45 
+
+±0.06 
+
+D = 2048 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.29 
+
+±0.08 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.03 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.09 
+
+±0.08 
+
+0.16 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.02 
+
+0.08 
+
+±0.04 
+
+0.35 
+
+±0.07 
+
+0.33 
+
+±0.08 
+
+D = 4096 
+
+0.1 1 10 100 100 10 10.1 
+
+> Learning Rate  = 0.0005
+> var
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.04 
+
+±0.03 
+
+0.10 
+
+±0.04 
+
+0.17 
+
+±0.03 
+
+0.01 
+
+±0.01 
+
+0.29 
+
+±0.03 
+
+0.05 
+
+±0.01 
+
+0.10 
+
+±0.02 
+
+0.03 
+
+±0.01 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.26 
+
+±0.04 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.07 
+
+±0.02 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.13 
+
+±0.02 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.02 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.02 
+
+±0.03 
+
+0.00 
+
+±0.00 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.09 
+
+±0.03 
+
+0.05 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.23 
+
+±0.05 
+
+0.1 1 10 100 100 10 10.1 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.11 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.25 
+
+±0.01 
+
+0.15 
+
+±0.05 
+
+0.01 
+
+±0.01 
+
+0.02 
+
+±0.02 
+
+0.11 
+
+±0.06 
+
+0.05 
+
+±0.04 
+
+0.56 
+
+±0.05 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+> Learning Rate  = 0.005
+> var
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.00 
+
+±0.00 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.01 
+
+±0.01 
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.1 1 10 100 
+
+cov 
+
+100 10 10.1 
+
+not swept (dead at D = 384 )
+
+0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 
+
+> success rate
+
+Dense-VICReg MLP LTI (k) Closed-Loop plan success (mean ± std, 3 seeds) 
+
+panel best 
+
+(b) Closed-Loop. 
+
+Figure 14: MLP ◦LTI (k) Predictor. Hyperparameter Sweeps for VICReg-based JEPA models in the PushT Environment. 28
