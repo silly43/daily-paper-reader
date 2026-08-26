@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-25</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-26</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 17 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 14 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>6</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>11</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>8</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-25 20:52:38 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-26 22:10:40 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读聚焦物理交互规划与机器人操作模型，17篇论文中6篇深度解析，最高分10.0分。值得关注：基于语义世界模型的动作规划，以及从未来潜在状态推断操作意图的新范式。建议普通读者重点关注“隐状态推理”方向，它是理解机器人“预判”能力的关键线索。</p>
+<p>今日共处理14篇论文，精读6篇、速读8篇，核心聚焦世界模型与机器人操控。</p>
+<p>精读中《GlanceWAM》与《XP-JEPA》均获9.0分，分别在稀疏测试时想象和可预测潜在动力学上提出新思路。</p>
+<p>速读可关注《Triplet2Track》《From Generation to Simulation》《Pointing-VLA》，建议优先从“世界模型如何落地为真模拟器”方向跟进。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -74,7 +76,7 @@
     <strong class="dpr-home-dashboard-count">6 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Beyond Instance Slots: Semantically Rich World Models for Physical Interaction Planning">Beyond Instance Slots: Semantically Rich World Models for Physical Interaction Planning</span></li><li><span class="dpr-home-dashboard-paper-title" title="Inferring Action from Future Latent State for Robotic Manipulation">Inferring Action from Future Latent State for Robotic Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="DreamMimic: Learning Visuomotor Whole-Body Loco-Manipulation via World Model">DreamMimic: Learning Visuomotor Whole-Body Loco-Manipulation via World Model</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GlanceWAM: Sparse Test-Time Imagination for World-Action Models">GlanceWAM: Sparse Test-Time Imagination for World-Action Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="XP-JEPA: Cross-Predictive Physics Grounding for Forecastable Latent Dynamics">XP-JEPA: Cross-Predictive Physics Grounding for Forecastable Latent Dynamics</span></li><li><span class="dpr-home-dashboard-paper-title" title="TrAct: Bridging Robot Control and Visual Prediction with Visual Tracks">TrAct: Bridging Robot Control and Visual Prediction with Visual Tracks</span></li></ul>
   </div>
   <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>6</strong></span></div>
 </section>
@@ -84,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">11 篇</strong>
+    <strong class="dpr-home-dashboard-count">8 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Force/Torque-Based Kinematic Adaptation for Robotic Manipulation Tasks">Force/Torque-Based Kinematic Adaptation for Robotic Manipulation Tasks</span></li><li><span class="dpr-home-dashboard-paper-title" title="CIDER: Continual Interactive Distillation for Embodied Reinforcement Learning">CIDER: Continual Interactive Distillation for Embodied Reinforcement Learning</span></li><li><span class="dpr-home-dashboard-paper-title" title="Counterfactual Quotient Models: Learning What Actions Change, Not What the World Does">Counterfactual Quotient Models: Learning What Actions Change, Not What the World Does</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Triplet2Track: A Hierarchical System with Object-Centric Representations for Reliable Long-Horizon Manipulation">Triplet2Track: A Hierarchical System with Object-Centric Representations for Reliable Long-Horizon Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="From Generation to Simulation: How Far Are World Models from Being True Simulators?">From Generation to Simulation: How Far Are World Models from Being True Simulators?</span></li><li><span class="dpr-home-dashboard-paper-title" title="Pointing-VLA: Typed Spatial Grounding Interfaces for Vision-Language-Action Manipulation">Pointing-VLA: Typed Spatial Grounding Interfaces for Vision-Language-Action Manipulation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>9</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>7</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
 </section>
 </div>
 
