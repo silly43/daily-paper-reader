@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-26</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-28</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 14 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 20 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>6</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>8</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>10</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>10</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-26 22:10:40 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-28 04:23:11 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共处理14篇论文，精读6篇、速读8篇，核心聚焦世界模型与机器人操控。</p>
-<p>精读中《GlanceWAM》与《XP-JEPA》均获9.0分，分别在稀疏测试时想象和可预测潜在动力学上提出新思路。</p>
-<p>速读可关注《Triplet2Track》《From Generation to Simulation》《Pointing-VLA》，建议优先从“世界模型如何落地为真模拟器”方向跟进。</p>
+<p>今日精读聚焦3D高斯世界建模与具身智能，两篇满分论文《GaussianDream++》与《Riemann-1.0》值得优先关注。速读中《Mol-JEPA》等三篇8分论文覆盖分子表征、机器人策略微调与VLA适应。建议从满分论文入手，深入理解高效3D场景表示与物理世界动作模型。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +71,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">6 篇</strong>
+    <strong class="dpr-home-dashboard-count">10 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GlanceWAM: Sparse Test-Time Imagination for World-Action Models">GlanceWAM: Sparse Test-Time Imagination for World-Action Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="XP-JEPA: Cross-Predictive Physics Grounding for Forecastable Latent Dynamics">XP-JEPA: Cross-Predictive Physics Grounding for Forecastable Latent Dynamics</span></li><li><span class="dpr-home-dashboard-paper-title" title="TrAct: Bridging Robot Control and Visual Prediction with Visual Tracks">TrAct: Bridging Robot Control and Visual Prediction with Visual Tracks</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GaussianDream++: Efficient 3D Gaussian World Modeling for Robotic Manipulation">GaussianDream++: Efficient 3D Gaussian World Modeling for Robotic Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="Riemann-1.0: An Embodied World Action Model for Physical AI">Riemann-1.0: An Embodied World Action Model for Physical AI</span></li><li><span class="dpr-home-dashboard-paper-title" title="ConfAL-WM: Confidence-Guided Active Learning for Action-Conditioned World Models">ConfAL-WM: Confidence-Guided Active Learning for Action-Conditioned World Models</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>6</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>10</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +84,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">8 篇</strong>
+    <strong class="dpr-home-dashboard-count">10 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Triplet2Track: A Hierarchical System with Object-Centric Representations for Reliable Long-Horizon Manipulation">Triplet2Track: A Hierarchical System with Object-Centric Representations for Reliable Long-Horizon Manipulation</span></li><li><span class="dpr-home-dashboard-paper-title" title="From Generation to Simulation: How Far Are World Models from Being True Simulators?">From Generation to Simulation: How Far Are World Models from Being True Simulators?</span></li><li><span class="dpr-home-dashboard-paper-title" title="Pointing-VLA: Typed Spatial Grounding Interfaces for Vision-Language-Action Manipulation">Pointing-VLA: Typed Spatial Grounding Interfaces for Vision-Language-Action Manipulation</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Mol-JEPA: A multimodal Joint Embedding Predictive Architecture for Molecules">Mol-JEPA: A multimodal Joint Embedding Predictive Architecture for Molecules</span></li><li><span class="dpr-home-dashboard-paper-title" title="Learning to Act While Waiting: RL Finetuning of Generalist Robot Policies Under Inference Latency">Learning to Act While Waiting: RL Finetuning of Generalist Robot Policies Under Inference Latency</span></li><li><span class="dpr-home-dashboard-paper-title" title="RA-VLA: Retrieval-Augmented VLA for Test-Time Adaptation">RA-VLA: Retrieval-Augmented VLA for Test-Time Adaptation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>7</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">world-models <strong>8</strong></span><span class="dpr-home-dashboard-tag">ssl <strong>2</strong></span></div>
 </section>
 </div>
 
