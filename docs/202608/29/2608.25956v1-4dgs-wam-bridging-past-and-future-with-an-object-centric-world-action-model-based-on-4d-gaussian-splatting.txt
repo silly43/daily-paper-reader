@@ -1,0 +1,980 @@
+Title: 4DGS-WAM: Bridging Past and Future with an Object-Centric World Action Model based on 4D Gaussian Splatting
+
+URL Source: https://arxiv.org/pdf/2608.25956v1
+
+Published Time: Thu, 27 Aug 2026 01:24:55 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+Preprint 
+
+# 4DGS-WAM: B RIDGING PAST AND FUTURE WITH AN 
+
+# OBJECT -C ENTRIC WORLD ACTION MODEL BASED ON 
+
+# 4D G AUSSIAN SPLATTING 
+
+Yueen Ma 
+
+The Chinese University of Hong Kong Shanghai Academy of AI for Science 
+
+mayueen@link.cuhk.edu.hk 
+
+Zenglin Xu 
+
+Fudan University Shanghai Academy of AI for Science 
+
+zenglinxu@fudan.edu.cn 
+
+Irwin King 
+
+The Chinese University of Hong Kong 
+
+king@cse.cuhk.edu.hk 
+
+## ABSTRACT 
+
+Current world action models (WAMs) typically operate on 2D visual data. These models can achieve exceptional visual quality, but they lack explicit spatial struc-ture for individual objects and repeatedly process redundant background content. Although point clouds can represent the world in 3D space, they can be difficult to align and accumulate across viewpoints. In this paper, we leverage an explicit 4D Gaussian Splatting (4DGS) representation that separately models dynamic objects and the static background of a scene. For dynamic objects, we use a policy model to predict future actor actions and a world model to predict transformations of their observed Gaussian splats. The static background need not be regenerated for future states, as much of it has already been observed in past frames. This forms an object-centric world action model, which we name 4DGS-WAM. It lifts 2D observations into a persistent 4D representation so that previously observed static content can be reused during future prediction. Future-state extrapolation can then focus on modeling the evolution of dynamic objects. Experiments on KITTI-MOT evaluate short-horizon prediction and past reconstruction. 
+
+## 1 INTRODUCTION 
+
+Predicting how the world evolves in response to an agent’s actions is a fundamental capability for embodied AI. World action models (WAMs) (Wang et al., 2026b) aim to equip policies with world-modeling capabilities, enabling embodied agents to reason about the consequences of their actions before taking them in the real world. Recent WAMs have achieved impressive visual fidelity by operating directly on sequences of 2D images (Cen et al., 2025b; Zhang et al., 2025). However, modeling the world entirely in image space presents a fundamental challenge: consecutive frames contain substantial redundant information, particularly in static backgrounds, while the underlying 3D structure and motion of dynamic objects remain implicit. As a result, image-based models must repeatedly generate large portions of the scene that are unchanged or only weakly related to the agent’s actions. An explicit spatial representation offers a promising alternative. By reconstructing a scene in 4D, a model can associate observations from different viewpoints and represent dynamic scenes persistently rather than regenerating them frame by frame. Point clouds (Huang et al., 2026) provide one such representation, but their sparse and unstructured nature can make dense view synthesis and temporal accumulation difficult, especially under viewpoint changes and object motion. In this work, we propose 4DGS-WAM, a world action model built on an explicit 4D Gaussian Splatting (4DGS) (Wu et al., 2024) representation. Our central idea is to decompose a dynamic 
+
+This is a work in progress. 
+
+1arXiv:2608.25956v1 [cs.CV] 26 Aug 2026 Preprint  
+
+> Past RGB
+> I0: t
+> 4DGS Recon. Segmentation Depth / Pose Optical Flow
+> st
+> • Observed 4DGS • Object Trajectories • Object Associations
+> Policy
+> π
+> World Model
+> W
+> Gt′
+> • Object Splats • Background Splats
+> Future RGB
+> It′
+> →→→→
+> at→t′
+> →→
+
+Figure 1: Architecture of 4DGS-WAM. Past RGB frames I0: t are processed by a 4DGS recon-struction module and vision foundation models for segmentation, depth, camera pose, and optical flow. Policy π predicts target-horizon SE(3) actions bat→t′ , which condition W to produce the future 4DGS state for rendering. scene into dynamic and static components and model them separately. The dynamic component represents objects whose states evolve over time, while the static component captures persistent background content observed over time. Rather than predicting an entire future image, we use a policy model to predict the future actions of dynamic objects and a world model to predict the corresponding transformations of their Gaussian splats. Because much of the background visible in future observations has already been observed in previous frames, it need not be reconstructed from scratch at every predicted time step. We then compose the extrapolated dynamic component with the accumulated static component to represent the future scene. To achieve dynamic–static decomposition, we leverage a suite of vision foundation models (VFMs) (Awais et al., 2025) for segmentation, depth estimation, and camera pose estimation. These estimates allow us to lift observations into a common world coordinate system and track the motion of individual objects over time. We further use an optical-flow VFM to provide pixel-level motion cues, enabling the modeling of non-rigid object transformations. In contrast to prior WAMs built on multimodal large language model (MLLM) backbones (Cen et al., 2025b; Wang et al., 2026c), 4DGS-WAM adopts a fundamentally different framework: a policy network and a world model operating on top of the perceived 4DGS representation. The policy network takes object-centric trajectories and a queried horizon h and predicts target-horizon actor actions. Conditioned on these actions and the same h, the world model predicts transformations of the Gaussian splats associated with each object. This object-centric formulation grounds world action modeling in the explicit spatial structure of the scene. We apply 4DGS-WAM to autonomous driving tasks. On the KITTI-MOT (Geiger et al., 2012) benchmark, rendering the accumulated 4DGS state from observed camera views achieves higher reported full-frame metrics than 3DGS (Kerbl et al., 2023), point-cloud methods, and other 4DGS baselines. For future extrapolation, we compare 4DGS-WAM against video- and 4DGS-based world models. A future application of 4DGS-WAM is robot manipulation, where the model must handle more challenging physical interactions, such as object collisions and deformable objects. In summary, our contributions are: • We introduce 4DGS-WAM, a 4D Gaussian Splatting-based world action model that explicitly decomposes dynamic scenes into static and dynamic components. • We propose a WAM framework in which policy and world models operate on object trajectories and Gaussians derived from a scene-level 4DGS state, distinct from prior multimodal LLM-based WAMs. • We evaluate 4DGS-WAM on an autonomous driving benchmark, KITTI-MOT, comparing future prediction with video- and 4DGS-based world models and reconstruction with 3D and 4D mapping methods. 
+
+## 2 RELATED WORK 
+
+World action models. Recent world action models (Wang et al., 2026b) primarily use image-or video-based representations. WorldVLA (Cen et al., 2025b) and RynnVLA-002 (Cen et al., 2Preprint       
+
+> Itat
+> RGB Action
+> Image Encoder Action Encoder
+> at′It′
+> Action RGB
+> Action Decoder Image Decoder WAM Backbone
+> I0: t
+> RGB
+> 4DGS Perception
+> st
+> at→t′
+> Policy
+> π
+> World Model
+> W
+> Gt′
+> 4DGS
+> It′
+> RGB
+
+(a) (b) Figure 2: World action model comparison. (a) Representative autoregressive WAMs. Image and action tokens are predicted jointly in a unified model. (b) 4DGS-WAM. Our model maintains a decomposed, renderable 4D Gaussian state: the static bank persists while policy-conditioned world dynamics transport only dynamic object splats. 2025a) jointly model future images and actions in unified autoregressive frameworks, while Uni-VLA (Wang et al., 2026c) incorporates world modeling into a token-based vision-language-action model. DreamZero (Ye et al., 2026) jointly generates future video and actions using video diffusion. In driving, GAIA-1 (Hu et al., 2023), DriveDreamer-2 (Zhao et al., 2025b), and Epona (Zhang et al., 2025) generate future driving video, with Epona additionally modeling future trajectories. PointWorld (Huang et al., 2026) instead predicts action-conditioned 3D point flows. In contrast, 4DGS-WAM maintains a renderable 4D Gaussian state with an explicit static–dynamic decomposition and applies a time-conditioned policy to object trajectories and a world model to object Gaussians. 
+
+4D Gaussian Splatting. 3D Gaussian Splatting (3DGS) (Kerbl et al., 2023) provides an explicit and efficient radiance-field representation for static scenes. 4DGS-SLAM (Li et al., 2025) and Flow4DGS-SLAM (Wang & Lee, 2026) extend Gaussian splatting to dynamic SLAM, but do not model action-conditioned future states. NeoVerse (Yang et al., 2026) performs pose-free, feed-forward 4D reconstruction from monocular video and supports novel-trajectory video generation. DriveDreamer4D (Zhao et al., 2025a) uses a video world model to synthesize novel-trajectory driving videos and then optimizes 4DGS using aligned real and synthetic views, rather than directly predicting future 4DGS states. Envision4D (Song et al., 2026) performs feed-forward 4DGS future extrapolation for driving, but is neither object-centric nor action-conditioned and does not decompose persistent static and evolving dynamic content. 
+
+Vision foundation models. Vision foundation models (Awais et al., 2025) provide complementary object-centric cues for our method. SAM 3 (Carion et al., 2026) supplies segmentation masks and object identities over time, while DA3 (Lin et al., 2026) estimates dense depth maps; VGGT (Wang et al., 2025) and VGGT-Ω (Wang et al., 2026a) additionally recover camera geometry. WAFT (Wang & Deng, 2026) estimates consecutive-frame optical flow. D4RT (Zhang et al., 2026) is a unified alternative for dynamic 4D reconstruction and tracking. 
+
+## 3 METHOD 
+
+4DGS-WAM first reconstructs past observations into an object-centric 4DGS state, then uses a time-conditioned policy and a time- and action-conditioned world model to extrapolate that state and render future observations, as illustrated in Figure 1. 3Preprint                
+
+> T0: tmh
+> Trajectories Memory Horizon
+> Embedding Temporal Attn. ×L
+> Actor kNN Attention Action Head
+> at→t′
+> Action
+> at→t′Gth
+> Action Splats Horizon
+> Splat Embedding Part Tokens Edge Attention SwiGLU + FiLM
+> ×L
+> Geometry Head Appearance Head Compose Residual Mix
+> Gt′
+> Future Splats (a) Policy π(b) World Model W
+
+Figure 3: Architectures of the policy network and the world model. (a) Policy network π. Each actor trajectory is augmented with a learned memory token m and a horizon embedding of the queried h, and the resulting sequences are processed by stacked temporal-attention layers followed by actor-level kNN attention. The action head reads m and predicts a target-horizon SE(3) action. 
+
+(b) World model W . Conditioned on the same h and the predicted action, splat embeddings and category-specific part tokens are processed by stacked geometric tensor layers. Residual SE(3) twists predicted at the part nodes are blended onto splats, and the resulting transformations are composed with the object action; source appearance attributes are updated through residual mixing. 3.1 PAST PERCEPTION 
+
+Given past RGB frames I0: t, a 4DGS reconstructor (Yang et al., 2026) produces N Gaussian primitives: 
+
+G0: t =   μi, ri, sc i, α i, sh i, τ i, ξ+ 
+
+> i
+
+, ξ−
+
+> i
+
+ Ni=1 , (1) where each primitive contains the standard 3DGS attributes—mean position μi, rotation ri, scale sc i,opacity αi, and spherical-harmonic appearance coefficients sh i—together with a temporal lifespan 
+
+τ i = ( τ start  
+
+> i
+
+, τ end  
+
+> i
+
+) and forward and backward motion twists ξ+ 
+
+> i
+
+and ξ− 
+
+> i
+
+. These twists characterize each Gaussian’s reconstructed trajectory over its lifespan within the observed frames. We denote by 
+
+Gt the active Gaussian snapshot obtained by evaluating G0: t at time t.
+
+Vision foundation models. 4DGS reconstruction alone lacks object-centric information and there-fore cannot distinguish dynamic objects from the static background. We use vision foundation models (VFMs) to estimate segmentation, optical flow, depth, and camera poses. Segmentation provides an object mask M(o) 
+
+> n
+
+, defined as the set of pixels p belonging to object o at time n. These masks support object tracking, while optical flow supplies pixel-level motion cues. We use depth maps and camera poses to lift these image-level estimates into 3D object trajectories and world-space 3D flow correspondences in a common coordinate frame. For each dynamic object o ∈ O t, we denote its object-center trajectory up to time t and its 3D flow correspondences from time t to a target time t′ by 
+
+T (o)0: t =
+
+n
+
+c(o) 
+
+> n
+
+∈ R3otn=0 
+
+, F(o) 
+
+> t→t′
+
+=   xj , fj
+
+ 
+
+> j∈J (o)
+> t→t′
+
+, (2) where c(o) 
+
+> n
+
+is the center of object o, xj is the world-space source position of a matched splat-associated surface point at time t, and fj is its measured world-space displacement to time t′. Object centers and flow correspondences are lifted using segmentation masks, optical flow, depth, and camera poses. During training, target-time masks, centers, and correspondences are extracted from available future observations; at inference, no target-time quantities are used. The masks at time t associate active Gaussians with dynamic objects, yielding {G (o) 
+
+> t
+
+}o∈O t , while the remaining Gaussians form Gstatic .We define the abstract state st as the reconstructed 4DGS, its object associations, and the object-center trajectories. The object trajectories are provided to the policy, while the flow correspondences supervise the world model. 4Preprint 3.2 FUTURE PREDICTION 
+
+Policy. A time-conditioned policy network π(st, h ) predicts actor motions for a queried future time 
+
+t′ = t + h, where h > 0 is the prediction horizon. Let At = Ot ∪ { ego } denote the policy’s actor set. The policy receives the center trajectories of these actors and outputs one six-vector target-horizon action ba(o) 
+
+> t→t′
+
+∈ R6 per actor. For any queried h, including h > 1, this action is obtained in a single policy evaluation of the observed prefix, without autoregressive prediction of intermediate actions. The policy produces nba(o)
+
+> t→t′
+
+o
+
+> o∈A t
+
+= π
+
+n
+
+T (o)0: t
+
+o
+
+> o∈A t
+
+, h 
+
+
+
+. (3) Because the ego camera is mounted on the ego vehicle, π includes the ego trajectory in its actor set; its predicted action determines the future camera pose. As shown in Figure 3, we append a learned memory token m to each actor trajectory and add a horizon embedding to every token. The resulting sequences are processed by L causal temporal-attention blocks (Vaswani et al., 2017), allowing each memory token to attend to its full trajectory while preventing trajectory tokens from attending to it. Actor-level kNN attention then enables interactions among nearby actors. The action head reads only from the corresponding memory token. We train the policy with Charbonnier regression (Charbonnier et al., 1994): 
+
+Lπ = 1
+
+|A t|
+
+X
+
+> o∈A t
+
+ρπ
+
+ba(o) 
+
+> t→t′
+
+− a(o)
+
+> t→t′
+
+
+
+, ρπ (z) = 
+
+sX
+
+> d
+
+z2 
+
+> d
+
++ ϵ2. (4) Here, a(o) 
+
+> t→t′
+
+is the teacher target-horizon action. Details of the action representation and exact objective are provided in App. A. 
+
+World model. A time- and action-conditioned world model W predicts the future Gaussian state at prediction horizon h. Given target-horizon actions, W operates on the observed, object-associated Gaussian snapshot Gt; we omit the association metadata in the notation below. Because the repre-sentation is 4DGS, the perceived Gaussians support novel-view synthesis. For the static background 
+
+Gstatic , we aggregate past multi-view observations and render it at the target camera pose. For each dynamic object, conditioned on a(o) 
+
+> t→t′
+
+, W predicts residual SE(3) twists on its category-specific part tokens, blends these twists onto the object’s splats, and composes the resulting transformations with the supplied action. These operations update Gaussian means and orientations and apply a residual appearance update. Writing at→t′ = {a(o) 
+
+> t→t′
+
+}o∈O t , the state transition is 
+
+bGt′ = W (st, at→t′ , h ) = W (Gt, at→t′ , h ) = W [
+
+> o∈O t
+
+G(o)
+
+> t
+
+!
+
+∪ G static , at→t′ , h 
+
+!
+
+= [
+
+> o∈O t
+
+W
+
+
+
+G(o) 
+
+> t
+
+, a(o) 
+
+> t→t′
+
+, h 
+
+!
+
+∪ G static = [
+
+> o∈O t
+
+bG(o)
+
+> t′
+
+!
+
+∪ G static .
+
+(5) Rendering bGt′ from the target camera pose yields the future observation bIt′ . During training, we condition W on teacher actions at→t′ and horizon h; at inference, we use policy predictions 
+
+bat→t′ . This per-object factorization omits inter-object interactions in W and therefore cannot model collisions. As shown in Figure 3, W is a GotenNet-style geometric tensor network (Aykent & Xia, 2025) operating over splats and part tokens. Architectural details, including category-specific part-token construction, are provided in App. A. We supervise geometry with 3D flow transport and appearance with masked photometry: 
+
+LW = Ltransport + λphoto Lphoto ,
+
+Ltransport = Lsplat + Lcenter 
+
+= E o∈O t 
+
+> j∈J (o)
+> t→t′
+
+ρW (bxj − xj − fj ) + Eo∈O t ρW mean  
+
+> j∈J (o)
+> t→t′
+
+ bxj − xj
+
+ − t
+
+
+
+a(o)
+
+> t→t′
+
+!
+
+,
+
+Lphoto = Eo∈O t, p ∈M (o)
+
+> t′
+
+bIt′ (p) − I t′ (p) 1
+
+, ρW (z) = X
+
+> d
+
+q
+
+z2 
+
+> d
+
++ ϵ2.
+
+(6) 5Preprint Table 1: Future prediction on KITTI-MOT. Mean ±std over the three sequence-level means at horizons h=1 , 3 (6 frames per method). Every method is scored on the same prefixes and target frames. The best given-camera result in each column is bold; predicted-camera rows are not eligible for this mark. †DriveDreamer-2 uses KITTI-adapted conditioning in place of its native nuScenes inputs.                         
+
+> Method Camera PSNR ↑SSIM ↑LPIPS ↓
+> Epona given 17 .46 ±1.21 0.482 ±0.054 0.203 ±0.021
+> DriveDreamer-2 given †13 .73 ±2.67 0.360 ±0.082 0.426 ±0.064
+> Envision4D predicted 17 .19 ±0.65 0.514 ±0.072 0.307 ±0.069
+> 4DGS-WAM (policy) given 18 .80 ±1.21 0.596 ±0.091 0.161 ±0.042
+> 4DGS-WAM (policy) predicted 16 .47 ±3.05 0.482 ±0.033 0.245 ±0.107
+
+Here, bxj is the predicted destination of the source point xj , and t(a) extracts an action’s translation. The splat term matches predicted point displacements to measured 3D flow, while the center term matches their average predicted displacement to the supplied target-horizon teacher translation. The photometric term is an ℓ1 error within the target-time segmentation mask M(o) 
+
+> t′
+
+. Unlike ρπ , which applies a joint Charbonnier penalty to the full action residual, ρW applies Charbonnier penalties independently to each coordinate. Optimizer settings and loss weights are given in Sec. 4.1; remaining training details are provided in App. A.4. 
+
+## 4 EXPERIMENTS 
+
+We evaluate 4DGS-WAM on the KITTI-MOT (Geiger et al., 2012) benchmark for two tasks: future-observation prediction and past reconstruction of observed frames. Figures 4–5 show qualitative examples. 4.1 IMPLEMENTATION DETAILS 
+
+We train π and W separately. The policy is a width-96 transformer with L=3 temporal-attention blocks; the world model is a width-128 geometric tensor network with L=4 layers. The policy uses AdamW (Loshchilov & Hutter, 2019) with learning rate 3×10 −4, batch size 16 , and 40 epochs, with 1.5 epochs of linear warmup, cosine decay to 0.1 times the peak rate, and gradient clipping at 5. The world model uses Adam (Kingma & Ba, 2015) with learning rate 3×10 −5 on both geometry and appearance, batch size 4, and 10 epochs, with cosine decay and the same gradient clip. Instantiating (6), we weight Lphoto , Lsplat , and Lcenter by 1, 0.5, and 0.5, add a missing-alpha penalty with total weight 0.2, and add a geometry-parameter ℓ2 anchor of weight 0.05 .4.2 FUTURE PREDICTION 
+
+We compare our future RGB predictions (Sec. 3.2) with Epona (Zhang et al., 2025), DriveDreamer-2 (Zhao et al., 2025b), and Envision4D (Song et al., 2026). All methods receive the same observed prefixes. Epona and DriveDreamer-2 synthesize a future video frame and are scored at the given future camera; DriveDreamer-2 uses KITTI-adapted conditioning in place of its native nuScenes inputs. Envision4D jointly predicts appearance and camera and is scored at that predicted camera. For 4DGS-WAM, π predicts target-horizon actions and W applies them to the observed dynamic Gaussians; both models are conditioned on h. We report the same π→W prediction at the given future pose and at the ego camera predicted by π. The 4DGS-WAM renders composite predicted splats over a frozen NeoVerse fusion underlay that fills remaining uncovered pixels; the baselines are scored on their native outputs. Table 1 lists PSNR, SSIM (Wang et al., 2004), and LPIPS (Zhang et al., 2018). At the given camera, policy-fed 4DGS-WAM leads the video baselines on all three metrics. At the predicted ego camera, the same prediction trails Envision4D, which models both content and camera. 6Preprint Table 2: Past reconstruction of observed frames on KITTI-MOT. Mean ±std over three sequences. The 4DGS-WAM full-frame scores use a frozen NeoVerse fusion underlay; other methods are scored on their native outputs. Its dynamic-region scores come from the corresponding no-fusion evaluation.                                              
+
+> Method PSNR ↑SSIM ↑LPIPS ↓dyn-PSNR ↑dyn-LPIPS ↓
+> Point Cloud Reconstruction
+> VGGT-Ω6.66 ±0.17 0.046 ±0.017 0.861 ±0.038 ——VGGT-SLAM 6.64 ±0.39 0.105 ±0.051 0.746 ±0.070 ——
+> 3DGS Reconstruction
+> 3DGS 14 .54 ±2.14 0.477 ±0.087 0.525 ±0.156 12 .83 ±3.72 0.504 ±0.142
+> MonoGS 20 .42 ±5.55 0.652 ±0.225 0.236 ±0.177 15 .51 ±5.12 0.224 ±0.159
+> EmbodiedSplat 13 .81 ±1.23 0.447 ±0.120 0.407 ±0.099 12 .23 ±0.05 0.411 ±0.043
+> 4DGS Reconstruction
+> 4DGS-SLAM 12 .09 ±1.11 0.446 ±0.130 0.462 ±0.110 12 .38 ±2.66 0.361 ±0.093
+> Flow4DGS-SLAM 12 .69 ±0.86 0.502 ±0.113 0.400 ±0.144 12 .91 ±3.10 0.282 ±0.100
+> 4DGS-WAM 27 .63 ±2.07 0.888 ±0.030 0.053 ±0.012 25 .53 ±3.58 0.025 ±0.006
+
+4.3 PAST RECONSTRUCTION 
+
+We compare past reconstructions of the observed prefix (Sec. 3.1), rendered at the given past cameras and scored only on those input views, not mixed with the future-prediction evaluation. Point-cloud baselines are VGGT-Ω (Wang et al., 2026a) and VGGT-SLAM (Maggio et al., 2025); 3DGS baselines are 3DGS (Kerbl et al., 2023), MonoGS (Matsuki et al., 2024), and EmbodiedSplat (Chhablani et al., 2025); 4DGS baselines are 4DGS-SLAM (Li et al., 2025) and Flow4DGS-SLAM (Wang & Lee, 2026). 4DGS-WAM merges per-frame static leftovers and dynamic object splats and fills remaining uncovered pixels with a frozen NeoVerse fusion underlay. Table 2 lists PSNR, SSIM, LPIPS, and scores in dynamic-object regions. 4DGS-WAM has the highest reported full-frame and dynamic-region metrics in Table 2. Among 3DGS methods, MonoGS is the strongest baseline. 4.4 QUALITATIVE RESULTS 
+
+We visualize KITTI-MOT scenes for future prediction (Figure 4) and past reconstruction (Figure 5). Panels share the native image aspect ratio; outputs produced on a different canvas are resized to that geometry only for display. For future prediction, each method produces a future RGB frame from the same observed prefix. Epona and DriveDreamer-2 synthesize that frame as video and are shown at the given future camera. Envision4D jointly predicts future appearance and the ego camera. For 4DGS-WAM, the predicted ego action sets the render camera so that the panel matches Envision4D’s predicted-camera setting. Its frozen fusion underlay fills remaining uncovered pixels; the static background is reconstructed from the observed prefix rather than newly generated. For past reconstruction, every method maps only the observed prefix and is rendered at the given past camera, never mixed with future-prediction views. 3DGS, MonoGS, and EmbodiedSplat optimize a Gaussian scene on those input views. VGGT-Ω and VGGT-SLAM lift a point cloud that we project into the same camera; uncovered pixels stay empty. 4DGS-SLAM and Flow4DGS-SLAM run dynamic Gaussian mapping on the prefix. 4DGS-WAM shows the merged static-and-dynamic 4DGS that serves as the world-model state, together with its frozen fusion underlay, rendered at the same given camera. 7Preprint 
+
+Figure 4: Future prediction on KITTI-MOT scenes. The three rows use horizons h=1 , h=2 , and 
+
+h=1 , respectively. Left to right: ground truth, Epona, DriveDreamer-2, Envision4D, and policy-fed 4DGS-WAM. Epona and DriveDreamer-2 use the given future camera; Envision4D and 4DGS-WAM use their predicted cameras. The 4DGS-WAM panels include the frozen fusion underlay described in the text. 
+
+Figure 5: Past reconstruction on KITTI-MOT scenes. Left: ground truth. Right: 3DGS, MonoGS, EmbodiedSplat, and VGGT-Ω (upper row); VGGT-SLAM, 4DGS-SLAM, Flow4DGS-SLAM, and 4DGS-WAM (lower row). The 4DGS-WAM panel shows its merged static–dynamic reconstruction with the frozen fusion underlay. 
+
+## 5 CONCLUSION 
+
+We presented 4DGS-WAM, an object-centric world action model on an explicit 4D Gaussian Splatting state. Past observations are reconstructed into static background and dynamic object Gaussians; a time-conditioned policy predicts SE(3) actor actions, including ego motion, and a time- and action-conditioned world model transports only the dynamic splats from the observed Gaussians, leaving the accumulated background in place. On KITTI-MOT, our merged reconstruction obtains the highest reported full-frame and dynamic-region metrics. Policy-fed short-horizon prediction leads the evaluated video world models at a given camera. By lifting 2D observations into a persistent 4D representation, 4DGS-WAM reuses reconstructed static content and extrapolates the future through the evolution of dynamic objects. 
+
+## 6 LIMITATIONS AND FUTURE WORK 
+
+The world model factorizes per object and therefore assumes that objects do not collide and cannot instantiate objects that appear after time t. The current 4DGS state also has no shape-completion module for unobserved sides of an object, such as the back of a vehicle seen only from the ego camera. These approximations suit the non-contact driving examples studied here, but they are insufficient for robot manipulation, where contact and other inter-object interactions must be modeled. Handling deformable objects, which would support more diverse manipulation tasks in embodied AI, may require more sophisticated 4DGS representations. 4DGS-WAM also depends on a suite of vision foundation models, so perception errors can propagate into the reconstructed state and predicted dynamics. The static bank preserves observed content but cannot synthesize newly revealed background regions. Our quantitative 4DGS-WAM renders therefore use a frozen fusion underlay for remaining uncovered pixels, whereas baselines are scored on their native outputs. Prediction is evaluated only at short horizons; longer-horizon rollout remains open. A unified end-to-end model is left to future work. Finally, 4DGS is only one possible 4D representation: the same object-centric WAM could be instantiated on voxel grids, meshes, or other 4D scene encodings. 8Preprint 
+
+## REFERENCES 
+
+Muhammad Awais, Muzammal Naseer, Salman Khan, Rao Muhammad Anwer, Hisham Cholakkal, Mubarak Shah, Ming-Hsuan Yang, and Fahad Shahbaz Khan. Foundation models defining a new era in vision: A survey and outlook. IEEE TPAMI , 47(4):2245–2264, 2025. Sarp Aykent and Tian Xia. GotenNet: Rethinking efficient 3D equivariant graph neural networks. In 
+
+ICLR , 2025. Nicolas Carion, Laura Gustafson, Yuan-Ting Hu, Shoubhik Debnath, Ronghang Hu, Didac Suris Coll-Vinent, Chaitanya Ryali, Kalyan Vasudev Alwala, Haitham Khedr, Andrew Huang, Jie Lei, Tengyu Ma, Baishan Guo, Arpit Kalla, Markus Marks, Joseph Greer, Meng Wang, Peize Sun, Roman R¨ adle, Triantafyllos Afouras, Effrosyni Mavroudi, Katherine Xu, Tsung-Han Wu, Yu Zhou, Liliane Momeni, Rishi Hazra, Shuangrui Ding, Sagar Vaze, Francois Porcher, Feng Li, Siyuan Li, Aishwarya Kamath, Ho Kei Cheng, Piotr Doll´ ar, Nikhila Ravi, Kate Saenko, Pengchuan Zhang, and Christoph Feichtenhofer. SAM 3: Segment anything with concepts. In ICLR , 2026. Jun Cen, Siteng Huang, Yuqian Yuan, Kehan Li, Hangjie Yuan, Chaohui Yu, Bohan Hou, Yuming Jiang, Jiayan Guo, Xin Li, Hao Luo, Fan Wang, Deli Zhao, and Hao Chen. RynnVLA-002: A unified vision-language-action and world model. arXiv preprint arXiv:2511.17502 , 2025a. Jun Cen, Chaohui Yu, Hangjie Yuan, Yuming Jiang, Siteng Huang, Jiayan Guo, Xin Li, Yibing Song, Hao Luo, Fan Wang, Deli Zhao, and Hao Chen. WorldVLA: Towards autoregressive action world model. arXiv preprint arXiv:2506.21539 , 2025b. Pierre Charbonnier, Laure Blanc-F´ eraud, Gilles Aubert, and Michel Barlaud. Two deterministic half-quadratic regularization algorithms for computed imaging. In ICIP , volume 2, pp. 168–172, 1994. Gunjan Chhablani, Xiaomeng Ye, Muhammad Zubair Irshad, and Zsolt Kira. EmbodiedSplat: Personalized real-to-sim-to-real navigation with gaussian splats from a mobile device. In ICCV ,pp. 25431–25441, 2025. Andreas Geiger, Philip Lenz, and Raquel Urtasun. Are we ready for autonomous driving? The KITTI vision benchmark suite. In CVPR , pp. 3354–3361, 2012. Anthony Hu, Lloyd Russell, Hudson Yeo, Zak Murez, George Fedoseev, Alex Kendall, Jamie Shotton, and Gianluca Corrado. GAIA-1: A generative world model for autonomous driving. arXiv preprint arXiv:2309.17080 , 2023. Wenlong Huang, Yu-Wei Chao, Arsalan Mousavian, Ming-Yu Liu, Dieter Fox, Kaichun Mo, and Li Fei-Fei. PointWorld: Scaling 3D world models for in-the-wild robotic manipulation. In CVPR ,pp. 20765–20779, 2026. Bernhard Kerbl, Georgios Kopanas, Thomas Leimk¨ uhler, and George Drettakis. 3D gaussian splatting for real-time radiance field rendering. ACM TOG , 42(4):139:1–139:14, 2023. Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization. In ICLR , 2015. Yanyan Li, Youxu Fang, Zunjie Zhu, Kunyi Li, Yong Ding, and Federico Tombari. 4D gaussian splatting SLAM. In ICCV , pp. 25019–25028, 2025. Haotong Lin, Sili Chen, Jun Hao Liew, Donny Y. Chen, Zhenyu Li, Yang Zhao, Sida Peng, Hengkai Guo, Xiaowei Zhou, Guang Shi, Jiashi Feng, and Bingyi Kang. Depth Anything 3: Recovering the visual space from any views. In ICLR , 2026. Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In ICLR , 2019. Dominic Maggio, Hyungtae Lim, and Luca Carlone. VGGT-SLAM: Dense RGB SLAM optimized on the SL(4) manifold. In NeurIPS , volume 38, pp. 129839–129867, 2025. Hidenobu Matsuki, Riku Murai, Paul H. J. Kelly, and Andrew J. Davison. Gaussian splatting SLAM. In CVPR , pp. 18039–18048, 2024. Ethan Perez, Florian Strub, Harm de Vries, Vincent Dumoulin, and Aaron Courville. FiLM: Visual reasoning with a general conditioning layer. In AAAI , pp. 3942–3951, 2018. Noam Shazeer. GLU variants improve transformer. arXiv preprint arXiv:2002.05202 , 2020. Qi Song, Yifei He, Chi Zhang, Zheng Fu, Xuhe Zhao, Mengmeng Yang, Kun Jiang, Rui Huang, and Diange Yang. Envision4D: Envisioning visual futures via feed-forward 4D gaussian splatting for autonomous driving. arXiv preprint arXiv:2606.10656 , 2026. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention is all you need. In NeurIPS , pp. 5998–6008, 2017. 9Preprint Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny. VGGT: Visual geometry grounded transformer. In CVPR , pp. 5294–5306, 2025. Jianyuan Wang, Minghao Chen, Shangzhan Zhang, Nikita Karaev, Johannes Sch¨ onberger, Patrick Labatut, Piotr Bojanowski, David Novotny, Andrea Vedaldi, and Christian Rupprecht. VGGT-Ω.In CVPR , pp. 21486–21499, 2026a. Siyin Wang, Junhao Shi, Zhaoyang Fu, Xinzhe He, Feihong Liu, Chenchen Yang, Yikang Zhou, Zhaoye Fei, Jingjing Gong, Jinlan Fu, Mike Zheng Shou, Xuanjing Huang, Xipeng Qiu, and Yu-Gang Jiang. World action models: The next frontier in embodied AI. arXiv preprint arXiv:2605.12090 , 2026b. Yihan Wang and Jia Deng. WAFT: Warping-alone field transforms for optical flow. In ICLR , 2026. Yunsong Wang and Gim Hee Lee. Flow4DGS-SLAM: Optical flow-guided 4D gaussian splatting SLAM. In CVPR , pp. 33364–33373, 2026. Yuqi Wang, Xinghang Li, Wenxuan Wang, Junbo Zhang, Yingyan Li, Yuntao Chen, Xinlong Wang, and Zhaoxiang Zhang. Unified vision-language-action model. In ICLR , 2026c. Zhou Wang, Alan C. Bovik, Hamid R. Sheikh, and Eero P. Simoncelli. Image quality assessment: From error visibility to structural similarity. IEEE TIP , 13(4):600–612, 2004. Guanjun Wu, Taoran Yi, Jiemin Fang, Lingxi Xie, Xiaopeng Zhang, Wei Wei, Wenyu Liu, Qi Tian, and Xinggang Wang. 4D gaussian splatting for real-time dynamic scene rendering. In CVPR , pp. 20310–20320, 2024. Yuxue Yang, Lue Fan, Ziqi Shi, Junran Peng, Feng Wang, and Zhaoxiang Zhang. NeoVerse: Enhancing 4D world model with in-the-wild monocular videos. In CVPR , pp. 40340–40351, 2026. Seonghyeon Ye, Yunhao Ge, Kaiyuan Zheng, Shenyuan Gao, Sihyun Yu, George Kurian, Suneel Indupuru, You Liang Tan, Chuning Zhu, Jiannan Xiang, Ayaan Malik, Kyungmin Lee, William Liang, Nadun Ranawaka, Jiasheng Gu, Yinzhen Xu, Guanzhi Wang, Fengyuan Hu, Avnish Narayan, Johan Bj¨ orck, Jing Wang, Gwanghyun Kim, Dantong Niu, Ruijie Zheng, Yuqi Xie, Jimmy Wu, Qi Wang, Ryan Julian, Danfei Xu, Yilun Du, Yevgen Chebotar, Scott Reed, Jan Kautz, Yuke Zhu, Linxi Fan, and Joel Jang. World action models are zero-shot policies. arXiv preprint arXiv:2602.15922 , 2026. Biao Zhang and Rico Sennrich. Root mean square layer normalization. In NeurIPS , 2019. Chuhan Zhang, Guillaume Le Moing, Skanda Koppula, Ignacio Rocco, Liliane Momeni, Junyu Xie, Shuyang Sun, Rahul Sukthankar, Jo¨ elle K. Barral, Raia Hadsell, Zoubin Ghahramani, Andrew Zisserman, Junlin Zhang, and Mehdi S. M. Sajjadi. Efficiently reconstructing dynamic scenes one D4RT at a time. In CVPR , pp. 7382–7392, 2026. Kaiwen Zhang, Zhenyu Tang, Xiaotao Hu, Xingang Pan, Xiaoyang Guo, Yuan Liu, Jingwei Huang, Li Yuan, Qian Zhang, Xiao-Xiao Long, Xun Cao, and Wei Yin. Epona: Autoregressive diffusion world model for autonomous driving. In ICCV , pp. 27220–27230, 2025. Richard Zhang, Phillip Isola, Alexei A. Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In CVPR , pp. 586–595, 2018. Guosheng Zhao, Chaojun Ni, Xiaofeng Wang, Zheng Zhu, Xueyang Zhang, Yida Wang, Guan Huang, Xinze Chen, Boyuan Wang, Youyi Zhang, Wenjun Mei, and Xingang Wang. DriveDreamer4D: World models are effective data machines for 4D driving scene representation. In CVPR , pp. 12015–12026, 2025a. Guosheng Zhao, Xiaofeng Wang, Zheng Zhu, Xinze Chen, Guan Huang, Xiaoyi Bao, and Xingang Wang. DriveDreamer-2: LLM-enhanced world models for diverse driving video generation. In 
+
+AAAI , pp. 10412–10420, 2025b. 10 Preprint 
+
+## A ARCHITECTURE AND TRAINING DETAILS 
+
+A.1 NOTATION 
+
+Table 3 collects the notation used in the main text and the implementation details below. Bold lower-case symbols denote vectors, and calligraphic symbols denote sets or structured states. Table 3: Core notation. The symbols follow the conventions of the main text. 
+
+Symbol Meaning 
+
+t, t ′, h = t′ − t Current time, target time, and prediction horizon 
+
+In, bIt′ RGB observation at time n and rendered future prediction 
+
+G0: t, Gn, bGt′ Reconstructed 4DGS, active snapshot, and predicted future state 
+
+G(o) 
+
+> n
+
+, Gstatic Object-specific Gaussian subset and static Gaussian bank 
+
+st Reconstructed 4DGS, object associations, and center trajectories 
+
+Ot, At Dynamic scene objects and policy actors, where At = Ot ∪ { ego }M(o) 
+
+> n
+
+Image mask of object o at time n
+
+T (o)0: t , c(o) 
+
+> n
+
+Center trajectory and world-space object center 
+
+F(o) 
+
+> t→t′
+
+, J (o) 
+
+> t→t′
+
+3D flow correspondences and their index set 
+
+μi Gaussian mean position 
+
+xj , bxj , fj Geometry-loss source, predicted destination, and measured displacement 
+
+ri, sc i, α i Gaussian rotation, scale, and opacity 
+
+sh i, rgb i Spherical-harmonic appearance and displayed RGB color 
+
+τ i, ξ+ 
+
+> i
+
+, ξ− 
+
+> i
+
+Gaussian lifespan and reconstructed forward/backward motion twists 
+
+a(o) 
+
+> t→t′
+
+, ba(o) 
+
+> t→t′
+
+Teacher and predicted target-horizon actions 
+
+π, W Policy network and Gaussian world model 
+
+z(o) 
+
+> n
+
+, m 9-D center-state token and learned policy memory token 
+
+a(o)CV , bu(o)
+
+> t,h
+
+, σ Per-step constant-velocity prior, normalized residual prediction, and residual scales 
+
+qo, χ od Object confidence and supervised action-dimension mask 
+
+ga = ( Ra, ta), ωa, θ, ιa SE(3) action transform, rotation vector, angle, and invariant feature triplet 
+
+yi, pk , K Centered splat position, part seed, and number of part tokens 
+
+ϕi, Vi Invariant scalar features and C×3 equivariant vector features 
+
+qi, ∆ij , d ij , eℓij , N (i) Graph-node position, edge geometry, invariant feature, and typed neighborhood 
+
+wmij , w ik Edge-attention weight for head m and splat-to-part assignment 
+
+δk , δi, g i Part residual twist, blended splat residual twist, and composed transform 
+
+Tij , grgb i Local appearance-transport weight and transported source color 
+
+drgb  
+
+> i
+
+, d αi , dlog sc  
+
+> i
+
+Per-splat color, opacity-logit, and log-scale residuals 
+
+Lπ , LW Policy and world-model objectives 
+
+Lsplat , Lcenter , Lphoto Dense-flow, center-transport, and masked-photometric losses 
+
+Lmiss , Lanchor Missing-alpha penalty and geometry-parameter anchor 
+
+ρπ , ρ W , ϵ Joint and coordinatewise Charbonnier penalties and stabilizer 
+
+A.2 POLICY NETWORK 
+
+Action convention. The six-vector action order is 
+
+a = (∆ x, ∆y, ∆z, roll , pitch , yaw) . (7) It maps to translation t = (∆ x, ∆y, ∆z) and rotation 
+
+R(a) = Rz (roll) Rx(pitch) Ry (yaw) . (8) Thus, when roll and pitch are zero, the convention reduces to planar yaw about the vertical axis. The action head parameterizes the target-horizon prediction as a bounded residual over a per-step constant-velocity prior: 
+
+ba(o) 
+
+> t→t′
+
+= Φ h
+
+
+
+a(o)CV + σ ⊙ tanh 
+
+bu(o)
+
+> t,h
+
+ 
+
+, (9) 11 Preprint where 
+
+σ = (0 .90 , 0.10 , 0.90 , 0.10 , 0.10 , 0.25) . (10) The first three entries are measured in meters and the last three in radians. The horizon map Φh
+
+converts this per-step-equivalent parameterization into the cumulative transform from t to t′ passed to the world model: it scales translation by h and sets R(h) = Exp( h Log R). Its inverse divides translation by h and uses Exp(Log R/h ). For object supervision, target-horizon translation is obtained from SAM+DA3 centroid displacement and target-horizon yaw from the tangent-derived heading change; roll and pitch are set to zero and supervised. For ego supervision, the relative camera motion defines the target-horizon action. 
+
+Input tokens and attention. For each actor, the policy uses the latest eight center-state observations, 
+
+z(o) 
+
+> n
+
+=
+
+h
+
+c(o) 
+
+> n
+
+; c(o) 
+
+> n
+
+− c(o)
+
+> n−1
+
+; ν(o)
+
+> n
+
+i
+
+∈ R9, (11) where ν(o) 
+
+> n
+
+∈ R3 is an optional uncertainty feature and is zero when unavailable. The ego row uses the same token layout, with centers obtained from the camera trajectory. The 9-D tokens are projected to width 96 . A learned projection of the scalar horizon h is added to every history token and to a learned memory token m. Three causal temporal-attention blocks, each with four heads, RMS normalization (Zhang & Sennrich, 2019), and a SwiGLU feed-forward layer (Shazeer, 2020), process the resulting sequence. Because m is appended after the history, it can attend to all valid observations while history tokens cannot attend to it. A 3D kNN interaction layer with k = 4 then exchanges information among nearby actors. The normalized memory feature is the sole input to the action head. A.3 WORLD MODEL 
+
+Part-token construction. For an object with N active splats, let 
+
+c = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+μi, yi = μi − c. (12) Farthest-point sampling over {yi} yields K part seeds {pk}Kk=1 . We use K = 1 for cars, vans, trucks, buses, trains, and unrecognized categories; K = 3 for bicycles and motorcycles; and K = 5 
+
+for people. The K = 1 case provides a rigid fallback. 
+
+Scalar and vector features. Let ga = ( Ra, ta) be the transform obtained from the supplied target-horizon action, ωa = Log( Ra), and θ = ∥ωa∥2. Define the invariant action feature ιa =[θ, ∥ta∥2, h ]. Splat and part nodes are initialized as 
+
+ϕ0 
+
+> i
+
+= Emb([log sc i; rgb i; αi; h]) , V0 
+
+> i
+
+=
+
+y⊤
+
+> i
+
+t⊤
+
+> a
+
+ω⊤
+
+> a
+
+ , (13) 
+
+ϕ0 
+
+> k
+
+= Emb([ 03; 03; 1; h]) , V0 
+
+> k
+
+=
+
+p⊤
+
+> k
+
+t⊤
+
+> a
+
+ω⊤
+
+> a
+
+ . (14) The three rows of V are equivariant vector channels. Action direction enters these channels directly, while ιa conditions each scalar update through FiLM (Perez et al., 2018). 
+
+Typed geometric tensor layers. The packed graph contains splat–splat kNN edges with k = 16 ,complete splat–part edges in both directions, and a complete part–part graph. For an edge i ← j,define 
+
+∆ij = qj − qi, dij = ∥∆ij ∥2, (15) where q denotes either a centered splat or a part seed. The invariant edge feature is 
+
+eℓij = dij ; ⟨Vℓi , Vℓj ⟩n; ⟨Vℓi , ∆ij ⟩n; ⟨Vℓj , ∆ij ⟩n
+
+ , (16) 12 Preprint where ⟨· , ·⟩ n is the normalized inner product used by the implementation. For layer ℓ and head m,
+
+wℓ,m ij = softmax j∈N (i) MLP ℓ
+
+> attn
+
+
+
+[ϕℓi ; ϕℓj ; eℓij ]
+
+
+
+> m
+
+. (17) The vector update uses learned gates aℓ,m τ and bℓ,m τ for edge type τ :
+
+∆Vℓi = X
+
+> m
+
+X 
+
+> j∈N (i)
+
+wℓ,m ij 
+
+
+
+aℓ,m τ (i,j ) ⊙ ∆ij + bℓ,m τ (i,j ) ⊙ Vℓj
+
+
+
+. (18) Attention-weighted edge invariants are pooled across neighbors and heads to form agg ℓi . The scalar update is 
+
+ϕℓ+1  
+
+> i
+
+= ϕℓi + (1 + γℓ) ⊙ SwiGLU ℓ
+
+
+
+[RMSNorm( ϕℓi ); agg ℓi ]
+
+
+
++ βℓ. (19) The implementation additionally RMS-normalizes vector residuals and uses learned per-layer residual scales. Four such layers are used, with scalar width 128 , four attention heads, three vector channels, and dropout 0.05 .
+
+Residual motion and composition. Only part nodes decode residual twists: 
+
+δk = 0 .2 tanh MLP δ ([ ϕk; vec( Vk); ta; ωa; ιa; h]) . (20) Thus, the decoder receives h both inside ιa and as a separate scalar. The final splat–part attention, averaged over heads, gives wik with P 
+
+> k
+
+wik = 1 . The default Lie-algebra blend is 
+
+δi =
+
+> K
+
+X
+
+> k=1
+
+wik δk, ∆gi = Exp( δi), gi = ∆ gi ◦ ga. (21) Writing gi = ( Ri, ti), the Gaussian update is 
+
+bμi = c + Riyi + ti, (22) and Ri is composed with the source quaternion. The last layer of the twist decoder is initialized to zero, so the initial transformation is exactly the supplied rigid action. 
+
+Appearance transport. On the splat kNN graph, local source-color transport uses 
+
+Tij = softmax j∈N (i) MLP T
+
+ [ϕi; ϕj ; dij ] , grgb i = X
+
+> j
+
+Tij rgb j . (23) The appearance head predicts bounded gates. Its color residual is 
+
+drgb  
+
+> i
+
+= clamp [−0.5,0.5] 
+
+
+
+λrgb  
+
+> i
+
+⊙ rgb i + βi
+
+ grgb i − rgb i
+
+ 
+
+, (24) where λrgb  
+
+> i
+
+∈ [−0.5, 0.5] 3 and βi ∈ [−0.5, 0.5] ; the clamp is componentwise. The head additionally predicts dαi ∈ [−3, 3] and dlog sc  
+
+> i
+
+∈ [−0.223 , 0.223] 3. These residuals are applied as 
+
+drgb i = clamp 
+
+
+
+rgb i + drgb  
+
+> i
+
+, 0, 1
+
+
+
+, bαi = sigmoid  logit  clamp( αi, 10 −4, 1 − 10 −4) + dαi
+
+ ,
+
+(25) 
+
+csc i = sc i ⊙ exp 
+
+
+
+dlog sc 
+
+> i
+
+
+
+. (26) The final layers are initialized to zero, making the untrained appearance path an identity update. A.4 TRAINING OBJECTIVES 
+
+Policy loss. The exact policy objective operates in normalized residual coordinates. Let 
+
+u(o) 
+
+> t,h
+
+=
+
+
+
+Φ−1
+
+> h
+
+
+
+a(o)
+
+> t→t′
+
+
+
+− a(o)CV 
+
+
+
+⊘ σ (27) be the teacher residual. With dimension mask χod , confidence qo, and ϵ = 10 −6, the per-actor penalty is 
+
+ℓ(o) 
+
+> π
+
+=
+
+vuut 6X
+
+> d=1
+
+χod 
+
+
+
+tanh bu(o) 
+
+> t,h,d
+
+− u(o)
+
+> t,h,d
+
+2
+
++ ϵ2. (28) Within each sample, actor losses are averaged with normalized confidence weights; the resulting sample losses are averaged over active samples. This is the normalized implementation of the schematic action-space loss in Equation 4. 13 Preprint 
+
+World-model geometry losses. For each supervised correspondence, let qj ≥ 0 denote its confi-dence. The dense flow loss is 
+
+Lsplat =
+
+P
+
+> o
+
+P 
+
+> j∈J (o)
+> t→t′
+
+qj ρW (bxj − xj − fj )
+
+P
+
+> o
+
+P 
+
+> j∈J (o)
+> t→t′
+
+qj
+
+, ρW (z) = 
+
+> 3
+
+X
+
+> d=1
+
+q
+
+z2 
+
+> d
+
++ ϵ2. (29) The center-transport term averages predicted displacements over the same index set J (o) 
+
+> t→t′
+
+and compares that mean with the translation t(o) 
+
+> a
+
+of the supplied target-horizon teacher action: 
+
+Lcenter =
+
+P 
+
+> o
+
+qo ρW
+
+  
+
+> 1
+> |J (o)
+> t→t′|
+
+P 
+
+> j∈J (o)
+> t→t′
+
+(bxj − xj ) − t(o)
+
+> a
+
+P 
+
+> o
+
+qo
+
+. (30) 
+
+Photometric and total loss. The photometric loss is the mean absolute RGB error over ground-truth object masks: 
+
+Lphoto := Eo, p ∈M (o)
+
+> t′
+
+ 13 bIt′ (p) − I t′ (p) 1
+
+
+
+. (31) Let bα(o)(p) be the rendered alpha attribution of object o. The implementation also adds a missing-alpha penalty 
+
+Lmiss = Eo, p ∈M (o)
+
+> t′
+
+h
+
+1 − bα(o)(p)
+
+i
+
+. (32) For the multi-horizon examples associated with one observed prefix, the world objective is 
+
+LW = Eh[Lphoto + 0 .2 Lmiss + 0 .5 Lsplat + 0 .5 Lcenter ] + 0 .05 Lanchor , (33) where Lanchor = P 
+
+> ϑ∈Θgeom
+
+∥ϑ − ϑ0∥22 anchors geometry parameters to their initialization. 14
